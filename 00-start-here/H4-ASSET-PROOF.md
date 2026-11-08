@@ -180,7 +180,7 @@ pad at z=-9. Frames: `tools/harness/golden/darwin/00-gym/cam3.png` and `cam4.png
 | N1 | torii budget triangles 108 -> 100 | `assets:budget` | exit 1, `✗ kit_torii: triangles 108 > budget 100` |
 | N1b | same, through the build | `assets:build` | exit 3, `assets/dist/ left unchanged` (hashes compared) |
 | N2 | manifest hand-edited: torii triangles 108 -> 90 | `assets:budget` | exit 1, `manifest triangles=90 but the shipped file measures 108 — manifest stale or hand-edited` |
-| N3 | manifest hand-edited: `"color"` added to prim_box | `assets:budget` (and the game at boot: same schema) | exit 1, `must NOT have additional properties "color"` |
+| N3 | manifest hand-edited: `"color"` added to prim_box | `assets:budget` (not tested: the game should also refuse to boot, since it uses the same ajv schema; CI runs `assets:budget` first, so the failure gets a clear name) | exit 1, `must NOT have additional properties "color"` |
 | N4 | `BLENDER=/nonexistent` | `assets:build` | exit 2, `Blender not runnable … assets/dist/ left unchanged` |
 | N5 | kit with an Array modifier | `export.py` | exit 1, `has modifiers ['ARRAY'] — kit geometry is built, not modified` |
 | N6 | vermilion on a non-torii asset | `lib.py` | exit 1, `vermilion is torii-only (STYLE-BIBLE section 2); set accent=True` |

@@ -14,7 +14,8 @@ import { Player, TUNING } from './entities/player';
 import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, preloadLevelAssets, MANIFEST, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
 import { configureAssetLoaders, getKtx2Support, getLoadedAsset, preloadAssets, type Ktx2Support } from './loaders/assets';
 
-/** The kit palette as authored in tools/blender/lib.py (STYLE-BIBLE section 2 + measured vermilion). */
+/** The kit palette — a COPY of PALETTE in tools/blender/lib.py (the source; STYLE-BIBLE 2 + measured
+ *  vermilion). Used only by the harness probe's Tier-2 fidelity readback; keep the two in step. */
 const KIT_PALETTE = [0xcabfac, 0xafa79c, 0x979189, 0x827d76, 0x69645f, 0x534e4b, 0x383838, 0x20201e, 0x603633];
 
 export const GAME_RULES = {
