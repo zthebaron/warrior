@@ -588,3 +588,26 @@ this branch's `startJson` fails TS2345, which is the intended B-16 gate: take PR
 keep `teleportPlayer` plus `rules.respawnDelaySec`/`fixedDt`. C would couple PR 4's review to PR 3's.
 Cost: PR 4 shows no CI until PR 3 merges.
 status: PROVISIONAL
+
+## OQ-050 — D-014 fix 3 says "finishing a chapter loads the next". What decides "next", and what happens around it?
+raised: 2026-11-08 by kit (D-014-PROGRESSION)
+options: A derive from each level's `chapter` (lowest chapter above this one) | B a hand-kept ordered list in GAME_RULES | C file-name order
+took: A (`src/systems/progression.ts`: entryLevel / nextLevel / chapterChain, one copy shared by the game, REACHABLE and check:progression)
+because: chapter agents cannot see each other (the reason MOVES_ALLOWED lives in the data), so a list
+someone must remember to extend is exactly how chapter 1 shipped unreachable. `chapter` is already a
+required schema field. C would make an id prefix carry meaning nothing enforces.
+Sub-choices taken, each the smallest that keeps a player moving:
+- Enter at results loads the next chapter directly (results -> loading -> play). The HUD says
+  `COMPLETE / Enter: next chapter`, or `COMPLETE / Enter: menu` after the last. Still no time, score,
+  par or rank (Q4, NOT-list #20 passes).
+- After the last chapter, Enter returns to the menu, and the menu starts from the front door again
+  (the entry chapter). Quitting mid-chapter (pause, M) keeps that chapter, so Enter at the menu resumes it.
+  There is no save: a reload starts at chapter 1. Persistence is not asked for anywhere and would be new
+  state, so it is not built.
+- A gap in the numbering is skipped, not a dead end. The gym (chapter 0, reached only by `?level=00-gym`)
+  leads to chapter 1.
+- Two files on one chapter: the tie breaks on id, so the order is total, and the losing file is then
+  unreachable. REACHABLE fails on it ("every chapter is on the progression chain"), and so does
+  check:progression on levels/, instead of a schema rule.
+Cost: REACHABLE now plays EVERY chapter end to end, about 20 s each on CI.
+status: PROVISIONAL
