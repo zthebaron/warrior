@@ -198,3 +198,31 @@ property: dark cliff mass left, bright void right, path on the seam, torii in se
   (jump, climb, crow) + 1 transfer + 0 practice.
 - **OQ-038 → D-012.** ACCENT_AREA is met at any pitch the rig reaches, with the floor unchanged.
   Rejections 3-4 above would now pass; the walled-gate control still fails.
+
+## Addendum: B-17, the instrument (2026-11-08)
+
+§4's "Q6 part 6 is not implemented" is now closed. To measure a human run, load
+`/?level=01-lower-stair&instrument=on` (or just `/?instrument=on`; chapter 1 is the default since
+D-014). Nothing appears in game (NOT-list #20). At the results screen the console prints a per-segment
+table, and the browser downloads `instrument-01-lower-stair-<timestamp>.json`. Hand over either one.
+
+Per segment: `segment_time_s` (entry to first clear, deaths and retries included), `deaths`,
+`first_clear_attempt`, `retry_times_s[]`. Per attempt in a crow segment: `player_depart_t` (the feet
+leave the torii radius), `crow_lift_t` (that crow's latest lift-off at or before departure),
+`depart_after_lift_s`, `cleared`. Every time is on the world clock, so pause is excluded and
+bot and human numbers compare (OQ-048).
+
+**Reading `depart_after_lift_s`.** One value proves nothing. Any departure falls between 0 and one
+loop after *some* lift-off, and the blind bot scored 0.48 s and 0.97 s by chance. The answer to
+OQ-034 is the spread over many attempts. Values clustered inside 0 to 0.75 s (seg 3) and 0 to 0.95 s
+(seg 4) mean the crow is being read. Values spread across the period mean the player is timing the
+slab, and the crow is decoration.
+
+**Cross-check.** The bot was run with `--instrument=on`, both reading the crow and leaving blind at
+one arrival phase. The instrument's per-segment deaths (blind: 0 0 1 1) summed to the game's own
+total of 2, and its clear times matched nav's.
+
+**HAZARD_INERT** is now an assertion, not a report. PHASE_SWEEP's blind departures must fail at least
+one arrival phase in every cued segment, otherwise the cue gates nothing and the stage fails. Chapter 1
+passes it, with 4/8 failing in seg 3 and 2/8 in seg 4. The blind runs already existed, so CI time is
+unchanged.

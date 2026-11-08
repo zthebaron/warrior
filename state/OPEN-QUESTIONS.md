@@ -581,6 +581,22 @@ that lands) with every hash intact. D-011 checked rather than assumed: chapter 1
 errors, 0 warnings, as 3 teaching (jump, climb, crow) + 1 transfer + 0 practice.
 status: PROVISIONAL
 
+## OQ-048 — B-17's brief says segment_time_s is "wall-clock torii to torii". Which clock?
+raised: 2026-11-08 by kit (B-17)
+options: A the world clock (D-004: play + death time, frozen in pause) | B performance.now() wall clock | C both
+took: A
+because: the world clock is what the hazards run on, so `crow_lift_t` and `player_depart_t` are only
+comparable on it; a wall clock would put a crow lift-off and a departure on two different time bases.
+It also excludes pause (a player who pauses mid-segment is not slower) and is deterministic, so a bot run
+(`--instrument=on`) and a human run give comparable numbers, which the brief asks for. The brief's
+"wall-clock" reads as "real seconds, not ticks", which the world clock is (fixed 60 Hz step, seconds).
+Cost: a tab that loses focus and stalls the loop is not counted either; for Q4's 25-35 s target that is
+the right side to err on. C was rejected as a second number nobody asked for.
+Known limit, for whoever reads the numbers: one `depart_after_lift_s` cannot say whether the crow was
+read. `crow_lift_t` is the most recent lift-off at or before departure, so ANY departure lands between 0
+and one loop period after it; the blind bot shows 0.48 s and 0.97 s by chance. Only the spread across
+many attempts separates reading (clustered just after 0, inside the 0.75 s / 0.95 s slack of OQ-034)
+from timing the slab (spread across the period, or clustered on the patroller's other safe window).
 ## OQ-033 — b12-harvest conflicts with main and with PR 3. Resolve now, or after PR 3 lands?
 raised: 2026-11-08 by kit (PR 4)
 options: A merge main in now, so PR 4 gets CI | B leave it conflicting until PR 3 is on main, then merge once | C stack PR 4 on h4-asset-kit

@@ -160,7 +160,7 @@ export async function openGame(ctx: Ctx, opts: { query?: string } = {}): Promise
   try {
     // --landingmark=off|on: run the stage with the landing mark forced (it ships on, D-010)
     const lm = ctx.args['landingmark'];
-    const flags = lm === 'off' || lm === 'on' ? `&landingmark=${lm}` : '';
+    const flags = (lm === 'off' || lm === 'on' ? `&landingmark=${lm}` : '') + (ctx.args['instrument'] === 'on' ? '&instrument=on' : '');
     await page.goto(`${ctx.baseUrl}/${opts.query ?? `?harness=1&level=${encodeURIComponent(ctx.levelId)}${flags}`}`);
   } catch (err) {
     // The page never loaded: nothing about the level was observed. Environment, with evidence.
@@ -251,6 +251,7 @@ declare global {
       level(): { id: string } | null;
       setCamera(pos: Vec3, target: Vec3): void;
       rigCamera(pivot: Vec3, dir: Vec3): Vec3;
+      instrument(): { level: string; total_s: number | null; finished: boolean; segments: { segment: number; from: string; to: string; crow: number | null; segment_time_s: number | null; deaths: number; first_clear_attempt: number | null; retry_times_s: number[]; attempts: { player_depart_t: number | null; crow_lift_t: number | null; depart_after_lift_s: number | null; cleared: boolean }[] }[] } | null;
       releaseCamera(): void;
       respawnAt(pos: Vec3, facing: number, tick: number): Snapshot;
       setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;

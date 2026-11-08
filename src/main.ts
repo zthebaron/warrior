@@ -12,6 +12,7 @@ import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
 import { LandingMark } from './entities/landing-mark';
+import { Instrument, type InstrumentReport } from './systems/instrument';
 import { nextLevel } from './systems/progression';
 import { buildLevel, fetchLevelFresh, levelIndex, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
 import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
@@ -87,6 +88,8 @@ interface HarnessApi {
   record(): InputFrame[];
   snapshot(): HarnessSnapshot;
   level(): LevelData | null;
+  /** B-17: the instrument's report so far (null unless ?instrument=on). */
+  instrument(): InstrumentReport | null;
   tuning: typeof TUNING;
   /** Rule constants the harness must agree with (checkpoint activation radius, height slack). */
   rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
@@ -154,6 +157,8 @@ function seededRandom(seed: number): () => number {
 
 const HARNESS_SEED = 0x5eed1234;
 const HARNESS_MODE = __HARNESS__ && new URLSearchParams(location.search).get('harness') === '1';
+// B-17: ?instrument=on records per-segment play numbers (dev only, never drawn: NOT-list #20).
+const INSTRUMENT = new URLSearchParams(location.search).get('instrument') === 'on';
 // Feel-test flags follow the accent's ?accent=<name> precedent (D-007). Defaults are unchanged; each is
 // also live in the ~ panel's "feel test" group (FEELTEST-SWITCHES).
 {
@@ -218,6 +223,8 @@ async function boot(): Promise<void> {
   // Rule log for the playtest harness (cheap; kept in all builds).
   let checkpointLog: number[] = [];
   let deaths = 0;
+  let instrument: Instrument | null = null;
+  let instrumentEmitted = false;
   let lastDeath: Vec3 | null = null;
   // Harness-only render controls (inert unless the harness API sets them).
   let cameraOverride: { pos: Vec3; target: Vec3 } | null = null;
@@ -264,6 +271,8 @@ async function boot(): Promise<void> {
     deathTicksLeft = 0;
     checkpointLog = [];
     deaths = 0;
+    instrument = INSTRUMENT ? new Instrument(data, GAME_RULES.checkpointRadius) : null;
+    instrumentEmitted = false;
     lastDeath = null;
     clearError();
   };
@@ -361,6 +370,7 @@ async function boot(): Promise<void> {
         camRig.snap(player.feet(tmpFeet));
         state.transition('play');
       }
+      instrumentTick();
       return;
     }
     profiler.begin('gameplay');
@@ -374,7 +384,29 @@ async function boot(): Promise<void> {
     profiler.end('physics');
     tools.probe.sample(player.feet(tmpFeet), player.grounded);
     rulesTick();
+    instrumentTick();
   };
+
+  // B-17: one sample per fixed tick from state the rules already keep. Output only at run end, only
+  // to the console and a download: nothing is rendered in game (NOT-list #20).
+  function instrumentTick(): void {
+    if (!instrument || !level || !player) return;
+    const f = player.feet(tmpFeet);
+    instrument.tick({ t: worldTime(), state: state.get(), feet: [f.x, f.y, f.z], checkpoints: checkpointLog, deaths, crows: level.crows() });
+    if (!instrumentEmitted && state.is('results')) {
+      instrumentEmitted = true;
+      const rep = instrument.report();
+      console.info(`[instrument] ${rep.level}: ${rep.total_s}s (world clock)`);
+      console.table(instrument.table());
+      if (!HARNESS_MODE) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(rep, null, 2)], { type: 'application/json' }));
+        a.download = `instrument-${rep.level}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+    }
+  }
 
   const onRender = (alpha: number, frameDt: number): void => {
     profiler.begin('animation');
@@ -595,6 +627,7 @@ async function boot(): Promise<void> {
       record: () => input.record(),
       snapshot,
       level: () => level?.data ?? null,
+      instrument: () => instrument?.report() ?? null,
       tuning: TUNING,
       // one rules object: B-8's respawn-safety constants + PR 4's respawn timing. respawnDelaySec is a getter
       // because the feel-test switches change it live; a value captured once would go stale.

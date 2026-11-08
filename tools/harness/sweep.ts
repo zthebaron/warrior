@@ -23,9 +23,8 @@
 //      not hidden (OQ-014).
 //
 // Crow cues (Q2, Q5): the bot above honours them (it holds at the torii for lift-off). For a segment
-// carrying a cue, the same N arrivals are ALSO run blind (ignoreCues), report-only: how many arrival
-// phases kill a player who departs without reading the crow. That is the cue's measured value and the
-// teach-rate proxy until per-segment death counts exist (Q6 part 6 is not implemented).
+// carrying a cue, the same N arrivals are ALSO run blind (ignoreCues): HAZARD_INERT asserts at least one
+// of them dies, i.e. the cue gates something (see below).
 //
 // Respawn points that coincide (the gym's checkpoint 0 sits on spawn) are merged. A checkpoint must
 // lie on the critical path, at a waypoint or partway along a ground edge, in path order.
@@ -138,17 +137,21 @@ export async function phaseSweep(ctx: Ctx): Promise<StageResult> {
         const nextStart = pts[r + 1]?.startIndex ?? ctx.level.critical_path.length;
         const cued = ctx.level.critical_path.map(wp).slice(pt.startIndex, nextStart).some((w) => w.cue !== undefined);
         if (cued) {
-          const blind: { offset: number; ok: boolean; why: string | null }[] = [];
+          const blind: { offset: number; ok: boolean; why: string | null; sec: number }[] = [];
           for (let j = 0; j < N; j++) {
             const tick = P === null ? 0 : Math.round(((j * P) / N) * FIXED_HZ);
             await g.page.evaluate(([p, f, t]) => window.__HARNESS__!.respawnAt(p, f, t), [pt.pos, pt.facing, tick] as const);
             const w = await walk(ctx, g.page, { startIndex: pt.startIndex, ...(pt.from ? { from: pt.from } : {}), ...(pt.untilCheckpoint !== undefined ? { untilCheckpoint: pt.untilCheckpoint } : {}), tickLimit, quiet: true, ignoreCues: true });
             const reachedEnd = w.snap.state === 'results' || (pt.untilCheckpoint !== undefined && w.snap.checkpoints.includes(pt.untilCheckpoint));
-            blind.push({ offset: j, ok: !w.failure && reachedEnd, why: w.failure });
+            blind.push({ offset: j, ok: !w.failure && reachedEnd, why: w.failure, sec: w.ticks / FIXED_HZ });
           }
           const dead = blind.filter((x) => !x.ok);
           const waits = runs.map((x) => x.sec);
-          st.check(`seg ${r}: crow cue (report)`, true, `blind departures fail ${dead.length}/${N} arrival phases${dead.length ? ` (offsets ${dead.map((x) => x.offset).join(',')})` : ''}; reading the crow clears ${runs.filter((x) => x.ok).length}/${N}, ${Math.min(...waits).toFixed(2)}-${Math.max(...waits).toFixed(2)}s incl. the wait`);
+          // HAZARD_INERT (PROMPT-B17-INSTRUMENT): the inverse of this stage's own assertions. PHASE_SWEEP proves a
+          // segment is always POSSIBLE; this proves its crow-gated hazard sometimes REFUSES a player who departs
+          // on arrival without reading the cue. Clearing from all N phases blind means the cue gates nothing.
+          const blindOk = blind.filter((x) => x.ok);
+          st.check(`seg ${r}: HAZARD_INERT (blind departure must fail some phase)`, dead.length > 0, `blind departures fail ${dead.length}/${N} arrival phases${dead.length ? ` (offsets ${dead.map((x) => x.offset).join(',')})` : ' — THE CUE GATES NOTHING'}; blind clears take ${blindOk.length ? `${Math.min(...blindOk.map((x) => x.sec)).toFixed(2)}s` : '—'}; reading the crow clears ${runs.filter((x) => x.ok).length}/${N}, ${Math.min(...waits).toFixed(2)}-${Math.max(...waits).toFixed(2)}s incl. the wait`);
           (st.data['blind'] ??= []) as unknown[];
           (st.data['blind'] as unknown[]).push({ segment: r, blind });
         }
