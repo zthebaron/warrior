@@ -2,6 +2,7 @@
   "id": "fixture-patroller",
   "title": "Fixture: one patroller across a flat pad",
   "chapter": 0,
+  "moves_allowed": ["ground", "jump", "double", "dash", "dashjump", "wall", "climb", "platform"],
   "palette": "greybox",
   "spawn": {
     "pos": [
