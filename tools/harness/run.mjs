@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
 import { lintLevel } from '../lint-level.mjs';
 import { EXIT_CODE, FAILURE, Stage } from './lib.ts';
-import { preflight } from './preflight.ts';
+import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
 import { replay, writeTrace } from './replay.ts';
 import { chaos } from './chaos.ts';
@@ -130,6 +130,10 @@ if (!pf.result.ok) {
 }
 
 for (const L of statics) {
+  // Stage isolation: every browser stage gets a freshly launched Chromium (fresh GPU process).
+  // Found on Linux CI: SwiftShader's GPU process wedged after chaos, and every later stage — even a
+  // blank page — could not get a webgl2 context. A wedge is still reported, per stage, as an
+  // environment failure; it just can no longer leak from one stage into the next.
   const ctx = { browser: pf.browser, baseUrl: pf.baseUrl, levelId: L.id, level: L.data, root: ROOT, args, log };
   const stages = [...L.stages, pf.result];
   console.log(`\n== ${L.id}`);
@@ -137,6 +141,18 @@ for (const L of statics) {
     if (!only.includes(name)) continue;
     if (!L.data) break;
     log(`  ${name}…`);
+    if (stages.length > L.stages.length + 1) {
+      await ctx.browser.close().catch(() => {});
+      ctx.browser = pf.browser = await launchBrowser();
+      const gl = await probeWebgl(ctx.browser);
+      if (!gl.webgl2) {
+        const st = new Stage(name);
+        st.failureClass = FAILURE.ENVIRONMENT;
+        st.check('fresh browser has webgl2', false, `${gl.error} — no level was tested by this stage`);
+        stages.push(st.result());
+        break;
+      }
+    }
     let r;
     if (name === 'nav') {
       r = await nav(ctx);

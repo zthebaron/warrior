@@ -147,7 +147,15 @@ export async function openGame(ctx: Ctx): Promise<GamePage> {
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
-  await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(ctx.levelId)}`);
+  try {
+    await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(ctx.levelId)}`);
+  } catch (err) {
+    // The page never loaded: nothing about the level was observed. Environment, with evidence.
+    const why = (err instanceof Error ? err.message : String(err)).split('\n')[0];
+    await page.close().catch(() => {});
+    const diag = await diagnose(ctx);
+    throw new EnvironmentError(`game page did not load: ${why} | ${diag}${errors.length ? ` | page errors: ${errors.slice(0, 3).join(' | ')}` : ''}`);
+  }
   try {
     await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
   } catch {
@@ -161,6 +169,38 @@ export async function openGame(ctx: Ctx): Promise<GamePage> {
     throw new LevelLoadError(`level "${ctx.levelId}" failed to load: ${started.error ?? 'unknown'}`);
   }
   return { page, errors, close: () => page.close() };
+}
+
+/**
+ * Why could a page not load? Distinguishes a dead/hung preview server from a wedged browser or
+ * GPU process, and spots leaked pages. Each probe is time-boxed so diagnosis cannot itself hang.
+ */
+export async function diagnose(ctx: Ctx): Promise<string> {
+  const parts: string[] = [];
+  const t0 = Date.now();
+  try {
+    const r = await fetch(`${ctx.baseUrl}/`, { signal: AbortSignal.timeout(5000) });
+    parts.push(`server: HTTP ${r.status} in ${Date.now() - t0}ms`);
+  } catch (e) {
+    parts.push(`server: UNREACHABLE (${e instanceof Error ? e.message : String(e)})`);
+  }
+  parts.push(`open pages: ${ctx.browser.contexts().reduce((n, c) => n + c.pages().length, 0)}`);
+  const t1 = Date.now();
+  try {
+    const probe = (async () => {
+      const p = await ctx.browser.newPage();
+      try {
+        return await p.evaluate(() => !!document.createElement('canvas').getContext('webgl2'));
+      } finally {
+        await p.close();
+      }
+    })();
+    const gl = await Promise.race([probe, new Promise<string>((r) => setTimeout(() => r('TIMEOUT 10s'), 10000))]);
+    parts.push(`fresh about:blank webgl2: ${String(gl)} in ${Date.now() - t1}ms`);
+  } catch (e) {
+    parts.push(`fresh about:blank: FAILED (${(e instanceof Error ? e.message : String(e)).split('\n')[0]})`);
+  }
+  return parts.join(' · ');
 }
 
 export class EnvironmentError extends Error {}

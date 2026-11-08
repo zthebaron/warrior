@@ -17,6 +17,34 @@ import { CHROMIUM_ARGS, FAILURE, Stage, VIEWPORT, type StageResult } from './lib
 /** Strings that exist only inside the `__HARNESS__` block of src/main.ts. */
 const HARNESS_SENTINELS = ['HARNESS_API_V1', 'releaseCamera', 'rendererInfo'];
 
+/** Chromium with the pinned SwiftShader args. One per browser stage (see run.mjs). */
+export function launchBrowser(): Promise<Browser> {
+  return chromium.launch({ headless: true, args: CHROMIUM_ARGS });
+}
+
+/** WebGL2 on about:blank, time-boxed: a wedged GPU process must report, not hang the run. */
+export async function probeWebgl(browser: Browser, timeoutMs = 15000): Promise<{ webgl2: boolean; renderer: string | null; error: string }> {
+  const run = async (): Promise<{ webgl2: boolean; renderer: string | null; error: string }> => {
+    const blank = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+    try {
+      const gl = await blank.evaluate(() => {
+        const c = document.createElement('canvas');
+        const ctx = c.getContext('webgl2');
+        if (!ctx) return { webgl2: false, renderer: null as string | null };
+        const dbg = ctx.getExtension('WEBGL_debug_renderer_info');
+        return { webgl2: true, renderer: String(dbg ? ctx.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER)) };
+      });
+      return { ...gl, error: gl.webgl2 ? '' : 'getContext("webgl2") returned null' };
+    } finally {
+      await blank.close().catch(() => {});
+    }
+  };
+  const timeout = new Promise<{ webgl2: boolean; renderer: string | null; error: string }>((r) =>
+    setTimeout(() => r({ webgl2: false, renderer: null, error: `webgl2 probe timed out after ${timeoutMs}ms (GPU process wedged?)` }), timeoutMs),
+  );
+  return Promise.race([run(), timeout]);
+}
+
 export interface PreflightOut {
   result: StageResult;
   browser: Browser | null;
@@ -106,24 +134,16 @@ export async function preflight(root: string, opts: { skipBuild: boolean }): Pro
   }
 
   try {
-    out.browser = await chromium.launch({ headless: true, args: CHROMIUM_ARGS });
+    out.browser = await launchBrowser();
     st.check('chromium launched with pinned args', true, `${out.browser.version()}  ${CHROMIUM_ARGS.join(' ')}`);
   } catch (err) {
     st.check('chromium launched with pinned args', false, String(err).slice(0, 500));
     return finish();
   }
 
-  const blank = await out.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
-  const gl = await blank.evaluate(() => {
-    const c = document.createElement('canvas');
-    const ctx = c.getContext('webgl2');
-    if (!ctx) return { webgl2: false, renderer: null as string | null };
-    const dbg = ctx.getExtension('WEBGL_debug_renderer_info');
-    return { webgl2: true, renderer: String(dbg ? ctx.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER)) };
-  });
-  await blank.close();
+  const gl = await probeWebgl(out.browser);
   out.webglRenderer = gl.renderer;
-  if (!st.check('webgl2 context on about:blank', gl.webgl2, gl.webgl2 ? `renderer: ${gl.renderer}` : 'getContext("webgl2") returned null — no level was tested')) return finish();
+  if (!st.check('webgl2 context on about:blank', gl.webgl2, gl.webgl2 ? `renderer: ${gl.renderer}` : `${gl.error} — no level was tested`)) return finish();
 
   const page = await out.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
   try {
