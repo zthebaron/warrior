@@ -545,7 +545,7 @@ Extend the curve past 4 m out to the distance at which the next gate first becom
 set the floor from where findability actually fails — the same way `#603633` failed at 0.012%.
 Do not set it from the values above, which are all near-field.
 
-implemented_by: 29b41c0 (floor at scanning distance in the `accent` stage; curve + swatches against the ramp, tools/harness/accent-floor.ts) — branch b6-accent-floor, stacked on PR 3. Floor provisional: OQ-026..028.
+implemented_by: 29b41c0 (floor at scanning distance in the `accent` stage; curve + swatches against the ramp, tools/harness/accent-floor.ts) — branch h4-asset-kit, PR 3 (folded in from b6-accent-floor). Floor provisional: OQ-026..028.
 
 
 ## D-007 — Landing mark (B-3): the constraints, before the code
