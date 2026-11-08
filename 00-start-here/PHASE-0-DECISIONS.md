@@ -302,3 +302,83 @@ faster than implementation, which is fine, but it has to be visible.
 Every decision entry gains an `implemented_by:` field, empty until the commit lands. Add a lint
 rule reporting any CLOSED decision with no implementing commit. Fold this into PROMPT 00's control
 plane: `state/DECISIONS.md` gets the same field and the same check.
+
+## D-003 — The 1% accent budget is withdrawn. My error. DECIDED
+
+The kit session measured a single torii at **2.06% of the gameplay frame**, flagged it as
+conflicting with a closed decision, and stopped rather than adjusting it. That was the correct
+call and the finding is correct. The budget is what is wrong.
+
+`STYLE-BIBLE.md` §2 says: *"the accent must not exceed 1% of frame area. This is measured, not a
+guess — when the palette was extracted by k-means at k=8 across all 36 frames, the vermilion did
+not form a cluster at all. It is that rare."*
+
+That is a non-sequitur, and I wrote it. "It never clustered" establishes that the seed contains
+**no** vermilion. It says nothing whatever about how much frame area the accent should occupy. An
+absence was converted into a budget and then labelled measured.
+
+It is the same category error diagnosed in D-001 four commits earlier, committed by the reviewer
+rather than the agent: the palette describes the seed; the accent must do a job the seed never
+needed done. Twelve seconds of non-interactive footage had no waypoint signal, so it cannot
+source either the accent's hue *or* its area.
+
+### What replaces it
+
+Area alone cannot express the rule, because §4 places torii "in sequence, two or three receding
+into mist." The same gate occupies a large fraction of the frame in the near band (0-25u) and
+almost none at 80u+. A single percentage conflates distance with intent.
+
+The real restraint is **what carries the accent**, which was always the load-bearing part and is
+unchanged:
+
+- the accent appears on torii and on nothing else, ever
+- never on the character, terrain, stone, trees, mist, sky or UI
+
+And the constraint nobody specified is a **floor**, not a ceiling. The accent's job is to be
+findable. In a gameplay frame where the next torii is visible, it must occupy *at least* a minimum
+area or it fails as a waypoint — which is exactly how `#603633` at 0.012% failed.
+
+So: replace the fixed 1% with a **band, measured at the gameplay camera** — the `follow` framing
+the session just built (`CAMERA_TUNING.distance`, ~7m behind the player, next torii ~6m ahead).
+That is the frame where findability matters, and 2.06% there is evidence of a working waypoint, not
+of excess. Derive the floor from the smallest area a player reliably finds while scanning, and the
+ceiling from the point a gate starts to dominate the frame.
+
+`ACCENT_CONTRAST` (D-001) gains a sibling: **`ACCENT_AREA`**, asserting the band at the gameplay
+camera rather than a global percentage.
+
+Amending a locked Gate B artifact is legitimate here, and only here, because the amendment rests on
+a measurement. That is the distinction Q2b drew: do not amend the Style Bible on a hypothesis;
+do amend it on evidence.
+
+implemented_by:
+
+## Q7 — The NOT list: **A, with one addition.** CLOSED
+
+Cut the refused fields from the schema. B is what Q4 amendment 2 already rejected for `score`:
+keeping a field and adding a linter error leaves it visible in the schema an agent reads, and turns
+the linter into a second schema written in the opposite direction. C is the status quo, and the
+example level is the evidence of what it produces.
+
+Your strongest argument is one worth keeping as a general rule: **agents copy examples more
+faithfully than they follow rules.** An example level containing a charger, a bell, a gate and a
+scroll teaches all four refused mechanics regardless of what SPEC.md says. The example is the spec.
+
+### ADDITION — every NOT row must name a mechanical check, or it is not enforced
+
+An enforcement column is still a table someone has to read. Each row must resolve to one of exactly
+two mechanical kinds:
+
+1. **a schema field that must not exist** — checked against `level.schema.json` under
+   `additionalProperties: false`; this covers everything being cut now
+2. **an identifier that must not appear in `src/`** — checked by grep; this covers mechanics that
+   were never schema fields at all, such as health, lives, damage or invulnerability frames
+
+A row that is neither is unenforced, and the column must say so rather than implying coverage.
+Add `lint:not-list` to run both checks in CI.
+
+Kind 2 is the gap worth naming: the schema cut cannot protect against a concept that was never in
+the schema. Nothing stops an agent adding `health` to the player entity, and no field was removed
+to prevent it.
+
+implemented_by:
