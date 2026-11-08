@@ -109,12 +109,14 @@ export interface Waypoint {
 
 export interface LevelJson {
   id: string;
+  chapter: number;
   spawn: { pos: Vec3; facing: number };
   goal: { pos: Vec3; radius?: number };
   bounds: { min: Vec3; max: Vec3 };
   critical_path: (Vec3 | Waypoint)[];
-  checkpoints: { pos: Vec3 }[];
-  platforms?: { id?: string; asset: string; path: Vec3[] }[];
+  checkpoints: { pos: Vec3; facing?: number }[];
+  platforms?: { id?: string; asset: string; path: Vec3[]; duration: number; loop?: 'pingpong' | 'cycle' | 'once' }[];
+  hazards?: { type: string; path?: Vec3[]; speed?: number; phase?: number }[];
 }
 
 export interface Ctx {
@@ -234,9 +236,11 @@ declare global {
       record(): InputFrame[];
       snapshot(): Snapshot;
       tuning: Record<string, number>;
+      rules: { checkpointRadius: number; goalHeightTolerance: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       setCamera(pos: Vec3, target: Vec3): void;
       releaseCamera(): void;
+      respawnAt(pos: Vec3, facing: number, tick: number): Snapshot;
     };
   }
 }

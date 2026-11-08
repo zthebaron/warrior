@@ -50,10 +50,11 @@ interface SegState {
   walkOffTick: number | null;
   pressed: Set<string>;
   attempts: number;
+  platDist: number | null; // last tick's platform-to-boarding-point distance (is it arriving or leaving?)
 }
 
 function newSeg(): SegState {
-  return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0 };
+  return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0, platDist: null };
 }
 
 function toward(from: Vec3, to: Vec3): { x: number; y: number } {
@@ -98,34 +99,63 @@ export async function nav(ctx: Ctx): Promise<StageResult & { outcome?: NavOutcom
   return { ...res, ...(outcome ? { outcome } : {}) };
 }
 
-async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage): Promise<NavOutcome> {
+export type StepFn = (f: InputFrame, render: boolean) => Promise<Snapshot>;
+
+export interface WalkOptions {
+  /** First waypoint index sought (1 = from spawn). */
+  startIndex: number;
+  /** Stand-in for path[startIndex - 1] as the first segment's origin (a respawn point mid-edge). */
+  from?: Waypoint;
+  /** Stop as soon as this checkpoint index is activated (PHASE_SWEEP). Otherwise stop at results. */
+  untilCheckpoint?: number;
+  /** Hard tick limit for the whole walk. */
+  tickLimit: number;
+  quiet?: boolean;
+}
+
+export interface WalkResult {
+  failure: string | null;
+  reached: number[];
+  ticks: number;
+  snap: Snapshot;
+  i: number;
+  minYSeen: number;
+  movesDone: Map<string, number>;
+}
+
+/**
+ * The bot's drive loop: seeks waypoints from opts.startIndex, choosing input from each `via`.
+ * Shared by `nav` (spawn -> goal) and `phase-sweep` (respawn point -> next checkpoint or goal).
+ */
+export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts: WalkOptions): Promise<WalkResult> {
   const L = ctx.level;
   const path = L.critical_path.map(wp);
   const C = NAV_CONFIG;
-  const budgetSec = ctx.segments * C.segmentBudgetSec;
-  const tickBudget = Math.round(budgetSec * FIXED_HZ);
-  const tickLimit = Math.round(budgetSec * C.stallMultiplier * FIXED_HZ);
+  const tickLimit = opts.tickLimit;
   const minY = L.bounds.min[1];
   const step = (f: InputFrame, render: boolean): Promise<Snapshot> => page.evaluate(([fr, r]) => window.__HARNESS__!.step(fr, r), [f, render] as const);
+  const log = (m: string): void => { if (!opts.quiet) ctx.log(m); };
 
   let snap = await page.evaluate(() => window.__HARNESS__!.snapshot());
   const t0 = snap.tick;
-  let i = 1; // waypoint index being sought (0 is spawn)
+  let i = opts.startIndex; // waypoint index being sought
   let seg = newSeg();
   let segStartTick = t0;
-  const reached: number[] = [0];
+  const reached: number[] = [opts.startIndex - 1];
   let minYSeen = snap.feet[1];
   let failure: string | null = null;
   const movesDone = new Map<string, number>();
   // --trace-seg=N: log every tick of segment N (debugging a move the bot cannot complete)
   const traceSeg = ctx.args['trace-seg'] !== undefined ? Number(ctx.args['trace-seg']) : -1;
+  const origin = (k: number): Waypoint => (k === opts.startIndex && opts.from ? opts.from : path[k - 1]!);
+  const done = (s: Snapshot): boolean => s.state === 'results' || (opts.untilCheckpoint !== undefined && s.checkpoints.includes(opts.untilCheckpoint));
 
   const segLabel = (k: number): string => {
     const w = path[k]!;
     return `seg ${k - 1}->${k} (via ${w.via ?? '?'}${w.platform ? ` ${w.platform}` : ''}${w.note ? `, "${w.note}"` : ''})`;
   };
 
-  while (snap.state !== 'results') {
+  while (!done(snap)) {
     const ticks = snap.tick - t0;
     if (ticks >= tickLimit) {
       failure = `goal not reached within ${C.stallMultiplier}x the bot budget = ${(tickLimit / FIXED_HZ).toFixed(0)}s; stalled on ${segLabel(Math.min(i, path.length - 1))} at ${fmt(snap.feet)}`;
@@ -136,7 +166,7 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
       break;
     }
 
-    const frame = i < path.length ? control(path[i - 1]!, path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
+    const frame = i < path.length ? control(origin(i), path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
     const prevDeaths = snap.deaths;
     snap = await step(frame, (snap.tick - t0) % C.renderEvery === 0);
     minYSeen = Math.min(minYSeen, snap.feet[1]);
@@ -153,11 +183,11 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
       failure = `FELL on ${segLabel(Math.min(i, path.length - 1))} — died at ${fmt(snap.lastDeath ?? snap.feet)}, target was ${fmt(w.pos)}, last reached waypoint ${reached.at(-1)}`;
       break;
     }
-    if (i < path.length && arrived(path[i - 1]!, path[i]!, path[i + 1], snap, seg)) {
+    if (i < path.length && arrived(origin(i), path[i]!, path[i + 1], snap, seg)) {
       reached.push(i);
       const v = path[i]!.via ?? 'ground';
       movesDone.set(v, (movesDone.get(v) ?? 0) + 1);
-      ctx.log(`    reached ${String(i).padStart(2)} ${segLabel(i).padEnd(58)} t=${((snap.tick - t0) / FIXED_HZ).toFixed(2)}s at ${fmt(snap.feet)}`);
+      log(`    reached ${String(i).padStart(2)} ${segLabel(i).padEnd(58)} t=${((snap.tick - t0) / FIXED_HZ).toFixed(2)}s at ${fmt(snap.feet)}`);
       i++;
       seg = newSeg();
       segStartTick = snap.tick;
@@ -173,6 +203,24 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
       seg.attempts = a;
     }
   }
+  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone };
+}
+
+async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage): Promise<NavOutcome> {
+  const L = ctx.level;
+  const path = L.critical_path.map(wp);
+  const C = NAV_CONFIG;
+  const budgetSec = ctx.segments * C.segmentBudgetSec;
+  const tickBudget = Math.round(budgetSec * FIXED_HZ);
+  const tickLimit = Math.round(budgetSec * C.stallMultiplier * FIXED_HZ);
+  const minY = L.bounds.min[1];
+  const w = await walk(ctx, page, { startIndex: 1, tickLimit });
+  const { failure, reached, snap, i, minYSeen, movesDone } = w;
+  const t0 = snap.tick - w.ticks;
+  const segLabel = (k: number): string => {
+    const q = path[k]!;
+    return `seg ${k - 1}->${k} (via ${q.via ?? '?'}${q.platform ? ` ${q.platform}` : ''}${q.note ? `, "${q.note}"` : ''})`;
+  };
 
   // The goal trigger (goal.radius) can fire before the final waypoint's reach radius; the final
   // waypoint sits in the goal by lint rule PATH_END, so entering the goal reaches it.
@@ -213,7 +261,13 @@ function control(a: Waypoint, b: Waypoint, next: Waypoint | undefined, s: Snapsh
     if (next?.via === 'platform' && next.platform) {
       const p = s.platforms.find((q) => q.id === next.platform);
       if (!p) return { ...NEUTRAL }; // named platform does not exist — wait; the segment timeout reports it
-      const here = hdist(p.pos, b.pos) < C.boardAlign;
+      const d = hdist(p.pos, b.pos);
+      // Arriving or dwelling, never leaving: committing on the departing half of the dwell means
+      // walking boardWaitDist after a platform that is already going (found by PHASE_SWEEP, B-7:
+      // gym offset 5 walked into the void). A departing platform is waited out for its next pass.
+      const leaving = seg.platDist !== null && d > seg.platDist + 1e-6;
+      seg.platDist = d;
+      const here = d < C.boardAlign && !leaving;
       if (hdist(s.feet, b.pos) < C.boardWaitDist && !here && seg.phase === 'approach') return { ...NEUTRAL };
       // Commit only from the wait point: committing from further back means arriving after the
       // platform has left. Once committed, keep walking on even as the platform starts moving.

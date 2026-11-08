@@ -208,6 +208,8 @@ export interface LevelInstance {
    * Call once per fixed tick, before the player moves.
    */
   fixedUpdate(t: number, dt: number): void;
+  /** Pose at world time t AND place kinematic bodies there immediately (respawn at a chosen tick). */
+  snapTo(t: number, dt: number): void;
   /** Interpolate visuals between the last two posed ticks. */
   render(alpha: number): void;
   /**
@@ -432,6 +434,11 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
         patrollerAt(h.def.path!, h.def.speed!, h.def.phase!, t - dt, h.prev);
         patrollerAt(h.def.path!, h.def.speed!, h.def.phase!, t, h.curr);
       }
+    },
+    snapTo(t, dt) {
+      this.fixedUpdate(t, dt);
+      for (const p of platforms) p.body.setTranslation(p.curr, true);
+      physics.syncColliders();
     },
     render(alpha) {
       for (const p of platforms) p.mesh.position.lerpVectors(p.prev, p.curr, alpha);

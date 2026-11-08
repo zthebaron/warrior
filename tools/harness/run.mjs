@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> visual
+// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> counters -> visual
 //
 //   npm run playtest                          every level in levels/
 //   npm run playtest -- --level=00-gym        one level
@@ -20,6 +20,7 @@ import { lintLevel, segmentsOf } from '../lint-level.mjs';
 import { EXIT_CODE, FAILURE, Stage } from './lib.ts';
 import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
+import { phaseSweep } from './sweep.ts';
 import { replay, writeTrace } from './replay.ts';
 import { chaos } from './chaos.ts';
 import { counters } from './counters.ts';
@@ -33,7 +34,7 @@ const args = Object.fromEntries(
   }),
 );
 const log = (m) => console.log(m);
-const BROWSER_STAGES = ['nav', 'replay', 'chaos', 'counters', 'visual'];
+const BROWSER_STAGES = ['nav', 'phase-sweep', 'replay', 'chaos', 'counters', 'visual'];
 const only = typeof args.only === 'string' ? args.only.split(',') : BROWSER_STAGES;
 
 const allLevels = readdirSync(join(ROOT, 'levels')).filter((f) => f.endsWith('.json') && !f.endsWith('.schema.json')).map((f) => f.replace(/\.json$/, ''));
@@ -177,7 +178,8 @@ for (const L of statics) {
         } else log('    --record ignored: nav did not pass');
       }
       delete r.outcome;
-    } else if (name === 'replay') r = await replay(ctx);
+    } else if (name === 'phase-sweep') r = await phaseSweep(ctx);
+    else if (name === 'replay') r = await replay(ctx);
     else if (name === 'chaos') r = await chaos(ctx);
     else if (name === 'counters') r = await counters(ctx);
     else r = await visual(ctx);

@@ -75,9 +75,18 @@ interface HarnessApi {
   snapshot(): HarnessSnapshot;
   level(): LevelData | null;
   tuning: typeof TUNING;
+  /** Rule constants the harness must agree with (checkpoint activation radius, height slack). */
+  rules: { checkpointRadius: number; goalHeightTolerance: number };
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   setCamera(pos: Vec3, target: Vec3): void;
   releaseCamera(): void;
+  /**
+   * PHASE_SWEEP (B-7): respawn at `pos` with the world clock set to `tick`. This is what a real
+   * respawn does (teleport, reset the player, world keeps its clock), except that the arrival phase
+   * is chosen instead of being wherever the death left it. Clears the checkpoint log, so the caller
+   * can see which torii the run then activates.
+   */
+  respawnAt(pos: Vec3, facing: number, tick: number): HarnessSnapshot;
 }
 
 declare global {
@@ -452,12 +461,27 @@ async function boot(): Promise<void> {
         return advance(1, render ? 1 : 0);
       },
       setInput: (frame) => input.setOverride(frame),
+      respawnAt: (pos, facing, tick) => {
+        if (!level || !player) return snapshot();
+        if (state.is('results') || state.is('menu')) state.transition('loading');
+        if (state.is('loading') || state.is('death') || state.is('pause')) state.transition('play');
+        worldTick = tick;
+        deathTicksLeft = 0;
+        level.snapTo(worldTime(), loop.dt);
+        player.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facing * DEG2RAD);
+        respawn = { pos, facing };
+        camRig.snap(player.feet(tmpFeet));
+        checkpointLog = [];
+        input.setOverride(null);
+        return snapshot();
+      },
       playback: (frames) => input.playback(frames),
       isPlayingBack: () => input.isPlayingBack(),
       record: () => input.record(),
       snapshot,
       level: () => level?.data ?? null,
       tuning: TUNING,
+      rules: { checkpointRadius: GAME_RULES.checkpointRadius, goalHeightTolerance: GAME_RULES.goalHeightTolerance },
       rendererInfo: () => {
         const info = renderer.renderer.info;
         return { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures };
