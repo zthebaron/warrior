@@ -11,8 +11,8 @@ import type { Physics, Vec3Like } from '../engine/physics';
 
 export const TUNING = {
   // --- presentation (feel test) ---
-  landingMark: 0,             // 1 = ink disc under the player (B-3, D-007). Default OFF; ?landingmark=on sets it at boot,
-                              // and the ~ cheat console flips it in place during the H2.5 feel test.
+  landingMark: 1,             // 1 = ink disc under the player. ON: the H2.5 feel test chose it (D-010, closing Q2b).
+                              // ?landingmark=off is the in-place comparison switch; the ~ panel flips it live.
 
   // --- body ---
   capsuleHalfHeight: 0.6,     // m, cylinder half-height (total height = 2*(halfHeight+radius) = 1.9m). Respawn to apply.

@@ -1,7 +1,28 @@
 {
   "basis": "Tier-1 per-asset ceilings, each set AT the value measured from the shipped .glb on 2026-11-08 (H4). A ratchet: raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'H4 asset budgets'.",
   "assets": {
-    "kit_rock_mass": { "triangles": 216, "bytes": 3460, "textures": 1, "texture_px": 32, "materials": 1, "draw_calls": 1 },
-    "kit_torii": { "triangles": 108, "bytes": 2436, "textures": 1, "texture_px": 32, "materials": 1, "draw_calls": 1 }
+    "kit_rock_mass": {
+      "triangles": 216,
+      "bytes": 3460,
+      "textures": 1,
+      "texture_px": 32,
+      "materials": 1,
+      "draw_calls": 1
+    },
+    "kit_torii": {
+      "triangles": 108,
+      "bytes": 2436,
+      "textures": 1,
+      "texture_px": 32,
+      "materials": 1,
+      "draw_calls": 1
+    }
+  },
+  "scenes_basis": "Per-level scene ratchet (OQ-040): peak renderer.info over the harness counters trace, set AT the measured value. Asserted by the harness `counters` stage. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'Scene budgets'. The Tier-1 ceilings (300 calls, 500k triangles) still apply on top.",
+  "scenes": {
+    "00-gym": {
+      "draw_calls": 34,
+      "triangles": 1104
+    }
   }
 }

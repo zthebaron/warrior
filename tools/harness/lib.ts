@@ -153,8 +153,9 @@ export async function openGame(ctx: Ctx): Promise<GamePage> {
   });
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
   try {
-    // --landingmark=on: run the stage with the feel-test landing mark on (B-3), e.g. to prove budgets hold
-    const flags = ctx.args['landingmark'] === 'on' ? '&landingmark=on' : '';
+    // --landingmark=off|on: run the stage with the landing mark forced (it ships on, D-010)
+    const lm = ctx.args['landingmark'];
+    const flags = lm === 'off' || lm === 'on' ? `&landingmark=${lm}` : '';
     await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(ctx.levelId)}${flags}`);
   } catch (err) {
     // The page never loaded: nothing about the level was observed. Environment, with evidence.
