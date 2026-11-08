@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+harness-report.json
+tools/harness/golden/**/*.actual.png
+reference/seed/*.mp4

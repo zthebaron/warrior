@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+import fs from 'fs'; import path from 'path';
+const b = await chromium.launch({ headless:true, args:['--enable-unsafe-swiftshader','--use-gl=swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows'] });
+const p = await b.newPage({ viewport:{width:640,height:360} });
+const errs=[]; p.on('console',m=>{if(m.type()==='error')errs.push(m.text());});
+p.on('pageerror',e=>errs.push('PAGEERROR: '+e.message));
+await p.goto('http://127.0.0.1:8099/index.html');
+await p.waitForFunction('window.__DONE__===true',{timeout:90000});
+const r = await p.evaluate(()=>window.__RESULT__);
+// pixel readback — the visual-regression assumption
+const shot = await p.screenshot({ path:'render_out.png' });
+await b.close();
+console.log('three.js REVISION      :', r.version);
+console.log('frames rendered        :', r.frames);
+console.log('draw calls             :', r.calls, '(2000 boxes via InstancedMesh)');
+console.log('triangles              :', r.tris.toLocaleString());
+console.log('geometries / textures  :', r.geometries, '/', r.textures);
+console.log('SwiftShader p50 frame  :', r.p50.toFixed(2)+'ms');
+console.log('SwiftShader p95 frame  :', r.p95.toFixed(2)+'ms');
+console.log('console errors         :', errs.length ? errs : 'none');
+console.log('screenshot bytes       :', shot.length, '->', fs.existsSync('render_out.png')?'written':'FAILED');

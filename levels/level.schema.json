@@ -1,0 +1,595 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dbai.agency/schemas/level.v2.json",
+  "title": "Level (v2 - move-annotated critical path)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "chapter",
+    "palette",
+    "spawn",
+    "goal",
+    "bounds",
+    "geometry",
+    "checkpoints",
+    "critical_path",
+    "par_time",
+    "difficulty"
+  ],
+  "definitions": {
+    "vec3": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "maxLength": 48
+    },
+    "assetRef": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$",
+      "maxLength": 48
+    },
+    "collider": {
+      "enum": [
+        "trimesh",
+        "box",
+        "capsule",
+        "sphere",
+        "none"
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "op",
+        "target"
+      ],
+      "properties": {
+        "op": {
+          "enum": [
+            "open",
+            "close",
+            "toggle",
+            "move",
+            "spawn",
+            "despawn",
+            "unlock",
+            "win"
+          ]
+        },
+        "target": {
+          "$ref": "#/definitions/id"
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        }
+      }
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset",
+        "pos"
+      ],
+      "properties": {
+        "asset": {
+          "$ref": "#/definitions/assetRef"
+        },
+        "pos": {
+          "$ref": "#/definitions/vec3"
+        },
+        "rot": {
+          "$ref": "#/definitions/vec3"
+        },
+        "scale": {
+          "oneOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 50
+            },
+            {
+              "$ref": "#/definitions/vec3"
+            }
+          ]
+        },
+        "collider": {
+          "$ref": "#/definitions/collider"
+        },
+        "tag": {
+          "type": "string",
+          "maxLength": 32
+        }
+      }
+    },
+    "move": {
+      "enum": [
+        "ground",
+        "jump",
+        "double",
+        "dash",
+        "dashjump",
+        "wall",
+        "climb",
+        "platform"
+      ]
+    },
+    "waypoint": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/vec3"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pos",
+            "via"
+          ],
+          "properties": {
+            "pos": {
+              "$ref": "#/definitions/vec3"
+            },
+            "via": {
+              "$ref": "#/definitions/move"
+            },
+            "platform": {
+              "$ref": "#/definitions/id"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 120
+            }
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/id"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "chapter": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 99
+    },
+    "palette": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "spawn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pos",
+        "facing"
+      ],
+      "properties": {
+        "pos": {
+          "$ref": "#/definitions/vec3"
+        },
+        "facing": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360
+        }
+      }
+    },
+    "goal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "pos"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "reach",
+            "collect_all",
+            "defeat_all",
+            "strike"
+          ]
+        },
+        "pos": {
+          "$ref": "#/definitions/vec3"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20
+        },
+        "target": {
+          "$ref": "#/definitions/id"
+        }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "$ref": "#/definitions/vec3"
+        },
+        "max": {
+          "$ref": "#/definitions/vec3"
+        }
+      }
+    },
+    "fog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "near": {
+          "type": "number",
+          "minimum": 0
+        },
+        "far": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "geometry": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1200,
+      "items": {
+        "$ref": "#/definitions/placement"
+      }
+    },
+    "platforms": {
+      "type": "array",
+      "maxItems": 120,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "asset",
+          "path",
+          "duration"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/definitions/id"
+          },
+          "asset": {
+            "$ref": "#/definitions/assetRef"
+          },
+          "path": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/definitions/vec3"
+            }
+          },
+          "duration": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 60
+          },
+          "easing": {
+            "enum": [
+              "linear",
+              "sine",
+              "ease-in-out",
+              "step"
+            ]
+          },
+          "loop": {
+            "enum": [
+              "pingpong",
+              "cycle",
+              "once",
+              "triggered"
+            ]
+          },
+          "collider": {
+            "$ref": "#/definitions/collider"
+          },
+          "startDelay": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          }
+        }
+      }
+    },
+    "hazards": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "fall",
+              "spike",
+              "crush",
+              "fire",
+              "water"
+            ]
+          },
+          "y": {
+            "type": "number"
+          },
+          "pos": {
+            "$ref": "#/definitions/vec3"
+          },
+          "size": {
+            "$ref": "#/definitions/vec3"
+          },
+          "damage": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "period": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      }
+    },
+    "interactables": {
+      "type": "array",
+      "maxItems": 120,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "id",
+          "pos"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "bell",
+              "gate",
+              "plate",
+              "lever",
+              "door",
+              "torch",
+              "rope"
+            ]
+          },
+          "id": {
+            "$ref": "#/definitions/id"
+          },
+          "pos": {
+            "$ref": "#/definitions/vec3"
+          },
+          "rot": {
+            "$ref": "#/definitions/vec3"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "closed",
+              "on",
+              "off"
+            ]
+          },
+          "onStrike": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/definitions/action"
+            }
+          },
+          "onEnter": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/definitions/action"
+            }
+          },
+          "requires": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/definitions/id"
+            }
+          }
+        }
+      }
+    },
+    "enemies": {
+      "type": "array",
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "pos"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "charger",
+              "ranged",
+              "blocker",
+              "patroller"
+            ]
+          },
+          "id": {
+            "$ref": "#/definitions/id"
+          },
+          "pos": {
+            "$ref": "#/definitions/vec3"
+          },
+          "patrol": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/definitions/vec3"
+            }
+          },
+          "aggroRadius": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "hp": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          }
+        }
+      }
+    },
+    "collectibles": {
+      "type": "array",
+      "maxItems": 60,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "id",
+          "pos"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "scroll",
+              "charm",
+              "shard"
+            ]
+          },
+          "id": {
+            "$ref": "#/definitions/id"
+          },
+          "pos": {
+            "$ref": "#/definitions/vec3"
+          }
+        }
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pos"
+        ],
+        "properties": {
+          "pos": {
+            "$ref": "#/definitions/vec3"
+          },
+          "facing": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "lighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preset": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "sunAngle": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "intensity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "ambienceZone": {
+          "type": "string",
+          "maxLength": 32
+        }
+      }
+    },
+    "cameras": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "pos",
+          "lookAt"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "pos": {
+            "$ref": "#/definitions/vec3"
+          },
+          "lookAt": {
+            "$ref": "#/definitions/vec3"
+          }
+        }
+      }
+    },
+    "critical_path": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 60,
+      "items": {
+        "$ref": "#/definitions/waypoint"
+      },
+      "description": "Ordered route the nav bot must traverse. Index 0 is spawn (bare vec3 allowed). Every later entry MUST declare via."
+    },
+    "par_time": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 900
+    },
+    "difficulty": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    }
+  }
+}
