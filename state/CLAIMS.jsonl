@@ -25,3 +25,4 @@
 {"id":"B-3","agent":"phase0-spec","ts":"2026-11-08T16:22:23.287Z","released":true}
 {"id":"OQ-029","agent":"phase0-spec","ts":"2026-11-08T16:22:23.313Z","released":true}
 {"id":"B-9","agent":"phase0-spec","ts":"2026-11-08T16:22:39.360Z","ttl_min":90}
+{"id":"B12-harvest","agent":"kit","ts":"2026-11-08T16:22:52.907Z","ttl_min":90}
