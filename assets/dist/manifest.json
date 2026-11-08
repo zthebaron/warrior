@@ -1,6 +1,72 @@
 {
   "assets": [
-    { "name": "prim_box",  "kind": "primitive", "shape": "box", "size": [1, 1, 1],   "collider": "trimesh" },
-    { "name": "prim_slab", "kind": "primitive", "shape": "box", "size": [4, 0.5, 4], "collider": "trimesh" }
+    {
+      "name": "prim_box",
+      "kind": "primitive",
+      "shape": "box",
+      "size": [
+        1,
+        1,
+        1
+      ],
+      "collider": "trimesh"
+    },
+    {
+      "name": "prim_slab",
+      "kind": "primitive",
+      "shape": "box",
+      "size": [
+        4,
+        0.5,
+        4
+      ],
+      "collider": "trimesh"
+    },
+    {
+      "name": "stair_run_12",
+      "kind": "mesh",
+      "file": "stair_run_12.glb",
+      "collider": "trimesh",
+      "triangles": 16,
+      "bytes": 11536,
+      "bytes_src": 368584,
+      "bbox": {
+        "min": [
+          0,
+          -0.266667,
+          -2
+        ],
+        "max": [
+          0.399927,
+          0.266569,
+          2
+        ]
+      },
+      "instancing": {
+        "count": 12,
+        "step": [
+          0.4,
+          0.266667,
+          0
+        ],
+        "triangles_total": 192,
+        "bbox": {
+          "min": [
+            0,
+            -0.266667,
+            -2
+          ],
+          "max": [
+            4.799927,
+            3.199902,
+            2
+          ]
+        }
+      },
+      "tread_depth": 0.4,
+      "riser_height": 0.266667,
+      "tread_width": 4,
+      "slope_deg": 33.6901
+    }
   ]
 }

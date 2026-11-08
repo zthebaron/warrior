@@ -11,7 +11,7 @@ import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
-import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
+import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, preloadLevelAssets, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
 
 export const GAME_RULES = {
   startLevel: '00-gym',
@@ -183,7 +183,9 @@ async function boot(): Promise<void> {
   const startLevel = async (): Promise<void> => {
     state.transition('loading');
     try {
-      install(await loadLevel(levelId));
+      const data = await loadLevel(levelId);
+      await preloadLevelAssets(data, renderer.renderer); // GLB mesh assets (Draco + KTX2)
+      install(data);
       state.transition('play');
     } catch (err) {
       showError(err);
@@ -205,7 +207,9 @@ async function boot(): Promise<void> {
   const reloadFromDisk = async (): Promise<void> => {
     const id = level?.data.id ?? levelId;
     try {
-      hotReload(import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id));
+      const data = import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id);
+      await preloadLevelAssets(data, renderer.renderer);
+      hotReload(data);
     } catch (err) {
       showError(err);
     }
@@ -214,11 +218,15 @@ async function boot(): Promise<void> {
   if (import.meta.hot) {
     import.meta.hot.on('level:changed', (msg: { id: string; text: string }) => {
       if (msg.id !== level?.data.id) return;
-      try {
-        hotReload(parseLevel(msg.text, `levels/${msg.id}.json`));
-      } catch (err) {
-        showError(err);
-      }
+      void (async () => {
+        try {
+          const data = parseLevel(msg.text, `levels/${msg.id}.json`);
+          await preloadLevelAssets(data, renderer.renderer);
+          hotReload(data);
+        } catch (err) {
+          showError(err);
+        }
+      })();
     });
   }
 

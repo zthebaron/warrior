@@ -15,7 +15,8 @@
     "lint:example": "node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json",
     "check:physics": "node tools/rapier-determinism.mjs",
     "check:webgl": "node tools/webgl-preflight.mjs",
-    "playtest": "node tools/harness/run.mjs"
+    "playtest": "node tools/harness/run.mjs",
+    "assets": "node tools/build_assets.mjs"
   },
   "keywords": [],
   "author": "",
@@ -26,12 +27,18 @@
     "three": "0.187.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@playwright/test": "^1.65.0",
     "@types/node": "^22.20.5",
     "@types/pngjs": "^6.0.5",
     "@types/three": "0.187.0",
+    "draco3dgltf": "^1.5.9",
+    "ktx2-encoder": "^0.6.0",
     "pixelmatch": "^8.0.0",
     "pngjs": "^7.0.0",
+    "sharp": "^0.35.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.6"
   },

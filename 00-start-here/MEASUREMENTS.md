@@ -90,3 +90,17 @@ measurements were taken with this behaviour.
   Airborne contacts (wall slide / wall jump / ledge grab) are untouched; every earlier nav segment
   time is identical to the tick, so ballistic moves are unaffected. 0.4u risers are now verified
   by the gym walk; the 0.5u autostep ceiling in MOVE.ground is still not measured directly.
+- CHANGED (H4, 2026-11-08): the gym staircase is now the real asset `stair_run_12` (12 x 0.2667
+  rise / 0.4 tread / 4.0 wide, 33.69deg; constants in tools/blender/stair_run_12.py, which
+  asserts riser < 0.4, riser < 0.5 autostep, slope < 50deg and flat tread > 0.2 autostep min
+  width). Same footprint and waypoints as the 8-box stair (x 58 -> 62.8, y 0 -> 3.2), so the
+  lint segment is unchanged. Nav: 23/23, stair segment 18->19 in 0.85s, no stall on the narrower
+  0.4 tread. CONSEQUENCE: the gym no longer contains a 0.4u riser — the H3 "0.4u risers verified"
+  claim above is now unexercised. If 0.4u risers matter for real levels, add a 0.4u stair to
+  the gym's test lane.
+- OPEN: the linter checks only the waypoint chord (here 3.2 rise over 4.8 run), never the stair
+  geometry itself. A stair asset with a 0.6u riser on the same footprint would lint clean and be
+  unwalkable. Today the Blender script's asserts are the only per-step check.
+- NOTE: Draco quantisation (14-bit positions) moves vertices by up to ~1e-4u: the tread is
+  0.399927 deep and the run tops out at 3.1999, not 3.2. Far below autostep; recorded so nobody
+  chases it.
