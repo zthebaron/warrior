@@ -419,4 +419,4 @@ pausing should not let the world move, and a play-time clock rather than a wall-
 replays deterministic. The gate becomes "advance in `play` or `death`, not in `pause`, `menu`,
 `loading` or `results`."
 
-implemented_by:
+implemented_by: 7e57746 (worldRunning gate, respawn on the fixed tick, chaos + hazards assertions) — branch b12-b13-world-clock-patroller

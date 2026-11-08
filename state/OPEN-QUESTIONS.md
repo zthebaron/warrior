@@ -121,3 +121,70 @@ because: both are derived from the decisions, measurements, style bible and lint
 their own first paragraphs. Leaving them out (C) is how a conflict ends up resolved by whichever was
 read last. SPEC §7 is the one exception, because lint:not-list executes it.
 status: PROVISIONAL
+
+## OQ-017 — Patroller loop shape: what is "one loop" of an open path?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A ping-pong, out and back | B cycle, end jumps to start | C cycle only when the path is closed
+took: A
+because: B teleports, and Q2a's rule is that nothing translates except the player and hazards, so
+  a jump would be a move nobody can read. A is continuous for every path; check:patrol asserts no
+  tick moves it more than speed*dt. Loop length = 2 x path length, so `phase` is a fraction of the
+  round trip. (Numbered from 017: PR 3 holds OQ-010..016.)
+status: PROVISIONAL
+
+## OQ-018 — A patroller with no `size`: default it, or require it?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A default volume in code | B mandatory in schema + lint error NO_PATROL_SIZE
+took: B
+because: a default is a number not in MEASUREMENTS.md, and the deadly volume is a level-design
+  quantity. Strengthens the schema, never weakens it. The example level already sets it; the gym
+  has no patroller.
+status: PROVISIONAL
+
+## OQ-019 — Patroller geometry conventions
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: path point = box centre | path point = base centre (feet convention)
+took: base centre; contact = the box widened by the capsule radius in x/z, overlapping the capsule's
+  vertical span
+because: matches the player's feet convention and the critical_path's y (ground level). The widened
+  box is square at the four corners (conservative by at most r(sqrt2 - 1) = 0.145u diagonally);
+  an exact capsule-box test can replace it inside capsuleTouches without touching any caller.
+status: PROVISIONAL
+
+## OQ-020 — Respawn on the render frame or on the fixed tick?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A keep it in onRender (frame time) | B fixed tick
+took: B
+because: with the world ticking during death (D-004), a fixed-tick respawn makes the death interval
+  exactly respawnDelaySec of world time, which is what the clock assertions and PHASE_SWEEP measure.
+  Nominal duration unchanged (0.8 s); it is now tick-exact instead of frame-quantised.
+status: PROVISIONAL
+
+## OQ-021 — Debug frame-stepping in pause, and platform time
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A leave as is | B make moving platforms a pure function of the world clock too
+took: A, for now
+because: out of B-12's scope. Frame-stepping while paused (dev tool) ticks player, physics and
+  platforms but not the world clock (D-004: pause is frozen), so platforms drift from runTimeSec
+  by the stepped ticks — debug-only. Platforms keep per-instance `time`, which is the mutable
+  per-object state B-12 just removed from hazards. Proposed as a backlog item: platforms as
+  pathPosition(def, runTimeSec), which also makes them PHASE_SWEEP-able.
+status: PROVISIONAL
+
+## OQ-022 — Prove the patroller in the gym, or in a fixture?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A add a patroller to 00-gym | B a harness-only fixture level (tools/harness/fixtures/)
+took: B, via a harness-only startJson() that uses the same parseLevel/install path as levels/
+because: A changes the gym's goldens and chaos stream, and a patroller near the path is B-7's job
+  (PHASE_SWEEP). Merge note: PR 3 adds preloadLevelAssets() to startLevel; when both land,
+  startJson must preload too, or a fixture placing a mesh asset will throw.
+status: PROVISIONAL
+
+## OQ-023 — Push this branch and open a PR?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A push + draft PR | B local only
+took: A
+because: the reviewer reviews through PRs and CI, and asked for the accent work to be pushed.
+  Branch push and draft PR are reversible (close the PR, delete the branch).
+status: PROVISIONAL
+
