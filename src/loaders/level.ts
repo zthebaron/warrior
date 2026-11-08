@@ -10,6 +10,7 @@ import manifestJson from '../../assets/dist/manifest.json';
 import manifestSchema from '../../assets/manifest.schema.json';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
 import { getLoadedAsset, preloadAssets } from './assets';
+import { patrolFraction, patrolPosition } from '../systems/patrol';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
 export type Vec3 = [number, number, number];
@@ -300,16 +301,10 @@ function ease(kind: PlatformDef['easing'], u: number): number {
 }
 
 /**
- * Patroller position at world time t: a pure function of (path, speed, phase, t), with no stored
- * state. It ping-pongs along the polyline at `speed` u/s; one loop (out and back) is 2·length, and
- * `phase` is the start offset as a fraction of that loop (OQ-012).
+ * Where a patroller is in its loop at world time t: [0,1). Re-exported from src/systems/patrol.ts, which
+ * holds the ONE definition: the patroller's position and its crow cue both derive from it.
  */
-/** Where a patroller is in its loop at world time t: [0,1). The ONE definition (patroller and its crow). */
-export function loopFraction(path: Vec3[], speed: number, phase: number, t: number): number {
-  const total = path.slice(1).reduce((a, b, i) => a + Math.hypot(b[0] - path[i]![0], b[1] - path[i]![1], b[2] - path[i]![2]), 0);
-  if (!(total > 0)) return 0;
-  return (((phase + (t * speed) / (2 * total)) % 1) + 1) % 1;
-}
+export const loopFraction = (path: Vec3[], speed: number, phase: number, t: number): number => patrolFraction(path, speed, phase, t);
 
 /** Crow pose at world time t, from its patroller's loop (see CrowDef). Pure in t. */
 export function crowAt(h: HazardDef, t: number, out: THREE.Vector3): { airborne: boolean } {
@@ -321,22 +316,9 @@ export function crowAt(h: HazardDef, t: number, out: THREE.Vector3): { airborne:
   return { airborne };
 }
 
+/** Patroller position at world time t, written into `out`. The motion itself lives in src/systems/patrol.ts. */
 export function patrollerAt(path: Vec3[], speed: number, phase: number, t: number, out: THREE.Vector3): THREE.Vector3 {
-  const lens = path.slice(1).map((b, i) => Math.hypot(b[0] - path[i]![0], b[1] - path[i]![1], b[2] - path[i]![2]));
-  const total = lens.reduce((a, b) => a + b, 0);
-  if (!(total > 0)) return out.set(...path[0]!);
-  const s = loopFraction(path, speed, phase, t); // [0,1) around the loop
-  let d = s < 0.5 ? s * 2 * total : (1 - s) * 2 * total; // distance from path[0]
-  for (let i = 0; i < lens.length; i++) {
-    const len = lens[i]!;
-    if (d <= len || i === lens.length - 1) {
-      const a = path[i]!, b = path[i + 1]!;
-      const u = len > 0 ? Math.min(d / len, 1) : 0;
-      return out.set(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u);
-    }
-    d -= len;
-  }
-  return out.set(...path[0]!);
+  return out.set(...patrolPosition(path, speed, phase, t));
 }
 
 function pointOnPath(path: Vec3[], u: number, out: THREE.Vector3): THREE.Vector3 {

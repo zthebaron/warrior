@@ -99,6 +99,7 @@ export interface Snapshot {
   deaths: number;
   lastDeath: Vec3 | null;
   runTime: number;
+  inputTicks: number;
 }
 
 export interface Waypoint {
@@ -245,7 +246,7 @@ declare global {
       record(): InputFrame[];
       snapshot(): Snapshot;
       tuning: Record<string, number>;
-      rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
+      rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       level(): { id: string } | null;
       setCamera(pos: Vec3, target: Vec3): void;
@@ -266,6 +267,7 @@ declare global {
         ktx2: Record<string, boolean> | null;
         pixels: { covered: number; nearPalette: number; maxError: number };
       }>;
+      teleportPlayer(pos: Vec3): void;
     };
   }
 }
