@@ -52,16 +52,37 @@ colour that is not on this ramp is a violation unless it is the accent below.
 
 ### The accent
 
-Vermilion, and only on torii gates.
+Vermilion, and only on torii gates. *(Amended 2026-11-08 by PHASE-0-DECISIONS D-001 and D-003,
+on measurement. The original 1% ceiling is withdrawn; its reasoning — "the vermilion never
+clustered at k=8" — shows the seed contains no vermilion and says nothing about area.)*
 
-**Budget: the accent must not exceed 1% of frame area.** This is measured, not a guess —
-when the palette was extracted by k-means at k=8 across all 36 frames, the vermilion did
-not form a cluster at all. It is that rare.
+**Hue — authored, not measured (D-001).** The seed's reddest pixels (median `#603633`) read as
+another dark shape and are recorded in MEASUREMENTS.md as a fact about the seed, not as the
+accent. The accent must pass `ACCENT_CONTRAST` against every ramp value above: CIEDE2000
+>= 2x the largest ramp step, chroma >= 3x the ramp's largest chroma, and lightness at or above
+wash-mid. Candidates live in `assets/src/accent.json`; the H2.5 feel test chooses between them.
 
+**Area — a band at the gameplay camera, not a global percentage (D-003).** The same gate fills
+9% of the frame from inside it and nothing at 80u, so one number conflates distance with
+intent. `ACCENT_AREA` measures the frame a player actually scans: the follow camera at rest,
+the player 6u before the next torii. In that frame the accent must cover:
+
+- **at least 0.505%**, so it can be found. This is the share of a torii at 25u from the camera,
+  the edge of the near band (section 3). The next waypoint must still read as a near form.
+  Provisional until the H2.5 feel test measures findability directly.
+- **at most 5.08%**, so it never dominates. This is the seed share of ink-black, the least-used
+  value of the ramp. The accent may never take more of the frame than any structural value does.
+
+Measured on the gym torii: 2.30% and 2.25%. Basis and full distance curve: MEASUREMENTS.md
+"D-003 accent area".
+
+The restraint that carries the weight is unchanged: **what** may carry the accent.
+
+- Torii only, and nothing else, ever
 - Never on the character
 - Never on terrain, stone, trees, mist or sky
 - Never on UI
-- A frame may contain more than one torii; the 1% total still holds
+- A frame may contain more than one torii. The band applies to the whole frame.
 
 The character's robe is **desaturated blue-grey**, not blue. It sits near `#7d8590` in
 value and saturation. It is not a second accent.
@@ -190,7 +211,7 @@ The section that prevents the most drift. An agent unsure whether something is a
 should assume it is not.
 
 1. Any light source you can locate
-2. Any colour off the §2 ramp, except vermilion on torii within the 1% budget
+2. Any colour off the §2 ramp, except the accent on torii, inside the §2 area band
 3. Saturated colour of any kind on the character
 4. Rounded or organic rock — all stone is faceted and planar
 5. Spiral stairs, arches, domes
@@ -209,8 +230,9 @@ should assume it is not.
 In order. Any failure is a failure.
 
 1. Can you tell where the light is? → fail
-2. Is any colour off-ramp other than torii vermilion? → fail
-3. Does the accent exceed roughly 1% of frame area? → fail
+2. Is any colour off-ramp other than the accent on torii? → fail
+3. In a gameplay frame with the next torii ahead, is the accent outside 0.505%-5.08%? → fail
+   (`ACCENT_AREA`; too little is a failure too: a waypoint nobody finds is not a waypoint)
 4. Are there three distinguishable depth bands? → if not, fail
 5. Is there a dark mass on one side and a bright void on the other? → if not, fail
 6. Does the hat disc read as a clean shape? → if not, fail
@@ -219,4 +241,5 @@ In order. Any failure is a failure.
 ---
 
 *Derived from the locked seed. If the seed changes, this document is void and must be
-re-derived — do not patch it.*
+re-derived — do not patch it. Amendments made on MEASUREMENT under a recorded decision are
+the one exception, and each is marked in place (section 2: D-001, D-003).*
