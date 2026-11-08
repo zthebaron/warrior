@@ -31,6 +31,7 @@ jobs:
 
       # B-12: the patroller runtime (src/systems/patrol.ts) is a pure function of phase + t*speed
       - run: npm run check:patrol
+      - run: npm run check:progression
 
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list

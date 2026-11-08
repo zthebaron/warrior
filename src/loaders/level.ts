@@ -2,6 +2,7 @@
 // -> build meshes + Rapier colliders. Any violation throws, naming the field. Nothing is
 // skipped silently.
 
+import type { LevelRef } from '../systems/progression';
 import * as THREE from 'three';
 import { Ajv, type ErrorObject } from 'ajv';
 import type { RigidBody, Collider } from '@dimforge/rapier3d-compat';
@@ -200,6 +201,20 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
 
 // ---------- loading ----------
 const SOURCES = import.meta.glob<string>(['../../levels/*.json', '!../../levels/*.schema.json'], { query: '?raw', import: 'default' });
+
+/** D-014 fix 3: every level's id and chapter, for progression (src/systems/progression.ts). Reads only
+ *  those two fields; a level is still fully validated by parseLevel when it is actually loaded. */
+let INDEX: Promise<LevelRef[]> | null = null;
+export function levelIndex(): Promise<LevelRef[]> {
+  INDEX ??= Promise.all(
+    Object.entries(SOURCES).map(async ([key, loader]) => {
+      const j = JSON.parse(await loader()) as { id?: unknown; chapter?: unknown };
+      const id = typeof j.id === 'string' ? j.id : key.replace('../../levels/', '').replace('.json', '');
+      return { id, chapter: typeof j.chapter === 'number' ? j.chapter : -1 };
+    }),
+  );
+  return INDEX;
+}
 
 export async function loadLevel(id: string): Promise<LevelData> {
   const key = `../../levels/${id}.json`;
