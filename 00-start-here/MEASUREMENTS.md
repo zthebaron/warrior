@@ -36,10 +36,12 @@ not 4.0. The linter cannot see the approach, so rise budgets use the RUNNING val
 Limits are set AT the measured run-speed clear, not below it. The margin comes from the
 TIGHT warning at 90%, which flags anything near the edge for human review.
 
-    ground    slope 50deg, autostep 0.5     (slope matches Rapier maxSlopeClimbAngle)
+    ground    slope 50deg, autostep 0.34    (slope = Rapier maxSlopeClimbAngle, NOT measured; autostep
+                                            measured B-14, see "Autostep" below: Rapier is configured 0.5)
     jump      maxH  5.0   maxRise 2.00
     double    maxH  9.5   maxRise 3.50   (running approach, not standing-adjacent 4.0)
-    dash      maxH  4.0   maxRise 0.50   (rise is just autostep height)
+    dash      maxH  4.0   maxRise 0.50   (measured clear, one sample; NOT the autostep height, which is 0.34
+                                          effective: re-measure with coverage, B-20)
     dashjump  maxH 10.0   maxRise 2.75
     wall      maxH  4.2   maxRise 4.00
     climb     maxH  7.0   maxRise 4.50
@@ -89,7 +91,39 @@ measurements were taken with this behaviour.
   y <= 0) treats horizontal-normal contacts as steps — no velocity cancel, no wall contact.
   Airborne contacts (wall slide / wall jump / ledge grab) are untouched; every earlier nav segment
   time is identical to the tick, so ballistic moves are unaffected. 0.4u risers are now verified
-  by the gym walk; the 0.5u autostep ceiling in MOVE.ground is still not measured directly.
+  by the gym walk HEAD-ON. The autostep ceiling is now measured directly (B-14, "Autostep" below): 0.40
+  risers stall on oblique approaches, so "verified" holds for the nav bot's line only (B-20).
+
+## Autostep (B-14, 2026-11-08)
+
+`kcc.autostepMaxHeight` 0.5 (src/engine/physics.ts) is an INPUT to Rapier's character controller. What
+the player actually walks up without jumping is lower, and it is not a sharp edge: whether a riser
+climbs depends on the sub-tick phase at which the capsule meets the face and on the approach angle.
+Rapier is deterministic (`check:physics`), so a single sample at one position always repeats, which is
+how a "clears 0.5" single measurement could be honest and still wrong.
+
+Measured with `npm run measure:autostep` (tools/measure-autostep.ts): the harness build, real Rapier,
+real Player, 60 Hz ticks. A fixture of risers (6 u treads, so `autostepMinWidth` 0.2 never binds) is
+walked with NO jump; a STALL is the capsule pinned against the face for 150 ticks (2.5 s).
+Coverage per height: 6 approaches (run head-on, rest against the face, sprint, 30 deg and 45 deg
+oblique, walk at half stick) x 96 start phases spread over one tick of travel x 5 absolute placements
+of the whole fixture = 2,880 trials. **Rule: a height is clean when it has zero stalls over all of it;
+the value is the largest H with every grid height <= H clean, not rounded either way.**
+
+    0.30-0.34   clean (0 stalls in 2,880 trials at each 0.01 step)       <- MOVE.ground.autostep = 0.34
+    0.35        1 stall  (30 deg oblique)
+    0.36        clean (an isolated clean height above the first stall does not raise the value)
+    0.37        16 stalls (15 at 45 deg oblique, 1 at 30 deg)
+    0.40        oblique only: up to 17 of 48 phases at 45 deg on one placement. Head-on clean.
+    0.42        oblique 26 and 69 of 96, walk 2 of 96 (3 placements)
+    0.44-0.50   most approaches, majority of trials; 0.50 stalls 17-24 of 24 even head-on
+
+Head-on approaches stall rarely below 0.42 (at 96 phases x 3 placements: rest once at 0.375, sprint
+once at 0.41, walk twice at 0.42); the oblique approaches set the ceiling, and MOVE uses it because
+the linter cannot see the approach angle (the same argument as RUN not sprint, above). The value fell each time coverage widened (0.40 -> 0.39 -> 0.37 -> 0.34 as phases
+went 24 -> 48 -> 96 and placements 1 -> 5), so it is a statement about THIS coverage: a riser in
+0.30-0.34 may still stall at some untested phase, but not at any of 14,400 tested. A stall is not a
+death: the player is pinned and can jump. Re-run when physics, TUNING or the capsule changes.
 
 ## H4 asset budgets (2026-11-08)
 

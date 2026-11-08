@@ -2,9 +2,12 @@
 //
 // !! The character-controller values below are VERIFIED (npm run check:physics) and are
 // !! mirrored in the MOVE table of tools/lint-level.mjs:
-// !!   kcc.maxSlopeClimbDeg   <->  MOVE.ground.slope
-// !!   kcc.autostepMaxHeight  <->  MOVE.ground.autostep
-// !! Change one, change both — otherwise levels lint clean and are still unplayable.
+// !!   kcc.maxSlopeClimbDeg   <->  MOVE.ground.slope      (equal by copy; never measured, B-20)
+// !!   kcc.autostepMaxHeight  ->   MOVE.ground.autostep   NOT equal: 0.5 here is Rapier's INPUT; the
+// !!                                                      MOVE value is the MEASURED effective ceiling
+// !!                                                      (0.34, MEASUREMENTS "Autostep", B-14)
+// !! Change one, change both: re-run `npm run measure:autostep` after any change to the autostep
+// !! settings, offset, capsule or TUNING, or levels lint clean and are still unplayable.
 
 import RAPIER from '@dimforge/rapier3d-compat';
 

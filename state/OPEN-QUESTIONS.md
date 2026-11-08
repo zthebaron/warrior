@@ -631,3 +631,34 @@ would hide the warning for any future gym edit that is tight by accident. Zero m
 this segment, so the warning stays visible and the waypoint's `note` now says why ("TIGHT accepted
 (D-016, OQ-051)"). Any TIGHT on a chapter (>= 1) segment remains a level fix, not this.
 status: PROVISIONAL
+
+## OQ-049 — B-14: the autostep "ceiling" is a stall rate, not an edge. Which number goes in MOVE.ground.autostep?
+raised: 2026-11-08 by phase0-spec (B-14)
+options: A keep 0.5 and set a per-field `measured: false` on it (the backlog's alternative) | B the largest height with zero stalls under a stated coverage protocol (0.34) | C a head-on value (~0.42: run and sprint barely stall below it) | D raise Rapier's autostepMaxHeight until the effective ceiling reaches 0.5
+took: B, 0.34
+because: measured, not configured. `npm run measure:autostep` walks the real game into risers with no
+jump: 6 approaches x 96 sub-tick phases x 5 placements = 2,880 trials per height. 0.30-0.34 have zero
+stalls; 0.35 has one (30 deg oblique); 0.50, the old value, stalls 17-24 of 24 even head-on. So the old
+`measured: true` on a 0.5 field certified a height the player usually cannot walk up. A would be honest
+but leaves UNMEASURED_MOVE reading a guess. C fails the RUN-not-sprint argument already in MEASUREMENTS:
+the linter cannot see the approach, so the worst approach sets the budget. D is an engine change to
+src/engine/physics.ts (approver-owned, and TUNING-class values are frozen together), not a measurement.
+Disclosed weaknesses, so a reviewer can attack them:
+  1. The value depends on coverage. It fell 0.40 -> 0.39 -> 0.37 -> 0.34 as phases rose 24 -> 96 and
+     placements 1 -> 5. More coverage could lower it again; MEASUREMENTS says so next to the number.
+  2. The protocol (6 approaches, 150-tick stall, one-tick phase spread) is mine. 30 and 45 deg obliques
+     set the ceiling; a 60 deg approach was not tested.
+  3. Changing the value changed NO lint verdict on any level (A/B at 0.5 vs 0.34: identical apart from
+     one printed number), because a `ground` rise is bounded by slope x run and autostep never binds a
+     riser. That gap is B-19. Fixing the number is still right: CHAPTER_TEACH's floor-within-reach and
+     READABLE_RISE's landing tolerance read it.
+  4. The gym's 0.40 stair risers are above the clean ceiling and stall at 45 deg (up to 17 of 48); CI
+     passes them because the nav bot walks head-on. Not changed here: gym geometry change = golden +
+     trace re-record (B-20).
+  5. I edited a comment in src/engine/physics.ts (approver-owned): its `<->` said kcc.autostepMaxHeight
+     equals MOVE.ground.autostep, which is now false. Comment only; no value changed.
+  6. The tool's runs slowed ~25x on later placements under machine load, and one multi-minute
+     page.evaluate left the browser unable to load the next page. Fixed by one short evaluate per
+     (approach, height) and a fresh page per placement; stall counts were identical before and after
+     (placement (17.37,0,4.61): 6/12 at 30/45 deg whether run first or third).
+status: PROVISIONAL

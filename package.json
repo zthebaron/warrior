@@ -20,6 +20,7 @@
     "lint:not-list": "node tools/lint-not-list.mjs",
     "check:physics": "node tools/rapier-determinism.mjs",
     "check:patrol": "node tools/check-patrol.ts",
+    "measure:autostep": "node tools/measure-autostep.ts",
     "check:progression": "node tools/check-progression.ts",
     "check:webgl": "node tools/webgl-preflight.mjs",
     "playtest": "node tools/harness/run.mjs"
