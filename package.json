@@ -1,7 +1,7 @@
 {
   "name": "warrior",
   "version": "1.0.0",
-  "description": "Warrior — AI-built 3D browser action-platformer. Proofline game track PGT-01.",
+  "description": "Warrior \u2014 AI-built 3D browser action-platformer. Proofline game track PGT-01.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit && tsc -p tools/harness",
     "assets:build": "node tools/assets/build.mjs",
     "assets:budget": "node tools/assets/budget.mjs",
+    "lint:accent": "node tools/assets/accent.mjs",
     "lint:levels": "node tools/lint-level.mjs levels/00-gym.json assets/dist/manifest.json",
     "lint:example": "node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json",
     "lint:not-list": "node tools/lint-not-list.mjs",

@@ -5,6 +5,7 @@
 //   1. validates assets/dist/manifest.json against assets/manifest.schema.json (strict)
 //   2. re-measures the shipped .glb (tools/assets/measure.mjs) and requires the manifest to agree
 //      field for field — a hand-edited or stale manifest fails here
+//   4. ACCENT_CONTRAST: every accent candidate separates from the palette (tools/assets/accent.mjs)
 //   3. checks the measurement against tools/assets/budgets.json: triangles, compressed bytes,
 //      texture count and max dimension, material count, draw calls when placed once
 //
@@ -20,6 +21,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
 import { measure } from './measure.mjs';
+import { checkAccents, printAccents } from './accent.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const Ajv = AjvMod.default ?? AjvMod;
@@ -105,6 +107,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const res = await checkBudgets();
   console.log('asset budgets (Tier-1) — assets/dist/');
   printBudget(res);
-  console.log(res.ok ? 'BUDGET PASS' : 'BUDGET FAIL');
-  process.exit(res.ok ? 0 : 1);
+  const acc = checkAccents();
+  console.log('accent (D-001, ACCENT_CONTRAST)');
+  printAccents(acc);
+  const ok = res.ok && acc.ok;
+  console.log(ok ? 'BUDGET PASS' : 'BUDGET FAIL');
+  process.exit(ok ? 0 : 1);
 }

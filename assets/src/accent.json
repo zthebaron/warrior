@@ -1,0 +1,12 @@
+{
+  "decision": "PHASE-0-DECISIONS D-001: the navigational accent is authored, not measured. Candidates must pass ACCENT_CONTRAST (tools/assets/accent.mjs); the H2.5 feel test picks one. Until then `default` is what ships, and ?accent=<name> switches the torii in place.",
+  "default": "vermilion_a",
+  "candidates": {
+    "vermilion_a": "#e34234",
+    "vermilion_b": "#ef5b3b",
+    "vermilion_c": "#c8371f"
+  },
+  "must_fail": {
+    "seed_red": "#603633"
+  }
+}

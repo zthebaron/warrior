@@ -31,6 +31,7 @@ jobs:
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
 
+      - run: npm run lint:accent # D-001 ACCENT_CONTRAST, named on its own so a failure says which rule
 
       # Tier-1 asset budgets on the COMMITTED assets/dist (CI has no Blender and never rebuilds):
       # manifest against assets/manifest.schema.json, manifest against a re-measure of every

@@ -12,39 +12,49 @@ STYLE-BIBLE rules this module enforces, not merely allows:
   - Palette law (section 2). A face's colour is a NAME from PALETTE; there is no way to pass
     an arbitrary colour. Colour reaches the GPU as a UV into one shared 32x32 palette
     texture, so a whole asset is ONE mesh, ONE material, ONE draw call.
-  - Vermilion only on torii. The kit module must declare ACCENT = True to use it; lib refuses
-    otherwise.
+  - The accent only on torii (PHASE-0-DECISIONS Q2, D-001). A face asks for "accent"; the kit
+    must be built with Kit(..., accent=True) or lib refuses. Which candidate it shows is data:
+    assets/src/accent.json, checked by ACCENT_CONTRAST (tools/assets/accent.mjs).
   - Determinism. All jitter comes from rng(seed); no time, no global random, no hash order.
 """
 
+import json
 import math
+import os
 import random
 
 import bmesh
 import bpy
 
-# ---- palette (section 2) ----------------------------------------------------------------
-# Eight-value ramp from reference/palette.json. Vermilion is NOT in palette.json (it never
-# clustered at k=8); its value was measured from the seed frames for H4 — see MEASUREMENTS.md.
-PALETTE = {
-    "paper_cream": "#cabfac",
-    "mist_pale": "#afa79c",
-    "wash_light": "#979189",
-    "stone_mid": "#827d76",
-    "wash_mid": "#69645f",
-    "ink_grey": "#534e4b",
-    "ink_deep": "#383838",
-    "ink_black": "#20201e",
-    "vermilion": "#603633",
-}
-ACCENTS = {"vermilion"}
+# ---- palette (section 2) and accent (D-001) -----------------------------------------------
+# Both read from data, never retyped here: the ramp from reference/palette.json (names with '_'),
+# the accent candidates from assets/src/accent.json. Every candidate gets its own texture cell, so
+# the runtime can switch the torii between them in place (?accent=<name>) for the H2.5 feel test.
+# The must_fail fixtures (seed_red #603633, the measured seed red) get a cell too, for comparison
+# renders only: no kit face can ask for them.
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+with open(os.path.join(_ROOT, "reference", "palette.json")) as _f:
+    RAMP = {c["name"].replace("-", "_"): c["hex"] for c in json.load(_f)["colors"]}
+with open(os.path.join(_ROOT, "assets", "src", "accent.json")) as _f:
+    _ACC = json.load(_f)
+ACCENT_CANDIDATES = dict(_ACC["candidates"])
+ACCENT_FIXTURES = dict(_ACC.get("must_fail", {}))
+ACCENT_DEFAULT = _ACC["default"]
+if ACCENT_DEFAULT not in ACCENT_CANDIDATES:
+    raise ValueError(f"accent.json default {ACCENT_DEFAULT!r} is not a candidate")
+# cell order: ramp, candidates, fixtures. "accent" resolves to the default candidate's cell.
+CELLS = {**RAMP, **ACCENT_CANDIDATES, **ACCENT_FIXTURES}
+PALETTE = {**RAMP, "accent": ACCENT_CANDIDATES[ACCENT_DEFAULT]}  # what a kit face may name
+ACCENTS = {"accent"}
 
 # 4x4 grid of 8px cells. 8px cells sit on whole 4x4 compression blocks, so block-compressed
 # texture formats (ETC1S/UASTC/BCn/ASTC 4x4) never mix two palette entries in one block.
 TEX_SIZE = 32
 CELL = 8
 CELLS_PER_ROW = TEX_SIZE // CELL
-PALETTE_ORDER = list(PALETTE)  # cell index = position in this list; unused cells = paper_cream
+PALETTE_ORDER = list(CELLS)  # cell index = position in this list; unused cells = paper_cream
+if len(PALETTE_ORDER) > CELLS_PER_ROW * CELLS_PER_ROW:
+    raise ValueError(f"{len(PALETTE_ORDER)} palette cells do not fit a {CELLS_PER_ROW}x{CELLS_PER_ROW} grid")
 TEXTURE_NAME = "kit_palette"
 MATERIAL_NAME = "kit_palette"
 
@@ -60,7 +70,7 @@ def _hex(h):
 
 def palette_uv(color):
     """UV at the centre of `color`'s cell (Blender UV space, origin bottom-left)."""
-    i = PALETTE_ORDER.index(color)
+    i = PALETTE_ORDER.index(ACCENT_DEFAULT if color == "accent" else color)
     cx, cy = i % CELLS_PER_ROW, i // CELLS_PER_ROW
     return ((cx * CELL + CELL / 2) / TEX_SIZE, (cy * CELL + CELL / 2) / TEX_SIZE)
 
@@ -80,7 +90,7 @@ def palette_material():
             # A BYTE image stores Image.pixels as-is (value * 255): no linear<->sRGB conversion.
             # Write the sRGB hex directly. (Found by the harness assets probe: converting to
             # linear here shipped every colour ~4x too dark, #383838 -> #0a0a0a.)
-            r, g, b = _hex(PALETTE[name])
+            r, g, b = _hex(CELLS[name])
             o = (y * TEX_SIZE + x) * 4
             px[o : o + 4] = (r, g, b, 1.0)
     img.pixels = px
@@ -125,7 +135,7 @@ class Kit:
         if color not in PALETTE:
             raise ValueError(f"{self.name}: colour {color!r} is not on the palette ramp")
         if color in ACCENTS and not self.accent:
-            raise ValueError(f"{self.name}: {color} is torii-only (STYLE-BIBLE section 2); set accent=True")
+            raise ValueError(f"{self.name}: the accent is torii-only (STYLE-BIBLE 2, PHASE-0 Q2); set accent=True")
         # game (x, y, z) -> Blender (x, -z, y); export_yup maps it straight back
         verts = [self.bm.verts.new((p[0], -p[2], p[1])) for p in points]
         f = self.bm.faces.new(verts)

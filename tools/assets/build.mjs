@@ -2,6 +2,7 @@
 // The asset pipeline.   npm run assets:build
 //
 // For every asset under assets/src/ (kit_*.py procedural modules, *.blend hero files):
+// pre. ACCENT_CONTRAST on assets/src/accent.json (tools/assets/accent.mjs) — fails before Blender runs
 //   0. export   blender -b tools/blender/export.py         -> assets/build/<name>/0-export.glb (uncompressed)
 //   1. style    unlit material, nearest sampling            -> 1-style.glb   (STYLE-BIBLE section 1: no specular,
 //               no light direction; palette cells must not blend)
@@ -27,6 +28,7 @@ import { KHRMaterialsSpecular, KHRMaterialsUnlit } from '@gltf-transform/extensi
 import { TextureInfo } from '@gltf-transform/core';
 import { ROOT, checkBudgets, printBudget, validateManifest } from './budget.mjs';
 import { io, measure } from './measure.mjs';
+import { checkAccents, printAccents } from './accent.mjs';
 
 const P = (...p) => join(ROOT, ...p);
 
@@ -64,6 +66,13 @@ const gltfTransform = P('node_modules/.bin/gltf-transform');
 const gtV = run(gltfTransform, ['--version'], 'gltf-transform');
 if (!gtV.ok) die(2, `gltf-transform CLI missing: npm ci. ${gtV.out}`);
 console.log(`toolchain: ${blenderV.out.split('\n')[0].trim()} · ${ktxV.out.trim().split('\n')[0]} · gltf-transform ${gtV.out.trim()}`);
+
+// ---------- accent (D-001): an off-ramp colour must earn its cell before anything is built ----------
+const accent = checkAccents();
+if (!accent.ok) {
+  printAccents(accent);
+  die(3, 'ACCENT_CONTRAST (assets/src/accent.json vs reference/palette.json)');
+}
 
 // ---------- sources ----------
 const sources = readdirSync(P('assets/src'))
