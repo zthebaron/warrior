@@ -12,11 +12,8 @@ import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
 import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, preloadLevelAssets, MANIFEST, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
-import { configureAssetLoaders, getKtx2Support, getLoadedAsset, preloadAssets, type Ktx2Support } from './loaders/assets';
-
-/** The kit palette — a COPY of PALETTE in tools/blender/lib.py (the source; STYLE-BIBLE 2 + measured
- *  vermilion). Used only by the harness probe's Tier-2 fidelity readback; keep the two in step. */
-const KIT_PALETTE = [0xcabfac, 0xafa79c, 0x979189, 0x827d76, 0x69645f, 0x534e4b, 0x383838, 0x20201e, 0x603633];
+import { ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, type Ktx2Support } from './loaders/assets';
+import paletteJson from '../reference/palette.json';
 
 export const GAME_RULES = {
   startLevel: '00-gym',
@@ -151,6 +148,9 @@ async function boot(): Promise<void> {
   const state = new StateMachine();
   const renderer = new Renderer(el('app'));
   configureAssetLoaders(renderer.renderer);
+  // D-001 feel-test switch: ?accent=<candidate> (assets/src/accent.json). Default = accent.json `default`.
+  const accentParam = new URLSearchParams(location.search).get('accent');
+  if (accentParam) setAccent(accentParam);
   const physics = await Physics.create();
   const input = new InputSystem(window);
   const profiler = new Profiler();
@@ -551,7 +551,9 @@ async function boot(): Promise<void> {
         const px = new Uint8Array(w * h * 4);
         gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
         // source texels: the palette as authored (sRGB bytes). Shipped colours must land on them.
-        const texels = KIT_PALETTE.map((hex) => [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255] as const);
+        // source texels: the ramp + the accent actually in use (palette.json, accent.json — the same data lib.py reads)
+        const hexes = [...paletteJson.colors.map((c) => c.hex), ACCENT_HEX[getAccent()]!];
+        const texels = hexes.map((h) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16)) as [number, number, number]);
         let covered = 0;
         let near = 0;
         let maxError = 0;

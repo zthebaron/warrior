@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import paletteJson from '../../reference/palette.json';
+import accentJson from '../../assets/src/accent.json';
 
 export const ASSET_LOADER_CONFIG = {
   dracoPath: '/vendor/draco/',
@@ -30,6 +32,51 @@ export interface Ktx2Support {
   dxt: boolean;
   bptc: boolean;
   pvrtc: boolean;
+}
+
+// ---- accent switch (D-001): the H2.5 feel test toggles the torii between candidates in place ----
+// The palette texture holds a cell per candidate, laid out exactly as tools/blender/lib.py does it:
+// ramp (reference/palette.json), then accent.json candidates, then must_fail fixtures; 8px cells in a
+// 32x32 texture, 4 per row, row 0 at Blender's v=0 (glTF v = 1 - v). The shipped torii samples the
+// DEFAULT candidate's cell; choosing another moves those UVs to the other cell at decode time.
+const TEX = 32;
+const CELL = 8;
+const PER_ROW = TEX / CELL;
+export const ACCENT_CELLS: string[] = [
+  ...paletteJson.colors.map((c) => c.name.replace(/-/g, '_')),
+  ...Object.keys(accentJson.candidates),
+  ...Object.keys(accentJson.must_fail),
+];
+export const ACCENT_HEX: Record<string, string> = { ...accentJson.candidates, ...accentJson.must_fail };
+export const ACCENT_DEFAULT: string = accentJson.default;
+const cellUv = (name: string): [number, number] => {
+  const i = ACCENT_CELLS.indexOf(name);
+  if (i < 0) throw new Error(`[assets] no palette cell "${name}"`);
+  return [((i % PER_ROW) * CELL + CELL / 2) / TEX, 1 - (Math.floor(i / PER_ROW) * CELL + CELL / 2) / TEX];
+};
+let accentChoice: string = ACCENT_DEFAULT;
+
+/** Pick the accent candidate (or a must_fail fixture, for comparison) before assets decode. */
+export function setAccent(name: string): void {
+  if (!(name in ACCENT_HEX)) throw new Error(`[assets] ?accent=${name}: not in assets/src/accent.json (${Object.keys(ACCENT_HEX).join(', ')})`);
+  if (cache.size && name !== accentChoice) throw new Error('[assets] setAccent after assets decoded — call it at boot');
+  accentChoice = name;
+}
+export function getAccent(): string {
+  return accentChoice;
+}
+
+function remapAccent(geometry: THREE.BufferGeometry): void {
+  if (accentChoice === ACCENT_DEFAULT) return;
+  const uv = geometry.getAttribute('uv');
+  if (!uv) return;
+  const [u0, v0] = cellUv(ACCENT_DEFAULT);
+  const [u1, v1] = cellUv(accentChoice);
+  const half = CELL / 2 / TEX;
+  for (let i = 0; i < uv.count; i++) {
+    if (Math.abs(uv.getX(i) - u0) < half && Math.abs(uv.getY(i) - v0) < half) uv.setXY(i, uv.getX(i) + u1 - u0, uv.getY(i) + v1 - v0);
+  }
+  uv.needsUpdate = true;
 }
 
 const URLS = import.meta.glob<string>('../../assets/dist/*.glb', { query: '?url', import: 'default' });
@@ -93,6 +140,7 @@ async function decode(name: string, file: string): Promise<LoadedAsset> {
     if (!(o instanceof THREE.Mesh)) return;
     // bake the node transform into the geometry so a placement only adds its own transform
     const geometry = (o.geometry as THREE.BufferGeometry).clone().applyMatrix4(o.matrixWorld);
+    remapAccent(geometry);
     const materials = Array.isArray(o.material) ? o.material : [o.material];
     if (materials.length !== 1) throw new Error(`[assets] ${name}: multi-material meshes are not supported`);
     // Palette texels ARE display colours (STYLE-BIBLE section 2): exempt from the renderer's ACES
