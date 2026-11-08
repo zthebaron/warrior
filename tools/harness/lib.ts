@@ -115,7 +115,6 @@ export interface LevelJson {
   critical_path: (Vec3 | Waypoint)[];
   checkpoints: { pos: Vec3 }[];
   platforms?: { id?: string; asset: string; path: Vec3[] }[];
-  par_time: number;
 }
 
 export interface Ctx {
@@ -123,6 +122,8 @@ export interface Ctx {
   baseUrl: string;
   levelId: string;
   level: LevelJson;
+  /** segmentsOf(level) from tools/lint-level.mjs — the one segment definition. */
+  segments: number;
   root: string;
   args: Record<string, string | boolean>;
   log: (msg: string) => void;

@@ -593,7 +593,8 @@ FIVE TEST MODES:
      platform -> move onto the named platform, wait to be carried, step off
      wall/climb -> movement into the surface + jump
    Public input API only. No teleporting.
-   ASSERTS: goal reached within par_time × 3; never falls below bounds.min.y;
+   ASSERTS: goal reached within 12s x segments (segments = checkpoints + 1; the Q3 bot
+   budget — levels have NO par_time field, PHASE-0-DECISIONS Q4); never falls below bounds.min.y;
    every waypoint reached in order.
 
 2. REPLAY RUNNER  (tools/harness/replay.ts)
@@ -663,7 +664,7 @@ BUILD (a route in the dev server, not part of the shipped game):
   - click any entity to see its JSON
   - scrub the nav bot along the critical path with a timeline slider, frame by frame
   - jump the camera to any waypoint
-  - a side panel: level stats (placements, triangles, draw calls, JSON size, par_time)
+  - a side panel: level stats (placements, triangles, draw calls, JSON size, segment count)
     and the linter's current warnings for this level
 
 Keep it ugly. It is a tool, not a product. It must never ship in a production build.
@@ -829,7 +830,9 @@ BUILD IT:
    via:"platform" also needs "platform":"<that platform's id>".
    The linter checks each segment against that move's distance and rise budget, so an
    honest annotation is the only one that passes. Make it represent the real route.
-5. Set par_time from your own playtesting, and difficulty 1-5.
+5. Set difficulty 1-5. Do NOT add par_time, score or rank — the schema rejects them and
+   that absence is deliberate (PHASE-0-DECISIONS Q4). Chapters 2+ must have 5 +/- 1 segments
+   (segments = checkpoints + 1); the linter enforces it as CHAPTER_LENGTH.
 
 VERIFY BEFORE REPORTING DONE — all of these, with numbers:
   npm run lint:levels                      (schema + semantic linter, must be clean)
@@ -838,8 +841,8 @@ VERIFY BEFORE REPORTING DONE — all of these, with numbers:
   Record one clean human-style replay trace into tools/replays/.
   Capture the 6 golden screenshots.
 
-REPORT: level id, world dimensions, vertical rise, asset counts, par_time, bot completion
-time, draw calls, triangles, JSON size, and a one-line self-assessment of how well it
+REPORT: level id, world dimensions, vertical rise, asset counts, segment count, bot completion
+time vs its 12s x segments budget, draw calls, triangles, JSON size, and a one-line self-assessment of how well it
 matches the concepts. Do NOT report frame time — CI renders on a software rasteriser and
 that number is meaningless.
 ```
@@ -926,9 +929,10 @@ Implement progression.
   - Settings: master/sfx/music volume, quality tier override, reduced motion,
     key remapping.
 
-Then: difficulty pass. Run the nav bot across every level, compare completion time
-to par_time. Any level where the bot takes over 2× par is mistuned — list them with
-the ratio and your diagnosis.
+Then: difficulty pass. There is no par_time (PHASE-0-DECISIONS Q4); the bot's 12s-per-segment
+budget is already a CI assertion. Report each level's bot time per segment, then flag any
+segment whose first-time-human time (from playtest notes) falls outside 25-35s — list them with
+the measured time and your diagnosis.
 ```
 
 ---

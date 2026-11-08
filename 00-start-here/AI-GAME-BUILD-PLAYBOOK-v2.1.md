@@ -269,10 +269,12 @@ removing the only proof that levels are completable.
     { "pos":[99,17,-64],  "via":"double" },
     { "pos":[140,36,-88], "via":"ground" }
   ],
-  "par_time": 95,
   "difficulty": 2
 }
 ```
+> **[SUPERSEDED — PHASE-0-DECISIONS Q4]** This example used to carry `"par_time": 95`. Levels have no `par_time`, `score` or
+> `rank` field; the schema rejects them under `additionalProperties: false`. The nav bot's time
+> budget is derived instead: 12 s × segments, where segments = `checkpoints.length + 1`.
 
 ### Move budgets — derived from the gym, enforced by the linter
 
@@ -370,10 +372,21 @@ every honest estimate comes from.
 
 ### ☐ PHASE 0 — SPEC & PREMISE · *half a day*
 Run `/grill-me` in REVIEWER. Produce `SPEC.md` (premise, core verb, core loop, win condition,
-session length 15–25 min, chapter list, failure model, the explicit **NOT** list, and a Tuning
+session length ~~15–25 min~~ *(superseded, see below)*, chapter list, failure model, the explicit **NOT** list, and a Tuning
 Constants section) and `AGENT-BRIEF.md` (stack, budgets, schema rules, lane isolation, the
 list of things agents may never do).
 **Test:** describe the game in 20 seconds. If you can't, it isn't scoped.
+
+> **[SUPERSEDED — PHASE-0-DECISIONS Q4]** **Session length is a content budget, not a minute target.** The 15–25 min
+> figure above is retired; do not scope toward it. The sprint is **4 chapters × 5 segments = 20
+> segments**. At 25–35 s per segment for a first-time player (Q3), that is **8–12 minutes**.
+> Hitting 15–25 min in the sprint would take 30–50 segments, 2–2.5× the level-authoring work,
+> committed before the vertical slice has measured days-per-level. **Production grows by adding
+> chapters, not by stretching them:** 12 chapters × 5 segments ≈ 30 min, with the same segment
+> length and the same chapter shape. Chapters 2+ are 5 ± 1 segments (linter `CHAPTER_LENGTH`).
+> Chapter 1 has no fixed length until the vertical slice measures the teach rate. If you see
+> 8–12 min and think "too short", read this note before adding scope.
+
 **🚦 GATE A — SCOPE LOCKED.**
 
 ### ☐ PHASE 1 — THE SEED VIDEO · *2–3 hours*
@@ -491,7 +504,8 @@ meaningless — the post stack's grain alters 100% of pixels between runs.
 
 Five modes:
 1. **Nav bot** — walks `critical_path`, using each waypoint's `via` to choose the input. Asserts
-   goal reached within `par_time × 3`, never below `bounds.min.y`, waypoints hit in order.
+   goal reached within **12 s × segments** (the Q3 bot budget; levels have no `par_time`,
+   see PHASE-0-DECISIONS Q4), never below `bounds.min.y`, waypoints hit in order.
 2. **Replay runner** — plays back recorded traces. **[V2] asserts on outcome within tolerance**
    (goal reached, checkpoints in order, position ±0.5u, frames ±5%) — not exact position. Rapier
    is deterministic in-process (verified to 9 decimal places) but makes no cross-machine
@@ -557,8 +571,10 @@ telegraph — the telegraph is the whole design. Combat: two-hit combo, 0.15 s p
 dash i-frames, **60 ms hitstop** (does more for game feel than anything else in this phase).
 Progression: chapter select, scroll counts, `localStorage` **wrapped in try/catch** (it throws
 in embedded and private-browsing contexts), versioned saves that reset rather than crash.
-**Respawn under 1.2 s** — the number-one reason players quit platformers. Difficulty pass from
-bot completion time vs `par_time`; anything over 2× par is mistuned.
+**Respawn under 1.2 s** — the number-one reason players quit platformers. Difficulty pass:
+~~bot completion time vs `par_time`~~ **[SUPERSEDED — PHASE-0-DECISIONS Q4]** there is no `par_time`. The bot budget
+(12 s/segment) is already a CI assertion, so the difficulty pass is about humans: first-time
+players should land at 25–35 s per segment (Q3). A segment far outside that range is mistuned.
 *Note: adding enemies will break critical paths authored without them. Expect a re-lint pass.*
 
 ### ☐ PHASE 10 — AUDIO · *1 day. Budget it properly.*

@@ -15,7 +15,6 @@
     "geometry",
     "checkpoints",
     "critical_path",
-    "par_time",
     "difficulty"
   ],
   "definitions": {
@@ -581,15 +580,11 @@
       },
       "description": "Ordered route the nav bot must traverse. Index 0 is spawn (bare vec3 allowed). Every later entry MUST declare via."
     },
-    "par_time": {
-      "type": "number",
-      "exclusiveMinimum": 0,
-      "maximum": 900
-    },
     "difficulty": {
       "type": "integer",
       "minimum": 1,
       "maximum": 5
     }
-  }
+  },
+  "description": "No score, par_time or rank field exists, and additionalProperties:false rejects one if added to a level. That absence IS the no-score rule (PHASE-0-DECISIONS Q4 amendment 2): a field an agent sees is a field it wires up. Do not add one here."
 }

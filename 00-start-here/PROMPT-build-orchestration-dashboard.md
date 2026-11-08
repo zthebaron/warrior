@@ -26,7 +26,8 @@ Every derived row shows its source and the timestamp it was read.
 
 ── DATA SOURCES (read, do not duplicate) ───────────────────────────────────────────
 1. GitHub (octokit, PAT in env): the game repo zthebaron/<game-repo>
-     - levels/*.json                → level inventory, par_time, difficulty, JSON size
+     - levels/*.json                → level inventory, chapter, segment count (checkpoints+1), difficulty, JSON size
+                                         (no par_time: removed by PHASE-0-DECISIONS Q4)
      - assets/dist/manifest.json    → asset count, triangles, bytes vs budget
      - 00-start-here/GATES.md       → gate ledger (parse the signed entries)
      - docs/build-log/*.md          → session feed
@@ -66,7 +67,7 @@ B. CHECKLIST — every step, with a checkbox
 
 C. LEVELS — the fan-out board
    One card per level: id, title, chapter, owning agent session, harness status per mode,
-   bot completion time vs par_time, draw calls, triangles, JSON size, last green run,
+   bot completion time vs its 12s × segments budget, draw calls, triangles, JSON size, last green run,
    and the 3 concept thumbnails. Red border on any failing mode.
    Sort by status so failures float to the top.
 

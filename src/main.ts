@@ -341,7 +341,9 @@ async function boot(): Promise<void> {
       case 'play': return '';
       case 'pause': return 'PAUSED\nP / Esc: resume   M: menu';
       case 'death': return 'fell';
-      case 'results': return `GOAL — ${runTimeSec.toFixed(GAME_RULES.decimals)}s (par ${level?.data.par_time ?? '?'}s)\nEnter: menu`;
+      // Q4: win is *arrive*. The results state reads `complete` and nothing else — no time, score,
+      // par or rank. Run time stays on the ~ debug overlay, which is dev tooling, not the game.
+      case 'results': return 'COMPLETE\nEnter: menu';
     }
   };
   state.onChange((to) => {

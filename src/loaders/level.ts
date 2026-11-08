@@ -64,7 +64,6 @@ export interface LevelData {
   lighting?: { preset?: string; sunAngle?: [number, number]; intensity?: number; ambienceZone?: string };
   cameras?: unknown[];
   critical_path: Waypoint[];
-  par_time: number;
   difficulty: number;
 }
 

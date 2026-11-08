@@ -15,12 +15,14 @@
 //   platform board the named platform, wait to be carried, step off
 //
 // Public input API only (window.__HARNESS__.step -> InputSystem override). No teleporting.
-// ASSERTS: goal within par_time x3, never below bounds.min.y, waypoints in order.
+// ASSERTS: goal within the Q3 bot budget (12s x segments), never below bounds.min.y, waypoints in order.
+// The budget is derived, never authored: levels have no par_time (PHASE-0-DECISIONS Q4 amendment 2).
 
 import { FIXED_HZ, NEUTRAL, Stage, fmt, guard, hdist, openGame, wp, type Ctx, type InputFrame, type Snapshot, type StageResult, type Vec3, type Waypoint } from './lib.ts';
 
 export const NAV_CONFIG = {
-  parMultiplier: 3,
+  segmentBudgetSec: 12,      // Q3: expert bot, no deaths, <= 12s per segment. An assertion, not a tuning knob.
+  stallMultiplier: 3,        // hard timeout = budget x this; past it the bot is stuck, stop driving
   segmentTimeoutSec: 20,     // no single segment may take longer (stuck detector)
   groundReach: 1.0,          // m horizontal: a ground waypoint counts as reached
   groundReachDy: 1.0,        // m vertical slack for the above
@@ -100,7 +102,9 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   const L = ctx.level;
   const path = L.critical_path.map(wp);
   const C = NAV_CONFIG;
-  const tickBudget = Math.round(L.par_time * C.parMultiplier * FIXED_HZ);
+  const budgetSec = ctx.segments * C.segmentBudgetSec;
+  const tickBudget = Math.round(budgetSec * FIXED_HZ);
+  const tickLimit = Math.round(budgetSec * C.stallMultiplier * FIXED_HZ);
   const minY = L.bounds.min[1];
   const step = (f: InputFrame, render: boolean): Promise<Snapshot> => page.evaluate(([fr, r]) => window.__HARNESS__!.step(fr, r), [f, render] as const);
 
@@ -123,8 +127,8 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
 
   while (snap.state !== 'results') {
     const ticks = snap.tick - t0;
-    if (ticks >= tickBudget) {
-      failure = `goal not reached within par_time x${C.parMultiplier} = ${(tickBudget / FIXED_HZ).toFixed(0)}s; stalled on ${segLabel(Math.min(i, path.length - 1))} at ${fmt(snap.feet)}`;
+    if (ticks >= tickLimit) {
+      failure = `goal not reached within ${C.stallMultiplier}x the bot budget = ${(tickLimit / FIXED_HZ).toFixed(0)}s; stalled on ${segLabel(Math.min(i, path.length - 1))} at ${fmt(snap.feet)}`;
       break;
     }
     if (i < path.length && snap.tick - segStartTick > C.segmentTimeoutSec * FIXED_HZ) {
@@ -180,8 +184,8 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   }
   const ticks = snap.tick - t0;
   const inOrder = reached.every((v, k) => v === k);
-  st.check('goal reached', snap.state === 'results' && !failure, failure ?? `results at ${(ticks / FIXED_HZ).toFixed(2)}s (par ${L.par_time}s, limit ${(tickBudget / FIXED_HZ).toFixed(0)}s)`);
-  st.check(`within par_time x${C.parMultiplier}`, ticks <= tickBudget, `${(ticks / FIXED_HZ).toFixed(2)}s / ${(tickBudget / FIXED_HZ).toFixed(0)}s`);
+  st.check('goal reached', snap.state === 'results' && !failure, failure ?? `results at ${(ticks / FIXED_HZ).toFixed(2)}s`);
+  st.check(`within ${C.segmentBudgetSec}s x ${ctx.segments} segments`, ticks <= tickBudget, `${(ticks / FIXED_HZ).toFixed(2)}s / ${(tickBudget / FIXED_HZ).toFixed(0)}s`);
   st.check('never below bounds.min.y', minYSeen >= minY, `min feet y ${minYSeen.toFixed(2)} vs ${minY}`);
   st.check('waypoints reached in order', inOrder && reached.length === path.length, `${reached.length}/${path.length}: [${reached.join(',')}]`);
   // Every move the path declares must have been completed at least once by the bot.

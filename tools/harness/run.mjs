@@ -16,7 +16,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
-import { lintLevel } from '../lint-level.mjs';
+import { lintLevel, segmentsOf } from '../lint-level.mjs';
 import { EXIT_CODE, FAILURE, Stage } from './lib.ts';
 import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
@@ -44,6 +44,8 @@ const Ajv = AjvMod.default ?? AjvMod;
 const validate = new Ajv({ strict: true, allErrors: true }).compile(JSON.parse(readFileSync(join(ROOT, 'levels/level.schema.json'), 'utf8')));
 const manifest = JSON.parse(readFileSync(join(ROOT, 'assets/dist/manifest.json'), 'utf8'));
 
+const ABSENT_FIELDS = ['score', 'par_time', 'rank'];
+
 function schemaStage(id, text) {
   const st = new Stage('schema');
   let data = null;
@@ -55,6 +57,12 @@ function schemaStage(id, text) {
   }
   const ok = validate(data);
   st.check('level.schema.json', !!ok, ok ? `levels/${id}.json` : validate.errors.map((e) => `${e.instancePath || '(root)'} ${e.message}`).join('; '));
+  // Q4 amendment 2: "no score" is structural. If any of these ever validates, someone added the
+  // field to the schema, and an agent will wire it up. Fail here, not in review.
+  if (ok) {
+    const leaked = ABSENT_FIELDS.filter((f) => validate({ ...data, [f]: 1 }));
+    st.check('schema rejects score/par_time/rank', leaked.length === 0, leaked.length ? `schema now accepts: ${leaked.join(', ')}` : ABSENT_FIELDS.join(', ') + ' rejected');
+  }
   return { result: st.result(), data };
 }
 
@@ -134,7 +142,7 @@ for (const L of statics) {
   // Found on Linux CI: SwiftShader's GPU process wedged after chaos, and every later stage — even a
   // blank page — could not get a webgl2 context. A wedge is still reported, per stage, as an
   // environment failure; it just can no longer leak from one stage into the next.
-  const ctx = { browser: pf.browser, baseUrl: pf.baseUrl, levelId: L.id, level: L.data, root: ROOT, args, log };
+  const ctx = { browser: pf.browser, baseUrl: pf.baseUrl, levelId: L.id, level: L.data, segments: segmentsOf(L.data), root: ROOT, args, log };
   const stages = [...L.stages, pf.result];
   console.log(`\n== ${L.id}`);
   for (const name of BROWSER_STAGES) {

@@ -95,8 +95,6 @@ Make it a budget rather than a feeling, since the nav bot already times segments
 That reconciles the 30-90s core loop with a checkpoint interval short enough to stay fair, and it
 is CI-checkable on the bot side.
 
-## Q4-Q7 — outstanding
-
 ## Q4 — Win condition and session length: **A, with three amendments.** CLOSED
 
 Win is *arrive*. No score, no par time, no rank screen, no unlocks in the sprint. The results state
@@ -138,3 +136,31 @@ similar — alongside `HAZARD_ON_PATH`, `FALL_DAMAGE`, `NO_FALL_PLANE` and `UNME
 without a code does not get built.
 
 Par time per chapter, taken from the bot's own runs, is deferred post-gold. Agreed as you framed it.
+
+### Q4 — implemented (branch `phase0-q4-amendments`)
+
+- **A segment is defined once:** segments = `checkpoints.length + 1`, so spawn → each torii →
+  goal. It lives in `segmentsOf()` in `tools/lint-level.mjs`. The linter and the nav bot both
+  call it, so there is only one count.
+- **`par_time` was not just a display field.** It was the nav bot's timeout (`par_time × 3`). It
+  is now removed from the schema, the gym, the example level and both TS types. The bot budget is
+  **derived**, not authored: **12 s × segments** (Q3), asserted as its own check, with a 3× stall
+  timeout behind it. Gym: 27.85 s / 36 s.
+- **The absence is tested.** The harness schema stage now fails if the schema ever accepts
+  `score`, `par_time` or `rank` on a level, so re-adding the property breaks CI.
+- **Results HUD** reads `COMPLETE` plus the `Enter: menu` key hint. Elapsed time was removed;
+  run time is still on the `~` debug overlay, which is dev tooling.
+- **`CHAPTER_LENGTH`** is an error for chapter ≥ 2 outside 4–6 segments. Chapter 0 (the gym) is
+  exempt. Chapter 1 gets a non-fatal **`CHAPTER_LENGTH_PENDING`** warning, so the rule's existence
+  is visible without fixing the number. The example level (chapter 2) previously had 3 segments,
+  which the new rule would fail. Two checkpoints were added on waypoints its path already passes
+  (wp3, wp8), giving 5 segments.
+- **Assumes one level file = one chapter.** The rule counts per file. Q5 confirms or changes this.
+- **Docs superseded in place:** the playbook's 15–25 min line (with the arithmetic and the
+  chapter-growth path), plus every live instruction that told an agent to set or compare against
+  `par_time` (playbook ×3, prompt pack ×5, dashboard prompt ×2). `H3-HARNESS-PROOF.md` and
+  `DAY-0-PROOF-SPIKE.md` are run records and were left as they are.
+- **Seen, not fixed (out of Q4 scope):** playbook Phase 7 still lists combat, "scroll counts" and
+  chapter select, which conflict with Q1/Q3.
+
+## Q5-Q7 — outstanding

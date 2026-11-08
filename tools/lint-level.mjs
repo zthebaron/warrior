@@ -16,6 +16,18 @@ const MOVE = {
   platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity, measured: true }
 };
 
+// A SEGMENT is the run between two consecutive torii: spawn -> checkpoint[0] -> ... ->
+// checkpoint[n-1] -> goal. So segments = checkpoints.length + 1. This is the ONE definition:
+// CHAPTER_LENGTH below and the nav bot's time budget (tools/harness/nav.ts, via run.mjs) both
+// use segmentsOf(). Two counts would be two rules. (PHASE-0-DECISIONS Q3, Q4.)
+export const segmentsOf = (level) => (level.checkpoints?.length ?? 0) + 1;
+
+// Chapter length, Q4: 5 segments +/- 1, chapters 2 and up. Chapter 0 is the gym (not a chapter).
+// Chapter 1 is deliberately NOT fixed: it teaches the primitives, and its length is an output of
+// the teach rate, which the vertical slice has not measured yet (Q4 amendment 3). Set the chapter-1
+// rule from that measurement, not before it.
+export const CHAPTER_SEGMENTS = { target: 5, min: 4, max: 6, fromChapter: 2 };
+
 export function lintLevel(level, manifest){
   const err=[],warn=[];
   const E=(c,m)=>err.push(`[${c}] ${m}`), W=(c,m)=>warn.push(`[${c}] ${m}`);
@@ -76,6 +88,12 @@ export function lintLevel(level, manifest){
         E('HAZARD_ON_PATH',`${hz.type} hazard on a critical_path waypoint`); }
   }
   if(!(level.hazards??[]).some(h=>h.type==='fall')) W('NO_FALL_PLANE','no fall plane — leaving the world never respawns');
+
+  const segs=segmentsOf(level), CL=CHAPTER_SEGMENTS;
+  if(level.chapter>=CL.fromChapter&&(segs<CL.min||segs>CL.max))
+    E('CHAPTER_LENGTH',`chapter ${level.chapter} has ${segs} segments (checkpoints+1); chapters ${CL.fromChapter}+ must have ${CL.target} +/- 1 (${CL.min}-${CL.max})`);
+  if(level.chapter===1)
+    W('CHAPTER_LENGTH_PENDING',`chapter 1 has ${segs} segments; its length rule is unset until the vertical slice measures the teach rate (Q4 amendment 3)`);
 
   const span=d(level.spawn.pos,last), cps=(level.checkpoints??[]).length;
   if(span/Math.max(cps,1)>90) W('CHECKPOINT_GAP',`~${(span/Math.max(cps,1)).toFixed(0)}u between checkpoints`);
