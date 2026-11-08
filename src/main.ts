@@ -17,7 +17,7 @@ import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx
 import paletteJson from '../reference/palette.json';
 
 export const GAME_RULES = {
-  startLevel: '00-gym',
+  startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
   respawnDelaySec: 0.8,     // time spent in `death` before respawning
   checkpointRadius: 2.0,    // m (horizontal) to activate a checkpoint
   goalHeightTolerance: 2.0, // m vertical slack when testing the goal radius
@@ -444,7 +444,7 @@ async function boot(): Promise<void> {
   const hudText = (s: GameState): string => {
     switch (s) {
       case 'boot': return 'booting…';
-      case 'menu': return 'WARRIOR — H2 gym\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
+      case 'menu': return 'WARRIOR\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
       case 'loading': return 'loading…';
       case 'play': return '';
       case 'pause': return 'PAUSED\nP / Esc: resume   M: menu';
