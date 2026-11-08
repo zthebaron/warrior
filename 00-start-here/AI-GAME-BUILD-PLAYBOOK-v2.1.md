@@ -376,12 +376,22 @@ list of things agents may never do).
 **Test:** describe the game in 20 seconds. If you can't, it isn't scoped.
 **🚦 GATE A — SCOPE LOCKED.**
 
-### ☐ PHASE 1 — THE SEED VIDEO · *2–3 hours*
-6–10 candidates on fal (~$40). Judge on four criteria only: readable silhouette at 5% screen
+### ☑ PHASE 1 — THE SEED VIDEO · ⛔ CLOSED (SEED-LOCKED)
+
+> **⛔ CLOSED — SEED-LOCKED in commit `fcf673a`. Do not run this phase.**
+> Seed: **`reference/seed/seed.mp4`** (Runway sample 4, 12.097 s, LFS). Derived from it:
+> `reference/palette.json` (k-means k=8 over its 36 frames) and `00-start-here/STYLE-BIBLE.md`
+> (drafted from its 6 hero frames). Generating candidates now can only drift from the seed or
+> re-open it; re-opening invalidates the palette and the Style Bible, the way a moveset change
+> invalidates every MOVE budget. Re-opening is an explicit owner decision in its own commit that
+> removes this banner and marks both derived artifacts invalidated. See prompt pack §P1.1.
+> The original phase text below is retained for the record — it is not an instruction.
+
+~~6–10 candidates on fal (~$40).~~ *(closed)* Judge on four criteria only: readable silhouette at 5% screen
 height · buildable (blocky, reconstructable) geometry · under 8 dominant hues · shippable
 third-person camera. Pick **one**, commit to `reference/seed/`, no backup. Extract frames at
 3 fps plus 6 hero frames.
-**Test:** three people watch it and say what you do in the game. Divergent answers → regenerate.
+**Test:** three people watch it and say what you do in the game. ~~Divergent answers → regenerate.~~ *(closed — the seed is locked; do not regenerate)*
 **🚦 GATE B — LOOK LOCKED.** *Highest remaining unverified risk in the program — this gate is
 where it gets settled.*
 

@@ -25,6 +25,10 @@ Each prompt is labelled with its **destination** in bold above the block. Paste 
 | **PASTE INTO TRIPO** | Tripo AI upload prompt field |
 | **PASTE INTO ELEVENLABS / UDIO** | Audio generation |
 
+**Closed prompts.** A section headed **⛔ CLOSED (SEED-LOCKED)** is retired: its label reads
+**CLOSED — DO NOT PASTE**, its block opens with a STOP line, and its text is kept for the record
+only. Never run one. Re-opening is an explicit owner decision recorded in its own commit.
+
 Replace every `<ANGLE_BRACKET>` placeholder before pasting. `<PROJECT>` is your repo name, `<GAME>` your title.
 
 ---
@@ -64,10 +68,31 @@ the lane isolation rules, and the list of things agents may never do.
 
 # §P1 — THE SEED VIDEO
 
-### P1.1 — Seed video generation
+### P1.1 — Seed video generation — ⛔ CLOSED (SEED-LOCKED)
 
-**PASTE INTO FAL** *(model: Flux 3 Max video / Veo / Runway — generate 6–10 variants)*
+> **⛔ CLOSED — SEED-LOCKED in commit `fcf673a`. Do not run this prompt.**
+> The seed is chosen: **`reference/seed/seed.mp4`** (Runway sample 4, 12.097 s, 1920x1080, in LFS).
+> Two artifacts are derived from it and anchor the whole visual target:
+> - `reference/palette.json` — k-means k=8 over the 36 frames at 3 fps
+> - `00-start-here/STYLE-BIBLE.md` — drafted from the 6 hero frames
+>
+> Generating more variants can only drift from the seed or re-open it, and re-opening it
+> invalidates the palette and the Style Bible the same way a moveset change invalidates every
+> measured MOVE budget. The prompt text is kept below for the record only.
+>
+> **To re-open** (deliberately, never as a side effect): a commit by the human owner that removes
+> this banner, states why the seed is being replaced, and in the same commit marks
+> `reference/palette.json` and `STYLE-BIBLE.md` as invalidated pending re-derivation.
+>
+> If fal is wanted later it is image-to-video on the locked hero frames for case-study media
+> only — outside the build dependency graph, never a seed candidate.
+
+**CLOSED — DO NOT PASTE** *(was: PASTE INTO FAL — Flux 3 Max video / Veo / Runway, 6–10 variants)*
 ```
+CLOSED — SEED-LOCKED (fcf673a). If you are reading this as an instruction, STOP: the seed is
+already chosen (reference/seed/seed.mp4). Do not generate video. Report back that this prompt
+is closed. Retained text follows for the record only.
+-----------------------------------------------------------------------------------------
 A lone wandering <CHARACTER_ARCHETYPE> walks a narrow stone path along a sheer cliff
 face, high above a sea of mist. Third-person camera, roughly behind and slightly above
 the figure at shoulder height, following smoothly — no crane moves, no cuts.
