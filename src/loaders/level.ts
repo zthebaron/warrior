@@ -8,6 +8,7 @@ import type { RigidBody, Collider } from '@dimforge/rapier3d-compat';
 import schema from '../../levels/level.schema.json';
 import manifestJson from '../../assets/dist/manifest.json';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
+import { patrolPosition, type PatrolDef } from '../systems/patrol';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
 export type Vec3 = [number, number, number];
@@ -79,6 +80,7 @@ export const LEVEL_VISUAL = {
   platformColor: 0x8fa3b8,
   tagColors: { goal_pad: 0x3fd08f, spawn: 0xd9c27a, test: 0xa89a8a } as Record<string, number>,
   checkpointColor: 0x6fb3ff,
+  patrollerColor: 0x383838, // greybox; ink-deep from palette.json (never the accent: SPEC 2)
   checkpointSize: [1.2, 0.06, 1.2] as const,
   fallPlaneColor: 0xff3030,
   fallPlaneOpacity: 0.15,
@@ -202,8 +204,10 @@ export interface LevelInstance {
   fallY: number | null;
   /** Advance moving platforms by one fixed tick (call before the player moves). */
   fixedUpdate(dt: number): void;
-  /** Interpolate platform visuals. */
-  render(alpha: number): void;
+  /** Interpolate platform visuals; place hazards at world time `worldTime` (a pure function of it). */
+  render(alpha: number, worldTime: number): void;
+  /** Patroller definitions — immutable. Position at time t: patrolPosition(def, t) (B-12). */
+  readonly patrollers: readonly PatrolDef[];
   /** Per-tick displacement of a platform collider, or null if it is not a platform. */
   platformDelta(collider: Collider): Vec3Like | null;
   /** Current platform centres by id (debug / harness). */
@@ -354,6 +358,28 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
     root.add(plane);
   }
 
+  // patrollers (B-12): immutable defs + one mesh each. Nothing per-hazard is integrated or stored;
+  // render() and the death test both evaluate patrolPosition(def, worldTime).
+  const patrollers: PatrolDef[] = (data.hazards ?? [])
+    .filter((h) => h.type === 'patroller')
+    .map((h, i) => {
+      if (!h.path || h.speed === undefined || h.phase === undefined || !h.size) throw new Error(`[level] patroller ${i}: path, speed, phase and size are mandatory (schema)`);
+      return Object.freeze({ path: h.path, speed: h.speed, phase: h.phase, size: h.size });
+    });
+  const patrolMeshes = patrollers.map((p) => {
+    const m = new THREE.Mesh(boxGeo, mat(V.patrollerColor));
+    m.scale.set(...p.size);
+    root.add(m);
+    return m;
+  });
+  const placePatrollers = (t: number): void => {
+    patrollers.forEach((p, i) => {
+      const [x, y, z] = patrolPosition(p, t);
+      patrolMeshes[i]!.position.set(x, y + p.size[1] / 2, z); // path point = base centre
+    });
+  };
+  placePatrollers(0);
+
   // critical path (debug)
   const pts = data.critical_path.map((w) => {
     const p = waypointPos(w);
@@ -378,8 +404,10 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
         p.body.setNextKinematicTranslation(p.curr);
       }
     },
-    render(alpha) {
+    patrollers,
+    render(alpha, worldTime) {
       for (const p of platforms) p.mesh.position.lerpVectors(p.prev, p.curr, alpha);
+      placePatrollers(worldTime);
     },
     platformDelta(collider) {
       return byHandle.get(collider.handle)?.delta ?? null;

@@ -85,6 +85,7 @@ export function lintLevel(level, manifest){
     if(typeof hz.speed!=='number') E('NO_SPEED',`hazards[${i}] patroller has no "speed" (u/s along its path)`);
     if(typeof hz.phase!=='number') E('NO_PHASE',`hazards[${i}] patroller has no "phase" (start offset, fraction of one loop)`);
     if(!Array.isArray(hz.path)||hz.path.length<2) E('NO_PATROL_PATH',`hazards[${i}] patroller needs a "path" of 2+ points`);
+    if(!Array.isArray(hz.size)||hz.size.length!==3) E('NO_PATROL_SIZE',`hazards[${i}] patroller has no "size" (its deadly volume, [x,y,z] from the path point up; B-12)`);
   });
 
   for(const hz of level.hazards??[]){

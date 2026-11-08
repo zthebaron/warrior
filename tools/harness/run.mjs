@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> visual
+// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> replay -> chaos -> hazards -> counters -> visual
 //
 //   npm run playtest                          every level in levels/
 //   npm run playtest -- --level=00-gym        one level
@@ -23,6 +23,7 @@ import { nav } from './nav.ts';
 import { replay, writeTrace } from './replay.ts';
 import { chaos } from './chaos.ts';
 import { counters } from './counters.ts';
+import { hazards } from './hazards.ts';
 import { visual } from './visual.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -33,7 +34,7 @@ const args = Object.fromEntries(
   }),
 );
 const log = (m) => console.log(m);
-const BROWSER_STAGES = ['nav', 'replay', 'chaos', 'counters', 'visual'];
+const BROWSER_STAGES = ['nav', 'replay', 'chaos', 'hazards', 'counters', 'visual'];
 const only = typeof args.only === 'string' ? args.only.split(',') : BROWSER_STAGES;
 
 const allLevels = readdirSync(join(ROOT, 'levels')).filter((f) => f.endsWith('.json') && !f.endsWith('.schema.json')).map((f) => f.replace(/\.json$/, ''));
@@ -179,6 +180,7 @@ for (const L of statics) {
       delete r.outcome;
     } else if (name === 'replay') r = await replay(ctx);
     else if (name === 'chaos') r = await chaos(ctx);
+    else if (name === 'hazards') r = await hazards(ctx);
     else if (name === 'counters') r = await counters(ctx);
     else r = await visual(ctx);
     stages.push(r);

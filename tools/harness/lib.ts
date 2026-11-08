@@ -238,6 +238,9 @@ declare global {
       setCamera(pos: Vec3, target: Vec3): void;
       releaseCamera(): void;
       rules: { respawnDelaySec: number; fixedDt: number };
+      startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+      teleportPlayer(pos: Vec3): void;
+      patrollers(t: number): Vec3[];
     };
   }
 }

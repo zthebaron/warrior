@@ -15,6 +15,7 @@
     "lint:example": "node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json",
     "lint:not-list": "node tools/lint-not-list.mjs",
     "check:physics": "node tools/rapier-determinism.mjs",
+    "check:patrol": "node tools/check-patrol.ts",
     "check:webgl": "node tools/webgl-preflight.mjs",
     "playtest": "node tools/harness/run.mjs"
   },

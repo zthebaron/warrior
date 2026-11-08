@@ -11,6 +11,7 @@ import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
+import { capsuleTouches, patrolPosition } from './systems/patrol';
 import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
 
 export const GAME_RULES = {
@@ -80,6 +81,11 @@ interface HarnessApi {
   setCamera(pos: Vec3, target: Vec3): void;
   releaseCamera(): void;
   rules: { respawnDelaySec: number; fixedDt: number };
+  /** Start a fixture level from JSON text (tools/harness/fixtures/), same validation as levels/. */
+  startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+  teleportPlayer(pos: Vec3): void;
+  /** Patroller base positions at world time t — the runtime's own pure function, for the harness. */
+  patrollers(t: number): Vec3[];
 }
 
 declare global {
@@ -255,6 +261,14 @@ async function boot(): Promise<void> {
       die(f);
       return;
     }
+    // Patrollers (B-12): a hazard is a moving fall plane (Q6) — touching one is death, nothing else.
+    // Position is a pure function of the world clock; nothing per-hazard is stored or reset.
+    const feet: [number, number, number] = [f.x, f.y, f.z];
+    const height = 2 * (TUNING.capsuleHalfHeight + TUNING.capsuleRadius);
+    if (level.patrollers.some((p) => capsuleTouches(p, runTimeSec, feet, TUNING.capsuleRadius, height))) {
+      die(f);
+      return;
+    }
     level.data.checkpoints.forEach((c, i) => {
       if (Math.hypot(f.x - c.pos[0], f.z - c.pos[2]) < GAME_RULES.checkpointRadius && Math.abs(f.y - c.pos[1]) < GAME_RULES.goalHeightTolerance) {
         respawn = { pos: c.pos, facing: c.facing ?? respawn.facing };
@@ -288,7 +302,8 @@ async function boot(): Promise<void> {
 
   const onRender = (alpha: number, frameDt: number): void => {
     profiler.begin('animation');
-    level?.render(alpha);
+    // world time for interpolation: between the previous tick (runTimeSec - dt) and the current one
+    level?.render(alpha, state.worldRunning() ? runTimeSec - loop.dt + alpha * loop.dt : runTimeSec);
     player?.render(alpha);
     profiler.end('animation');
 
@@ -460,6 +475,23 @@ async function boot(): Promise<void> {
       level: () => level?.data ?? null,
       tuning: TUNING,
       rules: { respawnDelaySec: GAME_RULES.respawnDelaySec, fixedDt: loop.dt },
+      startJson: async (text) => {
+        // Harness-only: run a FIXTURE level (tools/harness/fixtures/) that is not in levels/.
+        // Same validation and preload path as startLevel; only the source differs.
+        state.transition('loading');
+        try {
+          install(parseLevel(text, 'harness fixture'));
+          state.transition('play');
+        } catch (err) {
+          showError(err);
+          state.transition('menu');
+        }
+        return { ok: state.is('play'), error: errorBanner.style.display === 'block' ? errorBanner.textContent : null };
+      },
+      teleportPlayer: (pos) => {
+        player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
+      },
+      patrollers: (t) => (level?.patrollers ?? []).map((p) => patrolPosition(p, t)),
       rendererInfo: () => {
         const info = renderer.renderer.info;
         return { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures };

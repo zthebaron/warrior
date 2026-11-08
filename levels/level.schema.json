@@ -338,7 +338,7 @@
             "description": "patroller: start offset as a fraction of one loop. Position is a pure function of the world clock: phase + t*speed (Q6)."
           }
         },
-        "description": "A hazard is a moving fall plane (Q6): touching one is death, nothing else. The patroller lives here, not in an enemies array, so nothing invites AI (Q7). speed and phase are mandatory on a patroller (Q2). Water survives only as a flat wash (Q2c): a still plane at \"y\", never animated (no period/path/speed/phase), never reflective.",
+        "description": "A hazard is a moving fall plane (Q6): touching one is death, nothing else. The patroller lives here, not in an enemies array, so nothing invites AI (Q7). speed and phase are mandatory on a patroller (Q2); so is size, its deadly volume (B-12: no default exists, so none is invented). Water survives only as a flat wash (Q2c): a still plane at \"y\", never animated (no period/path/speed/phase), never reflective.",
         "allOf": [
           {
             "if": {
@@ -355,12 +355,14 @@
               "required": [
                 "path",
                 "speed",
-                "phase"
+                "phase",
+                "size"
               ],
               "properties": {
                 "path": true,
                 "speed": true,
-                "phase": true
+                "phase": true,
+                "size": true
               }
             }
           },
