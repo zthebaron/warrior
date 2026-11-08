@@ -11,6 +11,7 @@ import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
+import { LandingMark } from './entities/landing-mark';
 import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
 
 export const GAME_RULES = {
@@ -111,6 +112,8 @@ function seededRandom(seed: number): () => number {
 
 const HARNESS_SEED = 0x5eed1234;
 const HARNESS_MODE = __HARNESS__ && new URLSearchParams(location.search).get('harness') === '1';
+// Feel-test flags follow the accent's ?accent=<name> precedent (D-007).
+if (new URLSearchParams(location.search).get('landingmark') === 'on') TUNING.landingMark = 1;
 if (HARNESS_MODE) Math.random = seededRandom(HARNESS_SEED);
 
 function el(id: string): HTMLElement {
@@ -153,6 +156,8 @@ async function boot(): Promise<void> {
   let cameraOverride: { pos: Vec3; target: Vec3 } | null = null;
   let skipRender = false;
 
+  const landingMark = new LandingMark(physics);
+  renderer.scene.add(landingMark.mesh);
   const camRig = new SpringArmCamera(renderer.camera, (o, d, max) => physics.castRay(o, d, max, player?.collider)?.distance ?? null);
 
   const showError = (err: unknown): void => {
@@ -299,6 +304,7 @@ async function boot(): Promise<void> {
     profiler.begin('animation');
     level?.render(alpha);
     player?.render(alpha);
+    if (player && level) landingMark.update(player, level.data.bounds.min[1]);
     profiler.end('animation');
 
     if (cameraOverride) {

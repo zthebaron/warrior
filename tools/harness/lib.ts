@@ -153,7 +153,9 @@ export async function openGame(ctx: Ctx): Promise<GamePage> {
   });
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
   try {
-    await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(ctx.levelId)}`);
+    // --landingmark=on: run the stage with the feel-test landing mark on (B-3), e.g. to prove budgets hold
+    const flags = ctx.args['landingmark'] === 'on' ? '&landingmark=on' : '';
+    await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(ctx.levelId)}${flags}`);
   } catch (err) {
     // The page never loaded: nothing about the level was observed. Environment, with evidence.
     const why = (err instanceof Error ? err.message : String(err)).split('\n')[0];
