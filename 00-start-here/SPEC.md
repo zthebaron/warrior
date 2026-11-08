@@ -88,8 +88,8 @@ discovers it. Every platform attaches to the cliff mass (Q2b).
 6. **Deaths are counted per segment and never shown.** That count is the teach-rate measurement
    that sets chapter 1's length.
 7. **`HAZARD_AT_CHECKPOINT`** (lint): no torii radius intersects any hazard's sweep.
-   **`PHASE_SWEEP`** (harness): the bot clears every segment from its checkpoint at 8 evenly
-   spaced phase offsets. The first proves you can't respawn *into* a hazard; the second proves you
+   **`PHASE_SWEEP`** (harness stage `phase-sweep`): the bot clears every segment from its
+   checkpoint at 8 evenly spaced phase offsets, within 12 s counting the wait. The first proves you can't respawn *into* a hazard; the second proves you
    can always get *out*.
 
 A reload restarts the game. That is a known trade-off, and a showcase item after gold.

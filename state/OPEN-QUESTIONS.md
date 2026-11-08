@@ -160,3 +160,25 @@ because: a default would be an unmeasured number (CLAUDE.md). Static hazards wit
 crush, bounded water) use the same box-vs-capsule test. Crush's `period` still has no runtime meaning,
 so it is treated as a static volume until something decides what crush does.
 status: PROVISIONAL
+
+## OQ-014 — The gym fails PHASE_SWEEP's 12 s per-segment budget (13.2 s and 18.7 s). Fix the gym, or exempt it?
+raised: 2026-11-08 by phase0-spec
+options: A add checkpoints to the gym | B exempt chapter 0 from the 12 s (still assert every phase clears) | C raise the budget
+took: B
+because: Q4 says chapter 0 is the gym, not a chapter, and Q3's per-segment budget is about game
+segments. The gym is a move fixture, never built to it. A changes the gym's visuals (checkpoint
+meshes move the goldens) to satisfy a rule that does not apply to it. C weakens a decided budget.
+Under B the gym still must clear from every arrival phase, and its worst time is printed in the
+check, not hidden. nav's aggregate 12 s × segments check would never have caught this; per-segment
+assertion now exists for chapters 1+.
+status: PROVISIONAL
+
+## OQ-015 — Q6 says "8 evenly spaced phase offsets" of what, when hazards can have incommensurate periods?
+raised: 2026-11-08 by phase0-spec
+options: A the longest timed loop in the level (patroller 2·len/speed, platform pingpong 2·duration / cycle duration) | B the LCM of all periods | C a fixed window
+took: A
+because: B does not exist for incommensurate periods, which is the case Q6 is worried about. C needs an
+unmeasured number. A covers every pose of the slowest element, and the other elements are sampled at
+their own phases within that span. Wait cost is quantised to P/8, so it overestimates the true
+minimum wait: conservative toward failing. Increase N if a level ever needs finer resolution.
+status: PROVISIONAL

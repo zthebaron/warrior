@@ -12,14 +12,12 @@ Verified against the repository on 2026-11-08, not taken from any report.
 | B-4 | `moves_allowed` per chapter + its linter check | Q5 | MISSING | — |
 | B-5 | `ACCENT_CONTRAST` lint rule | D-001 | MISSING | — |
 | B-6 | `ACCENT_AREA` band measured at the gameplay camera | D-003 | MISSING | — |
-| B-7 | `PHASE_SWEEP` harness stage (8 phase offsets per segment) | Q6 | MISSING | no hazard-phase handling in `tools/harness/` |
 | B-8 | `HAZARD_AT_CHECKPOINT` lint rule | Q6 | MISSING | — |
 | B-9 | Respawn gated on a furthest-index counter | Q6 | MISSING | `src/main.ts` reassigns `respawn` for any checkpoint in radius |
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
 
-**B-7 is unblocked:** B-1, B-12 and B-13 have all landed. The schema carries `phase`/`speed`, patrollers move as a
-pure function of the world clock and kill on contact, and the clock runs through `death`. The harness snapshot now
-exposes `hazards[].pos`, which is what a sweep reads.
+**B-7 landed** (see below). B-8 `HAZARD_AT_CHECKPOINT` is now the stated precondition of PHASE_SWEEP's wait
+arithmetic (an arrival waits at the torii), so it is the next item that protects the sweep's meaning.
 
 ## Confirmed already done
 
@@ -36,3 +34,4 @@ exposes `hazards[].pos`, which is what a sweep reads.
 | B-12 patroller runtime | Q6 | `6dcc157`: `patrollerAt()` in `src/loaders/level.ts`, a pure function of (path, speed, phase, t). Platforms moved onto the same clock (OQ-011). Probe: two runs with different death histories give identical patroller poses at the same tick, equal to an independent closed form |
 | B-13 world clock runs during `death` | D-004 | `6dcc157`: `worldTick` in `src/main.ts`; `StateMachine.worldRunning()` = play or death. Death and respawn run in fixed ticks (OQ-010). Probe: +5.000 s over 300 ticks with 7 deaths; pause freezes ticks, clock and patroller |
 | Hazard contact → death | Q6 part 1 | `6dcc157`: `LevelInstance.hazardHit()`; same `death` path as falling. Probe: a spike on spawn killed 7× in 300 ticks |
+| B-7 `PHASE_SWEEP` | Q6 | `7fa2b70`: harness stage `phase-sweep` (tools/harness/sweep.ts). Every respawn point x 8 offsets of the longest timed loop; asserts some phase clears and every phase clears within 12 s counting the wait (chapter 0 exempt from the 12 s, OQ-014). Proven on throwaway levels: a crossing patroller fails 2/8 departures and costs 14.05 s; a blocking wall fails 0/8 |

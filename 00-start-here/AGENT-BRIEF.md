@@ -50,6 +50,7 @@ Excluded outright: game-engine GUIs, asset stores, multiplayer, any backend (SPE
 | chapter 1 length | **not fixed** until the vertical slice measures the teach rate | lint warns `CHAPTER_LENGTH_PENDING` |
 | level JSON | 120 KB | lint `SIZE` |
 | level completable | bot reaches goal, waypoints in order, every declared move done | harness `nav` |
+| completable after any death | from every torii, at 8 arrival phases: some phase clears, and every phase clears within 12 s counting the wait | harness `phase-sweep` |
 | console errors | 0 | harness |
 | visual drift vs golden | < 2% | harness `visual` |
 | draw calls · triangles | < 300 · < 500,000 | harness `counters` |
