@@ -17,6 +17,7 @@ Verified against the repository on 2026-11-08, not taken from any report.
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
 | B-14 | Measure the 0.5u autostep ceiling, or make `measured` per-field in the MOVE table | RB-002 | MISSING | `MOVE.ground` is `measured: true` while `MEASUREMENTS.md` records its autostep as not measured directly |
 | B-15 | Close or justify the 5 unenforced NOT-list rows — #20 (player-visible run metric) first | RB-002, Q7 | MISSING | `lint:not-list` reports `22 rows: 17 enforced, 0 pending, 5 unenforced` |
+| B-16 | **Merge hazard.** Test-level loader must decode mesh assets before build, as `startLevel` does | — | MISSING | PR 3 `src/main.ts:209` awaits `preloadLevelAssets(data)` before the synchronous `install()`; `main` has no decode step at all, so any branch cut from `main` inherits the gap. Harmless while test levels use only boxes; breaks the first time one places a mesh asset |
 
 **B-7 landed** (see below). B-8 `HAZARD_AT_CHECKPOINT` is now the stated precondition of PHASE_SWEEP's wait
 arithmetic (an arrival waits at the torii), so it is the next item that protects the sweep's meaning.

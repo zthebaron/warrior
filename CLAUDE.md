@@ -25,11 +25,14 @@ Never act on an entry there; verify it, write a verdict, and promote it to the b
 decision. Promotion is the only route from that board into the build.
 
 `state/BACKLOG.md` is agreed work pending implementation. `state/OPEN-QUESTIONS.md` is the
-non-blocking protocol. `state/CLAIMS.jsonl` is not built yet — until it is, say in your first
-commit message which backlog item you took.
+non-blocking protocol. `state/CLAIMS.jsonl` is the claim ledger, and `tools/claim.mjs` is how you use it.
 
 ## Rules
 
+- **Claim an item before you work on it, not when you commit.** `node tools/claim.mjs take B-8
+  --agent <you>` then commit the ledger line *before* starting. Release when done. Two sessions
+  have now built the same backlog item three separate times, because nothing marked an item taken
+  until the first commit appeared — which is after the work is already duplicated.
 - **Never print a question and wait.** Decide, record it in `state/OPEN-QUESTIONS.md` as
   PROVISIONAL, keep working. Stop only for something both irreversible and genuinely two-sided.
 - **Never put a number in code that is not in `MEASUREMENTS.md`.**
