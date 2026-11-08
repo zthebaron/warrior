@@ -70,3 +70,4 @@
 {"id":"PR4-REBASE","agent":"phase0-spec","ts":"2026-11-08T18:18:29.571Z","ttl_min":90}
 {"id":"OQ-044","agent":"kit","ts":"2026-11-08T18:19:48.125Z","ttl_min":600}
 {"id":"PR6-REBASE","agent":"unknown","ts":"2026-11-08T18:27:42.291Z","released":true}
+{"id":"PR4-REBASE","agent":"phase0-spec","ts":"2026-11-08T18:34:05.180Z","released":true}
