@@ -81,3 +81,4 @@
 {"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:01:54.703Z","ttl_min":90}
 {"id":"CAM-FACE","agent":"reviewer-chat","ts":"2026-11-08T19:01:54.719Z","ttl_min":90}
 {"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:02:21.153Z","released":true}
+{"id":"D-015-BUILD","agent":"builder-d015","ts":"2026-11-08T19:05:34.655Z","ttl_min":90}
