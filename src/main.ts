@@ -64,6 +64,8 @@ export interface HarnessSnapshot {
   hazards: { index: number; type: string; pos: Vec3 }[];
   /** Crow cues by hazard index: the bot holds at a torii for a perched -> airborne edge (Q2, Q5). */
   crows: { index: number; airborne: boolean; pos: Vec3 }[];
+  /** fixed ticks that consumed an input frame (every executed tick except `death` ticks) */
+  inputTicks: number;
   checkpoints: number[];
   deaths: number;
   lastDeath: Vec3 | null;
@@ -86,7 +88,7 @@ interface HarnessApi {
   level(): LevelData | null;
   tuning: typeof TUNING;
   /** Rule constants the harness must agree with (checkpoint activation radius, height slack). */
-  rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
+  rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   setCamera(pos: Vec3, target: Vec3): void;
   /** Where the follow rig would put the camera for this pivot and arm direction: the arm pulled in by the
@@ -111,6 +113,8 @@ interface HarnessApi {
   setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;
   /** Start a test level from JSON text (tools/harness/fixtures/): same validation AND decode as levels/. */
   startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+  /** Harness-only: move the player (PR 4's hazards stage). */
+  teleportPlayer(pos: Vec3): void;
 }
 
 /** One mesh asset rendered ALONE (own scene: no level, player, lights, HUD or debug lines). */
@@ -197,6 +201,9 @@ async function boot(): Promise<void> {
   // is a pure function of it (B-12). Reset only by install(), i.e. a level (re)load, never by death.
   let worldTick = 0;
   let deathTicksLeft = 0;
+  // Ticks that consumed an input frame. Since D-004 the world also ticks in `death` without reading
+  // input, so world ticks != input frames; the harness (chaos) needs this count to stay aligned.
+  let inputTicks = 0;
   const worldTime = (): number => worldTick * loop.dt;
   const tmpFeet = new THREE.Vector3();
   const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
@@ -346,6 +353,7 @@ async function boot(): Promise<void> {
     }
     profiler.begin('gameplay');
     const frame = input.sample(camRig.yaw, !tools.freeCamActive);
+    inputTicks++;
     level.fixedUpdate(worldTime(), dt);
     player.fixedUpdate(dt, frame);
     profiler.end('gameplay');
@@ -521,6 +529,7 @@ async function boot(): Promise<void> {
       deaths,
       lastDeath,
       runTime: worldTime(),
+      inputTicks,
     });
     // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
     // Mirrors GameLoop.frame's gate: ticks run while the world runs (play AND death, D-004), not in pause.
@@ -567,7 +576,15 @@ async function boot(): Promise<void> {
       snapshot,
       level: () => level?.data ?? null,
       tuning: TUNING,
-      rules: { checkpointRadius: GAME_RULES.checkpointRadius, goalHeightTolerance: GAME_RULES.goalHeightTolerance, goalRadiusDefault: GAME_RULES.goalRadiusDefault },
+      // one rules object: B-8's respawn-safety constants + PR 4's respawn timing. respawnDelaySec is a getter
+      // because the feel-test switches change it live; a value captured once would go stale.
+      rules: {
+        checkpointRadius: GAME_RULES.checkpointRadius,
+        goalHeightTolerance: GAME_RULES.goalHeightTolerance,
+        goalRadiusDefault: GAME_RULES.goalRadiusDefault,
+        get respawnDelaySec() { return GAME_RULES.respawnDelaySec; },
+        fixedDt: loop.dt,
+      },
       rendererInfo: () => {
         const info = renderer.renderer.info;
         return { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures };
@@ -684,6 +701,9 @@ async function boot(): Promise<void> {
         });
         const top = [...hist.entries()].sort((x, y) => y[1] - x[1]).slice(0, 6).map(([k, n]) => `#${k.toString(16).padStart(6, '0')}:${n}`);
         return { ok: true, error: null, ...info, maps, materials: mats.map((m) => m.type), top, ktx2: getKtx2Support(), pixels: { covered, nearPalette: near, maxError } };
+      },
+      teleportPlayer: (pos) => {
+        player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
       },
     };
     state.transition('menu');

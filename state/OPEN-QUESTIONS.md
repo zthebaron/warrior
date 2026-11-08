@@ -321,6 +321,20 @@ Feel-test note: on the gym's checkpoint pads (visual-only, 6 cm thick) the disc 
 because the ray passes through the pad to the floor. Real torii are not floor tiles.
 status: PROVISIONAL
 
+## OQ-030 — B-12/B-13 were implemented twice, in parallel. Which lands?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A open a PR with this session's runtime | B drop it; land only what main lacks
+took: B
+because: 6dcc157 landed first and does more (platforms on the same clock, static hazard volumes).
+  Two runtimes for one decision is the drift D-002 exists to stop. What main lacked, and this branch
+  adds: (1) CI proof — harness stage `hazards` (fixture level; runtime vs an independent oracle to
+  1.8e-15u; touch = death; +0.8000s across death; new phase at respawn; pause frozen); (2) chaos
+  asserts the clock across every gym death; (3) a chaos bug D-004 exposed: it counted death ticks
+  as input, reporting "3600/3600" while playing 3360 frames (5 deaths x 48). The superseded runtime
+  commits were force-replaced on this branch (with lease). Cause: no claim on backlog items;
+  state/CLAIMS.jsonl is unbuilt, and claiming in a first commit message is only visible after the work.
+  (Raised as OQ-014; renumbered OQ-030, reserved in state/CLAIMS.jsonl — main had its own OQ-014.)
+
 ## OQ-032 — Hazard `period` is accepted on every hazard type and nothing at runtime reads it. Give it a meaning or remove it?
 raised: 2026-11-08 by phase0-spec
 options: A remove it from the schema | B define crush as cycling on `period` | C keep it, documented as unused
