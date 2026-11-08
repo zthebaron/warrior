@@ -163,7 +163,6 @@ Par time per chapter, taken from the bot's own runs, is deferred post-gold. Agre
 - **Seen, not fixed (out of Q4 scope):** playbook Phase 7 still lists combat, "scroll counts" and
   chapter select, which conflict with Q1/Q3.
 
-## Q5-Q7 — outstanding
 
 ## Q5 — Chapter structure: **A, with the move order changed.** CLOSED
 
