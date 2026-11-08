@@ -27,6 +27,7 @@ jobs:
       - run: npm run typecheck
 
       - run: npm run lint:levels
+      - run: npm run lint:self # D-015: READABLE_RISE and CHAPTER_TEACH must be seen to FAIL, not just pass
 
       # B-12: the patroller runtime (src/systems/patrol.ts) is a pure function of phase + t*speed
       - run: npm run check:patrol

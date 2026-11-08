@@ -870,3 +870,127 @@ The crow is the one exception and it is the right one: Q5 named it the riskiest 
 the whole design, which outranks any move.
 
 implemented_by: c03fe4a (OQ-042: RECOVERABLE_MOVES = [ground], "unrecoverable within the segment" in the lint messages), aa55016 (OQ-043: CHAPTER_RISKIEST) — branch d011-d012, PR #8
+
+## D-014 — Chapter 1 shipped unreachable. "Playable" was never defined. FINDING
+
+Tim played the vertical slice, reported 15 s and "I don't see any crows." Both are explained by
+one line:
+
+```
+src/main.ts:202
+const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
+```
+
+`?level=` is honoured **only in harness mode**. Normal play always loads `GAME_RULES.startLevel`,
+still `'00-gym'`. The menu even says so — *"WARRIOR — H2 gym"*. Chapter 1 merged to main and is
+reachable by the nav bot and by nobody else.
+
+So the 15 s was the gym, not chapter 1, and the crow comparison was never made. Both earlier
+readings of that data were wrong.
+
+### What let it through
+
+Every gate passed, and each was measuring something true:
+
+- `PHASE_SWEEP`, `HAZARD_AT_CHECKPOINT`, the linter, the visual goldens — all run the level
+  **through the harness**, which sets `HARNESS_MODE` and therefore *can* reach it
+- `CHAPTER-1-MEASURED.md` reports a real 19.75 s bot clear — also via the harness
+- CI was green on both levels
+
+Nothing in the stack asks **"can a person get to this level?"** The build verified the level
+exhaustively and never verified that the level is reachable from the game's own front door. That
+is D-013's pattern again — every signal green, measuring the wrong property — but at the level of
+the *product* rather than a tool or a cue.
+
+### The root cause is a missing definition
+
+`PROMPT-CHAPTER-1.md` called chapter 1 "the first playable thing" and never said what playable
+means. The harness definition — *the bot can complete it* — was the only one written down, so it
+is the only one that got enforced.
+
+**Define it:** a level is playable when a person who loads the game with no query string and no
+documentation can reach it and finish it. Until that is true, a level is *authored*, not shipped.
+
+### Fixes, smallest first
+
+1. **Now:** honour `?level=` outside harness mode. A dev affordance, no effect on defaults,
+   goldens or CI.
+2. **Now:** `GAME_RULES.startLevel` → `01-lower-stair`. The gym is a test fixture; it should not
+   be what a player meets. Update the menu string, which still says "H2 gym".
+3. **Before chapter 2:** chapter progression — finishing a chapter loads the next. Without it,
+   every future chapter ships unreachable by exactly this route.
+4. **The gate that would have caught it:** a harness check that loads the game **with no query
+   string**, plays to the end, and asserts which level it reached. Call it `REACHABLE`. It is the
+   only check in the suite that would run as a player rather than as the harness.
+
+implemented_by: ec87689 (fix 1: ?level= outside harness mode), 290cc37 (fix 2: startLevel 01-lower-stair, menu string), f79e500 (fix 4: REACHABLE stage, proven to fail with startLevel = 00-gym). Fix 3 (chapter progression) NOT done: due before chapter 2.
+
+---
+
+## D-015 — a 3.5m face is invisible to this camera rig, and CHAPTER_TEACH cannot fail
+
+Reported from play, 2026-11-08: *"when I came up to the big block, it was hard to jump over. Also
+it was all I could see. It took up the whole screen."* Both halves are the same two faces:
+`01-lower-stair` critical_path wp8→9 and wp15→16, each `via: "climb"`, each a flush +3.50 rise.
+Every other rise in the chapter is 0.00 or the 2.00 staircase.
+
+### The camera measurement
+
+The rig puts the eye `pivotHeight + distance*sin(pitch)` = `1.5 + 7*sin(18°)` = **3.66m above the
+player's feet**, 6.66m behind. A face top at +3.50 therefore lands **0.16m below eye level**. You
+are looking at the surface you need to reach from its own height, edge-on.
+
+Standing 2m off the face, feet at 0, vfov 60°, measured across face heights:
+
+| face height | lip elevation | top surface subtends | face % of frame |
+|---|---|---|---|
+| 2.00 | -10.9° | 6.9° | 62% |
+| 3.00 |  -4.4° | 2.8° | 73% |
+| **3.50** | **-1.1°** | **0.7°** | **78%** |
+| 3.75 |  +0.6° | 0.4° | 81% |
+| 4.50 |  +5.5° | 3.5° | 89% |
+
+At 3.50 the top surface — the only thing in the frame that says *there is ground up there* — is
+**0.7° tall, about 8px at 1080p**, above a featureless grey face filling 78% of the screen. The
+pathological band is **3.25–4.00m**, where the lip crosses eye level; both authored faces sit in
+it. Below ~3.0m you look down onto the top surface and it reads. The ledge never leaves the
+frustum, so no framing check would have caught it: it is in frame and still carries no
+information.
+
+### Why the linter passed it
+
+`CHAPTER_TEACH` (tools/lint-level.mjs:238) fires when `intro[it] < 0` — when a new move appears in
+`CHAPTER_MOVES_ADDED[ch]` and **no segment uses it at all**. A move's first use is always in some
+segment, so for any move that is used the check is a tautology and cannot fail. Chapter 1's climb
+is "taught" by the segment that *is* the climb: teaching instance and gate are the same object.
+The check is named for learnability and measures presence.
+
+This is D-013's pattern for the eighth time, and the most expensive instance so far, because it is
+the one check whose entire purpose was to prevent this.
+
+### Rulings
+
+- **D-015a (PROVISIONAL, needs APPROVER):** chapter 1 drops `climb`. Each +3.50 face becomes a
+  1.5-wide shelf at the midpoint — two +1.75 steps, both inside `MOVE.jump.maxRise` 2.00, both
+  with a 5–7° readable top surface. `CHAPTER_MOVES_ADDED` becomes
+  `{1:['ground','jump'], 2:['wall','double','climb']}`; climb debuts in chapter 2 beside wall and
+  double, where Q5 already plans a teach beat. Data-only in the level; one table edit in the
+  linter. The alternative — keep climb and add a teach shelf before it — costs a segment, still
+  needs the camera work to be readable, and introduces chapter 1's riskiest move twice.
+- **D-015b:** `READABLE_RISE` (Tier-1, CI). For every critical_path rise, the top surface must
+  subtend ≥ 2.0° from the eye at a 2m standoff. Derivable from the rig constants and the rise; no
+  render needed. Rejects 3.25–4.00 faces and anything else that lands at eye level.
+- **D-015c:** `CHAPTER_TEACH` is rewritten to be falsifiable: a teaching instance must be the
+  move's first use **and** be bypassable or recoverable without losing the segment. Until the
+  predicate is written down, the check is removed rather than left green — a tautological check is
+  worse than no check, because it answers the question.
+- **D-015d (backlog, engine):** camera pitch assist. A forward probe inside ~3m of a face whose
+  top is within 0.5m of eye level blends pitch up until the top surface subtends ≥ 2.0°, released
+  when the player turns away. Fixes the class; D-015a only fixes the two instances.
+
+### The general rule
+
+A budget says a move *can* clear a gap. It says nothing about whether the player can *see* that
+it can. Both belong under CI, and until D-015b exists only one of them was.
+
+implemented_by: 8b5a4ac (D-015b READABLE_RISE; D-015c CHAPTER_TEACH made falsifiable, kept live rather than deleted: OQ-047), 286259f (D-015a level data + move table, PROVISIONAL, one revert; plus the D-015c teach step it forced), 05f3ffa (lint:self in CI: both checks proven to fail). D-015d NOT done: B-18. Deviations from the text, recorded not edited: shelves 2.5 u not 1.5 (1.5 fails D-015b), the 4.50 row reads 0 not 3.5 (OQ-046).

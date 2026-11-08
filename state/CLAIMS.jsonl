@@ -73,3 +73,16 @@
 {"id":"PR4-REBASE","agent":"phase0-spec","ts":"2026-11-08T18:34:05.180Z","released":true}
 {"id":"PR4-REBASE-2","agent":"phase0-spec","ts":"2026-11-08T18:42:40.567Z","ttl_min":90}
 {"id":"OQ-045","agent":"phase0-spec","ts":"2026-11-08T18:42:40.603Z","ttl_min":600}
+{"id":"B-17","agent":"kit","ts":"2026-11-08T18:47:09.925Z","ttl_min":90}
+{"id":"D-014","agent":"kit","ts":"2026-11-08T18:51:13.316Z","ttl_min":90}
+{"id":"PR4-REBASE-2","agent":"phase0-spec","ts":"2026-11-08T18:53:26.573Z","released":true}
+{"id":"OQ-045","agent":"phase0-spec","ts":"2026-11-08T18:53:26.599Z","released":true}
+{"id":"D-014","agent":"unknown","ts":"2026-11-08T18:57:43.271Z","released":true}
+{"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:01:54.703Z","ttl_min":90}
+{"id":"CAM-FACE","agent":"reviewer-chat","ts":"2026-11-08T19:01:54.719Z","ttl_min":90}
+{"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:02:21.153Z","released":true}
+{"id":"D-015-BUILD","agent":"builder-d015","ts":"2026-11-08T19:05:34.655Z","ttl_min":90}
+{"id":"D-015-BUILD","agent":"builder-d015","ts":"2026-11-08T19:28:54.931Z","released":true}
+{"id":"B-17","agent":"kit","ts":"2026-11-08T21:26:27.998Z","ttl_min":90}
+{"id":"OQ-048","agent":"kit","ts":"2026-11-08T21:26:28.025Z","ttl_min":90}
+{"id":"PR4-REBASE-3","agent":"phase0-spec","ts":"2026-11-08T21:26:36.110Z","ttl_min":90}

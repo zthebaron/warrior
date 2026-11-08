@@ -1,0 +1,699 @@
+{
+  "id": "fixture-unrecoverable-first-jump",
+  "title": "FIXTURE: CHAPTER_TEACH must fail (first jump over the void)",
+  "chapter": 1,
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      0,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      101,
+      9,
+      0
+    ],
+    "radius": 1.5
+  },
+  "bounds": {
+    "min": [
+      -10,
+      -15,
+      -15
+    ],
+    "max": [
+      115,
+      40,
+      15
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        3,
+        -4,
+        0
+      ],
+      "scale": [
+        18,
+        8,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        16,
+        -4,
+        0
+      ],
+      "scale": [
+        4,
+        8,
+        5
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        24.5,
+        -4,
+        0
+      ],
+      "scale": [
+        7,
+        8,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        28.3,
+        -3.8,
+        0
+      ],
+      "scale": [
+        0.6,
+        8.4,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        28.9,
+        -3.6,
+        0
+      ],
+      "scale": [
+        0.6,
+        8.8,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        29.5,
+        -3.4,
+        0
+      ],
+      "scale": [
+        0.6,
+        9.2,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        30.1,
+        -3.2,
+        0
+      ],
+      "scale": [
+        0.6,
+        9.6,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        30.7,
+        -3,
+        0
+      ],
+      "scale": [
+        0.6,
+        10,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        36,
+        -3,
+        0
+      ],
+      "scale": [
+        10,
+        10,
+        7
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        34,
+        2,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        61.5,
+        -1.25,
+        0
+      ],
+      "scale": [
+        41,
+        13.5,
+        7
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        55,
+        5.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        63,
+        5.7,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        77,
+        5.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        89.5,
+        -1.25,
+        0
+      ],
+      "scale": [
+        9,
+        13.5,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        101,
+        0.5,
+        0
+      ],
+      "scale": [
+        14,
+        17,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        81,
+        5.7,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        99,
+        9,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        -2,
+        -2,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        6.5,
+        -2,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        15,
+        -2,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        23.5,
+        -2,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        32,
+        0,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        45,
+        3.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        54,
+        3.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        62.5,
+        3.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        71,
+        3.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        80,
+        3.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        89,
+        3.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        98,
+        7,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        106.5,
+        7,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        40,
+        -0.25,
+        0
+      ],
+      "scale": [
+        3,
+        8,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        93,
+        3.25,
+        0
+      ],
+      "scale": [
+        3,
+        8,
+        7
+      ]
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [
+          66,
+          6.5,
+          -5
+        ],
+        [
+          66,
+          6.5,
+          5
+        ]
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "speed": 5,
+      "phase": 0,
+      "crow": {
+        "perch": [
+          63,
+          6.1,
+          3.2
+        ],
+        "to": [
+          60,
+          10.5,
+          9.5
+        ],
+        "size": [
+          0.35,
+          0.35,
+          0.6
+        ],
+        "lift": 0.11,
+        "away": 0.45
+      }
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [
+          89,
+          6.5,
+          -5
+        ],
+        [
+          89,
+          6.5,
+          5
+        ]
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "speed": 5,
+      "phase": 0,
+      "crow": {
+        "perch": [
+          81,
+          6.1,
+          3.2
+        ],
+        "to": [
+          78,
+          10.5,
+          9.5
+        ],
+        "size": [
+          0.35,
+          0.35,
+          0.6
+        ],
+        "lift": 0.02,
+        "away": 0.45
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        36,
+        2,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        57,
+        5.5,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        79,
+        5.5,
+        0
+      ],
+      "facing": -90
+    }
+  ],
+  "lighting": {
+    "preset": "greybox"
+  },
+  "critical_path": [
+    [
+      0,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        12,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "to the first break: the next jump, gap 2, is the first and is over the void"
+    },
+    {
+      "pos": [
+        14,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 2"
+    },
+    {
+      "pos": [
+        18,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        21,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 3"
+    },
+    {
+      "pos": [
+        27.6,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "foot of the stair"
+    },
+    {
+      "pos": [
+        31.4,
+        2,
+        0
+      ],
+      "via": "ground",
+      "note": "straight stair: 5 x 0.4 rise / 0.6 tread"
+    },
+    {
+      "pos": [
+        36,
+        2,
+        0
+      ],
+      "via": "ground",
+      "note": "T1"
+    },
+    {
+      "pos": [
+        36.5,
+        2,
+        0
+      ],
+      "via": "ground",
+      "note": "2u short of the first riser"
+    },
+    {
+      "pos": [
+        39.75,
+        3.75,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 onto the shelf (D-015a: was one 3.5 climb face)"
+    },
+    {
+      "pos": [
+        42,
+        5.5,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 off the shelf"
+    },
+    {
+      "pos": [
+        57,
+        5.5,
+        0
+      ],
+      "via": "ground",
+      "note": "T2"
+    },
+    {
+      "pos": [
+        72,
+        5.5,
+        0
+      ],
+      "via": "ground",
+      "note": "wait for the crow, then cross the sweep",
+      "cue": 1
+    },
+    {
+      "pos": [
+        79,
+        5.5,
+        0
+      ],
+      "via": "ground",
+      "note": "T3"
+    },
+    {
+      "pos": [
+        82,
+        5.5,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the gap, on the crow",
+      "cue": 2
+    },
+    {
+      "pos": [
+        85,
+        5.5,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 3 onto the swept ledge"
+    },
+    {
+      "pos": [
+        89.5,
+        5.5,
+        0
+      ],
+      "via": "ground",
+      "note": "2u short of the first riser, inside the sweep lane: crossed on the crow, like the run it replaces"
+    },
+    {
+      "pos": [
+        92.75,
+        7.25,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 onto the shelf (D-015a: was one 3.5 climb face)"
+    },
+    {
+      "pos": [
+        95,
+        9,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 off the shelf"
+    },
+    {
+      "pos": [
+        101,
+        9,
+        0
+      ],
+      "via": "ground",
+      "note": "goal"
+    }
+  ],
+  "difficulty": 1,
+  "moves_allowed": [
+    "ground",
+    "jump"
+  ]
+}

@@ -149,7 +149,8 @@ export interface GamePage {
  * Fresh page, harness mode, level loaded and in `play`. Every console error and page error is
  * captured from the first byte. Throws EnvironmentError if the harness API never appears.
  */
-export async function openGame(ctx: Ctx): Promise<GamePage> {
+/** opts.query replaces the whole query string (REACHABLE loads ?harness=1 with no level, as a player's default would). */
+export async function openGame(ctx: Ctx, opts: { query?: string } = {}): Promise<GamePage> {
   const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
   const errors: string[] = [];
   page.on('console', (m) => {
@@ -160,7 +161,7 @@ export async function openGame(ctx: Ctx): Promise<GamePage> {
     // --landingmark=off|on: run the stage with the landing mark forced (it ships on, D-010)
     const lm = ctx.args['landingmark'];
     const flags = lm === 'off' || lm === 'on' ? `&landingmark=${lm}` : '';
-    await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(ctx.levelId)}${flags}`);
+    await page.goto(`${ctx.baseUrl}/${opts.query ?? `?harness=1&level=${encodeURIComponent(ctx.levelId)}${flags}`}`);
   } catch (err) {
     // The page never loaded: nothing about the level was observed. Environment, with evidence.
     const why = (err instanceof Error ? err.message : String(err)).split('\n')[0];
@@ -247,6 +248,7 @@ declare global {
       tuning: Record<string, number>;
       rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
+      level(): { id: string } | null;
       setCamera(pos: Vec3, target: Vec3): void;
       rigCamera(pivot: Vec3, dir: Vec3): Vec3;
       releaseCamera(): void;

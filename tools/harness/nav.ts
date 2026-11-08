@@ -157,6 +157,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
   let seg = newSeg(cueOf(i) !== undefined);
   let cueWaitTicks = 0;
   let segStartTick = t0;
+  let lastJump = false; // last frame's jump input (see heldIn)
   const reached: number[] = [opts.startIndex - 1];
   let minYSeen = snap.feet[1];
   let failure: string | null = null;
@@ -194,6 +195,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
     const holding = seg.cueWait && i < path.length;
     if (holding) cueWaitTicks++;
     const frame = holding ? NEUTRAL : i < path.length ? control(origin(i), path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
+    lastJump = frame.jump;
     const prevDeaths = snap.deaths;
     snap = await step(frame, (snap.tick - t0) % C.renderEvery === 0);
     minYSeen = Math.min(minYSeen, snap.feet[1]);
@@ -217,6 +219,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       log(`    reached ${String(i).padStart(2)} ${segLabel(i).padEnd(58)} t=${((snap.tick - t0) / FIXED_HZ).toFixed(2)}s at ${fmt(snap.feet)}`);
       i++;
       seg = newSeg(cueOf(i) !== undefined);
+      if (lastJump) seg.pressed.add('heldIn'); // jump is edge-triggered: release before the next press
       segStartTick = snap.tick;
     } else if (seg.phase === 'done') {
       // ballistic attempt landed short but alive — retry
@@ -228,6 +231,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       const a = seg.attempts;
       seg = newSeg();
       seg.attempts = a;
+      if (lastJump) seg.pressed.add('heldIn');
     }
   }
   return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks };
@@ -329,6 +333,13 @@ function control(a: Waypoint, b: Waypoint, next: Waypoint | undefined, s: Snapsh
       (s.grounded && via === 'wall') || // jump into the surface straight away
       (s.grounded && rising && prog >= 0) ||
       (s.grounded && prog >= C.groundedPastTakeoff);
+    // Back-to-back jumps (D-015a's two +1.75 steps): the previous segment ended with jump HELD, and the
+    // game's jump is edge-triggered, so pressing again without a release does nothing. Release for one
+    // tick first, as a player's thumb does. Without this the bot stands at the riser holding jump.
+    if (fire && seg.pressed.has('heldIn') && via !== 'dash' && via !== 'dashjump') {
+      seg.pressed.delete('heldIn');
+      return f;
+    }
     if (fire) {
       seg.phase = 'air';
       seg.pressed.clear();

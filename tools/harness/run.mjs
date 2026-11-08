@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual
+// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual,
+// then once per run: reachable (D-014: the game's own front door, as a player)
 //
 //   npm run playtest                          every level in levels/
 //   npm run playtest -- --level=00-gym        one level
@@ -28,6 +29,7 @@ import { hazards } from './hazards.ts';
 import { assets } from './assets.ts';
 import { accent } from './accent.ts';
 import { visual } from './visual.ts';
+import { reachable } from './reachable.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = Object.fromEntries(
@@ -195,6 +197,19 @@ for (const L of statics) {
   const cls = classify(stages);
   report.levels.push({ id: L.id, class: cls, stages });
   printTable(L.id, stages);
+}
+
+// D-014: once per run, not per level: can a PLAYER (no query string) reach the entry chapter and finish it?
+// Runs on a full run, or when asked for (--only=reachable). Skipped for a single --level run.
+if ((typeof args.level !== 'string' && !(typeof args.only === 'string' && !args.only.split(',').includes('reachable'))) || (typeof args.only === 'string' && args.only.split(',').includes('reachable'))) {
+  const browser = await launchBrowser();
+  try {
+    const r = await reachable({ browser, baseUrl: pf.baseUrl, root: ROOT, args, log, lintRules: RESPAWN_RULES });
+    report.levels.push({ id: '(game)', class: classify([r]), stages: [r] });
+    printTable('(game) reachable', [r]);
+  } finally {
+    await browser.close().catch(() => {});
+  }
 }
 
 report.class = classify(report.levels.flatMap((l) => l.stages));

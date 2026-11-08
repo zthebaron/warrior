@@ -20,15 +20,15 @@ import { Stage, guard, openGame, wp, type Ctx, type StageResult, type Vec3 } fro
 
 const { PNG } = pngjs;
 
-/** The rest pose of the follow camera, READ from CAMERA_TUNING in src/engine/camera.ts (never retyped). */
+/** The rest pose of the follow camera, READ from CAMERA_TUNING in src/engine/camera-tuning.ts (never retyped; split out of camera.ts for D-015b). */
 export function followRig(root: string): { distance: number; pivotHeight: number; pitchDeg: number; pitchMinDeg: number; pitchMaxDeg: number; fovDeg: number } {
   const read = (file: string, key: string): number => {
     const m = readFileSync(join(root, file), 'utf8').match(new RegExp(`\\b${key}:\\s*(-?[0-9.]+)`));
     if (!m) throw new Error(`${key} not found in ${file}`);
     return Number(m[1]);
   };
-  const num = (key: string): number => read('src/engine/camera.ts', key);
-  return { distance: num('distance'), pivotHeight: num('pivotHeight'), pitchDeg: num('initialPitchDeg'), pitchMinDeg: num('pitchMinDeg'), pitchMaxDeg: num('pitchMaxDeg'), fovDeg: read('src/engine/renderer.ts', 'fovDeg') };
+  const num = (key: string): number => read('src/engine/camera-tuning.ts', key);
+  return { distance: num('distance'), pivotHeight: num('pivotHeight'), pitchDeg: num('initialPitchDeg'), pitchMinDeg: num('pitchMinDeg'), pitchMaxDeg: num('pitchMaxDeg'), fovDeg: read('src/engine/render-config.ts', 'fovDeg') };
 }
 
 /**
