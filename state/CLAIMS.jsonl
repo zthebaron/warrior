@@ -3,3 +3,4 @@
 {"id":"B-8","agent":"test-harness","ts":"2026-11-08T16:03:34.036Z","released":true}
 {"id":"B-8","agent":"phase0-spec","ts":"2026-11-08T16:04:33.845Z","ttl_min":90}
 {"id":"B-16","agent":"kit","ts":"2026-11-08T16:04:51.053Z","ttl_min":90}
+{"id":"B-16","agent":"unknown","ts":"2026-11-08T16:08:58.859Z","released":true}
