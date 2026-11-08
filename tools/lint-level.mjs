@@ -22,11 +22,23 @@ const MOVE = {
 // use segmentsOf(). Two counts would be two rules. (PHASE-0-DECISIONS Q3, Q4.)
 export const segmentsOf = (level) => (level.checkpoints?.length ?? 0) + 1;
 
-// Chapter length, Q4: 5 segments +/- 1, chapters 2 and up. Chapter 0 is the gym (not a chapter).
-// Chapter 1 is deliberately NOT fixed: it teaches the primitives, and its length is an output of
-// the teach rate, which the vertical slice has not measured yet (Q4 amendment 3). Set the chapter-1
-// rule from that measurement, not before it.
-export const CHAPTER_SEGMENTS = { target: 5, min: 4, max: 6, fromChapter: 2 };
+// Chapter length is DERIVED, not ranged (D-011, overriding OQ-037; Q4 amendment 3 measured by chapter 1):
+//   one TEACHING segment per new UNRECOVERABLE move or new signal, introducing exactly one of them;
+//   plus one TRANSFER segment: the chapter's riskiest new thing again, combined with another unrecoverable move;
+//   plus any PRACTICE segments: introduce no new move and no new signal, combine only what is taught.
+// The 4-6 range survives only as a WARN sanity check (a derivation far outside it usually means the
+// moveset changed). Chapter 0 is the gym (not a chapter); chapters past 4 add nothing to teach.
+export const CHAPTER_SEGMENTS = { min: 4, max: 6, fromChapter: 1 };
+// UNRECOVERABLE within the segment (OQ-042, renamed by Tim's ruling): a move earns a teaching segment when
+// MISUNDERSTANDING it costs the player the segment. Misjudge a jump and you fall and lose the segment;
+// misjudge walking and you stop and walk again. That holds at ANY ledge width, so it is not "ground cannot
+// kill you" (it can, off a one-metre catwalk); it is "a ground mistake is recoverable where you stand".
+export const RECOVERABLE_MOVES = ['ground'];
+// Signals added per chapter (Q2, Q5): the crow cue is chapter 1's. A cued waypoint (`cue`) uses it.
+export const CHAPTER_SIGNALS_ADDED = { 1: ['crow'] };
+// The riskiest new thing per chapter, which gets the transfer segment. Chapter 1: the crow (Q5 calls it the
+// riskiest unproven element). 2-4: the move Q5's table lists last, the one its notes single out (OQ-043).
+export const CHAPTER_RISKIEST = { 1: 'crow', 2: 'double', 3: 'dash', 4: 'dashjump' };
 
 // Respawn-point safety (Q6, B-8, D-005). These MIRROR the game: GAME_RULES.checkpointRadius,
 // goalHeightTolerance, goalRadiusDefault in src/main.ts, and TUNING.capsuleRadius / capsule height in
@@ -144,6 +156,23 @@ export function lintLevel(level, manifest){
     if(hz.type==='water'&&num(hz.y)&&vol) E('NO_KILL_VOLUME',`hazards[${i}] water has both a plane "y" and a volume "pos"+"size"; pick one, the other would have no effect`);
     if((hz.type==='spike'||hz.type==='crush')&&!vol) E('NO_KILL_VOLUME',`hazards[${i}] ${hz.type} needs "pos" + "size" (full extents): its kill volume. There is no default (no unmeasured numbers)`);
   });
+  // Crow cue (Q2, Q5). A waypoint's `cue` names the patroller whose crow says "go now" for that
+  // segment, and the player WAITS for it at the previous waypoint. So: the cue must point at a
+  // patroller that carries a crow (BAD_CUE), and the wait must happen at a torii or spawn, the only
+  // places HAZARD_AT_CHECKPOINT proves safe to stand (CUE_NOT_AT_TORII; SPEC: "Arrive at a torii.
+  // Wait for the crow. Go."). Chapter 1 must carry at least one cue (NO_CROW_CUE, Q5).
+  const RR=RESPAWN_RULES, torii=[level.spawn.pos,...(level.checkpoints??[]).map(c=>c.pos)];
+  const atTorii=p=>torii.some(t=>d(p,t)<RR.checkpointRadius&&Math.abs(p[1]-t[1])<RR.heightTolerance);
+  let cues=0;
+  cp.forEach((w,i)=>{
+    if(typeof w!=='object'||Array.isArray(w)||w.cue===undefined) return;
+    cues++;
+    const hz=(level.hazards??[])[w.cue];
+    if(!hz||hz.type!=='patroller'||!hz.crow){ E('BAD_CUE',`critical_path[${i}] cue ${w.cue}: hazards[${w.cue}] is not a patroller carrying a crow`); return; }
+    if(i<1||!atTorii(P(cp[i-1]))) E('CUE_NOT_AT_TORII',`critical_path[${i}] cue ${w.cue}: the player waits for the crow at critical_path[${i-1}] ${JSON.stringify(P(cp[i-1]??cp[0]))}, which is not within ${RR.checkpointRadius}u of spawn or a checkpoint. Waiting is only proven safe at a torii (D-005)`);
+  });
+  if(level.chapter===1&&cues===0) E('NO_CROW_CUE','chapter 1 carries no crow cue: Q5 requires the vertical slice to prove the crow (a critical_path waypoint with "cue" -> a patroller with a "crow")');
+
   const falls=(level.hazards??[]).filter(h=>h.type==='fall').length;
   if(falls>1) E('NO_KILL_VOLUME',`${falls} fall planes: only the highest kill plane can ever take effect; keep one`);
 
@@ -182,12 +211,42 @@ export function lintLevel(level, manifest){
   });
   if(!(level.hazards??[]).some(h=>h.type==='fall')) W('NO_FALL_PLANE','no fall plane — leaving the world never respawns');
 
-  const segs=segmentsOf(level), CL=CHAPTER_SEGMENTS;
-  if(level.chapter>=CL.fromChapter&&(segs<CL.min||segs>CL.max))
-    E('CHAPTER_LENGTH',`chapter ${level.chapter} has ${segs} segments (checkpoints+1); chapters ${CL.fromChapter}+ must have ${CL.target} +/- 1 (${CL.min}-${CL.max})`);
-  if(level.chapter===1)
-    W('CHAPTER_LENGTH_PENDING',`chapter 1 has ${segs} segments; its length rule is unset until the vertical slice measures the teach rate (Q4 amendment 3)`);
-
+  const segs=segmentsOf(level), CL=CHAPTER_SEGMENTS, ch=level.chapter;
+  // D-011: place each segment on the path (a checkpoint ends its segment at the first waypoint after the
+  // previous boundary within the activation radius), then classify each segment by what it introduces.
+  if(typeof ch==='number'&&ch>=1&&ch<=4){
+    const bounds=[]; let cur=0, placed=true;
+    (level.checkpoints??[]).forEach((c,ci)=>{
+      let k=-1; for(let j=cur+1;j<cp.length;j++){ const p=P(cp[j]); if(d(p,c.pos)<RR.checkpointRadius&&Math.abs(p[1]-c.pos[1])<RR.heightTolerance){k=j;break;} }
+      if(k<0) for(let j=cur+1;j<cp.length&&k<0;j++){ // partway along a GROUND edge (as PHASE_SWEEP places it)
+        const a=P(cp[j-1]), b2=P(cp[j]), ux=b2[0]-a[0], uz=b2[2]-a[2], L2=ux*ux+uz*uz; if(L2<1e-9) continue;
+        const t=((c.pos[0]-a[0])*ux+(c.pos[2]-a[2])*uz)/L2, lat=Math.abs((c.pos[0]-a[0])*uz-(c.pos[2]-a[2])*ux)/Math.sqrt(L2), y=a[1]+(b2[1]-a[1])*t;
+        if(t>=0&&t<=1&&lat<RR.checkpointRadius&&Math.abs(y-c.pos[1])<RR.heightTolerance&&(cp[j].via??'ground')==='ground') k=j-1; // the ground edge goes to the next segment
+      }
+      if(k<0){ E('SEGMENT_UNPLACED',`checkpoint[${ci}] ${JSON.stringify(c.pos)} is not at a critical_path waypoint after the previous torii, so its segment cannot be classified (D-011)`); placed=false; return; }
+      bounds.push(k); cur=k;
+    });
+    if(placed){
+      bounds.push(cp.length-1);
+      const unrecoverableNew=(CHAPTER_MOVES_ADDED[ch]??[]).filter(m=>!RECOVERABLE_MOVES.includes(m)), sigNew=CHAPTER_SIGNALS_ADDED[ch]??[];
+      const items=[...unrecoverableNew,...sigNew];
+      const segUse=bounds.map((b,s)=>{ const lo=s?bounds[s-1]+1:1, u=new Set();
+        for(let j=lo;j<=b;j++){ const w=cp[j]; if(typeof w!=='object'||Array.isArray(w)) continue;
+          if(w.via&&!RECOVERABLE_MOVES.includes(w.via)) u.add(w.via); if(w.cue!==undefined) u.add('crow'); }
+        return u; });
+      const intro=Object.fromEntries(items.map(it=>[it,segUse.findIndex(u=>u.has(it))]));
+      for(const it of items) if(intro[it]<0) E('CHAPTER_TEACH',`chapter ${ch} adds "${it}" but no segment uses it. Every new move whose misunderstanding is unrecoverable within the segment (all but ${RECOVERABLE_MOVES.join(', ')}), and every new signal, gets a teaching segment (D-011, OQ-042, Q5)`);
+      const kinds=segUse.map((u,s)=>{ const here=items.filter(it=>intro[it]===s);
+        if(here.length>1) E('CHAPTER_TEACH',`segment ${s} introduces ${here.length} new things at once (${here.join(', ')}). Misunderstanding any of them loses the segment, so a player who dies cannot tell which one they misread: one per teaching segment (D-011, OQ-042)`);
+        return here.length?'teach':'other'; });
+      const risk=CHAPTER_RISKIEST[ch];
+      const transfer=items.includes(risk)&&intro[risk]>=0 ? segUse.findIndex((u,s)=>s>intro[risk]&&kinds[s]==='other'&&u.has(risk)&&[...u].some(x=>x!==risk&&x!=='crow')) : -1;
+      if(items.length&&transfer<0) E('CHAPTER_TRANSFER',`chapter ${ch} has no transfer segment: after "${risk}" is introduced (segment ${intro[risk]}), a later segment that teaches nothing new must use it again together with another move whose misunderstanding is unrecoverable within the segment (D-011, OQ-043)`);
+      if(transfer>=0) kinds[transfer]='transfer';
+      const n=t=>kinds.filter(k=>k===t).length, derived=items.length+(items.length?1:0);
+      if(segs<CL.min||segs>CL.max) W('CHAPTER_LENGTH',`chapter ${ch} has ${segs} segments (${n('teach')} teaching + ${n('transfer')} transfer + ${n('other')} practice; derived minimum ${derived}), outside the ${CL.min}-${CL.max} sanity range: check the moveset, not the rule (D-011)`);
+    }
+  }
   const span=d(level.spawn.pos,last), cps=(level.checkpoints??[]).length;
   if(span/Math.max(cps,1)>90) W('CHECKPOINT_GAP',`~${(span/Math.max(cps,1)).toFixed(0)}u between checkpoints`);
   const bytes=Buffer.byteLength(JSON.stringify(level));

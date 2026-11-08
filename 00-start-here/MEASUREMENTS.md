@@ -146,6 +146,9 @@ draw calls, 500,000 triangles) still apply on top.
 | Level | Peak draw calls | Peak triangles |
 |---|---|---|
 | 00-gym | 34 / 34 | 1,104 / 1,104 |
+| 01-lower-stair | 43 / 43 | 3,852 / 3,852 |
+
+01-lower-stair (CHAPTER-1, CI run 42505174534, landing mark on): 13 kit_rock_mass (13 x 216 = 2,808 tris), 4 kit_torii (432), greybox ledges/stair/knobs, 2 patrollers, 2 crows, the landing mark.
 
 History:
   - 30 calls / 640 tris: greybox gym before H4.
@@ -280,6 +283,12 @@ For the feel test; this chooses nothing.
 One correction found while measuring: the first render pass captured the menu HUD, a DOM overlay,
 inside the canvas screenshot, over the gate. It is now hidden on those pages. In-level stages are
 unaffected, because the HUD is empty in `play`.
+
+**Measurement frame, D-012 (2026-11-08).** The floor is unchanged at 0.0204%. It is now met in the
+BEST frame over every pitch the follow rig allows (CAMERA_TUNING `pitchMinDeg`..`pitchMaxDeg`, -25..70,
+step fovDeg/6 = 10, plus rest 18), with the arm pulled in by the rig's own collision (`allowedArm`,
+harness `rigCamera`). Verified: chapter 1's original two-climb T2 reads 0.0000% at rest and 0.3468%
+at -25 (looking up), so it passes. A gate behind a 30 m wall reads 0.0000% at all 12 pitches, so it fails.
 
 ## Open (H4)
 

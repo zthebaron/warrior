@@ -94,6 +94,7 @@ export interface Snapshot {
   grounded: boolean;
   platforms: { id: string; pos: Vec3 }[];
   hazards: { index: number; type: string; pos: Vec3 }[];
+  crows: { index: number; airborne: boolean; pos: Vec3 }[];
   checkpoints: number[];
   deaths: number;
   lastDeath: Vec3 | null;
@@ -105,6 +106,8 @@ export interface Waypoint {
   via?: string;
   platform?: string;
   note?: string;
+  /** hazard index whose crow cues this segment: hold at the previous waypoint (a torii) until lift-off */
+  cue?: number;
 }
 
 export interface LevelJson {
@@ -244,6 +247,7 @@ declare global {
       rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       setCamera(pos: Vec3, target: Vec3): void;
+      rigCamera(pivot: Vec3, dir: Vec3): Vec3;
       releaseCamera(): void;
       respawnAt(pos: Vec3, facing: number, tick: number): Snapshot;
       setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;

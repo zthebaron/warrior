@@ -7,7 +7,7 @@ import { GameLoop, LOOP_CONFIG } from './engine/loop';
 import { InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
-import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
+import { SpringArmCamera, CAMERA_TUNING, allowedArm } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
@@ -62,6 +62,8 @@ export interface HarnessSnapshot {
   grounded: boolean;
   platforms: { id: string; pos: Vec3 }[];
   hazards: { index: number; type: string; pos: Vec3 }[];
+  /** Crow cues by hazard index: the bot holds at a torii for a perched -> airborne edge (Q2, Q5). */
+  crows: { index: number; airborne: boolean; pos: Vec3 }[];
   checkpoints: number[];
   deaths: number;
   lastDeath: Vec3 | null;
@@ -87,6 +89,9 @@ interface HarnessApi {
   rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   setCamera(pos: Vec3, target: Vec3): void;
+  /** Where the follow rig would put the camera for this pivot and arm direction: the arm pulled in by the
+   *  same raycast + clamp as SpringArmCamera (D-012: only frames normal camera control can reach). */
+  rigCamera(pivot: Vec3, dir: Vec3): Vec3;
   releaseCamera(): void;
   /**
    * PHASE_SWEEP (B-7): respawn at `pos` with the world clock set to `tick`. This is what a real
@@ -511,6 +516,7 @@ async function boot(): Promise<void> {
       grounded: player?.grounded ?? false,
       platforms: level?.platformPositions() ?? [],
       hazards: level?.hazardPositions() ?? [],
+      crows: level?.crows() ?? [],
       checkpoints: [...checkpointLog],
       deaths,
       lastDeath,
@@ -568,6 +574,12 @@ async function boot(): Promise<void> {
       },
       setCamera: (pos, target) => {
         cameraOverride = { pos, target };
+      },
+      rigCamera: (pivot, dir) => {
+        const o = new THREE.Vector3(...pivot);
+        const d = new THREE.Vector3(...dir).normalize();
+        const arm = allowedArm(physics.castRay(o, d, CAMERA_TUNING.distance, player?.collider)?.distance ?? null);
+        return [o.x + d.x * arm, o.y + d.y * arm, o.z + d.z * arm];
       },
       releaseCamera: () => {
         cameraOverride = null;

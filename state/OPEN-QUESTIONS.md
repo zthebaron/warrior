@@ -331,6 +331,76 @@ does, and no decision covers it. C is the defect itself. Neither level used it. 
 decided later, `period` returns as a schema addition with its runtime and a decision entry.
 status: PROVISIONAL
 
+## OQ-034 — The crow's lead time: a fixed constant, or authored per crow?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A one fixed lead constant in code, lift = window_open - lead | B `lift` authored per crow as a loop fraction, sufficiency proven by the harness, the effective lead measured and reported | C as A, with the window computed from the patroller's geometry against the cue path
+took: B
+because: PROMPT-CHAPTER-1 says "lifts off on a fixed lead time before the safe window opens", but no
+lead is in MEASUREMENTS.md, and CLAUDE.md forbids a number in code that is not there. The right lead
+is a human-reaction number, and only H2.5 can measure it. So under B the crow carries `lift`, and the
+harness proves it is a sufficient "go now": the bot departs on the lift-off edge and must clear from
+all 8 arrival phases. A quarter-loop mistimed `lift` fails 0/8 (verified). Measured in chapter 1: lift
+to window-open is 0.83 s (seg 3) and 1.19 s (seg 4), and departing up to 0.75 s / 0.95 s after
+lift-off still clears every phase (tools/harness/cue-window.ts). C is the upgrade once H2.5 picks a
+lead: a lint rule then derives `lift` and the authored field goes away.
+status: CONFIRMED (Tim, 2026-11-08). Stronger argument than the one made: the harness proves sufficiency without knowing the correct value, a property test standing in for a constant nobody can measure yet. The number that matters is the SLACK, not the lead: H2.5 must measure how late a HUMAN can depart after lift-off and still clear, against the bot's 0.75 s / 0.95 s. If human slack falls outside bot slack, the problem is cue legibility, and a bigger lead will not fix it.
+
+## OQ-035 — Where does a crow live in the level schema?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A a top-level `crows` array, each referencing a hazard | B a `crow` block inside the patroller it cues
+took: B
+because: Q2a: "nothing translates except the player and hazards." Under B the only crow that can move
+is part of a hazard, and a crow keyed to anything but a timed hazard cannot be represented: the schema
+allows `crow` on `type: patroller` only, so there is no rule to lint. Ambient crows cannot be authored
+at all yet; chapter 1 needs none. If they are wanted, they get their own array with no motion fields,
+which makes NOT row 18 enforceable as a schema check. A waypoint's `cue: <hazard index>` says where
+the player waits for it, and lint checks that it waits at a torii (BAD_CUE, CUE_NOT_AT_TORII).
+NO_CROW_CUE makes Q5's "chapter 1 carries the crow" executable.
+status: PROVISIONAL
+
+## OQ-036 — Q6 part 6 (per-segment death counts) does not exist. What stands in for the teach-rate proxy?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A build the per-segment counter first | B report PHASE_SWEEP "blind" departures (the bot ignoring the crow) as deaths per segment, labelled as a proxy | C report nothing
+took: B
+because: the harness has only a total `deaths` counter, and nav fails on the first death, so the expert
+bot always shows 0. That measures nothing. A blind departure is exactly a first-time player who does
+not read the crow, so its failure count is a direct per-segment death measure for the one unproven
+mechanic. It is report-only and never fails CI. A is real work owed to Q6, now B-17 in the backlog.
+status: PROVISIONAL
+
+## OQ-037 — Chapter 1 is 4 segments. What does that set for chapters 2-4?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A leave CHAPTER_SEGMENTS (4-6, chapter 2+) as it is; chapter 1 needs no rule of its own | B tighten to 4-5 | C set a per-move rule, "one segment per new move or signal that can kill you, plus one transfer segment for the riskiest"
+took: A, recording C as what chapter 1 actually did
+because: four came from C: ground cannot kill on a 7 m seam ledge, so it shares a segment with jump;
+climb gets one; the crow gets two (introduce it alone, then transfer it to a jump), because Q5 calls it
+the riskiest unproven element. Bot time is 19.75 s total, inside 12 s per segment. Chapters 2-4 add
+2/2/1 moves and no new signal, so C predicts 2-4 teaching segments plus practice: that lands in 4-6.
+The lint warning CHAPTER_LENGTH_PENDING stays until Tim sets the rule. The number is an input to
+that decision, not the decision.
+status: OVERRIDDEN by D-011 (C is the rule, not a description; 4-6 is a warn)
+
+## OQ-038 — ACCENT_AREA (D-006) made a two-climb segment impossible. Is the scanning frame right for a climbing game?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A keep the rule; author one climb per torii-to-torii rise | B scan with the rig pitched toward the gate | C exempt gates above the anchor
+took: A (the level was changed, the rule was not)
+because: the scan stands 6.7 m behind the previous torii, at the rig's rest pitch, facing the next one,
+so the previous torii is always dead centre. With two stacked 3.5 m faces in between, the upper lip
+hides everything below +8.4 degrees, and the previous gate's crossbeams cover +5..14 (frame top +12). Rendered with
+tools/harness/scan-frame.ts: 0.0000% at 21 m and at 33 m. Weakening a measured rule to fit content is
+forbidden. But this game climbs a mountain, so a player looking up for the next gate is the normal
+case. B is worth Tim's decision before chapters 2-4 author more vertical segments.
+status: OVERRIDDEN by D-012 (the frame was the defect, not the floor; A stands for chapter 1)
+
+## OQ-039 — `npm run lint:levels` never validates the schema
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A add ajv validation to lint:levels | B leave the schema to the playtest/game load
+took: B for now (out of CHAPTER-1 scope); recorded as a finding
+because: lint-level.mjs is semantic only. A level can print LINT PASS and still fail
+level.schema.json; only `npm run playtest` or a game load catches it. While authoring, a schema
+error (strict-mode `if/required`) crashed the harness at compile, and LINT PASS had already been
+printed. The cheapest fix is a few lines in the lint:levels loop.
+
 ## OQ-040 — D-010: batch the landing mark into an existing draw call, or raise the asserted count by one?
 raised: 2026-11-08 by phase0-spec
 options: A batch | B raise "the asserted count" by one | C there is no per-scene count asserted: add a measured scene ratchet and set it
@@ -353,4 +423,39 @@ green. But left un-recorded, that drift becomes permanent baseline noise eating 
 a real regression of the same size would then pass. Re-recorded deliberately: on darwin only cam0
 (8 px, a 4x3 patch at the feet) and cam1 (29 px, 11x5) changed, both to near-black ink, nothing
 else. Linux regenerated by CI from scratch (the missing-golden mechanism) and checked byte-equal.
+status: PROVISIONAL
+
+## OQ-042 — D-011 counts "new moves that can kill you". Which moves can?
+raised: 2026-11-08 by kit (D-011)
+options: A every move but ground | B every move | C derive it per level from geometry (does the edge cross the void?)
+took: A (`NON_LETHAL_MOVES = ['ground']` in tools/lint-level.mjs)
+because: this is what chapter 1's 4 segments came from, and D-011 adopted that derivation. Ground never
+leaves the support surface. Walking off an edge is a risk every segment carries, so it needs no segment
+of its own. B would demand a segment that teaches walking. C is honest but needs a geometry model the
+linter does not have, and it would make the count depend on layout rather than on the moveset, which
+is the opposite of D-011's point.
+status: CONFIRMED with a renaming (PHASE-0-DECISIONS "OQ-042"): the concept is "misunderstanding the move is unrecoverable within the segment", not "can kill you". Same classification; RECOVERABLE_MOVES = [ground]
+
+## OQ-043 — D-011's transfer segment is for "the riskiest". Which is the riskiest in chapters 2-4?
+raised: 2026-11-08 by kit (D-011)
+options: A a per-chapter table: chapter 1 crow (Q5), then the move Q5's table lists last (2 double, 3 dash, 4 dashjump) | B declared per level | C every new item gets a transfer
+took: A (`CHAPTER_RISKIEST` in tools/lint-level.mjs)
+because: Q5 names the crow as chapter 1's riskiest. For 2-4 its notes single out the later move: airborne
+cliff work and double; "timing and gaps arrive together" and dash; dashjump alone. B puts the choice back
+in an agent's hands, which is the taste D-011 removes. C turns "plus one" into "times two" and
+contradicts D-011's text. One table, five entries, overridable in one commit.
+status: CONFIRMED (PHASE-0-DECISIONS "OQ-043"): Q5's order already encodes difficulty, so "last in the chapter's list" is a derivation, not a judgement
+
+## OQ-044 — PR6-REBASE asked for a rebase of chapter-1 onto main. Rebase, or merge main in?
+raised: 2026-11-08 by kit (PR6-REBASE)
+options: A rebase chapter-1 onto origin/main and force-push | B merge origin/main into chapter-1 (fast-forward push) | C nothing (it was already clean)
+took: B
+because: PR 8 merged INTO chapter-1 (bfc6a3f), so none of either PR's commits were on main, and
+`git merge-tree origin/main chapter-1` showed no conflicts: main was 3 claim-ledger commits ahead.
+A rebase would have rewritten every chapter-1 commit, orphaning the hashes that implemented_by and
+BACKLOG cite (f24a9ac, aa55016, c03fe4a, ...). The handoff lists that as a dead end, and the brief
+said to keep every filled implemented_by. The instructed `git push origin HEAD:chapter-1` (no force)
+only accepts a fast-forward anyway. B gives the same result (PR 6 MERGEABLE, CI on the exact tree
+that lands) with every hash intact. D-011 checked rather than assumed: chapter 1 lints with 0
+errors, 0 warnings, as 3 teaching (jump, climb, crow) + 1 transfer + 0 practice.
 status: PROVISIONAL

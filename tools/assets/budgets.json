@@ -23,6 +23,10 @@
     "00-gym": {
       "draw_calls": 34,
       "triangles": 1104
+    },
+    "01-lower-stair": {
+      "draw_calls": 43,
+      "triangles": 3852
     }
   }
 }

@@ -1,0 +1,20 @@
+{
+  "segment": "seg1-ground-jump",
+  "model": "fal-ai/gpt-image-1.5/edit",
+  "params": {
+    "image_size": "1536x1024",
+    "quality": "medium",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "num_images": 1
+  },
+  "references": [
+    "reference/seed/hero/hero_3s.png",
+    "reference/seed/hero/hero_9s.png"
+  ],
+  "prompt": "Same art style as the reference frames, which are the locked seed: sumi-e ink wash on warm paper, flat fills, palette limited to paper-cream, mist-pale, wash greys and ink-black. Third-person follow view from slightly above and behind a small traveller in a straw hat. COMPOSITION (STYLE-BIBLE section 5, mandatory): a dark near-vertical cliff mass fills the LEFT side of the frame with vertical fracture lines; a bright cloud-sea void fills the RIGHT side; the walkable path is the narrow lighter ledge on the seam between them, with a defined dark edge where it meets the void. Horizon high, void fills the lower-right. Cliff tops flat, faces near-vertical, no rounded rock. Torii are vermilion post-and-lintel gates placed in sequence along the path as waypoints; vermilion appears on the torii and nowhere else. Crows are ink-black, never coloured. No floating platforms: every ledge is attached to the cliff. No text, no UI, no light source, no cast shadows.\n\nSegment 1 of the first chapter, 'The Lower Stair'. The path starts wide at the cliff base, runs along the seam, then rises up a short straight stone stair (straight run, visible treads, never spiral). After the stair the ledge is broken by two small gaps over the void, the second slightly wider than the first; the ledge continues on the far side. A vermilion torii stands on the ledge beyond the gaps, the next waypoint.",
+  "generated": "2026-11-08T17:05:06.238Z",
+  "ms": 26046,
+  "width": null,
+  "height": null
+}
