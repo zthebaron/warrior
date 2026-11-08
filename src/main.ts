@@ -11,7 +11,7 @@ import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
-import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, preloadLevelAssets, MANIFEST, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
+import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
 import { ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
 
@@ -91,6 +91,8 @@ interface HarnessApi {
    */
   respawnAt(pos: Vec3, facing: number, tick: number): HarnessSnapshot;
   assetProbe(name: string): Promise<AssetProbe>;
+  /** Start a test level from JSON text (tools/harness/fixtures/): same validation AND decode as levels/. */
+  startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
 }
 
 /** One mesh asset rendered ALONE (own scene: no level, player, lights, HUD or debug lines). */
@@ -188,7 +190,7 @@ async function boot(): Promise<void> {
   };
 
   // ---------- level lifecycle ----------
-  const install = (data: LevelData): void => {
+  const install = (data: PreparedLevel): void => {
     level?.dispose();
     level = buildLevel(data, physics);
     renderer.scene.add(level.root, level.debugRoot);
@@ -220,9 +222,7 @@ async function boot(): Promise<void> {
   const startLevel = async (): Promise<void> => {
     state.transition('loading');
     try {
-      const data = await loadLevel(levelId);
-      await preloadLevelAssets(data); // mesh assets decode before the (synchronous) build
-      install(data);
+      install(await prepareLevel(await loadLevel(levelId))); // decode mesh assets, then the sync build
       state.transition('play');
     } catch (err) {
       showError(err);
@@ -231,7 +231,7 @@ async function boot(): Promise<void> {
   };
 
   /** Validate FIRST; an invalid edit never replaces the running level. */
-  const hotReload = (data: LevelData): void => {
+  const hotReload = (data: PreparedLevel): void => {
     if (!state.can('loading')) return;
     const wasPaused = state.is('pause');
     state.transition('loading');
@@ -244,9 +244,7 @@ async function boot(): Promise<void> {
   const reloadFromDisk = async (): Promise<void> => {
     const id = level?.data.id ?? levelId;
     try {
-      const data = import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id);
-      await preloadLevelAssets(data);
-      hotReload(data);
+      hotReload(await prepareLevel(import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id)));
     } catch (err) {
       showError(err);
     }
@@ -256,8 +254,7 @@ async function boot(): Promise<void> {
     import.meta.hot.on('level:changed', (msg: { id: string; text: string }) => {
       if (msg.id !== level?.data.id) return;
       try {
-        const data = parseLevel(msg.text, `levels/${msg.id}.json`);
-        preloadLevelAssets(data).then(() => hotReload(data), showError);
+        prepareLevel(parseLevel(msg.text, `levels/${msg.id}.json`)).then(hotReload, showError);
       } catch (err) {
         showError(err);
       }
@@ -519,6 +516,19 @@ async function boot(): Promise<void> {
       },
       releaseCamera: () => {
         cameraOverride = null;
+      },
+      startJson: async (text) => {
+        // B-16: a test level goes through the same prepareLevel (mesh decode) as startLevel — the type
+        // of install() makes skipping it a compile error.
+        state.transition('loading');
+        try {
+          install(await prepareLevel(parseLevel(text, 'harness test level')));
+          state.transition('play');
+        } catch (err) {
+          showError(err);
+          state.transition('menu');
+        }
+        return { ok: state.is('play'), error: errorBanner.style.display === 'block' ? errorBanner.textContent : null };
       },
       assetProbe: async (name) => {
         const fail = (error: string): AssetProbe => ({ ok: false, error, calls: 0, triangles: 0, maps: [], materials: [], top: [], ktx2: getKtx2Support(), pixels: { covered: 0, nearPalette: 0, maxError: 0 } });

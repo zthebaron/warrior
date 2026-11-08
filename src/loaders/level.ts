@@ -162,11 +162,19 @@ function parseManifest(json: unknown): Map<string, ManifestAsset> {
 
 export const MANIFEST = parseManifest(manifestJson);
 
-/** Decode every mesh asset the level places. Must complete before buildLevel(data). */
-export async function preloadLevelAssets(data: LevelData): Promise<void> {
+// B-16: decoding mesh assets is async; building a level is sync. A level can only be BUILT from a
+// PreparedLevel, and the only way to get one is `await prepareLevel(data)`, which decodes every mesh
+// asset the level places. A load path that skips the decode is a TYPE ERROR (npm run typecheck, CI),
+// not a runtime throw the first time a test level happens to place a mesh.
+declare const PREPARED: unique symbol;
+export type PreparedLevel = LevelData & { readonly [PREPARED]: true };
+
+/** Decode every mesh asset the level places, then hand back a level that buildLevel accepts. */
+export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
   const names = new Set(data.geometry.map((p) => p.asset));
   const meshes = [...names].map((n) => MANIFEST.get(n)).filter((a): a is MeshAsset => a?.kind === 'mesh');
   await preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file })));
+  return data as PreparedLevel;
 }
 
 // ---------- loading ----------
@@ -327,7 +335,7 @@ function colliderDesc(kind: ColliderKind, size: THREE.Vector3, where: string): I
   return desc;
 }
 
-export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
+export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance {
   const root = new THREE.Group();
   root.name = `level:${data.id}`;
   const debugRoot = new THREE.Group();
@@ -355,7 +363,7 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
   // geometry/material, and one trimesh collider built from the asset's own triangles
   const placeMesh = (a: MeshAsset, p: Placement, q: THREE.Quaternion, where: string): void => {
     const loaded = getLoadedAsset(a.name);
-    if (!loaded) throw new Error(`[level] ${where}: asset "${a.name}" not preloaded — call preloadLevelAssets(data) before buildLevel`);
+    if (!loaded) throw new Error(`[level] ${where}: asset "${a.name}" not decoded — buildLevel needs await prepareLevel(data) first`);
     const scale = scaleOf(p.scale);
     for (const part of loaded.parts) {
       const mesh = new THREE.Mesh(part.geometry, part.material);

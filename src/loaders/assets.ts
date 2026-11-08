@@ -1,6 +1,6 @@
 // Mesh assets built by tools/assets/build.mjs (Draco geometry, KTX2 textures, KHR_materials_unlit)
 // -> decoded once, cached, handed to buildLevel synchronously. Levels never load files themselves:
-// call preloadLevelAssets() first (main.ts does, on every load path), or buildLevel throws.
+// buildLevel only accepts a PreparedLevel, which only `await prepareLevel(data)` produces (B-16).
 //
 // Decoders come from the pinned three (vite.config.ts serves/emits them under /vendor/).
 

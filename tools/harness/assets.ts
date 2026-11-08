@@ -14,7 +14,8 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Stage, guard, openGame, type Ctx, type StageResult } from './lib.ts';
+import { Stage, VIEWPORT, guard, openGame, type Ctx, type StageResult } from './lib.ts';
+import { accentShare, loadAccentConfig } from './accent.ts';
 
 interface MeshEntry {
   name: string;
@@ -70,6 +71,7 @@ export async function assets(ctx: Ctx): Promise<StageResult> {
         st.data['ktx2Support'] = p.ktx2;
       }
       st.data['tier2'] = tier2;
+
       const sup = st.data['ktx2Support'] as Record<string, boolean> | undefined;
       const fmt = Object.entries(tier2)
         .map(([n, t]) => `${n}: ${(t as { maps: { formatName: string }[] }).maps.map((x) => x.formatName).join(',')}`)
@@ -78,6 +80,32 @@ export async function assets(ctx: Ctx): Promise<StageResult> {
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');
     } finally {
       await g.close();
+    }
+
+    // B-16: a TEST level that places a mesh asset must load through the harness loader exactly as a
+    // level in levels/ does: decode, then build. A COLD page (no level started, empty asset cache) —
+    // on a warm page an earlier decode would mask a loader that skips its own. The type of install()
+    // already makes skipping a compile error; this proves the path end to end.
+    const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+    const errs: string[] = [];
+    page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+    page.on('pageerror', (e) => errs.push(`PAGEERROR: ${e.message}`));
+    try {
+      await page.goto(`${ctx.baseUrl}/?harness=1&level=00-gym`);
+      await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
+      const fx = readFileSync(join(ctx.root, 'tools/harness/fixtures/mesh-asset.json'), 'utf8');
+      const t = await page.evaluate(async (text) => window.__HARNESS__!.startJson(text), fx);
+      // The torii is the only thing allowed to carry the accent (STYLE-BIBLE 2): accent pixels in a frame
+      // aimed at it prove the mesh was decoded, built and textured, not merely that the load returned ok.
+      const acc = loadAccentConfig(ctx.root);
+      const pct = t.ok ? await accentShare(page, [-8, 3, 0], [0, 2.5, 0], acc.candidates[acc.default]!) : 0;
+      st.check(
+        'test level with a mesh asset loads (B-16)',
+        t.ok && pct > 0 && errs.length === 0,
+        t.ok ? `cold page, tools/harness/fixtures/mesh-asset.json via startJson: kit_torii on screen, accent ${pct.toFixed(3)}% of frame${errs.length ? `; errors: ${errs.slice(0, 2).join(' | ')}` : ''}` : (t.error ?? 'failed'),
+      );
+    } finally {
+      await page.close();
     }
   });
 }

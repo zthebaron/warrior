@@ -1,0 +1,17 @@
+{
+  "id": "fixture-mesh-asset",
+  "title": "Fixture: a mesh asset on a flat pad (B-16)",
+  "chapter": 0,
+  "palette": "greybox",
+  "spawn": { "pos": [-6, 0, 0], "facing": -90 },
+  "goal": { "type": "reach", "pos": [8, 0, 0], "radius": 1 },
+  "bounds": { "min": [-12, -15, -8], "max": [12, 10, 8] },
+  "geometry": [
+    { "asset": "prim_box", "pos": [0, -0.5, 0], "scale": [20, 1, 10], "tag": "spawn" },
+    { "asset": "kit_torii", "pos": [0, 0, 0], "tag": "torii" }
+  ],
+  "hazards": [{ "type": "fall", "y": -10 }],
+  "checkpoints": [{ "pos": [-6, 0, 0], "facing": -90 }],
+  "critical_path": [[-6, 0, 0], { "pos": [8, 0, 0], "via": "ground", "note": "walks through the torii" }],
+  "difficulty": 1
+}
