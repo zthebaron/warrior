@@ -11,7 +11,11 @@ import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
-import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
+import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, preloadLevelAssets, MANIFEST, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
+import { configureAssetLoaders, getKtx2Support, getLoadedAsset, preloadAssets, type Ktx2Support } from './loaders/assets';
+
+/** The kit palette as authored in tools/blender/lib.py (STYLE-BIBLE section 2 + measured vermilion). */
+const KIT_PALETTE = [0xcabfac, 0xafa79c, 0x979189, 0x827d76, 0x69645f, 0x534e4b, 0x383838, 0x20201e, 0x603633];
 
 export const GAME_RULES = {
   startLevel: '00-gym',
@@ -88,6 +92,20 @@ interface HarnessApi {
    * can see which torii the run then activates.
    */
   respawnAt(pos: Vec3, facing: number, tick: number): HarnessSnapshot;
+  assetProbe(name: string): Promise<AssetProbe>;
+}
+
+/** One mesh asset rendered ALONE (own scene: no level, player, lights, HUD or debug lines). */
+export interface AssetProbe {
+  ok: boolean;
+  error: string | null;
+  calls: number;
+  triangles: number;
+  maps: { width: number; height: number; compressed: boolean; format: number; mipmaps: number }[];
+  materials: string[];
+  ktx2: Ktx2Support | null;
+  /** Pixels sampled on the asset (non-background) and how many sit within 6/255 of a source texel. */
+  pixels: { covered: number; nearPalette: number; maxError: number };
 }
 
 declare global {
@@ -129,6 +147,7 @@ async function boot(): Promise<void> {
 
   const state = new StateMachine();
   const renderer = new Renderer(el('app'));
+  configureAssetLoaders(renderer.renderer);
   const physics = await Physics.create();
   const input = new InputSystem(window);
   const profiler = new Profiler();
@@ -198,7 +217,9 @@ async function boot(): Promise<void> {
   const startLevel = async (): Promise<void> => {
     state.transition('loading');
     try {
-      install(await loadLevel(levelId));
+      const data = await loadLevel(levelId);
+      await preloadLevelAssets(data); // mesh assets decode before the (synchronous) build
+      install(data);
       state.transition('play');
     } catch (err) {
       showError(err);
@@ -220,7 +241,9 @@ async function boot(): Promise<void> {
   const reloadFromDisk = async (): Promise<void> => {
     const id = level?.data.id ?? levelId;
     try {
-      hotReload(import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id));
+      const data = import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id);
+      await preloadLevelAssets(data);
+      hotReload(data);
     } catch (err) {
       showError(err);
     }
@@ -230,7 +253,8 @@ async function boot(): Promise<void> {
     import.meta.hot.on('level:changed', (msg: { id: string; text: string }) => {
       if (msg.id !== level?.data.id) return;
       try {
-        hotReload(parseLevel(msg.text, `levels/${msg.id}.json`));
+        const data = parseLevel(msg.text, `levels/${msg.id}.json`);
+        preloadLevelAssets(data).then(() => hotReload(data), showError);
       } catch (err) {
         showError(err);
       }
@@ -492,6 +516,59 @@ async function boot(): Promise<void> {
       },
       releaseCamera: () => {
         cameraOverride = null;
+      },
+      assetProbe: async (name) => {
+        const fail = (error: string): AssetProbe => ({ ok: false, error, calls: 0, triangles: 0, maps: [], materials: [], ktx2: getKtx2Support(), pixels: { covered: 0, nearPalette: 0, maxError: 0 } });
+        const a = MANIFEST.get(name);
+        if (!a || a.kind !== 'mesh') return fail(`"${name}" is not a mesh asset in the manifest`);
+        try {
+          await preloadAssets([{ name: a.name, file: a.file }]);
+        } catch (err) {
+          return fail(err instanceof Error ? err.message : String(err));
+        }
+        const loaded = getLoadedAsset(name)!;
+        const scene = new THREE.Scene();
+        const BG = 0xff00ff; // off-palette magenta: anything not magenta is the asset
+        scene.background = new THREE.Color(BG);
+        for (const part of loaded.parts) scene.add(new THREE.Mesh(part.geometry, part.material));
+        const [lo, hi] = [new THREE.Vector3(...a.bbox.min), new THREE.Vector3(...a.bbox.max)];
+        const c = lo.clone().add(hi).multiplyScalar(0.5);
+        const r = hi.clone().sub(lo).length() / 2;
+        const cam = new THREE.PerspectiveCamera(40, renderer.renderer.domElement.width / renderer.renderer.domElement.height, 0.1, r * 10);
+        cam.position.set(c.x + r * 1.6, c.y + r * 0.6, c.z + r * 2.2);
+        cam.lookAt(c);
+        const r3 = renderer.renderer;
+        r3.setRenderTarget(null);
+        r3.render(scene, cam);
+        const info = { calls: r3.info.render.calls, triangles: r3.info.render.triangles };
+        // read back in the same task as the render (no preserveDrawingBuffer needed)
+        const gl = r3.getContext();
+        const w = gl.drawingBufferWidth;
+        const h = gl.drawingBufferHeight;
+        const px = new Uint8Array(w * h * 4);
+        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        // source texels: the palette as authored (sRGB bytes). Shipped colours must land on them.
+        const texels = KIT_PALETTE.map((hex) => [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255] as const);
+        let covered = 0;
+        let near = 0;
+        let maxError = 0;
+        for (let i = 0; i < px.length; i += 4) {
+          const [R, G, B] = [px[i]!, px[i + 1]!, px[i + 2]!];
+          if (R > 240 && G < 15 && B > 240) continue; // background
+          covered++;
+          let best = 255;
+          for (const t of texels) best = Math.min(best, Math.max(Math.abs(R - t[0]), Math.abs(G - t[1]), Math.abs(B - t[2])));
+          if (best <= 6) near++;
+          maxError = Math.max(maxError, best);
+        }
+        const mats = loaded.parts.map((p) => p.material);
+        const maps = mats.flatMap((m) => {
+          const t = (m as THREE.MeshBasicMaterial).map;
+          if (!t) return [];
+          const img = t.image as { width: number; height: number };
+          return [{ width: img.width, height: img.height, compressed: (t as THREE.CompressedTexture).isCompressedTexture === true, format: t.format as number, mipmaps: t.mipmaps?.length ?? 0 }];
+        });
+        return { ok: true, error: null, ...info, maps, materials: mats.map((m) => m.type), ktx2: getKtx2Support(), pixels: { covered, nearPalette: near, maxError } };
       },
     };
     state.transition('menu');
