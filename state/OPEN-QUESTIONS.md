@@ -226,3 +226,13 @@ are byte-identical. If a real level ever runs near 300, revisit; the flag makes 
 Feel-test note: on the gym's checkpoint pads (visual-only, 6 cm thick) the disc is hidden underneath,
 because the ray passes through the pad to the floor. Real torii are not floor tiles.
 status: PROVISIONAL
+
+## OQ-032 — Hazard `period` is accepted on every hazard type and nothing at runtime reads it. Give it a meaning or remove it?
+raised: 2026-11-08 by phase0-spec
+options: A remove it from the schema | B define crush as cycling on `period` | C keep it, documented as unused
+took: A
+because: same class as D-008 (a field that can be authored with no effect is a schema defect) and as
+Q4 amendment 2 (a field an agent sees gets wired up). B would be a design decision about what crush
+does, and no decision covers it. C is the defect itself. Neither level used it. If crush cycling is
+decided later, `period` returns as a schema addition with its runtime and a decision entry.
+status: PROVISIONAL

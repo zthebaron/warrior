@@ -601,5 +601,5 @@ The general rule worth extracting: **a hazard type that can be authored with no 
 schema defect, not an author error.** Audit `spike` and `crush` for the same hole while
 implementing this.
 
-implemented_by:
+implemented_by: 6a88496
 >>>>>>> Stashed changes
