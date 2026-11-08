@@ -832,3 +832,39 @@ green lights that meant nothing, found and fixed in one day, is a stronger claim
 tests that passed.
 
 implemented_by: n/a — finding. The per-instance fixes are D-010, CLAUDE.md push rule, and dce7755.
+
+## OQ-042 — **CONFIRMED with a renaming.** What earns a teaching segment. CLOSED
+
+Took: every move except `ground` counts as able to kill you. The classification is right. **The
+name is wrong and will be misused.**
+
+`ground` can kill — walk off a narrow ledge and you die. It did not kill in chapter 1 because the
+seam ledge was 7 m wide, which is a property of that *geometry*, not of the move. A future reader
+applying "ground cannot kill you" to a one-metre catwalk will be wrong, and the linter will agree
+with them.
+
+What actually distinguishes the two is not lethality but **whether failing to understand the move
+costs the player progress**. Misjudge a jump and you fall and lose the segment. Misjudge walking
+and you stop, then walk again. That holds regardless of ledge width, which is why it is the better
+rule.
+
+So keep the classification exactly as taken — `ground` alone is exempt — and rename the concept to
+what it is: a move earns a teaching segment when **misunderstanding it is unrecoverable within the
+segment**. Carry that wording into the lint code's message so the next author reads the reason
+rather than a claim that is sometimes false.
+
+## OQ-043 — **CONFIRMED as taken.** The riskiest new thing per chapter. CLOSED
+
+The crow in chapter 1, then the move Q5's table lists last in each chapter — double, dash,
+dashjump.
+
+Correct, and for a reason worth making explicit: Q5's ordering **already encodes difficulty**
+(ground/jump/climb, then wall/double, then platform/dash, then dashjump as a mastery beat). So
+"last in the chapter's list" is a *derivation* from a decision already made, not a fresh judgement
+call. That is the same property that made D-011 preferable to a range — the number falls out of
+data the agent already holds, so two agents reach it independently.
+
+The crow is the one exception and it is the right one: Q5 named it the riskiest unproven element of
+the whole design, which outranks any move.
+
+implemented_by:
