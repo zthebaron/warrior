@@ -566,4 +566,4 @@ Flag convention: follow the accent's `?accent=<name>` precedent with `?landingma
 `TUNING` constant so it is switchable in place during the feel test. Scale the disc by the
 downward raycast distance — `physics.castRay` already exists for the camera rig, so no new system.
 
-implemented_by:
+implemented_by: bf19ded

@@ -213,3 +213,16 @@ Treating each leg as an AABB already over-reports (by up to the full leg's bound
 legs), so the error is biased the right way. A measured margin, if one is ever wanted, goes in
 MEASUREMENTS.md first.
 status: PROVISIONAL
+
+## OQ-029 — D-007: batch the landing mark into an existing draw call, or exempt the budget under the flag?
+raised: 2026-11-08 by phase0-spec
+options: A batch | B exempt the Tier-1 assertion when the flag is set | C neither: show it stays under budget
+took: C
+because: the Tier-1 draw-call budget is an absolute ceiling (300), not a baseline, and the gym peaks
+at 30, so one extra disc cannot fail it. Measured with the flag on: 31 calls, PASS. B would put a
+hole in a budget for no reason, and A couples a moving ground mark to geometry it does not share.
+Off, the mesh is `visible=false`, which three.js neither draws nor uploads: goldens and counters
+are byte-identical. If a real level ever runs near 300, revisit; the flag makes it a 1-call question.
+Feel-test note: on the gym's checkpoint pads (visual-only, 6 cm thick) the disc is hidden underneath,
+because the ray passes through the pad to the floor. Real torii are not floor tiles.
+status: PROVISIONAL
