@@ -665,3 +665,40 @@ same split applies to pickups: a collectible route needs reachability, not ident
 - Lineage: their thread credits Video2Game by @OdinLovis.
 
 implemented_by: n/a — finding, no code
+
+## D-010 — The landing mark ships. Q2b resolved by the feel test. CLOSED
+
+Tim ran the H2.5 comparison at `localhost:5173/` against `?landingmark=on` and the verdict is
+unambiguous: **with the mark is better, and it works.** Q2b has been CONDITIONAL since this
+morning; it is now closed.
+
+This is the mechanism Q2b specified working exactly as intended. The mark was not argued in, it
+was **built default-off and decided by playing**, which is the same discipline D-003 applied to the
+accent budget and D-006 to the accent area: do not amend the Style Bible on a hypothesis, do amend
+it on evidence. The evidence exists now.
+
+Also settled by implication: the straight-down mark is sufficient. D-007 reserved a ballistic
+landing *predictor* as the next move **if** depth stayed unreadable. It did not. The predictor is
+dropped, not deferred — bringing it back would need a new decision and a new reason.
+
+### Flipping the default is four changes, not one
+
+`TUNING.landingMark` goes to on. Everything below follows from that and none of it is optional:
+
+1. **The visual goldens move.** Every golden was recorded with the mark off. Re-record them
+   deliberately, on both platforms, and say so in the commit — a golden re-record is how a visual
+   regression test gets silently defeated, so it needs to be an announced act with a reason.
+2. **The Tier-1 draw-call budget moves.** D-007 flagged this: the mark adds a per-frame mesh.
+   Either batch it into an existing draw call or raise the asserted count by exactly one, with the
+   new number recorded in `MEASUREMENTS.md` like every other budget. Do not let it ride as an
+   unexplained +1.
+3. **`STYLE-BIBLE.md` §9 needs the exception written in.** The forbidden list currently bans
+   contact and cast shadows outright. The mark is neither — it is a hard-edged flat disc directly
+   beneath the capsule with no softness, no offset and no implied light direction, which is why it
+   passes §10 test 1. Write that distinction into §9 explicitly, because the next agent reading
+   "no shadows" and seeing a disc under the player will otherwise file it as a violation.
+4. **The flag inverts.** `?landingmark=off` becomes the comparison switch. Keep it: the ability to
+   A/B this in place is worth more than a tidy constant, and it is how the decision gets revisited
+   if a later level makes depth read differently.
+
+implemented_by:
