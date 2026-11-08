@@ -43,11 +43,64 @@ interface DevHook {
   platforms: () => { id: string; pos: Vec3 }[];
 }
 
+/** Playtest API (tools/harness). Exists only in `--mode harness` builds AND with ?harness=1. */
+export interface HarnessSnapshot {
+  tick: number;
+  frame: number;
+  state: GameState;
+  feet: Vec3;
+  vel: Vec3;
+  pstate: string;
+  grounded: boolean;
+  platforms: { id: string; pos: Vec3 }[];
+  checkpoints: number[];
+  deaths: number;
+  lastDeath: Vec3 | null;
+  runTime: number;
+}
+
+interface HarnessApi {
+  version: string;
+  seed: number;
+  start(): Promise<{ ok: boolean; error: string | null }>;
+  /** n deterministic frames: one fixed tick each (only while simulating) + one render pass. */
+  advance(n: number, renderEvery?: number): HarnessSnapshot;
+  /** setInput(frame) then advance(1) — one round trip per tick for the bot. */
+  step(frame: InputFrame | null, render: boolean): HarnessSnapshot;
+  setInput(frame: InputFrame | null): void;
+  playback(frames: InputFrame[]): void;
+  isPlayingBack(): boolean;
+  record(): InputFrame[];
+  snapshot(): HarnessSnapshot;
+  level(): LevelData | null;
+  tuning: typeof TUNING;
+  rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
+  setCamera(pos: Vec3, target: Vec3): void;
+  releaseCamera(): void;
+}
+
 declare global {
   interface Window {
     __DEV__?: DevHook;
+    __HARNESS__?: HarnessApi;
   }
 }
+
+/** mulberry32 — the harness replaces Math.random with this so any noise is reproducible. */
+function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const HARNESS_SEED = 0x5eed1234;
+const HARNESS_MODE = __HARNESS__ && new URLSearchParams(location.search).get('harness') === '1';
+if (HARNESS_MODE) Math.random = seededRandom(HARNESS_SEED);
 
 function el(id: string): HTMLElement {
   const e = document.getElementById(id);
@@ -77,6 +130,14 @@ async function boot(): Promise<void> {
   let deathTimer = 0;
   let runTimeSec = 0;
   const tmpFeet = new THREE.Vector3();
+  const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
+  // Rule log for the playtest harness (cheap; kept in all builds).
+  let checkpointLog: number[] = [];
+  let deaths = 0;
+  let lastDeath: Vec3 | null = null;
+  // Harness-only render controls (inert unless the harness API sets them).
+  let cameraOverride: { pos: Vec3; target: Vec3 } | null = null;
+  let skipRender = false;
 
   const camRig = new SpringArmCamera(renderer.camera, (o, d, max) => physics.castRay(o, d, max, player?.collider)?.distance ?? null);
 
@@ -113,13 +174,16 @@ async function boot(): Promise<void> {
     input.resetRecording();
     tools.probe.reset();
     runTimeSec = 0;
+    checkpointLog = [];
+    deaths = 0;
+    lastDeath = null;
     clearError();
   };
 
   const startLevel = async (): Promise<void> => {
     state.transition('loading');
     try {
-      install(await loadLevel(GAME_RULES.startLevel));
+      install(await loadLevel(levelId));
       state.transition('play');
     } catch (err) {
       showError(err);
@@ -139,7 +203,7 @@ async function boot(): Promise<void> {
   };
 
   const reloadFromDisk = async (): Promise<void> => {
-    const id = level?.data.id ?? GAME_RULES.startLevel;
+    const id = level?.data.id ?? levelId;
     try {
       hotReload(import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id));
     } catch (err) {
@@ -168,14 +232,17 @@ async function boot(): Promise<void> {
     const f = player.feet(tmpFeet);
     if (level.fallY !== null && f.y < level.fallY) {
       deathTimer = 0;
+      deaths++;
+      lastDeath = [f.x, f.y, f.z];
       state.transition('death');
       return;
     }
-    for (const c of level.data.checkpoints) {
+    level.data.checkpoints.forEach((c, i) => {
       if (Math.hypot(f.x - c.pos[0], f.z - c.pos[2]) < GAME_RULES.checkpointRadius && Math.abs(f.y - c.pos[1]) < GAME_RULES.goalHeightTolerance) {
         respawn = { pos: c.pos, facing: c.facing ?? respawn.facing };
+        if (!checkpointLog.includes(i)) checkpointLog.push(i);
       }
-    }
+    });
     const g = level.data.goal;
     if (Math.hypot(f.x - g.pos[0], f.z - g.pos[2]) < (g.radius ?? 1) && Math.abs(f.y - g.pos[1]) < GAME_RULES.goalHeightTolerance) {
       state.transition('results');
@@ -212,7 +279,10 @@ async function boot(): Promise<void> {
     player?.render(alpha);
     profiler.end('animation');
 
-    if (player && !tools.freeCamActive) {
+    if (cameraOverride) {
+      renderer.camera.position.set(...cameraOverride.pos);
+      renderer.camera.lookAt(...cameraOverride.target);
+    } else if (player && !tools.freeCamActive) {
       tmpFeet.copy(player.mesh.position);
       tmpFeet.y -= player.feetOffset();
       camRig.update(frameDt, tmpFeet, state.simulating() ? player.vel : ZERO);
@@ -221,7 +291,7 @@ async function boot(): Promise<void> {
     if (level) level.debugRoot.visible = overlay.visible;
 
     profiler.begin('render');
-    renderer.render();
+    if (!skipRender) renderer.render();
     profiler.end('render');
     overlay.update(frameDt);
     profiler.endFrame();
@@ -323,6 +393,69 @@ async function boot(): Promise<void> {
         return { center: v3(player.center), body: [b.x, b.y, b.z], collider: [c.x, c.y, c.z] };
       },
     };
+  }
+
+  // ---------- playtest harness API (dead code outside `--mode harness` builds) ----------
+  if (__HARNESS__ && HARNESS_MODE) {
+    const v3 = (v: THREE.Vector3): Vec3 => [v.x, v.y, v.z];
+    const snapshot = (): HarnessSnapshot => ({
+      tick: loop.tickCount,
+      frame: loop.frameCount,
+      state: state.get(),
+      feet: player ? v3(player.feet(new THREE.Vector3())) : [0, 0, 0],
+      vel: player ? v3(player.vel) : [0, 0, 0],
+      pstate: player?.state ?? 'none',
+      grounded: player?.grounded ?? false,
+      platforms: level?.platformPositions() ?? [],
+      checkpoints: [...checkpointLog],
+      deaths,
+      lastDeath,
+      runTime: runTimeSec,
+    });
+    // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
+    // Mirrors GameLoop.frame's gate — no ticks while not simulating (death delay, pause...).
+    const advance = (n: number, renderEvery = 1): HarnessSnapshot => {
+      for (let i = 0; i < n; i++) {
+        if (state.simulating()) loop.stepOnce();
+        skipRender = !(i === n - 1 || (renderEvery > 0 && loop.frameCount % renderEvery === 0));
+        onRender(0, loop.dt);
+        loop.frameCount++;
+      }
+      skipRender = false;
+      return snapshot();
+    };
+    window.__HARNESS__ = {
+      version: 'HARNESS_API_V1',
+      seed: HARNESS_SEED,
+      start: async () => {
+        await startLevel();
+        return { ok: state.is('play'), error: errorBanner.style.display === 'block' ? errorBanner.textContent : null };
+      },
+      advance,
+      step: (frame, render) => {
+        input.setOverride(frame);
+        return advance(1, render ? 1 : 0);
+      },
+      setInput: (frame) => input.setOverride(frame),
+      playback: (frames) => input.playback(frames),
+      isPlayingBack: () => input.isPlayingBack(),
+      record: () => input.record(),
+      snapshot,
+      level: () => level?.data ?? null,
+      tuning: TUNING,
+      rendererInfo: () => {
+        const info = renderer.renderer.info;
+        return { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures };
+      },
+      setCamera: (pos, target) => {
+        cameraOverride = { pos, target };
+      },
+      releaseCamera: () => {
+        cameraOverride = null;
+      },
+    };
+    state.transition('menu');
+    return; // deterministic mode: the harness drives every frame; the rAF loop never starts
   }
 
   state.transition('menu');

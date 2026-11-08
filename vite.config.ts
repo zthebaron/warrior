@@ -18,7 +18,11 @@ function levelHotReload(): Plugin {
   };
 }
 
-export default defineConfig({
+// __HARNESS__ is true ONLY for `vite build --mode harness` (tools/harness/run.mjs builds that
+// into dist-harness/). Every other build gets `false`, so the whole test API is dead code and the
+// minifier drops it — run.mjs greps the production bundle for the sentinel to prove it.
+export default defineConfig(({ mode }) => ({
   plugins: [levelHotReload()],
+  define: { __HARNESS__: JSON.stringify(mode === 'harness') },
   build: { target: 'es2022' },
-});
+}));

@@ -5,3 +5,4 @@ node_modules/
 harness-report.json
 tools/harness/golden/**/*.actual.png
 reference/seed/*.mp4
+dist-harness/

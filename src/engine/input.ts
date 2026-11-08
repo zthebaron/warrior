@@ -40,6 +40,7 @@ export class InputSystem {
   private recordOverflowWarned = false;
   private playbackQueue: InputFrame[] = [];
   private playbackIndex = 0;
+  private override: InputFrame | null = null;
 
   constructor(target: Window) {
     target.addEventListener('keydown', (e) => this.down.add(e.code));
@@ -77,6 +78,8 @@ export class InputSystem {
       frame = { ...queued };
       this.playbackIndex++;
       if (this.playbackIndex >= this.playbackQueue.length) this.stopPlayback();
+    } else if (this.override) {
+      frame = { ...this.override };
     } else if (!live) {
       frame = { ...NEUTRAL_FRAME };
     } else {
@@ -124,6 +127,15 @@ export class InputSystem {
   playback(frames: readonly InputFrame[]): void {
     this.playbackQueue = frames.map((f) => ({ ...f }));
     this.playbackIndex = 0;
+  }
+
+  /**
+   * Hold this frame as the live input until replaced or cleared (null). Same sampling path as
+   * the keyboard: recorded, edge-detected by the consumer, overridden by playback. Used by the
+   * playtest bot so it drives the game exactly as a player would — no teleporting.
+   */
+  setOverride(frame: InputFrame | null): void {
+    this.override = frame ? { ...frame } : null;
   }
 
   stopPlayback(): void {

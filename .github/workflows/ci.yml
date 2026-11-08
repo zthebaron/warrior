@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  playtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true # visual goldens are *.png, which .gitattributes routes through LFS
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3 # harness stages are .ts run by Node's built-in type stripping (>= 22.18)
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium (+ headless shell, + system deps)
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run typecheck
+
+      - run: npm run lint:levels
+
+      # schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> visual
+      # exit 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
+      - run: npm run playtest
+
+      - name: Upload harness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report
+          path: |
+            harness-report.json
+            tools/harness/golden/**/*.actual.png
+          if-no-files-found: warn

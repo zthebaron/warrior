@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 4173",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tools/harness",
     "lint:levels": "node tools/lint-level.mjs levels/00-gym.json assets/dist/manifest.json",
     "lint:example": "node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json",
     "check:physics": "node tools/rapier-determinism.mjs",
@@ -27,8 +27,11 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
+    "@types/node": "^22.20.5",
+    "@types/pngjs": "^6.0.5",
     "@types/three": "0.187.0",
     "pixelmatch": "^8.0.0",
+    "pngjs": "^7.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6"
   },
