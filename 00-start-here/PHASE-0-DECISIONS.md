@@ -54,6 +54,8 @@ If the feel test says depth is unreadable, the mark ships and §9 gets a documen
 Do not amend the Style Bible on a hypothesis — same discipline as not putting an unmeasured
 number in the budget table.
 
+implemented_by: bf19ded (the flagged mark, B-3), b20296d (shipped on: closed by D-010)
+
 ## Q2c — Schema cuts the Style Bible forces: **approved.** CLOSED
 
 - Cut the fire hazard and the torch interactable. Both need either an off-ramp colour or a
@@ -701,4 +703,4 @@ dropped, not deferred — bringing it back would need a new decision and a new r
    A/B this in place is worth more than a tidy constant, and it is how the decision gets revisited
    if a later level makes depth read differently.
 
-implemented_by:
+implemented_by: b20296d (default on, flag inverted, Style Bible exception, scene ratchet, darwin goldens), c512c78 (linux goldens)
