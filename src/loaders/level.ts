@@ -77,7 +77,8 @@ export interface ManifestAsset {
 export const LEVEL_VISUAL = {
   defaultColor: 0xb8b2a6,
   platformColor: 0x8fa3b8,
-  hazardColor: 0x2a2622,   // greybox: patrollers and hazard volumes read as dark ink masses
+  hazardColor: 0x2a2622,
+  waterColor: 0xafa79c,    // palette.json mist-pale: water is a flat wash (Q2c)   // greybox: patrollers and hazard volumes read as dark ink masses
   tagColors: { goal_pad: 0x3fd08f, spawn: 0xd9c27a, test: 0xa89a8a } as Record<string, number>,
   checkpointColor: 0x6fb3ff,
   checkpointSize: [1.2, 0.06, 1.2] as const,
@@ -201,7 +202,11 @@ export interface LevelInstance {
   debugRoot: THREE.Group;
   /** Meshes for ray picking (teleport-to-cursor). */
   pickables: THREE.Object3D[];
-  fallY: number | null;
+  /**
+   * The kill plane: feet below this y is death (Q6 part 1). It is the HIGHEST of the fall plane and
+   * any water plane (D-008), so no authored plane is silently ignored. null = no plane.
+   */
+  killPlaneY: number | null;
   /**
    * Pose every moving thing (platforms, patrollers) at world time `t`. Pure in t: nothing moving
    * keeps state of its own, so a level's motion is fully determined by the clock (B-12, Q6 part 4).
@@ -378,7 +383,7 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
     const isPatroller = def.type === 'patroller';
     if (!isPatroller && !def.pos) return;
     const start = isPatroller ? patrollerAt(def.path!, def.speed!, def.phase!, 0, new THREE.Vector3()) : new THREE.Vector3(...def.pos!);
-    const mesh = new THREE.Mesh(boxGeo, mat(V.hazardColor));
+    const mesh = new THREE.Mesh(boxGeo, mat(def.type === 'water' ? V.waterColor : V.hazardColor));
     mesh.scale.set(...def.size);
     mesh.position.copy(start);
     root.add(mesh);
@@ -396,6 +401,18 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
   // fall plane (visual)
   const fall = (data.hazards ?? []).find((h) => h.type === 'fall');
   const fallY = fall?.y ?? null;
+  // water as a plane (D-008): a still flat wash at y; below it is death, like fall. Drawn as an
+  // opaque flat fill in palette mist-pale: no reflection, no animation (Q2c, STYLE §9.8).
+  const waterYs = (data.hazards ?? []).filter((h) => h.type === 'water' && typeof h.y === 'number' && !h.pos).map((h) => h.y!);
+  for (const y of waterYs) {
+    const { min, max } = data.bounds;
+    const wash = new THREE.Mesh(new THREE.PlaneGeometry(max[0] - min[0], max[2] - min[2]), new THREE.MeshBasicMaterial({ color: V.waterColor, side: THREE.DoubleSide }));
+    wash.rotation.x = -Math.PI / 2;
+    wash.position.set((min[0] + max[0]) / 2, y, (min[2] + max[2]) / 2);
+    root.add(wash);
+  }
+  const planes = [...(fallY !== null ? [fallY] : []), ...waterYs];
+  const killPlaneY = planes.length ? Math.max(...planes) : null;
   if (fallY !== null) {
     const { min, max } = data.bounds;
     const plane = new THREE.Mesh(
@@ -421,7 +438,7 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
     root,
     debugRoot,
     pickables,
-    fallY,
+    killPlaneY,
     fixedUpdate(t, dt) {
       for (const p of platforms) {
         pointOnPath(p.def.path, ease(p.def.easing, platformParam(p.def, t - dt)), p.prev);

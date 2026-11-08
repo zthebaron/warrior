@@ -110,6 +110,20 @@ export function lintLevel(level, manifest){
   const last=P(cp.at(-1));
   if(level.goal.pos&&d(last,level.goal.pos)>(level.goal.radius??3)) E('PATH_END','path does not end in goal radius');
 
+  // NO_KILL_VOLUME (D-008): a hazard that can be authored with no effect is a schema defect, so each
+  // type must carry the one form that kills. Mirrors the schema's per-type rules, because this linter
+  // also runs standalone. (Patrollers report their own NO_* codes below.)
+  const num=v=>typeof v==='number', v3=v=>Array.isArray(v)&&v.length===3;
+  (level.hazards??[]).forEach((hz,i)=>{
+    const vol=v3(hz.pos)&&v3(hz.size);
+    if(hz.type==='fall'&&!num(hz.y)) E('NO_KILL_VOLUME',`hazards[${i}] fall has no "y": it is the kill plane, and without it nothing dies`);
+    if(hz.type==='water'&&!num(hz.y)&&!vol) E('NO_KILL_VOLUME',`hazards[${i}] water needs a plane ("y", below it is death) or a volume ("pos" + "size"); with neither it never kills (D-008)`);
+    if(hz.type==='water'&&num(hz.y)&&vol) E('NO_KILL_VOLUME',`hazards[${i}] water has both a plane "y" and a volume "pos"+"size"; pick one, the other would have no effect`);
+    if((hz.type==='spike'||hz.type==='crush')&&!vol) E('NO_KILL_VOLUME',`hazards[${i}] ${hz.type} needs "pos" + "size" (full extents): its kill volume. There is no default (no unmeasured numbers)`);
+  });
+  const falls=(level.hazards??[]).filter(h=>h.type==='fall').length;
+  if(falls>1) E('NO_KILL_VOLUME',`${falls} fall planes: only the highest kill plane can ever take effect; keep one`);
+
   // Patrollers (Q2, B-1): speed and phase are mandatory, same severity as a missing via. A patroller
   // without them has no defined position at a given tick, so PHASE_SWEEP (B-7) has nothing to sweep.
   (level.hazards??[]).forEach((hz,i)=>{
@@ -131,8 +145,9 @@ export function lintLevel(level, manifest){
     ...(level.checkpoints??[]).map((c,i)=>({name:`checkpoint[${i}]`,pos:c.pos,radius:R.checkpointRadius})),
     ...(level.goal?.pos?[{name:'goal',pos:level.goal.pos,radius:level.goal.radius??R.goalRadiusDefault}]:[])];
   for(const st of stands) (level.hazards??[]).forEach((hz,i)=>{
-    if(hz.type==='fall'){
-      if(typeof hz.y==='number'&&st.pos[1]<=hz.y) E('HAZARD_AT_CHECKPOINT',`${st.name} ${JSON.stringify(st.pos)} is at or below the fall plane y=${hz.y}: arriving there is death`);
+    const plane=hz.type==='fall'||(hz.type==='water'&&typeof hz.y==='number'&&!hz.pos);
+    if(plane){
+      if(typeof hz.y==='number'&&st.pos[1]<=hz.y) E('HAZARD_AT_CHECKPOINT',`${st.name} ${JSON.stringify(st.pos)} is at or below the ${hz.type} plane y=${hz.y}: arriving there is death`);
       return;
     }
     for(const b of hazardBoxes(hz)){

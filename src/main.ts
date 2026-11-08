@@ -257,7 +257,7 @@ async function boot(): Promise<void> {
     // (a stepped fall is picked up on the first real tick after resuming).
     if (!state.is('play')) return;
     const f = player.feet(tmpFeet);
-    if (level.fallY !== null && f.y < level.fallY) return die(f);
+    if (level.killPlaneY !== null && f.y < level.killPlaneY) return die(f);
     if (level.hazardHit(f, TUNING.capsuleRadius, 2 * (TUNING.capsuleHalfHeight + TUNING.capsuleRadius)) >= 0) return die(f);
     level.data.checkpoints.forEach((c, i) => {
       if (Math.hypot(f.x - c.pos[0], f.z - c.pos[2]) < GAME_RULES.checkpointRadius && Math.abs(f.y - c.pos[1]) < GAME_RULES.goalHeightTolerance) {

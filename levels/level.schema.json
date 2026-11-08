@@ -313,10 +313,6 @@
           "size": {
             "$ref": "#/definitions/vec3"
           },
-          "period": {
-            "type": "number",
-            "exclusiveMinimum": 0
-          },
           "path": {
             "type": "array",
             "minItems": 2,
@@ -338,8 +334,127 @@
             "description": "patroller: start offset as a fraction of one loop. Position is a pure function of the world clock: phase + t*speed (Q6)."
           }
         },
-        "description": "A hazard is a moving fall plane (Q6): touching one is death, nothing else. The patroller lives here, not in an enemies array, so nothing invites AI (Q7). speed and phase are mandatory on a patroller (Q2). Water survives only as a flat wash (Q2c): a still plane at \"y\", never animated (no period/path/speed/phase), never reflective.",
+        "description": "A hazard is a moving fall plane (Q6): touching one is death, nothing else. Each type has exactly one form that has an effect, and only that form is accepted (D-008: a hazard that can be authored with no effect is a schema defect). fall: a plane at y. water: a still plane at y (below it is death, like fall) OR a bounded volume pos+size, never animated or reflective (Q2c). spike, crush: a static volume pos+size (crush has no cycling until one is decided, OQ-032). patroller: path+speed+phase+size, moving as a pure function of the world clock (Q2, Q6). size is FULL extents.",
         "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "fall"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "y"
+              ],
+              "properties": {
+                "y": true,
+                "pos": false,
+                "size": false,
+                "path": false,
+                "speed": false,
+                "phase": false
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "water"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "path": false,
+                "speed": false,
+                "phase": false
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "y"
+                  ],
+                  "properties": {
+                    "y": true,
+                    "pos": false,
+                    "size": false
+                  }
+                },
+                {
+                  "required": [
+                    "pos",
+                    "size"
+                  ],
+                  "properties": {
+                    "pos": true,
+                    "size": true,
+                    "y": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "spike"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "pos",
+                "size"
+              ],
+              "properties": {
+                "pos": true,
+                "size": true,
+                "y": false,
+                "path": false,
+                "speed": false,
+                "phase": false
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "crush"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "pos",
+                "size"
+              ],
+              "properties": {
+                "pos": true,
+                "size": true,
+                "y": false,
+                "path": false,
+                "speed": false,
+                "phase": false
+              }
+            }
+          },
           {
             "if": {
               "properties": {
@@ -362,31 +477,9 @@
                 "path": true,
                 "speed": true,
                 "phase": true,
-                "size": true
-              }
-            }
-          },
-          {
-            "if": {
-              "properties": {
-                "type": {
-                  "const": "water"
-                }
-              },
-              "required": [
-                "type"
-              ]
-            },
-            "then": {
-              "required": [
-                "y"
-              ],
-              "properties": {
-                "y": true,
-                "period": false,
-                "path": false,
-                "speed": false,
-                "phase": false
+                "size": true,
+                "y": false,
+                "pos": false
               }
             }
           }

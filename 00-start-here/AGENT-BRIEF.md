@@ -77,7 +77,9 @@ Levels are data, not code. You write `levels/<id>.json` against `levels/level.sc
    `HAZARD_AT_CHECKPOINT` errors if any hazard volume or patrol sweep, at any phase, can touch a
    player standing exactly there, and warns if it only enters the activation disc.
    A patroller declares `path`, `speed`, `phase` and `size` (`NO_SPEED`, `NO_PHASE`,
-   `NO_PATROL_PATH`, `NO_PATROL_SIZE`). Water is a still plane at `y`.
+   `NO_PATROL_PATH`, `NO_PATROL_SIZE`). Every hazard carries exactly the one form that kills, or it is
+   rejected (`NO_KILL_VOLUME`, D-008): fall = a plane `y`; water = a plane `y` OR a volume
+   `pos`+`size`; spike, crush = a volume `pos`+`size`. One fall plane per level.
 6. **One level file = one chapter.** Use only the moves your chapter has unlocked (SPEC §5).
    *Pending:* the `moves_allowed` field and its check. Until they land, the SPEC §5 table is the
    rule.
