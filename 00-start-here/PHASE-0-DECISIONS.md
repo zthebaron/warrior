@@ -485,4 +485,4 @@ ships a checkpoint that kills the player on arrival.
 Apply to every place the player stands still: `spawn`, every entry in `checkpoints`, and `goal`
 (using the goal's own `radius` where it is set).
 
-implemented_by:
+implemented_by: c640e4b

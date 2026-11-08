@@ -6,3 +6,4 @@
 {"id":"B-16","agent":"unknown","ts":"2026-11-08T16:08:58.859Z","released":true}
 {"id":"B-11","agent":"kit","ts":"2026-11-08T16:09:17.987Z","ttl_min":90}
 {"id":"PR3-rebase","agent":"kit","ts":"2026-11-08T16:10:10.170Z","ttl_min":90}
+{"id":"B-8","agent":"phase0-spec","ts":"2026-11-08T16:11:12.424Z","released":true}

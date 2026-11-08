@@ -73,6 +73,11 @@ Levels are data, not code. You write `levels/<id>.json` against `levels/level.sc
 4. **The path starts at spawn and ends in the goal radius** (`PATH_START`, `PATH_END`). No hazard
    sits on a waypoint (`HAZARD_ON_PATH`, static only: moving-hazard collisions are the bot's job).
 5. **Every level has a fall plane** (`NO_FALL_PLANE` warns).
+5a. **Hazards keep clear of every place the player stands still**: spawn, each checkpoint, the goal.
+   `HAZARD_AT_CHECKPOINT` errors if any hazard volume or patrol sweep, at any phase, can touch a
+   player standing exactly there, and warns if it only enters the activation disc.
+   A patroller declares `path`, `speed`, `phase` and `size` (`NO_SPEED`, `NO_PHASE`,
+   `NO_PATROL_PATH`, `NO_PATROL_SIZE`). Water is a still plane at `y`.
 6. **One level file = one chapter.** Use only the moves your chapter has unlocked (SPEC §5).
    *Pending:* the `moves_allowed` field and its check. Until they land, the SPEC §5 table is the
    rule.

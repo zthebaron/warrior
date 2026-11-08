@@ -182,3 +182,34 @@ unmeasured number. A covers every pose of the slowest element, and the other ele
 their own phases within that span. Wait cost is quantised to P/8, so it overestimates the true
 minimum wait: conservative toward failing. Increase N if a level ever needs finer resolution.
 status: PROVISIONAL
+
+## OQ-016 — Finding: a water hazard with only `y` (the flat-wash form B-2 allows) never kills at runtime
+raised: 2026-11-08 by phase0-spec
+options: A treat a pos/size-less water plane like a fall plane (below y = death) | B leave it until a level uses water
+took: B, recorded here as a proposed backlog item rather than built
+because: found while writing B-8. hazardHit() only tests volumes (pos+size or patroller), and only the
+`fall` plane is checked by height, so a bare `{type:"water", y}` is inert. No level uses water yet, and
+whether water is "below y = death" or a surface you can wade in is a design call Q2c did not make. B-8
+already treats the fall plane as a respawn hazard; when water's meaning is decided, it should be added
+there too.
+status: PROVISIONAL
+
+## OQ-017 — D-005's table says hazard `size` is half-extents; every executable use treats it as full extents
+raised: 2026-11-08 by phase0-spec
+options: A follow D-005 (size = half-extents) | B follow the code (size = full extents)
+took: B, and recorded the conflict here as CLAUDE.md requires
+because: HAZARD_ON_PATH halves it (`s[0]/2`), the runtime mesh scales by it, and hazardHit() halves
+it. Under A the linter would check a volume twice the size of what actually kills, disagreeing with
+the runtime. The schema does not say either way; it should get a description ("full extents").
+D-005's geometry is otherwise implemented as written.
+status: PROVISIONAL
+
+## OQ-018 — D-005 says inflate the capsule by "capsuleRadius plus a small margin". What margin?
+raised: 2026-11-08 by phase0-spec
+options: A 0, relying on the AABB-per-leg over-approximation | B a chosen number
+took: A
+because: no margin value is measured anywhere, and CLAUDE.md forbids unmeasured numbers in code.
+Treating each leg as an AABB already over-reports (by up to the full leg's bounding box on diagonal
+legs), so the error is biased the right way. A measured margin, if one is ever wanted, goes in
+MEASUREMENTS.md first.
+status: PROVISIONAL
