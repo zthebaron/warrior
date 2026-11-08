@@ -28,6 +28,38 @@ export const segmentsOf = (level) => (level.checkpoints?.length ?? 0) + 1;
 // rule from that measurement, not before it.
 export const CHAPTER_SEGMENTS = { target: 5, min: 4, max: 6, fromChapter: 2 };
 
+// Respawn-point safety (Q6, B-8, D-005). These MIRROR the game: GAME_RULES.checkpointRadius,
+// goalHeightTolerance, goalRadiusDefault in src/main.ts, and TUNING.capsuleRadius / capsule height in
+// src/entities/player.ts. The Node linter cannot import browser TS, so the phase-sweep harness stage
+// asserts they equal the running game's values: a drifted copy fails CI.
+export const RESPAWN_RULES = { checkpointRadius: 2.0, heightTolerance: 2.0, goalRadiusDefault: 1.0, bodyRadius: 0.35, bodyHeight: 1.9 };
+
+// HAZARD_AT_CHECKPOINT (D-005). For every place the player stands still (spawn, each checkpoint, the
+// goal), against every hazard volume over its WHOLE motion. Static, phase-independent: a periodic
+// hazard and an unbounded wait mean any overlap at any phase eventually happens.
+//   swept volume  each patrol leg as an AABB grown by the box's half-extents (size is FULL extents,
+//                 as the runtime and HAZARD_ON_PATH use it: OQ-017); a static hazard is its box.
+//                 Conservative at corners by design: a false positive costs one edit.
+//   player        a capsule: feet at the point, body 0..bodyHeight above it, radius bodyRadius.
+//                 3D: a hazard passing overhead clear of the body is not a threat.
+//   ERROR  the capsule standing exactly at the point intersects the volume: respawn into a hazard.
+//   WARN   the volume only enters the activation disc (radius + bodyRadius), same body window:
+//          a player waiting off-centre can be clipped. A skill matter, like FALL_DAMAGE.
+function hazardBoxes(hz){
+  if(!hz.size) return [];
+  const e=hz.size.map(v=>v/2);
+  if(hz.type==='patroller'){
+    const P=hz.path??[], out=[];
+    for(let k=1;k<P.length;k++) out.push({lo:[0,1,2].map(d=>Math.min(P[k-1][d],P[k][d])-e[d]), hi:[0,1,2].map(d=>Math.max(P[k-1][d],P[k][d])+e[d]), where:`patrol leg ${k-1}->${k}`});
+    return out;
+  }
+  if(!hz.pos) return [];
+  return [{lo:hz.pos.map((v,d)=>v-e[d]), hi:hz.pos.map((v,d)=>v+e[d]), where:'its volume'}];
+}
+// capsule-ish body (vertical cylinder) at feet p with horizontal reach r vs an AABB
+const bodyHits=(b,p,r)=>b.hi[1]>p[1]&&b.lo[1]<p[1]+RESPAWN_RULES.bodyHeight&&
+  Math.hypot(Math.max(0,b.lo[0]-p[0],p[0]-b.hi[0]),Math.max(0,b.lo[2]-p[2],p[2]-b.hi[2]))<r;
+
 export function lintLevel(level, manifest){
   const err=[],warn=[];
   const E=(c,m)=>err.push(`[${c}] ${m}`), W=(c,m)=>warn.push(`[${c}] ${m}`);
@@ -94,6 +126,22 @@ export function lintLevel(level, manifest){
       if(Math.abs(p[0]-hz.pos[0])<s[0]/2&&Math.abs(p[2]-hz.pos[2])<s[2]/2&&Math.abs(p[1]-hz.pos[1])<3)
         E('HAZARD_ON_PATH',`${hz.type} hazard on a critical_path waypoint`); }
   }
+  const R=RESPAWN_RULES;
+  const stands=[{name:'spawn',pos:level.spawn.pos,radius:R.checkpointRadius},
+    ...(level.checkpoints??[]).map((c,i)=>({name:`checkpoint[${i}]`,pos:c.pos,radius:R.checkpointRadius})),
+    ...(level.goal?.pos?[{name:'goal',pos:level.goal.pos,radius:level.goal.radius??R.goalRadiusDefault}]:[])];
+  for(const st of stands) (level.hazards??[]).forEach((hz,i)=>{
+    if(hz.type==='fall'){
+      if(typeof hz.y==='number'&&st.pos[1]<=hz.y) E('HAZARD_AT_CHECKPOINT',`${st.name} ${JSON.stringify(st.pos)} is at or below the fall plane y=${hz.y}: arriving there is death`);
+      return;
+    }
+    for(const b of hazardBoxes(hz)){
+      if(bodyHits(b,st.pos,R.bodyRadius)){ E('HAZARD_AT_CHECKPOINT',`${st.name} ${JSON.stringify(st.pos)}: a player standing there intersects hazards[${i}] (${hz.type}) through ${b.where}. Respawn into a hazard (Q6, D-005)`); return; }
+    }
+    for(const b of hazardBoxes(hz)){
+      if(bodyHits(b,st.pos,st.radius+R.bodyRadius)){ W('HAZARD_AT_CHECKPOINT',`${st.name} ${JSON.stringify(st.pos)}: hazards[${i}] (${hz.type}) enters its ${(st.radius+R.bodyRadius).toFixed(2)}u activation disc through ${b.where}; a player waiting off-centre can be clipped`); return; }
+    }
+  });
   if(!(level.hazards??[]).some(h=>h.type==='fall')) W('NO_FALL_PLANE','no fall plane — leaving the world never respawns');
 
   const segs=segmentsOf(level), CL=CHAPTER_SEGMENTS;

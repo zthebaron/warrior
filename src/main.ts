@@ -18,6 +18,7 @@ export const GAME_RULES = {
   respawnDelaySec: 0.8,     // time spent in `death` before respawning
   checkpointRadius: 2.0,    // m (horizontal) to activate a checkpoint
   goalHeightTolerance: 2.0, // m vertical slack when testing the goal radius
+  goalRadiusDefault: 1.0,   // m, when the level's goal sets no radius (was an inline `?? 1`)
   teleportLift: 0.05,       // m above the picked surface
   fogDefaults: { near: 40, far: 250 },
   decimals: 2,
@@ -76,7 +77,7 @@ interface HarnessApi {
   level(): LevelData | null;
   tuning: typeof TUNING;
   /** Rule constants the harness must agree with (checkpoint activation radius, height slack). */
-  rules: { checkpointRadius: number; goalHeightTolerance: number };
+  rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   setCamera(pos: Vec3, target: Vec3): void;
   releaseCamera(): void;
@@ -260,7 +261,7 @@ async function boot(): Promise<void> {
       }
     });
     const g = level.data.goal;
-    if (Math.hypot(f.x - g.pos[0], f.z - g.pos[2]) < (g.radius ?? 1) && Math.abs(f.y - g.pos[1]) < GAME_RULES.goalHeightTolerance) {
+    if (Math.hypot(f.x - g.pos[0], f.z - g.pos[2]) < (g.radius ?? GAME_RULES.goalRadiusDefault) && Math.abs(f.y - g.pos[1]) < GAME_RULES.goalHeightTolerance) {
       state.transition('results');
     }
   };
@@ -481,7 +482,7 @@ async function boot(): Promise<void> {
       snapshot,
       level: () => level?.data ?? null,
       tuning: TUNING,
-      rules: { checkpointRadius: GAME_RULES.checkpointRadius, goalHeightTolerance: GAME_RULES.goalHeightTolerance },
+      rules: { checkpointRadius: GAME_RULES.checkpointRadius, goalHeightTolerance: GAME_RULES.goalHeightTolerance, goalRadiusDefault: GAME_RULES.goalRadiusDefault },
       rendererInfo: () => {
         const info = renderer.renderer.info;
         return { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures };

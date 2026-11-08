@@ -126,6 +126,8 @@ export interface Ctx {
   level: LevelJson;
   /** segmentsOf(level) from tools/lint-level.mjs — the one segment definition. */
   segments: number;
+  /** RESPAWN_RULES from tools/lint-level.mjs, asserted equal to the running game's (B-8). */
+  lintRules: { checkpointRadius: number; heightTolerance: number; goalRadiusDefault: number; bodyRadius: number; bodyHeight: number };
   root: string;
   args: Record<string, string | boolean>;
   log: (msg: string) => void;
@@ -236,7 +238,7 @@ declare global {
       record(): InputFrame[];
       snapshot(): Snapshot;
       tuning: Record<string, number>;
-      rules: { checkpointRadius: number; goalHeightTolerance: number };
+      rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       setCamera(pos: Vec3, target: Vec3): void;
       releaseCamera(): void;

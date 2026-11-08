@@ -15,7 +15,8 @@
 //   1. some arrival phase clears it at all (else: impassable)
 //   2. EVERY arrival phase clears within the Q3 bot budget (12 s), counting the wait. An arrival
 //      that fails on departure waits at the torii for the next offset that clears; its cost is
-//      that wait plus that run. Waiting at the torii is safe by HAZARD_AT_CHECKPOINT (B-8).
+//      that wait plus that run. Waiting at the torii is safe by HAZARD_AT_CHECKPOINT (B-8), whose
+//      mirrored constants this stage checks against the running game.
 //      The wait is quantised to P/N, so it is an upper bound: conservative toward failing.
 //      Chapter 0 (the gym) is not a chapter (Q4) and its segments were never built to the Q3
 //      budget: there, assertion 2 is "every phase clears eventually" and the worst time is printed,
@@ -97,6 +98,11 @@ export async function phaseSweep(ctx: Ctx): Promise<StageResult> {
     const g = await openGame(ctx);
     try {
       const rules = await g.page.evaluate(() => window.__HARNESS__!.rules);
+      const tuning = await g.page.evaluate(() => window.__HARNESS__!.tuning);
+      // HAZARD_AT_CHECKPOINT (B-8) mirrors these five numbers; the sweep's wait arithmetic relies on it.
+      const game = { checkpointRadius: rules.checkpointRadius, heightTolerance: rules.goalHeightTolerance, goalRadiusDefault: rules.goalRadiusDefault, bodyRadius: tuning['capsuleRadius']!, bodyHeight: 2 * (tuning['capsuleHalfHeight']! + tuning['capsuleRadius']!) };
+      const drift = (Object.keys(game) as (keyof typeof game)[]).filter((k) => Math.abs(game[k] - ctx.lintRules[k]) > 1e-9);
+      st.check('linter respawn constants match the game', drift.length === 0, drift.length ? drift.map((k) => `${k}: lint ${ctx.lintRules[k]} vs game ${game[k]}`).join('; ') : JSON.stringify(game));
       let pts: RespawnPoint[];
       try {
         pts = respawnPoints(ctx.level, rules.checkpointRadius, rules.goalHeightTolerance);

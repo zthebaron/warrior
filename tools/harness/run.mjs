@@ -16,7 +16,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
-import { lintLevel, segmentsOf } from '../lint-level.mjs';
+import { lintLevel, segmentsOf, RESPAWN_RULES } from '../lint-level.mjs';
 import { EXIT_CODE, FAILURE, Stage } from './lib.ts';
 import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
@@ -143,7 +143,7 @@ for (const L of statics) {
   // Found on Linux CI: SwiftShader's GPU process wedged after chaos, and every later stage — even a
   // blank page — could not get a webgl2 context. A wedge is still reported, per stage, as an
   // environment failure; it just can no longer leak from one stage into the next.
-  const ctx = { browser: pf.browser, baseUrl: pf.baseUrl, levelId: L.id, level: L.data, segments: segmentsOf(L.data), root: ROOT, args, log };
+  const ctx = { browser: pf.browser, baseUrl: pf.baseUrl, levelId: L.id, level: L.data, segments: segmentsOf(L.data), lintRules: RESPAWN_RULES, root: ROOT, args, log };
   const stages = [...L.stages, pf.result];
   console.log(`\n== ${L.id}`);
   for (const name of BROWSER_STAGES) {
