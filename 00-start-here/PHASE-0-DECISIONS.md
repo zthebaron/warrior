@@ -486,3 +486,54 @@ Apply to every place the player stands still: `spawn`, every entry in `checkpoin
 (using the goal's own `radius` where it is set).
 
 implemented_by: c640e4b
+
+## D-006 — `ACCENT_AREA` is a floor at scanning distance, not a ceiling. DECIDED
+
+The accent renders (`docs/build-log/accent/`) and the area curve settle part of D-003 and expose
+what the renders cannot settle.
+
+### What the renders prove
+
+`seed_red` (`#603633`) is visibly dead. In the contact sheet it reads as dark brown merging with
+the rock mass and the ground slab, and in the goal shot it is an undifferentiated dark silhouette
+against sky. D-001 rejected it by argument; this is the picture of that argument, and it fails
+even against an *easy* background.
+
+### What the renders cannot prove, and why
+
+`accent-renders.json` flags it itself: *"grey-box gym (lit primitives, blue sky), not the
+STYLE-BIBLE render."* The background is blue sky. Any red separates from blue sky. The question
+D-001 actually asks is how the accent reads against the **eight-value warm-grey ramp** — which is
+the single background these renders do not contain.
+
+So the sheet is sound evidence for the rejection and no evidence at all for choosing among
+`vermilion_a` / `_b` / `_c`. **Re-render the three survivors against the palette background
+before the feel test**, or the test asks a human to judge the wrong image.
+
+### The area band, from the curve rather than from taste
+
+The curve shows accent area is a pure function of camera distance — it is geometry, not colour,
+so it is identical for every candidate:
+
+| player distance from torii | camera to torii | accent % of frame |
+|---|---|---|
+| 0 m (standing at it) | 7.6 m | **9.04%** |
+| 2 m | 9.4 m | 5.14% |
+| 4 m | 11.3 m | 3.31% |
+
+The withdrawn 1% ceiling was being exceeded ninefold at the gate, which is further confirmation
+that D-003 was right to withdraw it — but it also shows a ceiling is the wrong instrument
+entirely. **Walking through a gate legitimately fills the frame.** A ceiling would forbid the one
+moment the accent is supposed to dominate.
+
+`ACCENT_AREA` is therefore a **floor measured at scanning distance**, not a ceiling at the gate:
+
+> When the next torii is in frame at scanning distance, its accent must occupy at least the
+> minimum area a player reliably finds while sweeping the frame.
+
+Extend the curve past 4 m out to the distance at which the next gate first becomes visible, and
+set the floor from where findability actually fails — the same way `#603633` failed at 0.012%.
+Do not set it from the values above, which are all near-field.
+
+implemented_by:
+

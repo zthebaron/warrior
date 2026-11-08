@@ -1,0 +1,169 @@
+{
+  "decision": "PHASE-0-DECISIONS D-001 — candidates for the H2.5 feel test; this file chooses nothing",
+  "default": "vermilion_a",
+  "budget": "Q2: accent <= 1% of frame area",
+  "caveat": "grey-box gym (lit primitives, blue sky), not the STYLE-BIBLE render",
+  "contactSheet": {
+    "file": "contact-sheet.png",
+    "rows": [
+      "vermilion_a",
+      "vermilion_b",
+      "vermilion_c",
+      "seed_red"
+    ],
+    "cols": [
+      "follow",
+      "approach",
+      "goal",
+      "scan"
+    ]
+  },
+  "shots": [
+    {
+      "name": "follow",
+      "pos": [
+        37,
+        3.4,
+        0
+      ],
+      "target": [
+        44,
+        1.6,
+        0
+      ],
+      "note": "gameplay framing: CAMERA_TUNING.distance 7m behind a player at x=44, torii at x=50 ahead"
+    },
+    {
+      "name": "approach",
+      "pos": [
+        34,
+        3.5,
+        3
+      ],
+      "target": [
+        50,
+        2.6,
+        -1
+      ],
+      "note": "torii at x=50 seen on approach, rock mass (dark wall) behind-left"
+    },
+    {
+      "name": "goal",
+      "pos": [
+        74,
+        6.5,
+        4
+      ],
+      "target": [
+        88,
+        5.5,
+        0
+      ],
+      "note": "goal-pad torii at x=88 against the open sky (bright void)"
+    },
+    {
+      "name": "scan",
+      "pos": [
+        -25,
+        28,
+        34
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "note": "whole-gym overview (harness cam0): small torii, a scanning read"
+    }
+  ],
+  "candidates": {
+    "vermilion_a": {
+      "hex": "#e34234",
+      "rejected": false,
+      "frames": {
+        "follow": {
+          "file": "vermilion_a-follow.png",
+          "accentPct": 2.056
+        },
+        "approach": {
+          "file": "vermilion_a-approach.png",
+          "accentPct": 1.165
+        },
+        "goal": {
+          "file": "vermilion_a-goal.png",
+          "accentPct": 1.471
+        },
+        "scan": {
+          "file": "vermilion_a-scan.png",
+          "accentPct": 0.076
+        }
+      }
+    },
+    "vermilion_b": {
+      "hex": "#ef5b3b",
+      "rejected": false,
+      "frames": {
+        "follow": {
+          "file": "vermilion_b-follow.png",
+          "accentPct": 2.056
+        },
+        "approach": {
+          "file": "vermilion_b-approach.png",
+          "accentPct": 1.165
+        },
+        "goal": {
+          "file": "vermilion_b-goal.png",
+          "accentPct": 1.471
+        },
+        "scan": {
+          "file": "vermilion_b-scan.png",
+          "accentPct": 0.076
+        }
+      }
+    },
+    "vermilion_c": {
+      "hex": "#c8371f",
+      "rejected": false,
+      "frames": {
+        "follow": {
+          "file": "vermilion_c-follow.png",
+          "accentPct": 2.056
+        },
+        "approach": {
+          "file": "vermilion_c-approach.png",
+          "accentPct": 1.165
+        },
+        "goal": {
+          "file": "vermilion_c-goal.png",
+          "accentPct": 1.471
+        },
+        "scan": {
+          "file": "vermilion_c-scan.png",
+          "accentPct": 0.076
+        }
+      }
+    },
+    "seed_red": {
+      "hex": "#603633",
+      "rejected": true,
+      "frames": {
+        "follow": {
+          "file": "seed_red-follow.png",
+          "accentPct": 2.056
+        },
+        "approach": {
+          "file": "seed_red-approach.png",
+          "accentPct": 1.165
+        },
+        "goal": {
+          "file": "seed_red-goal.png",
+          "accentPct": 1.471
+        },
+        "scan": {
+          "file": "seed_red-scan.png",
+          "accentPct": 0.076
+        }
+      }
+    }
+  }
+}
