@@ -291,7 +291,7 @@ same mechanism as Q2b and D-001.
 trying the game from the case-study page who refreshes loses everything. Post-gold showcase item,
 not a design change. Noted so it is a known trade rather than a surprise.
 
-implemented_by: 02e197c (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 4b2a34b (?accent=<name> in-place switch), b813a5c (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
+implemented_by: dc84f02 (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 29af4a0 (?accent=<name> in-place switch), 6abe6b6 (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
 
 ## D-002 — Decisions must name their implementing commit. DECIDED
 
@@ -355,7 +355,7 @@ Amending a locked Gate B artifact is legitimate here, and only here, because the
 a measurement. That is the distinction Q2b drew: do not amend the Style Bible on a hypothesis;
 do amend it on evidence.
 
-implemented_by: 289647f (ACCENT_AREA harness stage + band in accent.json), 073333c (STYLE-BIBLE §2 / §9 / §10 amended) — branch h4-asset-kit, PR 3. Floor provisional: state/OPEN-QUESTIONS.md OQ-011.
+implemented_by: a61019a (ACCENT_AREA harness stage + band in accent.json), a2048bd (STYLE-BIBLE §2 / §9 / §10 amended) — branch h4-asset-kit, PR 3. Floor provisional: state/OPEN-QUESTIONS.md OQ-011.
 
 ## Q7 — The NOT list: **A, with one addition.** CLOSED
 
