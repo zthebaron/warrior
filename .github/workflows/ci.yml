@@ -31,7 +31,13 @@ jobs:
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
 
-      # schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> visual
+
+      # Tier-1 asset budgets on the COMMITTED assets/dist (CI has no Blender and never rebuilds):
+      # manifest against assets/manifest.schema.json, manifest against a re-measure of every
+      # shipped .glb, every measurement against tools/assets/budgets.json.
+      - run: npm run assets:budget
+
+      # schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> assets -> visual
       # exit 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
       - run: npm run playtest
 
