@@ -704,3 +704,82 @@ dropped, not deferred — bringing it back would need a new decision and a new r
    if a later level makes depth read differently.
 
 implemented_by: b20296d (default on, flag inverted, Style Bible exception, scene ratchet, darwin goldens), c512c78 (linux goldens)
+
+## OQ-034 — crow lead time: **CONFIRMED as taken (B).** CLOSED
+
+Authored `lift` per crow, sufficiency proven by the harness, effective lead measured and reported.
+
+Right for the reason given — no human-reaction number exists in `MEASUREMENTS.md` and `CLAUDE.md`
+forbids one in code — but the stronger argument is the one not made: **the harness proves
+sufficiency without knowing the correct value.** The bot departs on the lift-off edge and must
+clear from all eight arrival phases, and a quarter-loop mistimed `lift` fails 0/8. That is a
+property test standing in for a constant nobody can yet measure, which is the same move the MOVE
+table makes and the opposite of guessing.
+
+The number that matters most in the report is not the lead, it is the **slack**: departing up to
+0.75 s (seg 3) and 0.95 s (seg 4) after lift-off still clears every phase. The window is forgiving,
+so the cue can be late and still work.
+
+**What H2.5 must measure for C to become possible**, stated now so the test is designed for it: not
+"the right lead time" but **how late a human can depart after lift-off and still clear**, compared
+against the bot's 0.75 s / 0.95 s. If human slack is comfortably inside the bot's, the cue is
+sound and `lift` can be derived. If it is not, the problem is the cue's legibility, not its timing,
+and a bigger lead will not fix it.
+
+## D-011 — Chapter length is derived, not ranged. OQ-037 **OVERRIDDEN.** DECIDED
+
+The session took A: leave `CHAPTER_SEGMENTS` at 4-6 and record C as a description of what chapter 1
+happened to do. **Adopt C as the rule instead.**
+
+C: *one segment per new move or signal that can kill you, plus one transfer segment for the
+riskiest.*
+
+A range of 4-6 is a bound, not a reason. No agent can justify choosing 6 over 4 from it, so the
+number becomes taste, and taste is what fan-out cannot share. C is a **derivation**: it produced 4
+for chapter 1 without anyone picking 4, and it is computable from `moves_allowed`, which B-4 already
+put in the schema. A rule that falls out of data an agent already has is worth more than a range it
+has to feel its way inside.
+
+It is also lintable in a way the range is not. The linter can count new killing moves plus new
+signals in a chapter and assert the teaching-segment count. A range can only be checked for bounds,
+never for correctness.
+
+Two things to pin down while implementing:
+
+- **"Practice segment" needs a definition**, since C says *plus practice* and leaves it open: a
+  segment that introduces no new move and no new signal, and combines only moves already taught.
+  Count them separately from teaching segments.
+- **Keep 4-6 as a warn, not an error.** C is the error. The range stays as a sanity check that
+  fires when a derivation produces something far outside it, which usually means the moveset
+  changed rather than the rule failing.
+
+`CHAPTER_LENGTH_PENDING` can be retired once C is implemented.
+
+## D-012 — `ACCENT_AREA` is measured at a reachable camera, not only at rest pitch. OQ-038. DECIDED
+
+Chapter 1: **A was correct, ship it.** The level changed, the rule did not, and refusing to weaken
+a measured rule to fit content is exactly right. That is not in question.
+
+But the session found the real problem and was right to escalate it: with two stacked 3.5 m faces,
+the upper lip hides everything below +8.4°, the previous gate's crossbeams cover +5..+14°, and the
+frame tops out at +12°. Rendered accent: **0.0000% at both 21 m and 33 m.** The rule made a
+two-climb segment impossible.
+
+**This game climbs a mountain. A player looking up for the next gate is the normal case**, so a
+floor evaluated only at the rig's rest pitch is measuring a frame the player does not use on a
+vertical segment. D-006 said "measured at the gameplay camera"; the defect is in *which* gameplay
+camera, not in the floor.
+
+So before chapters 2-4 author vertical segments, amend the measurement frame — **not the floor**:
+
+> The accent floor must be met in **some frame reachable by normal camera control**, within the
+> pitch range the rig actually permits, not solely at rest pitch.
+
+The guard that keeps this from being a weakening: the pitch range is bounded by what the camera can
+physically do, and the floor itself is unchanged. A gate findable by looking up passes. A gate
+findable from **no** reachable angle still fails, which is the case the rule exists to catch.
+
+Implementation note: `tools/harness/scan-frame.ts` already renders the scan; it needs to sweep
+pitch across the rig's range and take the best frame rather than the rest frame.
+
+implemented_by:
