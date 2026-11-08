@@ -235,3 +235,70 @@ Do not pick the final hex by fiat. Generate two or three candidates that pass `A
 render them on the torii in the gym, and let the H2.5 feel test choose — the same mechanism Q2b
 used for the landing mark. A real vermilion is near `#E34234`; expect the answer in that
 neighbourhood, at palette lightness or above.
+
+## Q6 — Failure model: **A, with one addition and one change.** CLOSED
+
+All seven parts stand except the respawn time. The reasoning is good throughout; two parts are
+better than good:
+
+**"A hazard is just a moving fall plane"** is the right reduction, and the knockback argument is
+the reason: knockback is a physics reaction that puts the player somewhere no level author planned,
+sometimes off a ledge and sometimes not, which is precisely the non-reproducible route Q1 ruled
+out. Treating a hazard touch as death adds *no new system at all*.
+
+**Hidden per-segment death counts are the teach-rate measurement** Q4 and Q5 both left open. That
+closes the loop: chapter 1's length rule comes from a number the harness already records, and a
+visible counter would be a score by another name (Q4). Best idea in the answer.
+
+The respawn bug at `src/main.ts` is confirmed — `respawn` is reassigned unconditionally for any
+checkpoint in radius, so walking back through an earlier torii drags the respawn point backwards.
+Note `checkpointLog` is already append-only, so the fix is to gate the assignment on a furthest-
+index counter rather than add new state.
+
+### ADDITION — `PHASE_SWEEP`, a new harness stage
+
+Part 4 says hazards never reset and run on the world clock. That is correct, and it creates a
+hole nothing currently checks. **A player who dies arrives back at the torii at an arbitrary
+hazard phase.** With per-hazard `phase` and `speed`, two hazards on incommensurate periods can
+produce arrival phases from which a segment is impassable, or passable only after an
+unreasonable wait. Verified: `levels/level.schema.json` has no `phase`/`speed` yet, and
+`tools/harness/` has no hazard-phase handling at all — `nav.ts`'s `phase` is its own
+approach/air/done state machine, unrelated to hazard timing.
+
+In a die-and-retry game, a segment that becomes unwinnable *after a death* is the worst defect
+available, and it would be intermittent, which makes it nearly impossible to diagnose from a bug
+report.
+
+So: the nav bot must clear each segment **entering from its checkpoint at N evenly-spaced phase
+offsets**, not only from the recorded start. Eight is a reasonable N. This is the dynamic
+counterpart to `HAZARD_AT_CHECKPOINT`: the linter proves you cannot respawn *into* a hazard, the
+sweep proves you can always get *out*.
+
+### CHANGE — respawn target 0.5s, with 1.2s as the CI ceiling
+
+Keep 1.2s as the hard assertion, but it is a ceiling, not a target. Deaths are the teaching
+mechanism by part 6's own logic, so respawn latency is paid constantly by design. Precision
+platformers sit at 0.3-0.5s. The usual argument for a longer respawn — letting the player
+re-orient — does not apply here, because §5's dark-mass/bright-void composition makes the frame
+read instantly. Target <= 0.5s, assert <= 1.2s, and let the H2.5 feel test pick the value, the
+same mechanism as Q2b and D-001.
+
+### Flagged, not acted on
+
+"A reload restarts the game" is fine for the sprint, but it has a showcase consequence: anyone
+trying the game from the case-study page who refreshes loses everything. Post-gold showcase item,
+not a design change. Noted so it is a known trade rather than a surprise.
+
+## D-002 — Decisions must name their implementing commit. DECIDED
+
+This file now asserts properties the code does not have: Q2's mandatory `speed`/`phase` linter
+errors, Q5's `moves_allowed` and its check, D-001's `ACCENT_CONTRAST`, and now `PHASE_SWEEP`,
+`HAZARD_AT_CHECKPOINT` and the respawn fix.
+
+That is the stale-prompt failure inverted — a document running *ahead* of reality rather than
+behind it, and just as capable of misleading an agent that trusts it. Decisions are accumulating
+faster than implementation, which is fine, but it has to be visible.
+
+Every decision entry gains an `implemented_by:` field, empty until the commit lands. Add a lint
+rule reporting any CLOSED decision with no implementing commit. Fold this into PROMPT 00's control
+plane: `state/DECISIONS.md` gets the same field and the same check.
