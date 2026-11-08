@@ -58,3 +58,4 @@
 {"id":"OQ-040","agent":"phase0-spec","ts":"2026-11-08T17:23:21.244Z","released":true}
 {"id":"OQ-041","agent":"phase0-spec","ts":"2026-11-08T17:23:21.272Z","released":true}
 {"id":"LINUX-GOLDENS-2-5","agent":"phase0-spec","ts":"2026-11-08T17:35:25.237Z","ttl_min":90}
+{"id":"LINUX-GOLDENS-2-5","agent":"phase0-spec","ts":"2026-11-08T17:50:17.994Z","released":true}
