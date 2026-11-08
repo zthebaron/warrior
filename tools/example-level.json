@@ -1,7 +1,7 @@
 {
-  "id": "02-temple-of-silent-bells",
-  "title": "Temple of Silent Bells",
-  "chapter": 2,
+  "id": "03-hanging-shrines",
+  "title": "The Hanging Shrines (example)",
+  "chapter": 3,
   "palette": "mist-ink",
   "spawn": {
     "pos": [
@@ -107,70 +107,28 @@
         6,
         1,
         6
-      ],
-      "damage": 1
-    }
-  ],
-  "interactables": [
-    {
-      "type": "bell",
-      "id": "bell-a",
-      "pos": [
-        60,
-        10,
-        -40
-      ],
-      "onStrike": [
-        {
-          "op": "open",
-          "target": "gate-a"
-        }
       ]
     },
     {
-      "type": "gate",
-      "id": "gate-a",
-      "pos": [
-        72,
-        0,
-        -44
-      ],
-      "state": "closed"
-    }
-  ],
-  "enemies": [
-    {
-      "type": "charger",
-      "id": "ronin-1",
-      "pos": [
-        90,
-        0,
-        -60
-      ],
-      "patrol": [
+      "type": "patroller",
+      "path": [
         [
-          90,
-          0,
-          -60
+          78,
+          11,
+          -46
         ],
         [
-          100,
-          0,
-          -60
+          78,
+          11,
+          -58
         ]
       ],
-      "aggroRadius": 12,
-      "hp": 3
-    }
-  ],
-  "collectibles": [
-    {
-      "type": "scroll",
-      "id": "scroll-2-1",
-      "pos": [
-        55,
-        18,
-        -22
+      "speed": 4,
+      "phase": 0,
+      "size": [
+        1.5,
+        2,
+        1.5
       ]
     }
   ],
@@ -206,11 +164,6 @@
   ],
   "lighting": {
     "preset": "overcast-dawn",
-    "sunAngle": [
-      38,
-      110
-    ],
-    "intensity": 1.1,
     "ambienceZone": "wind-high"
   },
   "critical_path": [

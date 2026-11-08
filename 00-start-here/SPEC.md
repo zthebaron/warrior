@@ -116,22 +116,22 @@ what *does* exist.
 <!-- NOT-LIST:BEGIN -->
 | # | Refused | Decision | Kind | Check | Status |
 |---|---|---|---|---|---|
-| 1 | Enemies that fight or pursue: charger, ranged, blocker, `hp`, `aggroRadius`. The patroller moves to `hazards`. | Q1, Q7 | schema | `enemies=[]!` | pending |
-| 2 | Combat verbs and input | Q1 | src | `attack!` `strike!` `combo` `parry` `hitstop` | pending |
+| 1 | Enemies that fight or pursue: charger, ranged, blocker, `hp`, `aggroRadius`. The patroller lives in `hazards`. | Q1, Q7 | schema | `enemies=[]` | enforced |
+| 2 | Combat verbs and input | Q1 | src | `attack` `strike` `combo` `parry` `hitstop` | enforced |
 | 3 | Pursuit AI | Q1 | src | `aggro*` `pathfind*` `navmesh` `chase*` | enforced |
 | 4 | A ninth move | Q2 | schema | `critical_path[1].via="glide"` | enforced |
 | 5 | A ninth move, in code | Q2 | src | `glide*` | enforced |
-| 6 | Pickups and collectibles | Q3 | schema | `collectibles=[]!` | pending |
-| 7 | Pickups, in code | Q3 | src | `collectible*!` `pickup*` | pending |
-| 8 | Ordered-state puzzles and interactables (bell, gate, plate, lever, door, rope, torch), and triggered platforms | Q3, Q2c | schema | `interactables=[]!` `platforms[0].loop="triggered"!` | pending |
-| 9 | Any win but arriving | Q4 | schema | `goal.type="collect_all"!` `goal.type="defeat_all"!` `goal.type="strike"!` | pending |
+| 6 | Pickups and collectibles | Q3 | schema | `collectibles=[]` | enforced |
+| 7 | Pickups, in code | Q3 | src | `collectible*` `pickup*` | enforced |
+| 8 | Ordered-state puzzles and interactables (bell, gate, plate, lever, door, rope, torch), and triggered platforms | Q3, Q2c | schema | `interactables=[]` `platforms[0].loop="triggered"` | enforced |
+| 9 | Any win but arriving | Q4 | schema | `goal.type="collect_all"` `goal.type="defeat_all"` `goal.type="strike"` | enforced |
 | 10 | Score, par time, rank | Q4 | schema | `score=1` `par_time=1` `rank=1` | enforced |
 | 11 | Score, par time, rank, in code | Q4 | src | `score` `par_time` `rank` | enforced |
 | 12 | A second route or branching path | Q3, Q5 | schema | `critical_paths=[]` | enforced |
-| 13 | Fire hazard, and any hazard that does damage | Q2c, Q6 | schema | `hazards[0].type="fire"!` `hazards[0].damage=1!` | pending |
-| 14 | Health, lives, damage, knockback, invulnerability, game over | Q6 | src | `health` `hp` `lives` `damage!` `knockback` `invuln*` `iframe*` `game_over` | pending |
+| 13 | Fire hazard, and any hazard that does damage | Q2c, Q6 | schema | `hazards[0].type="fire"` `hazards[0].damage=1` | enforced |
+| 14 | Health, lives, damage, knockback, invulnerability, game over | Q6 | src | `health` `hp` `lives` `damage` `knockback` `invuln*` `iframe*` `game_over` | enforced |
 | 15 | Saves, unlocks, chapter select | Q4, Q6 | src | `local_storage` `session_storage` `indexed_db` `unlock*` `chapter_select` | enforced |
-| 16 | A light with a direction | STYLE §1 | schema | `lighting.sunAngle=[0,0]!` `lighting.intensity=1!` | pending |
+| 16 | A light with a direction | STYLE §1 | schema | `lighting.sunAngle=[0,0]` `lighting.intensity=1` | enforced |
 | 17 | Multiplayer or a backend | playbook §3 | src | `web_socket` `rtc_peer_connection` | enforced |
 | 18 | Ambient motion: anything translating except the player and hazards. A level-lint rule is planned but is neither kind. | Q2a | unenforced | — | — |
 | 19 | Dialogue, cutscenes, text in the world | STYLE §9.10 | unenforced | — | — |
@@ -183,9 +183,7 @@ them yet**. Each one's `implemented_by:` stays empty until its commit lands.
 
 | rule | decision | where it will live |
 |---|---|---|
-| Schema cut, with the patroller moved into `hazards` and the example level rewritten | Q7, Q2c | `level.schema.json`, `tools/example-level.json` (closes NOT rows 1, 6, 8, 9, 13, 16) |
-| Remove the `attack` input, `damage` and the `collectibles`/`strike` types from `src/` | Q1, Q6, Q7 | `src/engine/input.ts`, `src/loaders/level.ts` (closes rows 2, 7, 14) |
-| `speed` and `phase` mandatory on patrollers | Q2 | linter |
+| patroller *runtime*: it is in the schema, but nothing moves or kills yet | Q6 | `src/loaders/level.ts` |
 | `moves_allowed` per chapter, and its linter check | Q5 | schema + linter |
 | `HAZARD_AT_CHECKPOINT` | Q6 | linter |
 | `PHASE_SWEEP` | Q6 | harness stage |
@@ -194,6 +192,8 @@ them yet**. Each one's `implemented_by:` stays empty until its commit lands.
 | `implemented_by:` lint over decisions | D-002 | `tools/` |
 | landing mark behind a flag, default off | Q2b | engine (CONDITIONAL) |
 
-Built and enforced today: `CHAPTER_LENGTH`, the derived bot budget, schema absence of
-score/par_time/rank, `UNMEASURED_MOVE`, `NO_VIA`/`BAD_VIA`, `HAZARD_ON_PATH` (static), and the
+Built and enforced today: the Q7 schema cut (no enemies, interactables, collectibles, other goal
+types, fire, damage, triggered platforms or level lighting direction), the patroller as a hazard
+with `speed`/`phase`/`path` mandatory (schema, Q2), `CHAPTER_LENGTH`, the derived bot budget,
+schema absence of score/par_time/rank, `UNMEASURED_MOVE`, `NO_VIA`/`BAD_VIA`, `HAZARD_ON_PATH` (static), and the
 `enforced` rows of §7.

@@ -11,10 +11,9 @@ export interface InputFrame {
   jump: boolean;   // held state (edge detection is the consumer's job)
   dash: boolean;   // held state
   sprint: boolean; // held state (explicit — no auto-sprint, so replays/bots control it exactly)
-  attack: boolean; // held state
 }
 
-export const NEUTRAL_FRAME: Readonly<InputFrame> = { x: 0, y: 0, jump: false, dash: false, sprint: false, attack: false };
+export const NEUTRAL_FRAME: Readonly<InputFrame> = { x: 0, y: 0, jump: false, dash: false, sprint: false };
 
 export const INPUT_CONFIG = {
   bindings: {
@@ -25,9 +24,7 @@ export const INPUT_CONFIG = {
     jump: ['Space'],
     dash: ['KeyK'],
     sprint: ['ShiftLeft', 'ShiftRight'],
-    attack: ['KeyJ'],
   },
-  attackMouseButton: 0,
   maxRecordedFrames: 60 * 60 * 30, // 30 minutes at 60Hz; past this, recording stops (warned once)
 };
 
@@ -35,7 +32,6 @@ type Action = keyof typeof INPUT_CONFIG.bindings;
 
 export class InputSystem {
   private readonly down = new Set<string>();
-  private mouseAttack = false;
   private recorded: InputFrame[] = [];
   private recordOverflowWarned = false;
   private playbackQueue: InputFrame[] = [];
@@ -45,16 +41,7 @@ export class InputSystem {
   constructor(target: Window) {
     target.addEventListener('keydown', (e) => this.down.add(e.code));
     target.addEventListener('keyup', (e) => this.down.delete(e.code));
-    target.addEventListener('blur', () => {
-      this.down.clear();
-      this.mouseAttack = false;
-    });
-    target.addEventListener('mousedown', (e) => {
-      if (e.button === INPUT_CONFIG.attackMouseButton && document.pointerLockElement) this.mouseAttack = true;
-    });
-    target.addEventListener('mouseup', (e) => {
-      if (e.button === INPUT_CONFIG.attackMouseButton) this.mouseAttack = false;
-    });
+    target.addEventListener('blur', () => this.down.clear());
   }
 
   /** Raw key query, for UI / dev tools (NOT for gameplay — gameplay reads InputFrames). */
@@ -109,7 +96,6 @@ export class InputSystem {
       jump: this.held('jump'),
       dash: this.held('dash'),
       sprint: this.held('sprint'),
-      attack: this.held('attack') || this.mouseAttack,
     };
   }
 

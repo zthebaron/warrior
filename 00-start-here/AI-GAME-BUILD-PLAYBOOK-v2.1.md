@@ -230,51 +230,12 @@ nonsense as a jump and normal as a run, and neither the linter nor the bot could
 was meant. An agent hitting that would have loosened the check until it passed, silently
 removing the only proof that levels are completable.
 
-```jsonc
-{
-  "id": "02-temple-of-silent-bells",
-  "title": "Temple of Silent Bells",
-  "chapter": 2,
-  "palette": "mist-ink",
-  "spawn":  { "pos": [0,2,0], "facing": 180 },
-  "goal":   { "type": "reach", "pos": [140,36,-88], "radius": 3 },
-  "bounds": { "min": [-200,-40,-200], "max": [200,120,200] },
-  "fog":    { "color": "#cfc6b4", "near": 40, "far": 220 },
-
-  "geometry":      [ { "asset":"cliff_face_a", "pos":[0,0,0], "rot":[0,0,0], "scale":1, "collider":"trimesh" } ],
-  "platforms":     [ { "id":"slab_a", "asset":"stone_slab", "path":[[20,6,-10],[20,14,-10]],
-                       "duration":3.2, "easing":"sine", "loop":"pingpong", "collider":"box" } ],
-  "hazards":       [ { "type":"fall", "y":-20 },
-                     { "type":"spike", "pos":[44,2,-30], "size":[6,1,6], "damage":1 } ],
-  "interactables": [ { "type":"bell", "id":"bell-a", "pos":[60,10,-40],
-                       "onStrike":[{ "op":"open", "target":"gate-a" }] },
-                     { "type":"gate", "id":"gate-a", "pos":[72,0,-44], "state":"closed" } ],
-  "enemies":       [ { "type":"charger", "id":"ronin-1", "pos":[90,0,-60],
-                       "patrol":[[90,0,-60],[100,0,-60]], "aggroRadius":12, "hp":3 } ],
-  "collectibles":  [ { "type":"scroll", "id":"scroll-2-1", "pos":[55,18,-22] } ],
-  "checkpoints":   [ { "pos":[48,16,-28] }, { "pos":[96,12,-64] } ],
-  "lighting":      { "preset":"overcast-dawn", "sunAngle":[38,110], "intensity":1.1,
-                     "ambienceZone":"wind-high" },
-
-  // [V2] every waypoint after spawn declares HOW the player gets there
-  "critical_path": [
-    [0,2,0],
-    { "pos":[12,4,-8],    "via":"ground" },
-    { "pos":[16,6,-10],   "via":"jump" },
-    { "pos":[20,6,-10],   "via":"jump" },
-    { "pos":[20,14,-10],  "via":"platform", "platform":"slab_a" },
-    { "pos":[48,16,-28],  "via":"ground" },
-    { "pos":[60,10,-40],  "via":"ground" },
-    { "pos":[96,12,-64],  "via":"ground" },
-    { "pos":[99,17,-64],  "via":"double" },
-    { "pos":[140,36,-88], "via":"ground" }
-  ],
-  "difficulty": 2
-}
-```
-> **[SUPERSEDED — PHASE-0-DECISIONS Q4]** This example used to carry `"par_time": 95`. Levels have no `par_time`, `score` or
-> `rank` field; the schema rejects them under `additionalProperties: false`. The nav bot's time
-> budget is derived instead: 12 s × segments, where segments = `checkpoints.length + 1`.
+> **[SUPERSEDED — PHASE-0-DECISIONS Q7]** An inline example level used to sit here. It taught
+> four refused mechanics at once (a charger enemy, a struck bell opening a gate, a scroll pickup,
+> a directional sun) plus `par_time`, and agents copy examples more faithfully than they follow
+> rules. The one example is now **`tools/example-level.json`**, an honest chapter-3 level that
+> `npm run lint:example` checks. It is not reproduced here, so it cannot drift. See SPEC.md §7 for
+> what the schema refuses.
 
 ### Move budgets — derived from the gym, enforced by the linter
 

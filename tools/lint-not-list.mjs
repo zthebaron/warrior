@@ -50,8 +50,7 @@ function readRows() {
 
 // ---------- schema checks ----------
 const Ajv = AjvMod.default ?? AjvMod;
-const validate = new Ajv({ strict: true, allErrors: true }).compile(JSON.parse(fs.readFileSync(SCHEMA, 'utf8')));
-const base = JSON.parse(fs.readFileSync(BASE_LEVEL, 'utf8'));
+let validate, base; // compiled inside the try below: a broken schema is UNREADABLE (exit 2), not a crash
 
 function mutate(level, expr) {
   const eq = expr.indexOf('=');
@@ -108,6 +107,8 @@ function srcViolations(token) {
 let rows;
 try {
   rows = readRows();
+  validate = new Ajv({ strict: true, allErrors: true }).compile(JSON.parse(fs.readFileSync(SCHEMA, 'utf8')));
+  base = JSON.parse(fs.readFileSync(BASE_LEVEL, 'utf8'));
   if (!validate(base)) throw new Error(`base level ${path.relative(ROOT, BASE_LEVEL)} does not validate, so every schema check would pass vacuously`);
 } catch (e) {
   console.error(`NOT-LIST UNREADABLE  ${e.message}`);

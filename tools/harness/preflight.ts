@@ -55,7 +55,10 @@ export interface PreflightOut {
 
 function vite(root: string, args: string[]): { ok: boolean; out: string } {
   const r = spawnSync(join(root, 'node_modules/.bin/vite'), args, { cwd: root, encoding: 'utf8' });
-  return { ok: r.status === 0, out: `${r.stdout}${r.stderr}`.trim() };
+  // r.error is set when the binary could not be spawned at all (e.g. a worktree with no node_modules):
+  // say so, instead of printing `undefinedundefined` under BUILD_FAILURE.
+  if (r.error) return { ok: false, out: `could not run ${join(root, 'node_modules/.bin/vite')}: ${r.error.message} (run npm ci in this checkout)` };
+  return { ok: r.status === 0, out: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim() };
 }
 
 function startPreview(root: string): Promise<{ server: ChildProcess; url: string }> {

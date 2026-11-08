@@ -13,7 +13,7 @@ export const CHAOS_CONFIG = {
   stuckMinMove: 0.5,        // m: must move at least this far within every window...
   stuckActiveFraction: 0.5, // ...in which at least this fraction of ticks had movement input
   capMultiplier: 2,
-  p: { move: 0.85, jump: 0.35, dash: 0.12, sprint: 0.3, attack: 0.1 },
+  p: { move: 0.85, jump: 0.35, dash: 0.12, sprint: 0.3 },
 };
 
 function mulberry32(seed: number): () => number {
@@ -41,8 +41,8 @@ export function chaosFrames(seed: number, ticks: number): InputFrame[] {
       jump: r() < C.p.jump,
       dash: r() < C.p.dash,
       sprint: r() < C.p.sprint,
-      attack: r() < C.p.attack,
     };
+    r(); // was the attack draw (cut by Q1/Q7); still consumed so a fixed seed replays the same chaos stream
     // jump/dash held for the whole segment would only fire once; release halfway for a second edge
     for (let k = 0; k < hold && out.length < ticks; k++) {
       const half = k === Math.floor(hold / 2);

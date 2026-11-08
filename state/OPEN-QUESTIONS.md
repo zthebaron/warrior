@@ -94,3 +94,21 @@ because: D-002 says the field stays empty until the commit implementing the deci
 partial fill would assert the code has properties it lacks. The open part is tracked visibly by the
 `!` checks in SPEC §7. Q4 got `afb3e4b` because it is fully built.
 status: PROVISIONAL
+
+## OQ-007 — Cutting `lighting.sunAngle`/`intensity` from level data moves the greybox light (gym [50,135] vs engine default [45,135])
+raised: 2026-11-08 by phase0-spec
+options: A accept the light change, re-record goldens | B make the gym's value the engine's greybox constant | C keep the fields
+took: B
+because: re-recording goldens to absorb a refactor is exactly what the never-list forbids, and C keeps
+a STYLE §1 violation in the schema. The greybox DirectionalLight is engine-only until the ink shader
+replaces it; with the constant at the gym's old value the goldens stay byte-identical.
+status: PROVISIONAL
+
+## OQ-008 — What does "water restricted to flat wash" (Q2c, B-2) mean as a schema rule?
+raised: 2026-11-08 by phase0-spec
+options: A water requires `y` (a still plane) and forbids period/path/speed/phase | B also forbid pos/size | C leave it to the shader
+took: A
+because: "flat" is a horizontal plane at a height. "Wash" means it never animates (Q2a: nothing
+translates except the player and hazards, and a wave is translation). pos/size stay allowed so a
+pool can be bounded. Reflectivity is a rendering property (STYLE §9.8) the schema cannot express.
+status: PROVISIONAL

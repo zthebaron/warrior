@@ -29,18 +29,20 @@ export interface PlatformDef {
   path: Vec3[];
   duration: number; // seconds per leg
   easing?: 'linear' | 'sine' | 'ease-in-out' | 'step';
-  loop?: 'pingpong' | 'cycle' | 'once' | 'triggered';
+  loop?: 'pingpong' | 'cycle' | 'once';
   collider?: ColliderKind;
   startDelay?: number;
 }
 
 export interface HazardDef {
-  type: 'fall' | 'spike' | 'crush' | 'fire' | 'water';
+  type: 'fall' | 'spike' | 'crush' | 'water' | 'patroller';
   y?: number;
   pos?: Vec3;
   size?: Vec3;
-  damage?: number;
   period?: number;
+  path?: Vec3[];  // patroller (schema makes path/speed/phase mandatory for it)
+  speed?: number; // patroller, u/s
+  phase?: number; // patroller, [0,1)
 }
 
 export type Waypoint = Vec3 | { pos: Vec3; via: Move; platform?: string; note?: string };
@@ -51,17 +53,14 @@ export interface LevelData {
   chapter: number;
   palette: string;
   spawn: { pos: Vec3; facing: number };
-  goal: { type: 'reach' | 'collect_all' | 'defeat_all' | 'strike'; pos: Vec3; radius?: number; target?: string };
+  goal: { type: 'reach'; pos: Vec3; radius?: number };
   bounds: { min: Vec3; max: Vec3 };
   fog?: { color?: string; near?: number; far?: number };
   geometry: Placement[];
   platforms?: PlatformDef[];
   hazards?: HazardDef[];
-  interactables?: unknown[];
-  enemies?: unknown[];
-  collectibles?: unknown[];
   checkpoints: { pos: Vec3; facing?: number }[];
-  lighting?: { preset?: string; sunAngle?: [number, number]; intensity?: number; ambienceZone?: string };
+  lighting?: { preset?: string; ambienceZone?: string };
   cameras?: unknown[];
   critical_path: Waypoint[];
   difficulty: number;
@@ -89,8 +88,10 @@ export const LEVEL_VISUAL = {
   hemiGround: 0x5a5248,
   hemiIntensity: 0.9,
   sunColor: 0xffffff,
-  defaultSunAngleDeg: [45, 135] as const, // [elevation, azimuth]
-  defaultSunIntensity: 1.6,
+  // Greybox light only: an engine constant, never level data (STYLE §1 forbids a locatable light;
+  // the ink shader replaces this). [50,135] is what 00-gym carried, so the goldens do not move.
+  greyboxSunAngleDeg: [50, 135] as const, // [elevation, azimuth]
+  greyboxSunIntensity: 1.6,
   sunDistance: 100,
   stepLegs: 0.5, // easing 'step' switches halfway
 };
@@ -253,7 +254,6 @@ function platformParam(def: PlatformDef, time: number): number {
     }
     case 'cycle': return phase - Math.floor(phase);
     case 'once': return Math.min(phase, 1);
-    case 'triggered': return 0; // no trigger system yet: stays at path[0]
   }
 }
 
@@ -287,9 +287,9 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 
   // lighting
-  const sun = data.lighting?.sunAngle ?? V.defaultSunAngleDeg;
+  const sun = V.greyboxSunAngleDeg;
   const [elev, azim] = [sun[0] * DEG2RAD, sun[1] * DEG2RAD];
-  const dir = new THREE.DirectionalLight(V.sunColor, data.lighting?.intensity ?? V.defaultSunIntensity);
+  const dir = new THREE.DirectionalLight(V.sunColor, V.greyboxSunIntensity);
   dir.position.set(Math.cos(elev) * Math.sin(azim), Math.sin(elev), Math.cos(elev) * Math.cos(azim)).multiplyScalar(V.sunDistance);
   root.add(new THREE.HemisphereLight(V.hemiSky, V.hemiGround, V.hemiIntensity), dir);
 

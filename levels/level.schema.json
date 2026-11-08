@@ -45,36 +45,6 @@
       ],
       "description": "No 'box': with the verified KCC (snapToGround 0.5) a standing capsule sinks through cuboid colliders, fixed or kinematic. Proven by npm run check:physics (FLOOR SINK). Use trimesh."
     },
-    "action": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "op",
-        "target"
-      ],
-      "properties": {
-        "op": {
-          "enum": [
-            "open",
-            "close",
-            "toggle",
-            "move",
-            "spawn",
-            "despawn",
-            "unlock",
-            "win"
-          ]
-        },
-        "target": {
-          "$ref": "#/definitions/id"
-        },
-        "delay": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 30
-        }
-      }
-    },
     "placement": {
       "type": "object",
       "additionalProperties": false,
@@ -202,11 +172,9 @@
       "properties": {
         "type": {
           "enum": [
-            "reach",
-            "collect_all",
-            "defeat_all",
-            "strike"
-          ]
+            "reach"
+          ],
+          "description": "Win is arriving (Q4). No other goal type exists."
         },
         "pos": {
           "$ref": "#/definitions/vec3"
@@ -215,9 +183,6 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 20
-        },
-        "target": {
-          "$ref": "#/definitions/id"
         }
       }
     },
@@ -306,8 +271,7 @@
             "enum": [
               "pingpong",
               "cycle",
-              "once",
-              "triggered"
+              "once"
             ]
           },
           "collider": {
@@ -336,8 +300,8 @@
               "fall",
               "spike",
               "crush",
-              "fire",
-              "water"
+              "water",
+              "patroller"
             ]
           },
           "y": {
@@ -349,154 +313,83 @@
           "size": {
             "$ref": "#/definitions/vec3"
           },
-          "damage": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 3
-          },
           "period": {
             "type": "number",
             "exclusiveMinimum": 0
-          }
-        }
-      }
-    },
-    "interactables": {
-      "type": "array",
-      "maxItems": 120,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "type",
-          "id",
-          "pos"
-        ],
-        "properties": {
-          "type": {
-            "enum": [
-              "bell",
-              "gate",
-              "plate",
-              "lever",
-              "door",
-              "torch",
-              "rope"
-            ]
           },
-          "id": {
-            "$ref": "#/definitions/id"
-          },
-          "pos": {
-            "$ref": "#/definitions/vec3"
-          },
-          "rot": {
-            "$ref": "#/definitions/vec3"
-          },
-          "state": {
-            "enum": [
-              "open",
-              "closed",
-              "on",
-              "off"
-            ]
-          },
-          "onStrike": {
-            "type": "array",
-            "maxItems": 8,
-            "items": {
-              "$ref": "#/definitions/action"
-            }
-          },
-          "onEnter": {
-            "type": "array",
-            "maxItems": 8,
-            "items": {
-              "$ref": "#/definitions/action"
-            }
-          },
-          "requires": {
-            "type": "array",
-            "maxItems": 8,
-            "items": {
-              "$ref": "#/definitions/id"
-            }
-          }
-        }
-      }
-    },
-    "enemies": {
-      "type": "array",
-      "maxItems": 80,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "type",
-          "pos"
-        ],
-        "properties": {
-          "type": {
-            "enum": [
-              "charger",
-              "ranged",
-              "blocker",
-              "patroller"
-            ]
-          },
-          "id": {
-            "$ref": "#/definitions/id"
-          },
-          "pos": {
-            "$ref": "#/definitions/vec3"
-          },
-          "patrol": {
+          "path": {
             "type": "array",
             "minItems": 2,
             "maxItems": 12,
             "items": {
               "$ref": "#/definitions/vec3"
-            }
+            },
+            "description": "patroller: the fixed route it walks. Fixed, so its whole sweep is known statically (Q1, Q6)."
           },
-          "aggroRadius": {
+          "speed": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 40,
+            "description": "patroller: units/s along path."
+          },
+          "phase": {
             "type": "number",
             "minimum": 0,
-            "maximum": 60
-          },
-          "hp": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 12
+            "exclusiveMaximum": 1,
+            "description": "patroller: start offset as a fraction of one loop. Position is a pure function of the world clock: phase + t*speed (Q6)."
           }
-        }
-      }
-    },
-    "collectibles": {
-      "type": "array",
-      "maxItems": 60,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "type",
-          "id",
-          "pos"
-        ],
-        "properties": {
-          "type": {
-            "enum": [
-              "scroll",
-              "charm",
-              "shard"
-            ]
+        },
+        "description": "A hazard is a moving fall plane (Q6): touching one is death, nothing else. The patroller lives here, not in an enemies array, so nothing invites AI (Q7). speed and phase are mandatory on a patroller (Q2). Water survives only as a flat wash (Q2c): a still plane at \"y\", never animated (no period/path/speed/phase), never reflective.",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "patroller"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "path",
+                "speed",
+                "phase"
+              ],
+              "properties": {
+                "path": true,
+                "speed": true,
+                "phase": true
+              }
+            }
           },
-          "id": {
-            "$ref": "#/definitions/id"
-          },
-          "pos": {
-            "$ref": "#/definitions/vec3"
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "water"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "y"
+              ],
+              "properties": {
+                "y": true,
+                "period": false,
+                "path": false,
+                "speed": false,
+                "phase": false
+              }
+            }
           }
-        }
+        ]
       }
     },
     "checkpoints": {
@@ -527,24 +420,12 @@
           "type": "string",
           "maxLength": 32
         },
-        "sunAngle": {
-          "type": "array",
-          "items": {
-            "type": "number"
-          },
-          "minItems": 2,
-          "maxItems": 2
-        },
-        "intensity": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 5
-        },
         "ambienceZone": {
           "type": "string",
           "maxLength": 32
         }
-      }
+      },
+      "description": "No light direction or strength in level data (STYLE \u00a71). The greybox light is an engine constant until the ink shader replaces it."
     },
     "cameras": {
       "type": "array",
@@ -586,5 +467,5 @@
       "maximum": 5
     }
   },
-  "description": "No score, par_time or rank field exists, and additionalProperties:false rejects one if added to a level. That absence IS the no-score rule (PHASE-0-DECISIONS Q4 amendment 2): a field an agent sees is a field it wires up. Do not add one here."
+  "description": "There is no score, par_time or rank field (Q4), and no enemies, interactables or collectibles (Q7), and additionalProperties:false rejects one if added to a level. That absence IS the no-score rule (PHASE-0-DECISIONS Q4 amendment 2): a field an agent sees is a field it wires up. Do not add one here."
 }

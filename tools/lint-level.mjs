@@ -36,7 +36,7 @@ export function lintLevel(level, manifest){
   const P=w=>Array.isArray(w)?w:w.pos;
 
   const ids=new Map();
-  for (const k of ['platforms','interactables','enemies','collectibles'])
+  for (const k of ['platforms'])
     for (const e of level[k]??[]){ if(!e.id) continue;
       if(ids.has(e.id)) E('DUP_ID',`id "${e.id}" used in ${ids.get(e.id)} and ${k}`); else ids.set(e.id,k); }
 
@@ -44,9 +44,6 @@ export function lintLevel(level, manifest){
   for (const p of [...(level.geometry??[]),...(level.platforms??[])])
     if(!known.has(p.asset)) E('UNKNOWN_ASSET',`"${p.asset}" not in manifest`);
 
-  for (const i of level.interactables??[])
-    for (const a of [...(i.onStrike??[]),...(i.onEnter??[])])
-      if(a.op!=='win'&&!ids.has(a.target)) E('DANGLING_TARGET',`"${i.id}" -> unknown "${a.target}"`);
 
   const b=level.bounds, cp=level.critical_path;
   if(!inB(level.spawn.pos,b)) E('OOB','spawn outside bounds');
@@ -80,6 +77,15 @@ export function lintLevel(level, manifest){
   if(d(P(cp[0]),level.spawn.pos)>3) E('PATH_START','critical_path[0] not at spawn');
   const last=P(cp.at(-1));
   if(level.goal.pos&&d(last,level.goal.pos)>(level.goal.radius??3)) E('PATH_END','path does not end in goal radius');
+
+  // Patrollers (Q2, B-1): speed and phase are mandatory, same severity as a missing via. A patroller
+  // without them has no defined position at a given tick, so PHASE_SWEEP (B-7) has nothing to sweep.
+  (level.hazards??[]).forEach((hz,i)=>{
+    if(hz.type!=='patroller') return;
+    if(typeof hz.speed!=='number') E('NO_SPEED',`hazards[${i}] patroller has no "speed" (u/s along its path)`);
+    if(typeof hz.phase!=='number') E('NO_PHASE',`hazards[${i}] patroller has no "phase" (start offset, fraction of one loop)`);
+    if(!Array.isArray(hz.path)||hz.path.length<2) E('NO_PATROL_PATH',`hazards[${i}] patroller needs a "path" of 2+ points`);
+  });
 
   for(const hz of level.hazards??[]){
     if(hz.type==='fall'||!hz.pos) continue;

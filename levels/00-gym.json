@@ -399,12 +399,7 @@
     }
   ],
   "lighting": {
-    "preset": "greybox",
-    "sunAngle": [
-      50,
-      135
-    ],
-    "intensity": 1.6
+    "preset": "greybox"
   },
   "critical_path": [
     [

@@ -80,10 +80,9 @@ export interface InputFrame {
   jump: boolean;
   dash: boolean;
   sprint: boolean;
-  attack: boolean;
 }
 
-export const NEUTRAL: InputFrame = { x: 0, y: 0, jump: false, dash: false, sprint: false, attack: false };
+export const NEUTRAL: InputFrame = { x: 0, y: 0, jump: false, dash: false, sprint: false };
 
 export interface Snapshot {
   tick: number;

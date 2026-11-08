@@ -80,9 +80,10 @@ Levels are data, not code. You write `levels/<id>.json` against `levels/level.sc
 9. **Asset names are `lower_snake_case`** (`assetRef` pattern) and must exist in
    `assets/dist/manifest.json` (`UNKNOWN_ASSET`).
 10. **Every platform attaches to the cliff mass.** Nothing floats in open space (Q2b, unenforced).
-11. **Do not copy `tools/example-level.json` yet.** It still has a charger, a bell, a gate and a
-    scroll, all refused (SPEC §7). Its rewrite is queued with the schema cut. Copy
-    `levels/00-gym.json` for structure.
+11. **`tools/example-level.json` is the template.** It is an honest chapter-3 level: 5 segments,
+    chapter-3 moves only, a patroller hazard with `path`/`speed`/`phase`, and nothing from the NOT
+    list. Agents copy examples more faithfully than they follow rules (Q7), so a change to the
+    example is a change to the spec.
 
 Verify before reporting done:
 `npm run lint:levels && npm run lint:not-list && npm run playtest -- --level=<id>`
