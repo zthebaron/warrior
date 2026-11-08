@@ -96,3 +96,45 @@ That reconciles the 30-90s core loop with a checkpoint interval short enough to 
 is CI-checkable on the bot side.
 
 ## Q4-Q7 — outstanding
+
+## Q4 — Win condition and session length: **A, with three amendments.** CLOSED
+
+Win is *arrive*. No score, no par time, no rank screen, no unlocks in the sprint. The results state
+reads `complete` and nothing else. 5 segments per chapter, ~20 segments, 8-12 minutes for a
+first-time player.
+
+The two arguments that decide it are both yours and both good: session length is a **content
+budget, not a feel number** (five segments per chapter tells someone how much to build; "15-25
+minutes" does not), and at a <= 12s bot budget a full end-to-end run is <= 4 minutes, which makes
+one complete winnability run per CI pass realistic. *The game is winnable* becomes an assertion
+rather than an opinion. B commits to a 2-2.5x authoring cost before the vertical slice has
+measured days-per-level, which is the Q2b mistake. C ranks first-time players against a clock,
+which fights the 30s checkpoint fairness rule.
+
+Three amendments.
+
+**1. Retire the playbook's 15-25 minute figure explicitly — don't just miss it.** You argued
+against the number but left it sitting in the document. That is now the third instance of the same
+failure in this build: §H1.1 told agents to generate a locked seed, §P3.1 pointed at a schema path
+that never existed, and the playbook will tell the next agent the game should run 15-25 minutes.
+A build agent reading it will see 8-12 and helpfully expand scope. Mark it superseded, in place,
+with the arithmetic and the chapter-growth path (12 chapters x 5 segments is ~30 min, so
+production grows by adding chapters, not stretching them).
+
+**2. Make "no score" structural, not prose.** A commitment in a spec is not a constraint. The
+results state and the level schema must simply *have no* `score`, `par_time` or `rank` field, under
+`additionalProperties: false`. Your own line from the schema pushback was that a build agent that
+sees a field will try to wire it up — the inverse is the enforcement mechanism. Absent field,
+absent feature.
+
+**3. Do not fix chapter 1's length.** 5 segments +/- 1 applies to chapters 2 and up. Chapter 1
+teaches the primitives, and its length is an *output* of the teach rate, which has never been
+measured. Fixing it now sets a number ahead of its measurement, which is what Q2b refused to do.
+Let the vertical slice be as long as teaching requires, measure it, then set the rule from the
+measurement.
+
+Implementation note: the chapter-length rule needs a linter error code — `CHAPTER_LENGTH` or
+similar — alongside `HAZARD_ON_PATH`, `FALL_DAMAGE`, `NO_FALL_PLANE` and `UNMEASURED_MOVE`. A rule
+without a code does not get built.
+
+Par time per chapter, taken from the bot's own runs, is deferred post-gold. Agreed as you framed it.
