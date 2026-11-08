@@ -78,3 +78,6 @@
 {"id":"PR4-REBASE-2","agent":"phase0-spec","ts":"2026-11-08T18:53:26.573Z","released":true}
 {"id":"OQ-045","agent":"phase0-spec","ts":"2026-11-08T18:53:26.599Z","released":true}
 {"id":"D-014","agent":"unknown","ts":"2026-11-08T18:57:43.271Z","released":true}
+{"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:01:54.703Z","ttl_min":90}
+{"id":"CAM-FACE","agent":"reviewer-chat","ts":"2026-11-08T19:01:54.719Z","ttl_min":90}
+{"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:02:21.153Z","released":true}

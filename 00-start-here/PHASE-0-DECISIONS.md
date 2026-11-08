@@ -924,3 +924,73 @@ documentation can reach it and finish it. Until that is true, a level is *author
    only check in the suite that would run as a player rather than as the harness.
 
 implemented_by: ec87689 (fix 1: ?level= outside harness mode), 290cc37 (fix 2: startLevel 01-lower-stair, menu string), f79e500 (fix 4: REACHABLE stage, proven to fail with startLevel = 00-gym). Fix 3 (chapter progression) NOT done: due before chapter 2.
+
+---
+
+## D-015 — a 3.5m face is invisible to this camera rig, and CHAPTER_TEACH cannot fail
+
+Reported from play, 2026-11-08: *"when I came up to the big block, it was hard to jump over. Also
+it was all I could see. It took up the whole screen."* Both halves are the same two faces:
+`01-lower-stair` critical_path wp8→9 and wp15→16, each `via: "climb"`, each a flush +3.50 rise.
+Every other rise in the chapter is 0.00 or the 2.00 staircase.
+
+### The camera measurement
+
+The rig puts the eye `pivotHeight + distance*sin(pitch)` = `1.5 + 7*sin(18°)` = **3.66m above the
+player's feet**, 6.66m behind. A face top at +3.50 therefore lands **0.16m below eye level**. You
+are looking at the surface you need to reach from its own height, edge-on.
+
+Standing 2m off the face, feet at 0, vfov 60°, measured across face heights:
+
+| face height | lip elevation | top surface subtends | face % of frame |
+|---|---|---|---|
+| 2.00 | -10.9° | 6.9° | 62% |
+| 3.00 |  -4.4° | 2.8° | 73% |
+| **3.50** | **-1.1°** | **0.7°** | **78%** |
+| 3.75 |  +0.6° | 0.4° | 81% |
+| 4.50 |  +5.5° | 3.5° | 89% |
+
+At 3.50 the top surface — the only thing in the frame that says *there is ground up there* — is
+**0.7° tall, about 8px at 1080p**, above a featureless grey face filling 78% of the screen. The
+pathological band is **3.25–4.00m**, where the lip crosses eye level; both authored faces sit in
+it. Below ~3.0m you look down onto the top surface and it reads. The ledge never leaves the
+frustum, so no framing check would have caught it: it is in frame and still carries no
+information.
+
+### Why the linter passed it
+
+`CHAPTER_TEACH` (tools/lint-level.mjs:238) fires when `intro[it] < 0` — when a new move appears in
+`CHAPTER_MOVES_ADDED[ch]` and **no segment uses it at all**. A move's first use is always in some
+segment, so for any move that is used the check is a tautology and cannot fail. Chapter 1's climb
+is "taught" by the segment that *is* the climb: teaching instance and gate are the same object.
+The check is named for learnability and measures presence.
+
+This is D-013's pattern for the eighth time, and the most expensive instance so far, because it is
+the one check whose entire purpose was to prevent this.
+
+### Rulings
+
+- **D-015a (PROVISIONAL, needs APPROVER):** chapter 1 drops `climb`. Each +3.50 face becomes a
+  1.5-wide shelf at the midpoint — two +1.75 steps, both inside `MOVE.jump.maxRise` 2.00, both
+  with a 5–7° readable top surface. `CHAPTER_MOVES_ADDED` becomes
+  `{1:['ground','jump'], 2:['wall','double','climb']}`; climb debuts in chapter 2 beside wall and
+  double, where Q5 already plans a teach beat. Data-only in the level; one table edit in the
+  linter. The alternative — keep climb and add a teach shelf before it — costs a segment, still
+  needs the camera work to be readable, and introduces chapter 1's riskiest move twice.
+- **D-015b:** `READABLE_RISE` (Tier-1, CI). For every critical_path rise, the top surface must
+  subtend ≥ 2.0° from the eye at a 2m standoff. Derivable from the rig constants and the rise; no
+  render needed. Rejects 3.25–4.00 faces and anything else that lands at eye level.
+- **D-015c:** `CHAPTER_TEACH` is rewritten to be falsifiable: a teaching instance must be the
+  move's first use **and** be bypassable or recoverable without losing the segment. Until the
+  predicate is written down, the check is removed rather than left green — a tautological check is
+  worse than no check, because it answers the question.
+- **D-015d (backlog, engine):** camera pitch assist. A forward probe inside ~3m of a face whose
+  top is within 0.5m of eye level blends pitch up until the top surface subtends ≥ 2.0°, released
+  when the player turns away. Fixes the class; D-015a only fixes the two instances.
+
+### The general rule
+
+A budget says a move *can* clear a gap. It says nothing about whether the player can *see* that
+it can. Both belong under CI, and until D-015b exists only one of them was.
+
+implemented_by:
