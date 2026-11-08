@@ -66,3 +66,4 @@
 {"id":"OQ-043","agent":"kit","ts":"2026-11-08T18:04:46.388Z","ttl_min":600}
 {"id":"D-011","agent":"unknown","ts":"2026-11-08T18:06:58.974Z","released":true}
 {"id":"D-012","agent":"unknown","ts":"2026-11-08T18:06:59.001Z","released":true}
+{"id":"PR4-REBASE","agent":"phase0-spec","ts":"2026-11-08T18:18:29.571Z","ttl_min":90}
