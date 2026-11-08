@@ -261,7 +261,11 @@ async function boot(): Promise<void> {
     if (level.hazardHit(f, TUNING.capsuleRadius, 2 * (TUNING.capsuleHalfHeight + TUNING.capsuleRadius)) >= 0) return die(f);
     level.data.checkpoints.forEach((c, i) => {
       if (Math.hypot(f.x - c.pos[0], f.z - c.pos[2]) < GAME_RULES.checkpointRadius && Math.abs(f.y - c.pos[1]) < GAME_RULES.goalHeightTolerance) {
-        respawn = { pos: c.pos, facing: c.facing ?? respawn.facing };
+        // Q6 part 3 (B-9): respawn at the FURTHEST torii reached, never an earlier one. The furthest
+        // index is derived from the append-only checkpointLog, so walking back through an earlier
+        // torii logs nothing new and moves nothing. No new state.
+        const furthest = checkpointLog.length ? Math.max(...checkpointLog) : -1;
+        if (i >= furthest) respawn = { pos: c.pos, facing: c.facing ?? respawn.facing };
         if (!checkpointLog.includes(i)) checkpointLog.push(i);
       }
     });
