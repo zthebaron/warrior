@@ -15,8 +15,9 @@ ASSET = {"collider": "trimesh"}
 
 SEED = 11
 HALF_W, HALF_D = 5.0, 2.5  # base footprint half extents (x, z)
-SIDES = 11  # footprint polygon vertices per stratum
-JITTER = 0.16  # radial jitter of the footprint (fraction of radius)
+SIDES = 7  # footprint vertices per stratum: few, so the faces read as planes, not a drum
+JITTER = 0.3  # radial jitter of the footprint (fraction of radius)
+SHIFT = 0.45  # max x/z offset of each stratum (world units): the mass leans and steps unevenly
 STRATA = [  # (height, side colour, inset fraction from the base footprint)
     (3.2, "ink_deep", 0.00),
     (2.6, "ink_grey", 0.05),
@@ -34,7 +35,8 @@ def build(lib):
     y = 0.0
     for i, (h, side, inset) in enumerate(STRATA):
         k = 1.0 - inset
-        foot = lib.jittered_footprint(r, HALF_W * k, HALF_D * k, SIDES, JITTER)
+        dx, dz = r.uniform(-SHIFT, SHIFT), r.uniform(-SHIFT, SHIFT)
+        foot = [(x + dx, z + dz) for x, z in lib.jittered_footprint(r, HALF_W * k, HALF_D * k, SIDES, JITTER)]
         lib.prism(kit, foot, y, y + h, side, LEDGE, bottom="ink_black")  # every stratum closed: jitter can overhang the one below
         lib.fracture_lines(kit, foot, y, y + h, r, **FRACTURE)
         y += h

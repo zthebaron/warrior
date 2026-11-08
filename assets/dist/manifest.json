@@ -28,21 +28,21 @@
       "kind": "mesh",
       "file": "kit_rock_mass.glb",
       "source": "assets/src/kit_rock_mass.py",
-      "sha256": "7c4db2bb47da4c803d8124a07b827c2f0d0099fc8643108493a54d8eef661d44",
+      "sha256": "59a274a46dc52a2c6f02c6c13cc40cc9ddda4c5b17971e902c53bd43228262ea",
       "collider": "trimesh",
-      "triangles": 310,
-      "bytes": 3984,
-      "bytes_export": 21260,
+      "triangles": 216,
+      "bytes": 3436,
+      "bytes_export": 16016,
       "bbox": {
         "min": [
-          -4.65572,
+          -4.29814,
           0,
-          -2.29019
+          -2.13188
         ],
         "max": [
-          4.63782,
+          4.25926,
           12,
-          2.22547
+          2.11715
         ]
       },
       "materials": 1,
@@ -65,11 +65,11 @@
       "kind": "mesh",
       "file": "kit_torii.glb",
       "source": "assets/src/kit_torii.py",
-      "sha256": "f3b09905e6591fcaa6ce03be86a07595a470c16edd0a212a867353a5f4775835",
+      "sha256": "6d6e6cb302706b9049a8b77e6dba2f72a623a7d9ca367f65725461eb35ddb571",
       "collider": "trimesh",
       "triangles": 108,
       "bytes": 2412,
-      "bytes_export": 9108,
+      "bytes_export": 9104,
       "bbox": {
         "min": [
           -0.31,

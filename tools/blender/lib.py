@@ -58,10 +58,6 @@ def _hex(h):
     return tuple(int(h[i : i + 2], 16) / 255.0 for i in (0, 2, 4))
 
 
-def _srgb_to_linear(c):
-    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-
-
 def palette_uv(color):
     """UV at the centre of `color`'s cell (Blender UV space, origin bottom-left)."""
     i = PALETTE_ORDER.index(color)
@@ -81,9 +77,10 @@ def palette_material():
         for x in range(TEX_SIZE):
             i = (y // CELL) * CELLS_PER_ROW + (x // CELL)
             name = PALETTE_ORDER[i] if i < len(PALETTE_ORDER) else "paper_cream"
-            # Image.pixels are scene-linear floats for an sRGB image; the PNG writer converts
-            # back, so the stored bytes are the palette hex exactly.
-            r, g, b = (_srgb_to_linear(c) for c in _hex(PALETTE[name]))
+            # A BYTE image stores Image.pixels as-is (value * 255): no linear<->sRGB conversion.
+            # Write the sRGB hex directly. (Found by the harness assets probe: converting to
+            # linear here shipped every colour ~4x too dark, #383838 -> #0a0a0a.)
+            r, g, b = _hex(PALETTE[name])
             o = (y * TEX_SIZE + x) * 4
             px[o : o + 4] = (r, g, b, 1.0)
     img.pixels = px
