@@ -537,3 +537,33 @@ Do not set it from the values above, which are all near-field.
 
 implemented_by:
 
+
+## D-007 — Landing mark (B-3): the constraints, before the code
+
+Q2b put the landing mark behind a default-off flag so the H2.5 feel test decides it. Three things
+are not obvious, and one of them breaks CI if missed.
+
+**1. It must not imply a light source.** §10 test 1 is "can you tell where the light is?" So: a
+hard-edged flat disc directly beneath the capsule, no softness, no penumbra, no directional
+offset. The moment it has a soft edge or sits off-centre it is a shadow, and §1 and §9 forbid
+shadows. Colour comes from the palette — `ink-black #20201e` or `ink-deep #383838` — never a new
+value, and it is **not** the accent, so it does not touch `ACCENT_CONTRAST` or `ACCENT_AREA`.
+
+**2. Turning it on changes `renderer.info` and will fail the Tier-1 budgets.** The harness
+asserts draw calls, and adding a per-frame mesh adds one. Default-off keeps CI and the visual
+goldens untouched, which is the mechanical reason default-off matters, not just the political one.
+But the feel test runs with it **on**, so either batch it into an existing draw call or give the
+budget assertion an explicit exemption when the flag is set. Decide that before writing it, or the
+first toggled run reports a budget regression that is not one.
+
+**3. It answers "how far down is the ground," not "where will I land."** Q2b specified a mark
+*straight down under the player*, which reports current ground distance. A landing *predictor*
+integrates ballistic motion and marks the arrival point — a different and stronger affordance.
+Keep what Q2b specified. But record the distinction now, because if the feel test comes back
+"still cannot judge depth," the correct next move is the predictor, **not a bigger dot.**
+
+Flag convention: follow the accent's `?accent=<name>` precedent with `?landingmark=on`, plus a
+`TUNING` constant so it is switchable in place during the feel test. Scale the disc by the
+downward raycast distance — `physics.castRay` already exists for the camera rig, so no new system.
+
+implemented_by:
