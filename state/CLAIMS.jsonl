@@ -93,3 +93,11 @@
 {"id":"OQ-049","agent":"phase0-spec","ts":"2026-11-08T22:13:36.032Z","ttl_min":90}
 {"id":"B-19","agent":"phase0-spec","ts":"2026-11-08T22:13:36.059Z","ttl_min":90}
 {"id":"B-20","agent":"phase0-spec","ts":"2026-11-08T22:13:36.084Z","ttl_min":90}
+{"id":"B-14","agent":"phase0-spec","ts":"2026-11-08T22:52:37.649Z","released":true}
+{"id":"B-14","agent":"phase0-spec","ts":"2026-11-08T22:52:37.681Z","ttl_min":90}
+{"id":"OQ-049","agent":"phase0-spec","ts":"2026-11-08T22:52:37.712Z","released":true}
+{"id":"OQ-049","agent":"phase0-spec","ts":"2026-11-08T22:52:37.740Z","ttl_min":90}
+{"id":"B-19","agent":"phase0-spec","ts":"2026-11-08T22:52:37.771Z","released":true}
+{"id":"B-19","agent":"phase0-spec","ts":"2026-11-08T22:52:37.800Z","ttl_min":90}
+{"id":"B-20","agent":"phase0-spec","ts":"2026-11-08T22:52:37.830Z","released":true}
+{"id":"B-20","agent":"phase0-spec","ts":"2026-11-08T22:52:37.860Z","ttl_min":90}
