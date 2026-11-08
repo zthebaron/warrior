@@ -1,0 +1,191 @@
+{
+  "decision": "D-006: candidates against the eight-value ramp, for the H2.5 feel test — chooses nothing",
+  "rows": [
+    "vermilion_a #e34234",
+    "vermilion_b #ef5b3b",
+    "vermilion_c #c8371f",
+    "seed_red #603633 (REJECTED, reference)"
+  ],
+  "cols": [
+    "paper-cream #cabfac",
+    "mist-pale #afa79c",
+    "wash-light #979189",
+    "stone-mid #827d76",
+    "wash-mid #69645f",
+    "ink-grey #534e4b",
+    "ink-deep #383838",
+    "ink-black #20201e"
+  ],
+  "near_m": 6,
+  "floor_m": 90,
+  "table": {
+    "vermilion_a": {
+      "paper-cream": {
+        "dE2000": 35,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "mist-pale": {
+        "dE2000": 30.9,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-light": {
+        "dE2000": 28.4,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "stone-mid": {
+        "dE2000": 27.6,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-mid": {
+        "dE2000": 28.7,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-grey": {
+        "dE2000": 31.8,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-deep": {
+        "dE2000": 37.4,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-black": {
+        "dE2000": 43,
+        "near_px": 5176,
+        "floor_px": 47
+      }
+    },
+    "vermilion_b": {
+      "paper-cream": {
+        "dE2000": 31,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "mist-pale": {
+        "dE2000": 27.9,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-light": {
+        "dE2000": 26.7,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "stone-mid": {
+        "dE2000": 27.3,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-mid": {
+        "dE2000": 30.7,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-grey": {
+        "dE2000": 35.3,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-deep": {
+        "dE2000": 41.5,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-black": {
+        "dE2000": 47.3,
+        "near_px": 5176,
+        "floor_px": 47
+      }
+    },
+    "vermilion_c": {
+      "paper-cream": {
+        "dE2000": 38.5,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "mist-pale": {
+        "dE2000": 33.9,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-light": {
+        "dE2000": 30.3,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "stone-mid": {
+        "dE2000": 27.7,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-mid": {
+        "dE2000": 26.7,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-grey": {
+        "dE2000": 28.3,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-deep": {
+        "dE2000": 33.2,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-black": {
+        "dE2000": 38.2,
+        "near_px": 5176,
+        "floor_px": 47
+      }
+    },
+    "seed_red": {
+      "paper-cream": {
+        "dE2000": 52.1,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "mist-pale": {
+        "dE2000": 44,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-light": {
+        "dE2000": 34.8,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "stone-mid": {
+        "dE2000": 27.6,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "wash-mid": {
+        "dE2000": 20.2,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-grey": {
+        "dE2000": 16,
+        "near_px": 5291,
+        "floor_px": 66
+      },
+      "ink-deep": {
+        "dE2000": 17.8,
+        "near_px": 5176,
+        "floor_px": 47
+      },
+      "ink-black": {
+        "dE2000": 21.4,
+        "near_px": 5176,
+        "floor_px": 47
+      }
+    }
+  }
+}

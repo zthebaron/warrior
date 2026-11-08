@@ -10,10 +10,8 @@
     "seed_red": "#603633"
   },
   "area": {
-    "rule": "ACCENT_AREA (D-003): at the gameplay follow framing \u2014 the player ahead_m before a torii along the critical path, camera at CAMERA_TUNING's rest pose \u2014 the accent's share of the frame must lie in [floor_pct, ceiling]. Asserted by the harness `accent` stage, per torii, per level.",
-    "ahead_m": 6,
-    "floor_pct": 0.505,
-    "floor_basis": "PROVISIONAL until H2.5. Measured 2026-11-08: kit_torii's accent share with the torii 25.26 u from the camera (STYLE-BIBLE 3 near-band edge, 25 u): the next waypoint must still read as a near-band form. docs/build-log/accent/accent-area-curve.json. Frozen as a number, so a smaller gate fails it rather than moving it.",
-    "ceiling": "min share in reference/palette.json (ink-black 5.08%), read at run time: the accent never covers more of the frame than the least-used value of the ramp, so it stays a signal and never competes with the structure."
+    "rule": "ACCENT_AREA (D-003, revised by D-006): a FLOOR at scanning distance, no ceiling. Each kit_torii, in route order, is scanned for from the previous anchor (previous torii, else spawn) with the follow rig at rest facing it; its accent must cover >= floor_pct of the frame. Harness `accent` stage.",
+    "floor_pct": 0.0204,
+    "floor_basis": "PROVISIONAL until H2.5. Measured 2026-11-08 (tools/harness/accent-floor.ts -> docs/build-log/accent/palette/curve.json): the last distance (90 m before the gate) at which the largest connected accent blob still exceeds 27.6 px \u2014 the seed red's observed failure area, 0.012% of a 640x360 frame. At 100 m it fractures to 18 px. Frozen as a number so a smaller gate fails it rather than moving it."
   }
 }

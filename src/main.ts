@@ -91,6 +91,14 @@ interface HarnessApi {
    */
   respawnAt(pos: Vec3, facing: number, tick: number): HarnessSnapshot;
   assetProbe(name: string): Promise<AssetProbe>;
+  /**
+   * D-006: render kit_torii ALONE at the origin (its own scene: no level, lights, player, fog) against a
+   * solid `bg` colour, from `cam` looking at `target`, with the game camera's fov and aspect. The caller
+   * screenshots the canvas. Used for the accent-vs-ramp swatches and the area-vs-distance curve.
+   */
+  renderTorii(bg: string, cam: Vec3, target: Vec3): Promise<{ ok: boolean; error: string | null }>;
+  /** Show/hide the level's placements of mesh asset `name` at `pos` (harness: isolate one torii's pixels). */
+  setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;
   /** Start a test level from JSON text (tools/harness/fixtures/): same validation AND decode as levels/. */
   startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
 }
@@ -516,6 +524,35 @@ async function boot(): Promise<void> {
       },
       releaseCamera: () => {
         cameraOverride = null;
+      },
+      setPlacementVisible: (name, pos, visible) => {
+        let n = 0;
+        level?.root.traverse((o) => {
+          if (o instanceof THREE.Mesh && o.name === name && o.position.distanceTo(new THREE.Vector3(...pos)) < 1e-3) {
+            o.visible = visible;
+            n++;
+          }
+        });
+        return n;
+      },
+      renderTorii: async (bg, cam, target) => {
+        const a = MANIFEST.get('kit_torii');
+        if (!a || a.kind !== 'mesh') return { ok: false, error: 'kit_torii is not a mesh asset in the manifest' };
+        try {
+          await preloadAssets([{ name: a.name, file: a.file }]);
+        } catch (err) {
+          return { ok: false, error: err instanceof Error ? err.message : String(err) };
+        }
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(bg);
+        for (const part of getLoadedAsset('kit_torii')!.parts) scene.add(new THREE.Mesh(part.geometry, part.material));
+        const c = renderer.camera;
+        const view = new THREE.PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
+        view.position.set(...cam);
+        view.lookAt(...target);
+        renderer.renderer.setRenderTarget(null);
+        renderer.renderer.render(scene, view);
+        return { ok: true, error: null };
       },
       startJson: async (text) => {
         // B-16: a test level goes through the same prepareLevel (mesh decode) as startLevel — the type

@@ -1,0 +1,201 @@
+{
+  "decision": "D-006 / B-6",
+  "rig": {
+    "distance": 7,
+    "pivotHeight": 1.5,
+    "pitchDeg": 18
+  },
+  "viewport": {
+    "width": 640,
+    "height": 360
+  },
+  "background": "paper-cream #cabfac",
+  "accent": "vermilion_a",
+  "curve": [
+    {
+      "ahead_m": 0,
+      "cam_to_torii_m": 7.6,
+      "accent_pct": 8.9332,
+      "accent_px": 20582,
+      "largest_blob_px": 20582
+    },
+    {
+      "ahead_m": 2,
+      "cam_to_torii_m": 9.4,
+      "accent_pct": 5.046,
+      "accent_px": 11626,
+      "largest_blob_px": 11626
+    },
+    {
+      "ahead_m": 4,
+      "cam_to_torii_m": 11.27,
+      "accent_pct": 3.2513,
+      "accent_px": 7491,
+      "largest_blob_px": 7491
+    },
+    {
+      "ahead_m": 6,
+      "cam_to_torii_m": 13.18,
+      "accent_pct": 2.2465,
+      "accent_px": 5176,
+      "largest_blob_px": 5176
+    },
+    {
+      "ahead_m": 8,
+      "cam_to_torii_m": 15.11,
+      "accent_pct": 1.6194,
+      "accent_px": 3731,
+      "largest_blob_px": 3731
+    },
+    {
+      "ahead_m": 12,
+      "cam_to_torii_m": 19.01,
+      "accent_pct": 0.9479,
+      "accent_px": 2184,
+      "largest_blob_px": 2184
+    },
+    {
+      "ahead_m": 18.34,
+      "cam_to_torii_m": 25.26,
+      "accent_pct": 0.4805,
+      "accent_px": 1107,
+      "largest_blob_px": 1107
+    },
+    {
+      "ahead_m": 25,
+      "cam_to_torii_m": 31.87,
+      "accent_pct": 0.296,
+      "accent_px": 682,
+      "largest_blob_px": 682
+    },
+    {
+      "ahead_m": 30,
+      "cam_to_torii_m": 36.84,
+      "accent_pct": 0.2114,
+      "accent_px": 487,
+      "largest_blob_px": 487
+    },
+    {
+      "ahead_m": 40,
+      "cam_to_torii_m": 46.8,
+      "accent_pct": 0.1198,
+      "accent_px": 276,
+      "largest_blob_px": 276
+    },
+    {
+      "ahead_m": 50,
+      "cam_to_torii_m": 56.78,
+      "accent_pct": 0.0621,
+      "accent_px": 143,
+      "largest_blob_px": 143
+    },
+    {
+      "ahead_m": 60,
+      "cam_to_torii_m": 66.76,
+      "accent_pct": 0.0425,
+      "accent_px": 98,
+      "largest_blob_px": 98
+    },
+    {
+      "ahead_m": 70,
+      "cam_to_torii_m": 76.74,
+      "accent_pct": 0.0273,
+      "accent_px": 63,
+      "largest_blob_px": 61
+    },
+    {
+      "ahead_m": 80,
+      "cam_to_torii_m": 86.73,
+      "accent_pct": 0.0313,
+      "accent_px": 72,
+      "largest_blob_px": 72
+    },
+    {
+      "ahead_m": 90,
+      "cam_to_torii_m": 96.73,
+      "accent_pct": 0.0204,
+      "accent_px": 47,
+      "largest_blob_px": 46
+    },
+    {
+      "ahead_m": 100,
+      "cam_to_torii_m": 106.72,
+      "accent_pct": 0.0226,
+      "accent_px": 52,
+      "largest_blob_px": 18
+    },
+    {
+      "ahead_m": 120,
+      "cam_to_torii_m": 126.71,
+      "accent_pct": 0.0056,
+      "accent_px": 13,
+      "largest_blob_px": 5
+    },
+    {
+      "ahead_m": 140,
+      "cam_to_torii_m": 146.7,
+      "accent_pct": 0.0013,
+      "accent_px": 3,
+      "largest_blob_px": 1
+    },
+    {
+      "ahead_m": 160,
+      "cam_to_torii_m": 166.7,
+      "accent_pct": 0.0009,
+      "accent_px": 2,
+      "largest_blob_px": 1
+    },
+    {
+      "ahead_m": 180,
+      "cam_to_torii_m": 186.69,
+      "accent_pct": 0.0004,
+      "accent_px": 1,
+      "largest_blob_px": 1
+    },
+    {
+      "ahead_m": 200,
+      "cam_to_torii_m": 206.69,
+      "accent_pct": 0,
+      "accent_px": 0,
+      "largest_blob_px": 0
+    },
+    {
+      "ahead_m": 250,
+      "cam_to_torii_m": 256.68,
+      "accent_pct": 0,
+      "accent_px": 0,
+      "largest_blob_px": 0
+    },
+    {
+      "ahead_m": 300,
+      "cam_to_torii_m": 306.68,
+      "accent_pct": 0,
+      "accent_px": 0,
+      "largest_blob_px": 0
+    }
+  ],
+  "floor": {
+    "rule": "largest connected accent blob >= 27.6 px (= the seed red's 0.012% at 640x360)",
+    "last_findable": {
+      "ahead_m": 90,
+      "cam_to_torii_m": 96.73,
+      "accent_pct": 0.0204,
+      "accent_px": 47,
+      "largest_blob_px": 46
+    },
+    "first_failing": {
+      "ahead_m": 100,
+      "cam_to_torii_m": 106.72,
+      "accent_pct": 0.0226,
+      "accent_px": 52,
+      "largest_blob_px": 18
+    },
+    "accent_vanishes_at": {
+      "ahead_m": 200,
+      "cam_to_torii_m": 206.69,
+      "accent_pct": 0,
+      "accent_px": 0,
+      "largest_blob_px": 0
+    }
+  }
+}

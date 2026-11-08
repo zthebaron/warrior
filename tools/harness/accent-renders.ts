@@ -123,7 +123,7 @@ writeFileSync(join(OUT, 'contact-sheet.png'), PNG.sync.write(sheet));
 const report = {
   decision: 'PHASE-0-DECISIONS D-001 — candidates for the H2.5 feel test; this file chooses nothing',
   default: accent.default,
-  budget: 'ACCENT_AREA band at the follow framing (D-003; assets/src/accent.json area) — the 1% ceiling is withdrawn',
+  budget: 'ACCENT_AREA: a floor at scanning distance, no ceiling (D-006; assets/src/accent.json area; curve: tools/harness/accent-floor.ts)',
   caveat: 'grey-box gym (lit primitives, blue sky), not the STYLE-BIBLE render',
   contactSheet: { file: 'contact-sheet.png', rows: NAMES, cols: SHOTS.map((s) => s.name) },
   shots: SHOTS,
