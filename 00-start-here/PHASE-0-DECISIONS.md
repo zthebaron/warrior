@@ -238,7 +238,7 @@ render them on the torii in the gym, and let the H2.5 feel test choose — the s
 used for the landing mark. A real vermilion is near `#E34234`; expect the answer in that
 neighbourhood, at palette lightness or above.
 
-implemented_by: 5d95529 (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 93c53e1 (?accent=<name> in-place switch), 484680a (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
+implemented_by: d04cc08 (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 3f0817c (?accent=<name> in-place switch), 136f9a9 (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
 
 ## Q6 — Failure model: **A, with one addition and one change.** CLOSED
 
@@ -357,7 +357,7 @@ Amending a locked Gate B artifact is legitimate here, and only here, because the
 a measurement. That is the distinction Q2b drew: do not amend the Style Bible on a hypothesis;
 do amend it on evidence.
 
-implemented_by: 2a25cc3 (ACCENT_AREA harness stage + band in accent.json), d41c2a2 (STYLE-BIBLE §2 / §9 / §10 amended) — branch h4-asset-kit, PR 3. Floor provisional: state/OPEN-QUESTIONS.md OQ-017.
+implemented_by: 2481615 (ACCENT_AREA harness stage + band in accent.json), d37a2be (STYLE-BIBLE §2 / §9 / §10 amended) — branch h4-asset-kit, PR 3. Floor provisional: state/OPEN-QUESTIONS.md OQ-017.
 
 ## Q7 — The NOT list: **A, with one addition.** CLOSED
 

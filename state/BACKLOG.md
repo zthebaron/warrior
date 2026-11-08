@@ -15,7 +15,6 @@ Verified against the repository on 2026-11-08, not taken from any report.
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
 | B-14 | Measure the 0.5u autostep ceiling, or make `measured` per-field in the MOVE table | RB-002 | MISSING | `MOVE.ground` is `measured: true` while `MEASUREMENTS.md` records its autostep as not measured directly |
 | B-15 | Close or justify the 5 unenforced NOT-list rows — #20 (player-visible run metric) first | RB-002, Q7 | MISSING | `lint:not-list` reports `22 rows: 17 enforced, 0 pending, 5 unenforced` |
-| B-16 | **Merge hazard.** Test-level loader must decode mesh assets before build, as `startLevel` does | — | MISSING | PR 3 `src/main.ts:209` awaits `preloadLevelAssets(data)` before the synchronous `install()`; `main` has no decode step at all, so any branch cut from `main` inherits the gap. Harmless while test levels use only boxes; breaks the first time one places a mesh asset |
 
 **B-7 and B-8 landed** (see below). B-8 `HAZARD_AT_CHECKPOINT` is the precondition of PHASE_SWEEP's wait
 arithmetic (an arrival waits at the torii), so it is the next item that protects the sweep's meaning.
@@ -28,7 +27,8 @@ arithmetic (an arrival waits at the torii), so it is the next item that protects
 | No `score` / `par_time` / `rank` fields | Q4 | absent from the schema; 17 `additionalProperties` guards |
 | 15-25 min session target retired in place | Q4 | struck through with a `[SUPERSEDED — PHASE-0-DECISIONS Q4]` block; 5 supersede markers |
 | `HAZARD_ON_PATH`, `FALL_DAMAGE`, `NO_FALL_PLANE`, `UNMEASURED_MOVE`, `NO_VIA` | playbook | all present in the linter |
-| B-5 `ACCENT_CONTRAST` lint rule | D-001 | `5d95529`: `tools/assets/accent.mjs`, `npm run lint:accent` (CI; also in `assets:build` and `assets:budget`). dE2000 >= 2x ramp step, C* >= 3x palette max chroma, L* >= wash-mid, all derived from palette.json; 3 candidates pass, `#603633` must fail |
+| B-16 test-level loader decodes mesh assets | — | `c48bdb6`: `buildLevel`/`install` take only a `PreparedLevel`, made only by `await prepareLevel(data)` (decodes the meshes); skipping it is a typecheck error (TS2345, proven). Harness `startJson` for `tools/harness/fixtures/`; assets stage loads `fixtures/mesh-asset.json` on a COLD page: kit_torii on screen (accent 5.514%); a cast past the gate fails with "not decoded" |
+| B-5 `ACCENT_CONTRAST` lint rule | D-001 | `d04cc08`: `tools/assets/accent.mjs`, `npm run lint:accent` (CI; also in `assets:build` and `assets:budget`). dE2000 >= 2x ramp step, C* >= 3x palette max chroma, L* >= wash-mid, all derived from palette.json; 3 candidates pass, `#603633` must fail |
 | B-1 `speed`/`phase` on patrollers | Q2 | `19234ab`: required in schema (if/then) and lint errors `NO_SPEED`/`NO_PHASE`/`NO_PATROL_PATH`; probes rejected by both |
 | B-2 fire/torch cut, water a flat wash | Q2c | `19234ab`: `fire` and `interactables` absent; water requires `y`, forbids period/path/speed/phase (OQ-008) |
 | B-10 `lint:not-list` | Q7 | `1191a34` (in CI); `19234ab` closed all 9 known-open checks: 17 enforced, 0 pending, 5 unenforced |
