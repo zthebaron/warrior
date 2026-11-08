@@ -23,15 +23,17 @@ const MOVE = {
 export const segmentsOf = (level) => (level.checkpoints?.length ?? 0) + 1;
 
 // Chapter length is DERIVED, not ranged (D-011, overriding OQ-037; Q4 amendment 3 measured by chapter 1):
-//   one TEACHING segment per new lethal move or new signal, introducing exactly one of them;
-//   plus one TRANSFER segment: the chapter's riskiest new thing again, combined with another lethal move;
+//   one TEACHING segment per new UNRECOVERABLE move or new signal, introducing exactly one of them;
+//   plus one TRANSFER segment: the chapter's riskiest new thing again, combined with another unrecoverable move;
 //   plus any PRACTICE segments: introduce no new move and no new signal, combine only what is taught.
 // The 4-6 range survives only as a WARN sanity check (a derivation far outside it usually means the
 // moveset changed). Chapter 0 is the gym (not a chapter); chapters past 4 add nothing to teach.
 export const CHAPTER_SEGMENTS = { min: 4, max: 6, fromChapter: 1 };
-// "Can kill you": a move that leaves the support surface. Ground never does; walking off an edge is a
-// risk every segment carries, so it teaches nothing that needs its own segment (chapter 1, OQ-042).
-export const NON_LETHAL_MOVES = ['ground'];
+// UNRECOVERABLE within the segment (OQ-042, renamed by Tim's ruling): a move earns a teaching segment when
+// MISUNDERSTANDING it costs the player the segment. Misjudge a jump and you fall and lose the segment;
+// misjudge walking and you stop and walk again. That holds at ANY ledge width, so it is not "ground cannot
+// kill you" (it can, off a one-metre catwalk); it is "a ground mistake is recoverable where you stand".
+export const RECOVERABLE_MOVES = ['ground'];
 // Signals added per chapter (Q2, Q5): the crow cue is chapter 1's. A cued waypoint (`cue`) uses it.
 export const CHAPTER_SIGNALS_ADDED = { 1: ['crow'] };
 // The riskiest new thing per chapter, which gets the transfer segment. Chapter 1: the crow (Q5 calls it the
@@ -226,20 +228,20 @@ export function lintLevel(level, manifest){
     });
     if(placed){
       bounds.push(cp.length-1);
-      const lethalNew=(CHAPTER_MOVES_ADDED[ch]??[]).filter(m=>!NON_LETHAL_MOVES.includes(m)), sigNew=CHAPTER_SIGNALS_ADDED[ch]??[];
-      const items=[...lethalNew,...sigNew];
+      const unrecoverableNew=(CHAPTER_MOVES_ADDED[ch]??[]).filter(m=>!RECOVERABLE_MOVES.includes(m)), sigNew=CHAPTER_SIGNALS_ADDED[ch]??[];
+      const items=[...unrecoverableNew,...sigNew];
       const segUse=bounds.map((b,s)=>{ const lo=s?bounds[s-1]+1:1, u=new Set();
         for(let j=lo;j<=b;j++){ const w=cp[j]; if(typeof w!=='object'||Array.isArray(w)) continue;
-          if(w.via&&!NON_LETHAL_MOVES.includes(w.via)) u.add(w.via); if(w.cue!==undefined) u.add('crow'); }
+          if(w.via&&!RECOVERABLE_MOVES.includes(w.via)) u.add(w.via); if(w.cue!==undefined) u.add('crow'); }
         return u; });
       const intro=Object.fromEntries(items.map(it=>[it,segUse.findIndex(u=>u.has(it))]));
-      for(const it of items) if(intro[it]<0) E('CHAPTER_TEACH',`chapter ${ch} adds "${it}" but no segment uses it: a chapter teaches what it adds (D-011, Q5)`);
+      for(const it of items) if(intro[it]<0) E('CHAPTER_TEACH',`chapter ${ch} adds "${it}" but no segment uses it. Every new move whose misunderstanding is unrecoverable within the segment (all but ${RECOVERABLE_MOVES.join(', ')}), and every new signal, gets a teaching segment (D-011, OQ-042, Q5)`);
       const kinds=segUse.map((u,s)=>{ const here=items.filter(it=>intro[it]===s);
-        if(here.length>1) E('CHAPTER_TEACH',`segment ${s} introduces ${here.length} new things at once (${here.join(', ')}): one new move or signal per teaching segment (D-011)`);
+        if(here.length>1) E('CHAPTER_TEACH',`segment ${s} introduces ${here.length} new things at once (${here.join(', ')}). Misunderstanding any of them loses the segment, so a player who dies cannot tell which one they misread: one per teaching segment (D-011, OQ-042)`);
         return here.length?'teach':'other'; });
       const risk=CHAPTER_RISKIEST[ch];
       const transfer=items.includes(risk)&&intro[risk]>=0 ? segUse.findIndex((u,s)=>s>intro[risk]&&kinds[s]==='other'&&u.has(risk)&&[...u].some(x=>x!==risk&&x!=='crow')) : -1;
-      if(items.length&&transfer<0) E('CHAPTER_TRANSFER',`chapter ${ch} has no transfer segment: after "${risk}" is introduced (segment ${intro[risk]}), a later segment that teaches nothing new must use it again together with another lethal move (D-011)`);
+      if(items.length&&transfer<0) E('CHAPTER_TRANSFER',`chapter ${ch} has no transfer segment: after "${risk}" is introduced (segment ${intro[risk]}), a later segment that teaches nothing new must use it again together with another move whose misunderstanding is unrecoverable within the segment (D-011, OQ-043)`);
       if(transfer>=0) kinds[transfer]='transfer';
       const n=t=>kinds.filter(k=>k===t).length, derived=items.length+(items.length?1:0);
       if(segs<CL.min||segs>CL.max) W('CHAPTER_LENGTH',`chapter ${ch} has ${segs} segments (${n('teach')} teaching + ${n('transfer')} transfer + ${n('other')} practice; derived minimum ${derived}), outside the ${CL.min}-${CL.max} sanity range: check the moveset, not the rule (D-011)`);

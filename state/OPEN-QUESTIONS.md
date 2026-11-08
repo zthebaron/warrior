@@ -434,7 +434,7 @@ leaves the support surface. Walking off an edge is a risk every segment carries,
 of its own. B would demand a segment that teaches walking. C is honest but needs a geometry model the
 linter does not have, and it would make the count depend on layout rather than on the moveset, which
 is the opposite of D-011's point.
-status: PROVISIONAL
+status: CONFIRMED with a renaming (PHASE-0-DECISIONS "OQ-042"): the concept is "misunderstanding the move is unrecoverable within the segment", not "can kill you". Same classification; RECOVERABLE_MOVES = [ground]
 
 ## OQ-043 — D-011's transfer segment is for "the riskiest". Which is the riskiest in chapters 2-4?
 raised: 2026-11-08 by kit (D-011)
@@ -444,4 +444,4 @@ because: Q5 names the crow as chapter 1's riskiest. For 2-4 its notes single out
 cliff work and double; "timing and gaps arrive together" and dash; dashjump alone. B puts the choice back
 in an agent's hands, which is the taste D-011 removes. C turns "plus one" into "times two" and
 contradicts D-011's text. One table, five entries, overridable in one commit.
-status: PROVISIONAL
+status: CONFIRMED (PHASE-0-DECISIONS "OQ-043"): Q5's order already encodes difficulty, so "last in the chapter's list" is a derivation, not a judgement
