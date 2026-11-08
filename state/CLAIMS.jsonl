@@ -62,3 +62,5 @@
 {"id":"LINUX-GOLDENS-2-5","agent":"phase0-spec","ts":"2026-11-08T17:50:17.994Z","released":true}
 {"id":"D-011","agent":"kit","ts":"2026-11-08T18:00:08.908Z","ttl_min":90}
 {"id":"D-012","agent":"kit","ts":"2026-11-08T18:00:08.935Z","ttl_min":90}
+{"id":"OQ-042","agent":"kit","ts":"2026-11-08T18:04:46.361Z","ttl_min":600}
+{"id":"OQ-043","agent":"kit","ts":"2026-11-08T18:04:46.388Z","ttl_min":600}
