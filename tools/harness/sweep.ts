@@ -22,6 +22,11 @@
 //      budget: there, assertion 2 is "every phase clears eventually" and the worst time is printed,
 //      not hidden (OQ-014).
 //
+// Crow cues (Q2, Q5): the bot above honours them (it holds at the torii for lift-off). For a segment
+// carrying a cue, the same N arrivals are ALSO run blind (ignoreCues), report-only: how many arrival
+// phases kill a player who departs without reading the crow. That is the cue's measured value and the
+// teach-rate proxy until per-segment death counts exist (Q6 part 6 is not implemented).
+//
 // Respawn points that coincide (the gym's checkpoint 0 sits on spawn) are merged. A checkpoint must
 // lie on the critical path, at a waypoint or partway along a ground edge, in path order.
 
@@ -125,6 +130,23 @@ export async function phaseSweep(ctx: Ctx): Promise<StageResult> {
           const w = await walk(ctx, g.page, { startIndex: pt.startIndex, ...(pt.from ? { from: pt.from } : {}), ...(pt.untilCheckpoint !== undefined ? { untilCheckpoint: pt.untilCheckpoint } : {}), tickLimit, quiet: true });
           const reachedEnd = w.snap.state === 'results' || (pt.untilCheckpoint !== undefined && w.snap.checkpoints.includes(pt.untilCheckpoint));
           runs.push({ offset: j, tick, ok: !w.failure && reachedEnd, sec: w.ticks / FIXED_HZ, why: w.failure });
+        }
+        const nextStart = pts[r + 1]?.startIndex ?? ctx.level.critical_path.length;
+        const cued = ctx.level.critical_path.map(wp).slice(pt.startIndex, nextStart).some((w) => w.cue !== undefined);
+        if (cued) {
+          const blind: { offset: number; ok: boolean; why: string | null }[] = [];
+          for (let j = 0; j < N; j++) {
+            const tick = P === null ? 0 : Math.round(((j * P) / N) * FIXED_HZ);
+            await g.page.evaluate(([p, f, t]) => window.__HARNESS__!.respawnAt(p, f, t), [pt.pos, pt.facing, tick] as const);
+            const w = await walk(ctx, g.page, { startIndex: pt.startIndex, ...(pt.from ? { from: pt.from } : {}), ...(pt.untilCheckpoint !== undefined ? { untilCheckpoint: pt.untilCheckpoint } : {}), tickLimit, quiet: true, ignoreCues: true });
+            const reachedEnd = w.snap.state === 'results' || (pt.untilCheckpoint !== undefined && w.snap.checkpoints.includes(pt.untilCheckpoint));
+            blind.push({ offset: j, ok: !w.failure && reachedEnd, why: w.failure });
+          }
+          const dead = blind.filter((x) => !x.ok);
+          const waits = runs.map((x) => x.sec);
+          st.check(`seg ${r}: crow cue (report)`, true, `blind departures fail ${dead.length}/${N} arrival phases${dead.length ? ` (offsets ${dead.map((x) => x.offset).join(',')})` : ''}; reading the crow clears ${runs.filter((x) => x.ok).length}/${N}, ${Math.min(...waits).toFixed(2)}-${Math.max(...waits).toFixed(2)}s incl. the wait`);
+          (st.data['blind'] ??= []) as unknown[];
+          (st.data['blind'] as unknown[]).push({ segment: r, blind });
         }
         // cost of arriving at offset j: wait for the next offset that clears (cyclic), plus its run
         const step = P === null ? 0 : P / N;

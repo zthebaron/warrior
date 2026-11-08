@@ -62,6 +62,8 @@ export interface HarnessSnapshot {
   grounded: boolean;
   platforms: { id: string; pos: Vec3 }[];
   hazards: { index: number; type: string; pos: Vec3 }[];
+  /** Crow cues by hazard index: the bot holds at a torii for a perched -> airborne edge (Q2, Q5). */
+  crows: { index: number; airborne: boolean; pos: Vec3 }[];
   checkpoints: number[];
   deaths: number;
   lastDeath: Vec3 | null;
@@ -506,6 +508,7 @@ async function boot(): Promise<void> {
       grounded: player?.grounded ?? false,
       platforms: level?.platformPositions() ?? [],
       hazards: level?.hazardPositions() ?? [],
+      crows: level?.crows() ?? [],
       checkpoints: [...checkpointLog],
       deaths,
       lastDeath,

@@ -45,9 +45,27 @@ export interface HazardDef {
   path?: Vec3[];  // patroller (schema makes path/speed/phase mandatory for it)
   speed?: number; // patroller, u/s
   phase?: number; // patroller, [0,1)
+  crow?: CrowDef; // patroller only: the timing cue keyed to this hazard's loop (Q2, Q5)
 }
 
-export type Waypoint = Vec3 | { pos: Vec3; via: Move; platform?: string; note?: string };
+/**
+ * The crow cue (Q2: "crow motion means WHEN"; Q5: chapter 1 carries it). A crow belongs to ONE
+ * patroller and reads that patroller's loop fraction, the same `phase + t·speed` expression, so it
+ * has no clock and no state of its own and replays stay deterministic (D-004, B-12). It never reads
+ * the player. Every number is level data: none is invented here.
+ *   perched  at `perch`, for loop fractions outside [lift, lift + away)
+ *   lift-off at loop fraction `lift` it leaves the perch: the signal is the motion, never a colour
+ *   away     for `away` of the loop it travels perch -> `to` -> perch, displacement sin(pi·u/away)
+ */
+export interface CrowDef {
+  perch: Vec3;
+  to: Vec3;
+  size: Vec3;
+  lift: number; // [0,1) loop fraction of lift-off
+  away: number; // (0,1) fraction of the loop spent off the perch
+}
+
+export type Waypoint = Vec3 | { pos: Vec3; via: Move; platform?: string; note?: string; cue?: number };
 
 export interface LevelData {
   id: string;
@@ -96,6 +114,7 @@ export const LEVEL_VISUAL = {
   defaultColor: 0xb8b2a6,
   platformColor: 0x8fa3b8,
   hazardColor: 0x2a2622,
+  crowColor: 0x20201e,     // palette.json ink-black: a crow is never coloured (Q2), it signals by motion
   waterColor: 0xafa79c,    // palette.json mist-pale: water is a flat wash (Q2c)   // greybox: patrollers and hazard volumes read as dark ink masses
   tagColors: { goal_pad: 0x3fd08f, spawn: 0xd9c27a, test: 0xa89a8a } as Record<string, number>,
   checkpointColor: 0x6fb3ff,
@@ -248,6 +267,8 @@ export interface LevelInstance {
   platformPositions(): { id: string; pos: Vec3 }[];
   /** Current hazard-volume centres by hazard index (debug / harness; PHASE_SWEEP reads these). */
   hazardPositions(): { index: number; type: HazardDef['type']; pos: Vec3 }[];
+  /** Crow cues by hazard index at the last posed tick: perched or airborne (harness; the bot reads lift-off). */
+  crows(): { index: number; airborne: boolean; pos: Vec3 }[];
   dispose(): void;
 }
 
@@ -283,11 +304,28 @@ function ease(kind: PlatformDef['easing'], u: number): number {
  * state. It ping-pongs along the polyline at `speed` u/s; one loop (out and back) is 2·length, and
  * `phase` is the start offset as a fraction of that loop (OQ-012).
  */
+/** Where a patroller is in its loop at world time t: [0,1). The ONE definition (patroller and its crow). */
+export function loopFraction(path: Vec3[], speed: number, phase: number, t: number): number {
+  const total = path.slice(1).reduce((a, b, i) => a + Math.hypot(b[0] - path[i]![0], b[1] - path[i]![1], b[2] - path[i]![2]), 0);
+  if (!(total > 0)) return 0;
+  return (((phase + (t * speed) / (2 * total)) % 1) + 1) % 1;
+}
+
+/** Crow pose at world time t, from its patroller's loop (see CrowDef). Pure in t. */
+export function crowAt(h: HazardDef, t: number, out: THREE.Vector3): { airborne: boolean } {
+  const c = h.crow!;
+  const u = (((loopFraction(h.path!, h.speed!, h.phase!, t) - c.lift) % 1) + 1) % 1;
+  const airborne = u < c.away;
+  const k = airborne ? Math.sin((Math.PI * u) / c.away) : 0;
+  out.set(c.perch[0] + (c.to[0] - c.perch[0]) * k, c.perch[1] + (c.to[1] - c.perch[1]) * k, c.perch[2] + (c.to[2] - c.perch[2]) * k);
+  return { airborne };
+}
+
 export function patrollerAt(path: Vec3[], speed: number, phase: number, t: number, out: THREE.Vector3): THREE.Vector3 {
   const lens = path.slice(1).map((b, i) => Math.hypot(b[0] - path[i]![0], b[1] - path[i]![1], b[2] - path[i]![2]));
   const total = lens.reduce((a, b) => a + b, 0);
   if (!(total > 0)) return out.set(...path[0]!);
-  const s = (((phase + (t * speed) / (2 * total)) % 1) + 1) % 1; // [0,1) around the loop
+  const s = loopFraction(path, speed, phase, t); // [0,1) around the loop
   let d = s < 0.5 ? s * 2 * total : (1 - s) * 2 * total; // distance from path[0]
   for (let i = 0; i < lens.length; i++) {
     const len = lens[i]!;
@@ -451,6 +489,22 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     volumes.push({ index, def, half: new THREE.Vector3(...def.size).multiplyScalar(0.5), prev: start.clone(), curr: start.clone(), mesh });
   });
 
+  // crow cues: render-only (no collider, never pickable, never a kill volume). Ink-black, never the
+  // accent (Q2: vermilion is torii-only), so the crow can signal through motion alone.
+  interface CrowInstance { index: number; def: HazardDef; prev: THREE.Vector3; curr: THREE.Vector3; airborne: boolean; mesh: THREE.Mesh }
+  const crows: CrowInstance[] = [];
+  (data.hazards ?? []).forEach((def, index) => {
+    if (def.type !== 'patroller' || !def.crow) return;
+    const start = new THREE.Vector3();
+    const { airborne } = crowAt(def, 0, start);
+    const mesh = new THREE.Mesh(boxGeo, mat(V.crowColor));
+    mesh.name = 'crow';
+    mesh.scale.set(...def.crow.size);
+    mesh.position.copy(start);
+    root.add(mesh);
+    crows.push({ index, def, prev: start.clone(), curr: start.clone(), airborne, mesh });
+  });
+
   // checkpoints (visual only)
   for (const c of data.checkpoints) {
     const m = new THREE.Mesh(boxGeo, mat(V.checkpointColor));
@@ -512,6 +566,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
         patrollerAt(h.def.path!, h.def.speed!, h.def.phase!, t - dt, h.prev);
         patrollerAt(h.def.path!, h.def.speed!, h.def.phase!, t, h.curr);
       }
+      for (const c of crows) {
+        crowAt(c.def, t - dt, c.prev);
+        c.airborne = crowAt(c.def, t, c.curr).airborne;
+      }
     },
     snapTo(t, dt) {
       this.fixedUpdate(t, dt);
@@ -521,6 +579,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     render(alpha) {
       for (const p of platforms) p.mesh.position.lerpVectors(p.prev, p.curr, alpha);
       for (const h of volumes) h.mesh.position.lerpVectors(h.prev, h.curr, alpha);
+      for (const c of crows) c.mesh.position.lerpVectors(c.prev, c.curr, alpha);
     },
     hazardHit(feet, radius, height) {
       for (const h of volumes) {
@@ -539,6 +598,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     },
     hazardPositions() {
       return volumes.map((h) => ({ index: h.index, type: h.def.type, pos: [h.curr.x, h.curr.y, h.curr.z] }));
+    },
+    crows() {
+      return crows.map((c) => ({ index: c.index, airborne: c.airborne, pos: [c.curr.x, c.curr.y, c.curr.z] }));
     },
     dispose() {
       physics.removeBody(fixed);

@@ -121,6 +121,23 @@ export function lintLevel(level, manifest){
     if(hz.type==='water'&&num(hz.y)&&vol) E('NO_KILL_VOLUME',`hazards[${i}] water has both a plane "y" and a volume "pos"+"size"; pick one, the other would have no effect`);
     if((hz.type==='spike'||hz.type==='crush')&&!vol) E('NO_KILL_VOLUME',`hazards[${i}] ${hz.type} needs "pos" + "size" (full extents): its kill volume. There is no default (no unmeasured numbers)`);
   });
+  // Crow cue (Q2, Q5). A waypoint's `cue` names the patroller whose crow says "go now" for that
+  // segment, and the player WAITS for it at the previous waypoint. So: the cue must point at a
+  // patroller that carries a crow (BAD_CUE), and the wait must happen at a torii or spawn, the only
+  // places HAZARD_AT_CHECKPOINT proves safe to stand (CUE_NOT_AT_TORII; SPEC: "Arrive at a torii.
+  // Wait for the crow. Go."). Chapter 1 must carry at least one cue (NO_CROW_CUE, Q5).
+  const RR=RESPAWN_RULES, torii=[level.spawn.pos,...(level.checkpoints??[]).map(c=>c.pos)];
+  const atTorii=p=>torii.some(t=>d(p,t)<RR.checkpointRadius&&Math.abs(p[1]-t[1])<RR.heightTolerance);
+  let cues=0;
+  cp.forEach((w,i)=>{
+    if(typeof w!=='object'||Array.isArray(w)||w.cue===undefined) return;
+    cues++;
+    const hz=(level.hazards??[])[w.cue];
+    if(!hz||hz.type!=='patroller'||!hz.crow){ E('BAD_CUE',`critical_path[${i}] cue ${w.cue}: hazards[${w.cue}] is not a patroller carrying a crow`); return; }
+    if(i<1||!atTorii(P(cp[i-1]))) E('CUE_NOT_AT_TORII',`critical_path[${i}] cue ${w.cue}: the player waits for the crow at critical_path[${i-1}] ${JSON.stringify(P(cp[i-1]??cp[0]))}, which is not within ${RR.checkpointRadius}u of spawn or a checkpoint. Waiting is only proven safe at a torii (D-005)`);
+  });
+  if(level.chapter===1&&cues===0) E('NO_CROW_CUE','chapter 1 carries no crow cue: Q5 requires the vertical slice to prove the crow (a critical_path waypoint with "cue" -> a patroller with a "crow")');
+
   const falls=(level.hazards??[]).filter(h=>h.type==='fall').length;
   if(falls>1) E('NO_KILL_VOLUME',`${falls} fall planes: only the highest kill plane can ever take effect; keep one`);
 

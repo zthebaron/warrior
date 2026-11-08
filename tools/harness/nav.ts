@@ -13,6 +13,11 @@
 //            the wall jump fires, then steers for b. Author wall segments accordingly.
 //   climb    jump + grab (into the wall), jump from the hang to climb
 //   platform board the named platform, wait to be carried, step off
+//   cue      (any via) a waypoint with `cue: k` is not departed for until hazards[k]'s crow LIFTS OFF:
+//            the bot holds neutral at the previous waypoint (a torii, CUE_NOT_AT_TORII) and goes on
+//            the first perched -> airborne edge it observes. Arriving mid-flight waits for the next
+//            lift-off. This is the crow read as a player is told to read it (SPEC: wait for the crow,
+//            go), so a clear proves the cue is a sufficient "go now". ignoreCues: depart blind.
 //
 // Public input API only (window.__HARNESS__.step -> InputSystem override). No teleporting.
 // ASSERTS: goal within the Q3 bot budget (12s x segments), never below bounds.min.y, waypoints in order.
@@ -51,10 +56,12 @@ interface SegState {
   pressed: Set<string>;
   attempts: number;
   platDist: number | null; // last tick's platform-to-boarding-point distance (is it arriving or leaving?)
+  cueWait: boolean;            // holding for the crow's lift-off
+  cueSeen: boolean | null;     // crow airborne at the last observed tick (null = not yet observed)
 }
 
-function newSeg(): SegState {
-  return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0, platDist: null };
+function newSeg(cue = false): SegState {
+  return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0, platDist: null, cueWait: cue, cueSeen: null };
 }
 
 function toward(from: Vec3, to: Vec3): { x: number; y: number } {
@@ -111,6 +118,8 @@ export interface WalkOptions {
   /** Hard tick limit for the whole walk. */
   tickLimit: number;
   quiet?: boolean;
+  /** Depart cue segments without waiting for the crow (PHASE_SWEEP's blind runs: what the cue saves). */
+  ignoreCues?: boolean;
 }
 
 export interface WalkResult {
@@ -121,6 +130,8 @@ export interface WalkResult {
   i: number;
   minYSeen: number;
   movesDone: Map<string, number>;
+  /** ticks spent holding at a torii for a crow's lift-off */
+  cueWaitTicks: number;
 }
 
 /**
@@ -139,7 +150,9 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
   let snap = await page.evaluate(() => window.__HARNESS__!.snapshot());
   const t0 = snap.tick;
   let i = opts.startIndex; // waypoint index being sought
-  let seg = newSeg();
+  const cueOf = (k: number): number | undefined => (opts.ignoreCues ? undefined : path[k]?.cue);
+  let seg = newSeg(cueOf(i) !== undefined);
+  let cueWaitTicks = 0;
   let segStartTick = t0;
   const reached: number[] = [opts.startIndex - 1];
   let minYSeen = snap.feet[1];
@@ -166,7 +179,14 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       break;
     }
 
-    const frame = i < path.length ? control(origin(i), path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
+    if (seg.cueWait && i < path.length) {
+      const airborne = snap.crows.find((c) => c.index === cueOf(i))?.airborne ?? false;
+      if (seg.cueSeen === false && airborne) seg.cueWait = false; // lift-off: go now
+      else seg.cueSeen = airborne;
+    }
+    const holding = seg.cueWait && i < path.length;
+    if (holding) cueWaitTicks++;
+    const frame = holding ? NEUTRAL : i < path.length ? control(origin(i), path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
     const prevDeaths = snap.deaths;
     snap = await step(frame, (snap.tick - t0) % C.renderEvery === 0);
     minYSeen = Math.min(minYSeen, snap.feet[1]);
@@ -189,7 +209,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       movesDone.set(v, (movesDone.get(v) ?? 0) + 1);
       log(`    reached ${String(i).padStart(2)} ${segLabel(i).padEnd(58)} t=${((snap.tick - t0) / FIXED_HZ).toFixed(2)}s at ${fmt(snap.feet)}`);
       i++;
-      seg = newSeg();
+      seg = newSeg(cueOf(i) !== undefined);
       segStartTick = snap.tick;
     } else if (seg.phase === 'done') {
       // ballistic attempt landed short but alive — retry
@@ -203,7 +223,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       seg.attempts = a;
     }
   }
-  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone };
+  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks };
 }
 
 async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage): Promise<NavOutcome> {

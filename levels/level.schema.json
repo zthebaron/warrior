@@ -120,6 +120,11 @@
             "note": {
               "type": "string",
               "maxLength": 120
+            },
+            "cue": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Index into hazards of a patroller carrying a crow. The player waits at the previous waypoint (a torii) and goes when that crow lifts off (Q2, Q5). The nav bot holds for the lift-off edge; lint BAD_CUE / CUE_NOT_AT_TORII."
             }
           }
         }
@@ -332,6 +337,41 @@
             "minimum": 0,
             "exclusiveMaximum": 1,
             "description": "patroller: start offset as a fraction of one loop. Position is a pure function of the world clock: phase + t*speed (Q6)."
+          },
+          "crow": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "perch",
+              "to",
+              "size",
+              "lift",
+              "away"
+            ],
+            "description": "patroller only: the crow cue, keyed to THIS patroller's loop (phase + t*speed), no state of its own. Perched at perch; at loop fraction lift it lifts off and spends fraction away of the loop travelling perch -> to -> perch. Never coloured: it signals by motion alone (Q2). Never reacts to the player.",
+            "properties": {
+              "perch": {
+                "$ref": "#/definitions/vec3"
+              },
+              "to": {
+                "$ref": "#/definitions/vec3"
+              },
+              "size": {
+                "$ref": "#/definitions/vec3"
+              },
+              "lift": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMaximum": 1,
+                "description": "loop fraction at which the crow lifts off"
+              },
+              "away": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "exclusiveMaximum": 1,
+                "description": "fraction of the loop spent off the perch"
+              }
+            }
           }
         },
         "description": "A hazard is a moving fall plane (Q6): touching one is death, nothing else. Each type has exactly one form that has an effect, and only that form is accepted (D-008: a hazard that can be authored with no effect is a schema defect). fall: a plane at y. water: a still plane at y (below it is death, like fall) OR a bounded volume pos+size, never animated or reflective (Q2c). spike, crush: a static volume pos+size (crush has no cycling until one is decided, OQ-032). patroller: path+speed+phase+size, moving as a pure function of the world clock (Q2, Q6). size is FULL extents.",
@@ -480,6 +520,23 @@
                 "size": true,
                 "y": false,
                 "pos": false
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "crow": true
+              },
+              "required": [
+                "crow"
+              ]
+            },
+            "then": {
+              "properties": {
+                "type": {
+                  "const": "patroller"
+                }
               }
             }
           }
