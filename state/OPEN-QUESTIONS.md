@@ -445,3 +445,17 @@ cliff work and double; "timing and gaps arrive together" and dash; dashjump alon
 in an agent's hands, which is the taste D-011 removes. C turns "plus one" into "times two" and
 contradicts D-011's text. One table, five entries, overridable in one commit.
 status: CONFIRMED (PHASE-0-DECISIONS "OQ-043"): Q5's order already encodes difficulty, so "last in the chapter's list" is a derivation, not a judgement
+
+## OQ-044 — PR6-REBASE asked for a rebase of chapter-1 onto main. Rebase, or merge main in?
+raised: 2026-11-08 by kit (PR6-REBASE)
+options: A rebase chapter-1 onto origin/main and force-push | B merge origin/main into chapter-1 (fast-forward push) | C nothing (it was already clean)
+took: B
+because: PR 8 merged INTO chapter-1 (bfc6a3f), so none of either PR's commits were on main, and
+`git merge-tree origin/main chapter-1` showed no conflicts: main was 3 claim-ledger commits ahead.
+A rebase would have rewritten every chapter-1 commit, orphaning the hashes that implemented_by and
+BACKLOG cite (f24a9ac, aa55016, c03fe4a, ...). The handoff lists that as a dead end, and the brief
+said to keep every filled implemented_by. The instructed `git push origin HEAD:chapter-1` (no force)
+only accepts a fast-forward anyway. B gives the same result (PR 6 MERGEABLE, CI on the exact tree
+that lands) with every hash intact. D-011 checked rather than assumed: chapter 1 lints with 0
+errors, 0 warnings, as 3 teaching (jump, climb, crow) + 1 transfer + 0 practice.
+status: PROVISIONAL
