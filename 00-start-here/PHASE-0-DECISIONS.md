@@ -993,4 +993,4 @@ the one check whose entire purpose was to prevent this.
 A budget says a move *can* clear a gap. It says nothing about whether the player can *see* that
 it can. Both belong under CI, and until D-015b exists only one of them was.
 
-implemented_by:
+implemented_by: 8b5a4ac (D-015b READABLE_RISE; D-015c CHAPTER_TEACH made falsifiable, kept live rather than deleted: OQ-047), 286259f (D-015a level data + move table, PROVISIONAL, one revert; plus the D-015c teach step it forced), 05f3ffa (lint:self in CI: both checks proven to fail). D-015d NOT done: B-18. Deviations from the text, recorded not edited: shelves 2.5 u not 1.5 (1.5 fails D-015b), the 4.50 row reads 0 not 3.5 (OQ-046).

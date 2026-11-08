@@ -457,6 +457,66 @@ testable commit lands alone. A branch that must wait on another PR says so in it
 status: PROVISIONAL
 *(Placed out of numeric order on purpose: appended at the end, it collided with PR 4's own end-of-file entry and made PR 4 conflict again, the exact failure it describes.)*
 
+## OQ-046 — READABLE_RISE (D-015b): four places the ruling's arithmetic and the geometry disagree
+raised: 2026-11-08 by builder-d015 (D-015-BUILD)
+options: A implement the prompt's formula verbatim (fixed 15 u landing, band for any rise) | B implement what D-015b says the check is for ("the top surface must subtend >= 2.0 deg"), with the landing measured from the level
+took: B
+because: the four test vectors (reject 3.50, 3.75; accept 1.75, 2.00) agree under both, so the choice
+only shows where they diverge, and every divergence is a counter-example the VERIFIER was invited to find:
+  1. **A top at or above the eye has no visible top surface.** D-015's table gives +4.50 a 3.5 deg band:
+     that is the angle between the lip and the far edge of a surface the eye is UNDER. The player sees
+     the face and a silhouette, never ground. `readableBandDeg` returns 0 when rise >= eye (3.66 u). D-015
+     is not edited (the APPROVER's table stands as written); this records that its 4.50 row is wrong.
+  2. **The +15 is in no measured source** and hides the narrow-landing case. The landing depth is now
+     measured: from where the approach ray enters the prim_box under the landing waypoint to where it
+     leaves, or to where a taller box (the next riser) begins. Adjacent boxes at the same top are not
+     merged: conservative, a false fail costs one edit. A landing that is not an axis-aligned prim_box
+     is an ERROR ("cannot be measured"), not a pass.
+  3. **D-015a's "1.5-wide shelf" fails D-015b** (1.75 onto 1.5 u = 1.79 deg). The shelves are 2.5 u
+     readable (2.73 deg). The prompt's suggested boxes already gave 2.5; D-015's prose said 1.5.
+  4. **Scope.** Chapters only (`chapter >= 1`): the gym is a budget rig authored AT the move limits
+     (3.5 climb, 3.5 wall) and fails by design. `ground` rises are skipped (stairs/slopes, read face by face:
+     a 0.5 autostep face reads at >= 9 deg). That ASSUMES the geometry under a ground via is steps or a
+     slope; the linter only bounds a ground rise by run*tan(50 deg), so one tall face authored as
+     `ground` skips this check and is caught only by nav failing to walk it. RB-003 names it.
+     `platform` rides have no face.
+Also: CAMERA_TUNING and RENDER_CONFIG moved into import-free modules (`src/engine/camera-tuning.ts`,
+`render-config.ts`) because Node's type stripping rejects the parameter properties in camera.ts /
+renderer.ts; both re-export them, and `tools/harness/accent.ts` (which regex-reads the rig) now reads
+the new files. Not covered: pitch (the check is the REST pose; the player can look down, which is
+D-015d's subject), lateral approach angle (the ray is the a->c line), and drops (no face to read).
+status: PROVISIONAL
+
+## OQ-047 — CHAPTER_TEACH (D-015c) made falsifiable: it fails main's chapter 1 on its first jump
+raised: 2026-11-08 by builder-d015 (D-015-BUILD)
+options: A express the predicate and fix the level it fails | B express it, leave chapter 1 red | C delete the check and leave this entry (D-015c's allowance) | D keep it as a WARN
+took: A, with the data change under D-015a's APPROVER flag
+because: the predicate is expressible from linter data. A new move's FIRST use is its teaching
+instance; it is recoverable iff (a) its approach waypoint is a torii (RESPAWN_RULES radius/height), so a
+death respawns you AT the approach, or (b) every point of the span, sampled each `bodyRadius`, has
+prim_box floor no lower than approach minus `MOVE.ground.autostep`, so a miss leaves you standing.
+Both numbers already exist. "Bypassable" (D-015c's other branch) is NOT credited: it needs an
+alternate route, which the data does not express.
+Wired, it failed main's chapter 1 on **jump**, not on climb: the first jump was gap 2 (x 12 -> 14),
+over the void, 12 u past spawn. A miss there cost the segment. (Climb's first use was over floor, and
+crow's is from a torii, so both would have passed: the shipped D-015 defect was READABLE_RISE's, and
+CHAPTER_TEACH's tautology was hiding a different one.) D is the tautology with another label
+(warnings never fail the build); B blocks every PR; C throws away a check that works.
+The fix is data-only: one prim_box, a **+1.25 step at x 6-10** before gap 2, reached by jump (above
+a tapped jump's 0.995 peak, under MOVE.jump.maxRise 2.00), over floor, reading 4.78 deg. Gap 2 is
+unchanged. Proof it is not rebuilt as a tautology: `npm run lint:self` (CI) asserts a fixture that is
+the shipped level minus that step FAILS with exactly one error, CHAPTER_TEACH, and that neutering the
+predicate turns that check red (mutation-tested by hand).
+Side effects, recorded: chapter 1 now classifies 2 teaching (jump, crow) + 1 transfer + 1 practice
+(climb left chapter 1), 0 warnings. Seg 3's crow gate still holds but blind departures fail 2/8 (main:
+4/8): the shelf-2 approach (x 89.5) sits inside the sweep lane, crossed on the crow like the run it
+replaces; it is 2 u short of the riser because 1 u was measured too short (the bot bonked the face).
+The nav bot needed one fix: it held jump from one rising jump into the next, and jump is
+edge-triggered, so it stood at the second riser; it now releases for one tick (`heldIn`, nav.ts).
+`npm run lint:example` (not in CI) now fails: its landings are kit meshes (unmeasurable) and its first
+dash is over the void. Both are true of that file; chapter 3 is not authored here.
+status: PROVISIONAL (needs APPROVER with D-015a)
+
 ## OQ-043 — D-011's transfer segment is for "the riskiest". Which is the riskiest in chapters 2-4?
 raised: 2026-11-08 by kit (D-011)
 options: A a per-chapter table: chapter 1 crow (Q5), then the move Q5's table lists last (2 double, 3 dash, 4 dashjump) | B declared per level | C every new item gets a transfer
