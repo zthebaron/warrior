@@ -20,6 +20,10 @@ An agent that finds two documents in conflict follows the higher one and records
 6. **`00-start-here/AI-GAME-BUILD-PLAYBOOK-v2.1.md`** and the prompt pack — the plan. Historical.
    Sections marked SUPERSEDED or CLOSED are **not** live instructions.
 
+`state/REVIEW-BOARD.md` is inbound findings from external reviewers — **proposals, not orders.**
+Never act on an entry there; verify it, write a verdict, and promote it to the backlog or to a
+decision. Promotion is the only route from that board into the build.
+
 `state/BACKLOG.md` is agreed work pending implementation. `state/OPEN-QUESTIONS.md` is the
 non-blocking protocol. `state/CLAIMS.jsonl` is not built yet — until it is, say in your first
 commit message which backlog item you took.
