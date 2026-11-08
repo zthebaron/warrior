@@ -164,3 +164,74 @@ Par time per chapter, taken from the bot's own runs, is deferred post-gold. Agre
   chapter select, which conflict with Q1/Q3.
 
 ## Q5-Q7 — outstanding
+
+## Q5 — Chapter structure: **A, with the move order changed.** CLOSED
+
+Four fixed chapters climbing one mountain, one level file each, per-chapter `moves_allowed`
+declared in the level JSON and enforced by the linter. B and C are both rejected for the reasons
+you gave, and the second one is the right reason: C would need a chapter manifest spanning files,
+which is a schema change to the main level file — the same cost that ruled out B in Q3.
+
+Your load-bearing argument is correct and worth restating because it generalises: **teaching order
+has to live in the data, because chapter agents cannot see each other.** With fan-out, the chapter 2
+agent never reads chapter 1, so without a declared move set every agent builds with everything the
+gym proves and a first-time player meets dash-jump in the first minute. Same shape as `via`: the
+agent declares, the linter checks.
+
+Also right, and the best instinct in the question: **chapter 1 must contain a crow cue**, because
+the vertical slice should prove the riskiest unproven thing in the design, and movement is already
+proven by the gym. A chapter 1 without the crow proves nothing new.
+
+### The move order — take your own alternative, not your primary
+
+You offered wall and climb in place of dash in chapter 1 and flagged it as the part most worth
+challenging. It is the better option, and the reason is §5: every chapter is a cliff seam, so
+**climb and wall are what the architecture affords, and dash is the move that fights it.** Teaching
+the incongruent move first teaches the player to read the level wrongly.
+
+| chapter | moves added | running total | notes |
+|---|---|---|---|
+| 1 | ground, jump, climb | 3 | + the crow cue. Climb is slow and forgiving — ideal for teaching the seam read. |
+| 2 | wall, double | 5 | airborne cliff work, still cliff-native |
+| 3 | platform, dash | 7 | timing and gaps arrive together, after the crow cue is established |
+| 4 | dashjump | 8 | densest timing; the last torii is the win |
+
+`dashjump` is a **compound** of dash and jump, so it is never taught — it is discovered once both
+components are fluent. Putting it alone in chapter 4 makes the final chapter a mastery beat rather
+than a new-content beat, which is also cheaper to author.
+
+This is 3/2/2/1 rather than a flat spread: chapter 1 carries 3 moves plus 1 signal, which is the
+teach rate Q4 deliberately left unmeasured. Measure it in the vertical slice, then set the
+chapter-length rule from the measurement.
+
+## D-001 — The navigational accent is **authored, not measured.** DECIDED
+
+H4 measured the reddest pixels across all 36 seed frames and found median `#603633` at 0.012% of
+frame area, noting honestly that `palette.json` omits it *because it never clustered*. That
+measurement is sound and stays in `MEASUREMENTS.md` as a fact about the seed.
+
+**It is rejected as the accent colour.** `#603633` is RGB(96,54,51) — lightness ~29%, saturation
+~31%. The palette ramp sits at lightness 50-80% with saturation ~12% in a warm yellow-orange hue.
+A dark, muted brick reads as *another dark shape*: against the dark cliff mass of §5 it vanishes,
+and against the bright void it is just a silhouette. Q2 locked "vermilion means WHERE." A colour
+that does not separate cannot carry a navigational signal, and being under the 1% area budget is
+the wrong test — the test is whether a player scanning the frame finds it.
+
+The category error is instructive: the palette's job is to describe what the seed looks like. The
+accent's job is to do something **the seed never needed to do.** Twelve seconds of
+non-interactive footage had no reason to contain a waypoint signal, so measuring it for one cannot
+work. This is the project's first authored colour, and it is recorded as a decision rather than
+slipped in as a measurement.
+
+Set it by function, then test it:
+
+- new lint rule **`ACCENT_CONTRAST`** — the accent must exceed a minimum perceptual distance from
+  *every* entry in `palette.json`. Use CIE Lab dE2000 with a stated threshold; failing that, a
+  minimum delta in both chroma and lightness from the nearest entry.
+- the 1% area budget and torii-only placement from Q2 are unchanged
+- `#603633` stays recorded as the seed's measured red, explicitly NOT the accent
+
+Do not pick the final hex by fiat. Generate two or three candidates that pass `ACCENT_CONTRAST`,
+render them on the torii in the gym, and let the H2.5 feel test choose — the same mechanism Q2b
+used for the landing mark. A real vermilion is near `#E34234`; expect the answer in that
+neighbourhood, at palette lightness or above.
