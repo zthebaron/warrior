@@ -59,3 +59,5 @@
 {"id":"OQ-041","agent":"phase0-spec","ts":"2026-11-08T17:23:21.272Z","released":true}
 {"id":"LINUX-GOLDENS-2-5","agent":"phase0-spec","ts":"2026-11-08T17:35:25.237Z","ttl_min":90}
 {"id":"CHAPTER-1","agent":"unknown","ts":"2026-11-08T17:50:10.564Z","released":true}
+{"id":"D-011","agent":"kit","ts":"2026-11-08T18:00:08.908Z","ttl_min":90}
+{"id":"D-012","agent":"kit","ts":"2026-11-08T18:00:08.935Z","ttl_min":90}
