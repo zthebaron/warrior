@@ -40,3 +40,4 @@
 {"id":"OQ-033","agent":"kit","ts":"2026-11-08T16:40:57.048Z","ttl_min":600}
 {"id":"B12-PR","agent":"unknown","ts":"2026-11-08T16:41:39.245Z","released":true}
 {"id":"FEELTEST-SWITCHES","agent":"phase0-spec","ts":"2026-11-08T16:42:09.788Z","ttl_min":90}
+{"id":"FEELTEST-SWITCHES","agent":"phase0-spec","ts":"2026-11-08T16:45:00.136Z","released":true}
