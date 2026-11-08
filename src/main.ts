@@ -199,7 +199,10 @@ async function boot(): Promise<void> {
   let deathTicksLeft = 0;
   const worldTime = (): number => worldTick * loop.dt;
   const tmpFeet = new THREE.Vector3();
-  const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
+  // D-014: ?level=<id> is honoured in normal play too (a dev affordance: no default, golden or CI changes).
+  // Only a level-file-shaped id is accepted, so the param can never point the fetch anywhere but levels/.
+  const levelParam = new URLSearchParams(location.search).get('level');
+  const levelId = (levelParam && /^[0-9a-z-]+$/.test(levelParam) ? levelParam : null) || GAME_RULES.startLevel;
   // Rule log for the playtest harness (cheap; kept in all builds).
   let checkpointLog: number[] = [];
   let deaths = 0;
@@ -226,6 +229,7 @@ async function boot(): Promise<void> {
   const install = (data: PreparedLevel): void => {
     level?.dispose();
     level = buildLevel(data, physics);
+    document.body.dataset['level'] = data.id; // D-014: which level a PLAYER reached (read by REACHABLE; never rendered)
     renderer.scene.add(level.root, level.debugRoot);
     renderer.scene.fog = data.fog
       ? new THREE.Fog(data.fog.color ?? RENDER_CONFIG.clearColor, data.fog.near ?? GAME_RULES.fogDefaults.near, data.fog.far ?? GAME_RULES.fogDefaults.far)
