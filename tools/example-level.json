@@ -2,7 +2,15 @@
   "id": "03-hanging-shrines",
   "title": "The Hanging Shrines (example)",
   "chapter": 3,
-  "moves_allowed": ["ground", "jump", "climb", "wall", "double", "platform", "dash"],
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "climb",
+    "wall",
+    "double",
+    "platform",
+    "dash"
+  ],
   "palette": "mist-ink",
   "spawn": {
     "pos": [
@@ -144,7 +152,7 @@
     {
       "pos": [
         48,
-        4,
+        16,
         -28
       ]
     },
@@ -224,6 +232,23 @@
     },
     {
       "pos": [
+        78,
+        11,
+        -52
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        80.77,
+        11.06,
+        -53.85
+      ],
+      "via": "dash",
+      "note": "introduce dash (D-011)"
+    },
+    {
+      "pos": [
         96,
         12,
         -64
@@ -237,6 +262,24 @@
         -64
       ],
       "via": "double"
+    },
+    {
+      "pos": [
+        102,
+        15.2,
+        -65.5
+      ],
+      "via": "dash",
+      "note": "transfer: dash again"
+    },
+    {
+      "pos": [
+        105,
+        16,
+        -67
+      ],
+      "via": "jump",
+      "note": "transfer: with a jump"
     },
     {
       "pos": [

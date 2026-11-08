@@ -704,3 +704,169 @@ dropped, not deferred — bringing it back would need a new decision and a new r
    if a later level makes depth read differently.
 
 implemented_by: b20296d (default on, flag inverted, Style Bible exception, scene ratchet, darwin goldens), c512c78 (linux goldens)
+
+## OQ-034 — crow lead time: **CONFIRMED as taken (B).** CLOSED
+
+Authored `lift` per crow, sufficiency proven by the harness, effective lead measured and reported.
+
+Right for the reason given — no human-reaction number exists in `MEASUREMENTS.md` and `CLAUDE.md`
+forbids one in code — but the stronger argument is the one not made: **the harness proves
+sufficiency without knowing the correct value.** The bot departs on the lift-off edge and must
+clear from all eight arrival phases, and a quarter-loop mistimed `lift` fails 0/8. That is a
+property test standing in for a constant nobody can yet measure, which is the same move the MOVE
+table makes and the opposite of guessing.
+
+The number that matters most in the report is not the lead, it is the **slack**: departing up to
+0.75 s (seg 3) and 0.95 s (seg 4) after lift-off still clears every phase. The window is forgiving,
+so the cue can be late and still work.
+
+**What H2.5 must measure for C to become possible**, stated now so the test is designed for it: not
+"the right lead time" but **how late a human can depart after lift-off and still clear**, compared
+against the bot's 0.75 s / 0.95 s. If human slack is comfortably inside the bot's, the cue is
+sound and `lift` can be derived. If it is not, the problem is the cue's legibility, not its timing,
+and a bigger lead will not fix it.
+
+## D-011 — Chapter length is derived, not ranged. OQ-037 **OVERRIDDEN.** DECIDED
+
+The session took A: leave `CHAPTER_SEGMENTS` at 4-6 and record C as a description of what chapter 1
+happened to do. **Adopt C as the rule instead.**
+
+C: *one segment per new move or signal that can kill you, plus one transfer segment for the
+riskiest.*
+
+A range of 4-6 is a bound, not a reason. No agent can justify choosing 6 over 4 from it, so the
+number becomes taste, and taste is what fan-out cannot share. C is a **derivation**: it produced 4
+for chapter 1 without anyone picking 4, and it is computable from `moves_allowed`, which B-4 already
+put in the schema. A rule that falls out of data an agent already has is worth more than a range it
+has to feel its way inside.
+
+It is also lintable in a way the range is not. The linter can count new killing moves plus new
+signals in a chapter and assert the teaching-segment count. A range can only be checked for bounds,
+never for correctness.
+
+Two things to pin down while implementing:
+
+- **"Practice segment" needs a definition**, since C says *plus practice* and leaves it open: a
+  segment that introduces no new move and no new signal, and combines only moves already taught.
+  Count them separately from teaching segments.
+- **Keep 4-6 as a warn, not an error.** C is the error. The range stays as a sanity check that
+  fires when a derivation produces something far outside it, which usually means the moveset
+  changed rather than the rule failing.
+
+`CHAPTER_LENGTH_PENDING` can be retired once C is implemented.
+
+implemented_by: aa55016 (derivation lint CHAPTER_TEACH / CHAPTER_TRANSFER / SEGMENT_UNPLACED; 4-6 as a CHAPTER_LENGTH warn; CHAPTER_LENGTH_PENDING retired; example fixture fixed), c03fe4a (OQ-042 renaming: RECOVERABLE_MOVES, the reason in every message) — branch d011-d012, PR #8
+
+## D-012 — `ACCENT_AREA` is measured at a reachable camera, not only at rest pitch. OQ-038. DECIDED
+
+Chapter 1: **A was correct, ship it.** The level changed, the rule did not, and refusing to weaken
+a measured rule to fit content is exactly right. That is not in question.
+
+But the session found the real problem and was right to escalate it: with two stacked 3.5 m faces,
+the upper lip hides everything below +8.4°, the previous gate's crossbeams cover +5..+14°, and the
+frame tops out at +12°. Rendered accent: **0.0000% at both 21 m and 33 m.** The rule made a
+two-climb segment impossible.
+
+**This game climbs a mountain. A player looking up for the next gate is the normal case**, so a
+floor evaluated only at the rig's rest pitch is measuring a frame the player does not use on a
+vertical segment. D-006 said "measured at the gameplay camera"; the defect is in *which* gameplay
+camera, not in the floor.
+
+So before chapters 2-4 author vertical segments, amend the measurement frame — **not the floor**:
+
+> The accent floor must be met in **some frame reachable by normal camera control**, within the
+> pitch range the rig actually permits, not solely at rest pitch.
+
+The guard that keeps this from being a weakening: the pitch range is bounded by what the camera can
+physically do, and the floor itself is unchanged. A gate findable by looking up passes. A gate
+findable from **no** reachable angle still fails, which is the case the rule exists to catch.
+
+Implementation note: `tools/harness/scan-frame.ts` already renders the scan; it needs to sweep
+pitch across the rig's range and take the best frame rather than the rest frame.
+
+implemented_by: aa55016 (accent stage: best frame over the rig pitch clamp, arm pulled in by the shared allowedArm collision; harness rigCamera; scan-frame.ts sweeps the same pitches) — branch d011-d012, PR #8
+
+## D-013 — The dominant failure of this build: success signals that measure the wrong thing. FINDING
+
+Five instances in one day, across two actors and three layers. They were handled as separate
+incidents. They are one bug.
+
+| # | what reported success | what it actually measured | what it missed |
+|---|---|---|---|
+| 1 | `git push origin main` exited 0 | that the ref named `main` reached the remote | the committer was on another branch, so nothing was pushed |
+| 2 | `do script` delivered text to the TUI | that characters reached the terminal | Claude Code showed `[Pasted text]` and waited; nothing was submitted |
+| 3 | `rev-parse HEAD == rev-parse origin/main` | that the local tip matched the remote | the commit had failed on unmerged paths, so **conflict markers reached main** |
+| 4 | a push step in a script | nothing — the result was never read | the push was refused; the script deleted the PR branch anyway, closed PR #7 unmerged, and waited for a CI run that could never come |
+| 5 | `visual` stage, six Linux goldens | that two byte-identical files matched | the goldens were **copies of the macOS set**; a ±1-per-channel floor sat under tolerance, hiding any regression that size |
+
+Four of the five are mine or the reviewer's. The fifth is a test that had passed every run since it
+was written.
+
+### The statement
+
+**A success signal that does not measure the effect you care about is worse than no signal, because
+it stops you looking.** Each of these was checked. Each check returned green. The check and the
+effect had quietly come apart, and in every case they had come apart for a *mechanical* reason that
+was obvious in hindsight and invisible at the time.
+
+### The fix has one shape
+
+Assert the **effect**, not the call:
+
+- a push → compare SHAs *and* grep the content on the remote
+- a commit → confirm it committed before acting as though it did
+- an injection → confirm the token count moved and the input line cleared
+- any scripted step after a fallible one → gate on the previous step's result, never proceed on
+  assumption
+- a test → **prove it can fail**
+
+That last is the general form, and it is already written into `PROMPT-00-BOOTSTRAP-CONTROL-PLANE.md`:
+*a linter that has never been shown to fail is not a linter.* Instance 5 is that principle applied
+to visual tests, and it was violated for the entire life of those goldens. Before trusting any gate,
+break it on purpose once and watch it go red.
+
+### For the case study
+
+This is the most repeated finding of the build and the most transferable, because it is not
+game-specific and not AI-specific. It is the reason the method is worth selling: **the control
+system kept catching itself, and the thing it kept catching was its own instrumentation.** Five
+green lights that meant nothing, found and fixed in one day, is a stronger claim than any number of
+tests that passed.
+
+implemented_by: n/a — finding. The per-instance fixes are D-010, CLAUDE.md push rule, and dce7755.
+
+## OQ-042 — **CONFIRMED with a renaming.** What earns a teaching segment. CLOSED
+
+Took: every move except `ground` counts as able to kill you. The classification is right. **The
+name is wrong and will be misused.**
+
+`ground` can kill — walk off a narrow ledge and you die. It did not kill in chapter 1 because the
+seam ledge was 7 m wide, which is a property of that *geometry*, not of the move. A future reader
+applying "ground cannot kill you" to a one-metre catwalk will be wrong, and the linter will agree
+with them.
+
+What actually distinguishes the two is not lethality but **whether failing to understand the move
+costs the player progress**. Misjudge a jump and you fall and lose the segment. Misjudge walking
+and you stop, then walk again. That holds regardless of ledge width, which is why it is the better
+rule.
+
+So keep the classification exactly as taken — `ground` alone is exempt — and rename the concept to
+what it is: a move earns a teaching segment when **misunderstanding it is unrecoverable within the
+segment**. Carry that wording into the lint code's message so the next author reads the reason
+rather than a claim that is sometimes false.
+
+## OQ-043 — **CONFIRMED as taken.** The riskiest new thing per chapter. CLOSED
+
+The crow in chapter 1, then the move Q5's table lists last in each chapter — double, dash,
+dashjump.
+
+Correct, and for a reason worth making explicit: Q5's ordering **already encodes difficulty**
+(ground/jump/climb, then wall/double, then platform/dash, then dashjump as a mastery beat). So
+"last in the chapter's list" is a *derivation* from a decision already made, not a fresh judgement
+call. That is the same property that made D-011 preferable to a range — the number falls out of
+data the agent already holds, so two agents reach it independently.
+
+The crow is the one exception and it is the right one: Q5 named it the riskiest unproven element of
+the whole design, which outranks any move.
+
+implemented_by: c03fe4a (OQ-042: RECOVERABLE_MOVES = [ground], "unrecoverable within the segment" in the lint messages), aa55016 (OQ-043: CHAPTER_RISKIEST) — branch d011-d012, PR #8

@@ -185,3 +185,16 @@ impossible (§5). The concept is subordinate, and that is the precedence order w
 
 The greybox renders from each segment's scanning view match their concepts on the one testable
 property: dark cliff mass left, bright void right, path on the seam, torii in sequence.
+
+## Addendum: rulings (2026-11-08)
+
+- **OQ-034 CONFIRMED.** The number H2.5 must measure is human **slack** (how late a person can leave
+  after lift-off and still clear), compared against the bot's 0.75 s / 0.95 s. If human slack falls
+  outside it, the cue is not legible, and a longer lead will not fix that.
+- **OQ-037 → D-011.** Chapter length is derived: one teaching segment per new move whose misunderstanding is
+  unrecoverable within the segment (every move but ground, OQ-042) or new signal, one transfer segment, and any
+  number of practice segments. Lint codes `CHAPTER_TEACH`, `CHAPTER_TRANSFER`,
+  `SEGMENT_UNPLACED`; 4-6 is now a `CHAPTER_LENGTH` warn. Chapter 1 classifies as 3 teaching
+  (jump, climb, crow) + 1 transfer + 0 practice.
+- **OQ-038 → D-012.** ACCENT_AREA is met at any pitch the rig reaches, with the floor unchanged.
+  Rejections 3-4 above would now pass; the walled-gate control still fails.

@@ -21,14 +21,36 @@ import { Stage, guard, openGame, wp, type Ctx, type StageResult, type Vec3 } fro
 const { PNG } = pngjs;
 
 /** The rest pose of the follow camera, READ from CAMERA_TUNING in src/engine/camera.ts (never retyped). */
-export function followRig(root: string): { distance: number; pivotHeight: number; pitchDeg: number } {
-  const src = readFileSync(join(root, 'src/engine/camera.ts'), 'utf8');
-  const num = (key: string): number => {
-    const m = src.match(new RegExp(`\\b${key}:\\s*(-?[0-9.]+)`));
-    if (!m) throw new Error(`CAMERA_TUNING.${key} not found in src/engine/camera.ts`);
+export function followRig(root: string): { distance: number; pivotHeight: number; pitchDeg: number; pitchMinDeg: number; pitchMaxDeg: number; fovDeg: number } {
+  const read = (file: string, key: string): number => {
+    const m = readFileSync(join(root, file), 'utf8').match(new RegExp(`\\b${key}:\\s*(-?[0-9.]+)`));
+    if (!m) throw new Error(`${key} not found in ${file}`);
     return Number(m[1]);
   };
-  return { distance: num('distance'), pivotHeight: num('pivotHeight'), pitchDeg: num('initialPitchDeg') };
+  const num = (key: string): number => read('src/engine/camera.ts', key);
+  return { distance: num('distance'), pivotHeight: num('pivotHeight'), pitchDeg: num('initialPitchDeg'), pitchMinDeg: num('pitchMinDeg'), pitchMaxDeg: num('pitchMaxDeg'), fovDeg: read('src/engine/renderer.ts', 'fovDeg') };
+}
+
+/**
+ * D-012: the pitches a player can look from, swept across the rig's own clamp [pitchMinDeg, pitchMaxDeg]
+ * plus the rest pitch. Step = fovDeg / 6 (derived, not chosen): a gate visible at any pitch is then
+ * within a sixth of the frame of a sampled frame's centre band, never only clipped at an edge.
+ */
+export function scanPitches(rig: { pitchDeg: number; pitchMinDeg: number; pitchMaxDeg: number; fovDeg: number }): number[] {
+  const step = rig.fovDeg / 6;
+  const out = new Set<number>([rig.pitchDeg, rig.pitchMaxDeg]);
+  for (let p = rig.pitchMinDeg; p < rig.pitchMaxDeg; p += step) out.add(+p.toFixed(3));
+  return [...out].sort((a, b) => a - b);
+}
+
+/** Unit arm direction (pivot -> camera) for a player at `from` facing the gate at `to`, at `pitchDeg`. */
+export function scanArm(from: Vec3, to: Vec3, pitchDeg: number): Vec3 {
+  const dx = to[0] - from[0];
+  const dz = to[2] - from[2];
+  const dist = Math.hypot(dx, dz);
+  const [tx, tz] = dist > 1e-6 ? [dx / dist, dz / dist] : [1, 0];
+  const p = (pitchDeg * Math.PI) / 180;
+  return [-tx * Math.cos(p), Math.sin(p), -tz * Math.cos(p)];
 }
 
 export interface AreaFloor {
@@ -169,16 +191,26 @@ export async function accent(ctx: Ctx): Promise<StageResult> {
     const rig = followRig(ctx.root);
     const g = await openGame(ctx);
     try {
-      const rows: { pos: Vec3; from: Vec3; dist: number; pct: number }[] = [];
+      // D-012: the floor must be met in SOME frame normal camera control reaches: every pitch in the rig's
+      // clamp, the arm pulled in by the rig's own collision (rigCamera). The floor itself is unchanged.
+      const pitches = scanPitches(rig);
+      const rows: { pos: Vec3; from: Vec3; dist: number; pct: number; pitch: number; restPct: number }[] = [];
       let from: Vec3 = level.spawn.pos;
       for (const t of torii) {
         const f = scanningFraming(from, t.pos, rig);
-        const pct = await placementAccentShare(g.page, 'kit_torii', t.pos, f.cam, f.target, hex);
-        rows.push({ pos: t.pos, from, dist: +f.dist.toFixed(2), pct });
+        let best = { pct: -1, pitch: rig.pitchDeg };
+        let restPct = 0;
+        for (const p of pitches) {
+          const cam = await g.page.evaluate(([pv, dir]) => window.__HARNESS__!.rigCamera(pv, dir), [f.target, scanArm(from, t.pos, p)] as const);
+          const pct = await placementAccentShare(g.page, 'kit_torii', t.pos, cam, f.target, hex);
+          if (p === rig.pitchDeg) restPct = pct;
+          if (pct > best.pct) best = { pct, pitch: p };
+        }
+        rows.push({ pos: t.pos, from, dist: +f.dist.toFixed(2), pct: best.pct, pitch: best.pitch, restPct });
         st.check(
           `ACCENT_AREA torii (${t.pos.join(', ')})`,
-          pct >= area.floor_pct,
-          `${pct.toFixed(4)}% of frame is THIS gate's accent, scanned from (${from.join(', ')}), ${f.dist.toFixed(1)}m away (floor ${area.floor_pct}%)`,
+          best.pct >= area.floor_pct,
+          `${best.pct.toFixed(4)}% of frame is THIS gate's accent at pitch ${best.pitch.toFixed(0)} deg (rest ${rig.pitchDeg}: ${restPct.toFixed(4)}%), best of ${pitches.length} reachable pitches, scanned from (${from.join(', ')}), ${f.dist.toFixed(1)}m away (floor ${area.floor_pct}%)`,
         );
         from = t.pos;
       }
