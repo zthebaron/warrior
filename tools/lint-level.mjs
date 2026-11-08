@@ -206,8 +206,17 @@ export function lintLevel(level, manifest){
     if(h>m.maxH*0.9&&h<=m.maxH) W('TIGHT',`seg ${i-1}->${i} via ${via} is at ${((h/m.maxH)*100).toFixed(0)}% of the limit`);
   }
 
+  // Teaching instances (D-015c, D-016). A move's FIRST critical_path use in the chapter that adds it is its
+  // teaching instance. CHAPTER_TEACH and READABLE_RISE both key off this one index, so they cannot disagree
+  // about which segment teaches.
+  const firstUse=(it)=>cp.findIndex((w,k)=>k>0&&typeof w==='object'&&!Array.isArray(w)&&(it==='crow'?w.cue!==undefined:w.via===it));
+  const teachAt=new Map(); // critical_path index -> move it teaches
+  if(typeof level.chapter==='number') for(const m of CHAPTER_MOVES_ADDED[level.chapter]??[]){ const j=firstUse(m); if(j>0) teachAt.set(j,m); }
+
   // READABLE_RISE (D-015b, Tier-1). Every critical_path rise onto a landing must show the player ground up
-  // there: the landing's top surface subtends >= minBandDeg from the rest-pose eye at standoffM. Chapters
+  // there: the landing's top surface subtends >= minBandDeg from the rest-pose eye at standoffM.
+  // D-016: an ERROR on a move's teaching instance (the rest pose is what the player meets when the move is
+  // new, so it may not ask them to pitch up), a WARNING on every later use (a practised move may). Chapters
   // only (the gym is a budget rig authored AT the move limits; OQ-046). `ground` rises are skipped as
   // stairs/slopes read face by face; that is ASSUMED (this linter bounds a ground rise only by its slope),
   // so a tall face authored as `ground` is caught by nav, not here (OQ-046, RB-003). A `platform` ride
@@ -216,10 +225,14 @@ export function lintLevel(level, manifest){
   if(typeof level.chapter==='number'&&level.chapter>=1) for(let i=1;i<cp.length;i++){
     const via=typeof cp[i]==='object'&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
     const a=P(cp[i-1]), c=P(cp[i]), rise=c[1]-a[1]; if(rise<=0) continue;
+    const teach=teachAt.get(i)===via, R=teach?E:W;
+    const role=teach?`the teaching instance of "${via}" (ERROR per D-016)`
+      :(CHAPTER_MOVES_ADDED[level.chapter]??[]).includes(via)?`practice, "${via}" is taught at critical_path[${firstUse(via)}] (WARNING per D-016)`
+      :`practice, "${via}" is not new in chapter ${level.chapter} (WARNING per D-016)`;
     const L=landingDepth(boxes,a,c);
-    if(!L){ E('READABLE_RISE',`critical_path[${i}] via ${via}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
+    if(!L){ R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
     const band=readableBandDeg(rise,L.depth);
-    if(band<READABLE_RISE.minBandDeg) E('READABLE_RISE',`critical_path[${i}] via ${via}: +${rise.toFixed(2)}u rise onto geometry[${L.gi}] (${L.depth.toFixed(2)}u readable depth): its top surface subtends ${band.toFixed(2)}deg from the rest-pose eye (${REST_EYE.aboveFeet.toFixed(2)}u above the feet) at a ${READABLE_RISE.standoffM}u standoff, needs >= ${READABLE_RISE.minBandDeg}deg.${rise>=REST_EYE.aboveFeet?' The top is at or above the eye, so the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
+    if(band<READABLE_RISE.minBandDeg) R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto geometry[${L.gi}] (${L.depth.toFixed(2)}u readable depth): its top surface subtends ${band.toFixed(2)}deg from the rest-pose eye (${REST_EYE.aboveFeet.toFixed(2)}u above the feet) at a ${READABLE_RISE.standoffM}u standoff, needs >= ${READABLE_RISE.minBandDeg}deg.${rise>=REST_EYE.aboveFeet?' The top is at or above the eye, so the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
   }
 
   if(d(P(cp[0]),level.spawn.pos)>3) E('PATH_START','critical_path[0] not at spawn');
@@ -326,7 +339,7 @@ export function lintLevel(level, manifest){
       //       MOVE.ground.autostep, so a miss leaves you standing where you can walk back.
       // "Bypassable" (D-015c's other branch) is not expressible from this data and is NOT credited: OQ-046.
       for(const it of items){ if(intro[it]<0) continue;
-        const j=cp.findIndex((w,k)=>k>0&&typeof w==='object'&&!Array.isArray(w)&&(it==='crow'?w.cue!==undefined:w.via===it)); if(j<1) continue;
+        const j=firstUse(it); if(j<1) continue;
         const a=P(cp[j-1]), c=P(cp[j]);
         if(atTorii(a)) continue;
         const L=Math.hypot(c[0]-a[0],c[2]-a[2]), n=Math.max(1,Math.ceil(L/RR.bodyRadius));

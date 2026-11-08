@@ -328,6 +328,19 @@ is 2.5 u readable (2.73 deg), the step off each shelf lands on deep ground (>= 7
 D-015c teach step (+1.25 onto 4 u) reads 4.78 deg. D-015a's "1.5-wide shelf" as written reads 1.79
 deg and would fail D-015b: that is why the shelves are 2.5 u.
 
+### D-016 readable ceilings (rest pose)
+
+Largest rise, at 0.01 u resolution, whose landing top still subtends >= 2.0 deg. Bisected with
+`readableBandDeg`, and pinned in `npm run lint:self` at the value (accept) and +0.01 (reject):
+
+| landing depth | 2.5 | 5 | 6 | 15 | 41 | limit |
+|---|---|---|---|---|---|---|
+| max readable rise (u) | 2.28 | 2.83 | 2.92 | 3.18 | 3.29 | 3.36 |
+
+The limit is `eye - (standoff + behind) * tan(minBand)` = 3.663 - 8.657 tan 2 deg = 3.361: no landing
+depth makes a higher rise readable. Wall (maxRise 4.00) and climb (4.50) have characteristic rises wholly
+above it, so D-016 blocks chapter 2 on D-015d. This is arithmetic, not a render.
+
 ## Open (H4)
 
 - Linux visual goldens for the asset-bearing gym were COPIED from Darwin, not rendered on

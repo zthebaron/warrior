@@ -13,7 +13,8 @@ import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
 import { LandingMark } from './entities/landing-mark';
 import { Instrument, type InstrumentReport } from './systems/instrument';
-import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
+import { nextLevel } from './systems/progression';
+import { buildLevel, fetchLevelFresh, levelIndex, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
 import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
 
@@ -215,6 +216,10 @@ async function boot(): Promise<void> {
   // Only a level-file-shaped id is accepted, so the param can never point the fetch anywhere but levels/.
   const levelParam = new URLSearchParams(location.search).get('level');
   const levelId = (levelParam && /^[0-9a-z-]+$/.test(levelParam) ? levelParam : null) || GAME_RULES.startLevel;
+  // D-014 fix 3: the level the menu starts, and the one finishing it leads to (null after the last
+  // chapter). Derived from the levels' own `chapter` field (src/systems/progression.ts).
+  let currentId = levelId;
+  let nextId: string | null = null;
   // Rule log for the playtest harness (cheap; kept in all builds).
   let checkpointLog: number[] = [];
   let deaths = 0;
@@ -272,10 +277,13 @@ async function boot(): Promise<void> {
     clearError();
   };
 
-  const startLevel = async (): Promise<void> => {
+  const startLevel = async (id: string = currentId): Promise<void> => {
     state.transition('loading');
     try {
-      install(await prepareLevel(await loadLevel(levelId))); // decode mesh assets, then the sync build
+      const data = await prepareLevel(await loadLevel(id)); // decode mesh assets, then the sync build
+      nextId = nextLevel(await levelIndex(), { id: data.id, chapter: data.chapter })?.id ?? null;
+      currentId = id;
+      install(data);
       state.transition('play');
     } catch (err) {
       showError(err);
@@ -491,7 +499,7 @@ async function boot(): Promise<void> {
       case 'death': return 'fell';
       // Q4: win is *arrive*. The results state reads `complete` and nothing else — no time, score,
       // par or rank. Run time stays on the ~ debug overlay, which is dev tooling, not the game.
-      case 'results': return 'COMPLETE\nEnter: menu';
+      case 'results': return nextId ? 'COMPLETE\nEnter: next chapter' : 'COMPLETE\nEnter: menu';
     }
   };
   state.onChange((to) => {
@@ -501,7 +509,15 @@ async function boot(): Promise<void> {
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
     if (e.code === k.start && state.is('menu')) void startLevel();
-    else if (e.code === k.start && state.is('results')) state.transition('menu');
+    else if (e.code === k.start && state.is('results')) {
+      // D-014 fix 3: finishing a chapter loads the next; after the last one, back to the menu, which
+      // then starts the game from the front door again.
+      if (nextId) void startLevel(nextId);
+      else {
+        currentId = levelId;
+        state.transition('menu');
+      }
+    }
     else if (k.pause.includes(e.code) && state.is('play')) state.transition('pause');
     else if (k.pause.includes(e.code) && state.is('pause')) state.transition('play');
     else if (e.code === k.menu && state.is('pause')) state.transition('menu');

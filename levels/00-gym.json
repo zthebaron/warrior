@@ -565,7 +565,7 @@
         0
       ],
       "via": "jump",
-      "note": "gap 5"
+      "note": "gap 5 = jump maxH, on purpose: the budget rig proves the limit each CI run. TIGHT accepted (D-016, OQ-051)"
     },
     {
       "pos": [
