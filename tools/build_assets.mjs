@@ -136,7 +136,9 @@ for (const file of sources) {
     }
   }
   const round = (v) => Math.round(v * 1e5) / 1e5;
-  const textures = doc.getRoot().listTextures().map((t) => ({ name: t.getName(), mime: t.getMimeType() }));
+  // source formats vs shipped formats (read after the ktx2 stage; draco does not touch textures)
+  const shipped = new Map((await io.read(s2)).getRoot().listTextures().map((t) => [t.getName(), t.getMimeType()]));
+  const textures = doc.getRoot().listTextures().map((t) => ({ name: t.getName(), mime: `${t.getMimeType()} -> ${shipped.get(t.getName()) ?? '?'}` }));
   const bytes = {
     src: statSync(src).size,
     resize: statSync(s1).size,

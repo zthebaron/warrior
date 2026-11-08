@@ -1,0 +1,27 @@
+{
+  "name": "stair_run_12",
+  "file": "stair_run_12.glb",
+  "collider": "trimesh",
+  "collision_mesh": null,
+  "instancing": {
+    "count": 12,
+    "step": [
+      0.4,
+      0.266667,
+      0.0
+    ],
+    "origin": "front-bottom-centre of tread 0; tread i is offset by i * step (glTF Y-up)"
+  },
+  "tread": {
+    "depth": 0.4,
+    "riser": 0.266667,
+    "width": 4.0
+  },
+  "run": {
+    "length": 4.8,
+    "rise": 3.2,
+    "slope_deg": 33.69
+  },
+  "triangles_per_instance": 108,
+  "tri_budget_per_instance": 400
+}
