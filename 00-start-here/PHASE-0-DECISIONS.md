@@ -137,7 +137,7 @@ without a code does not get built.
 
 Par time per chapter, taken from the bot's own runs, is deferred post-gold. Agreed as you framed it.
 
-### Q4 — implemented (branch `phase0-q4-amendments`)
+### Q4 — implemented
 
 - **A segment is defined once:** segments = `checkpoints.length + 1`, so spawn → each torii →
   goal. It lives in `segmentsOf()` in `tools/lint-level.mjs`. The linter and the nav bot both
@@ -163,7 +163,7 @@ Par time per chapter, taken from the bot's own runs, is deferred post-gold. Agre
 - **Seen, not fixed (out of Q4 scope):** playbook Phase 7 still lists combat, "scroll counts" and
   chapter select, which conflict with Q1/Q3.
 
-## Q5-Q7 — outstanding
+implemented_by: afb3e4b
 
 ## Q5 — Chapter structure: **A, with the move order changed.** CLOSED
 

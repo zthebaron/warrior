@@ -42,4 +42,55 @@ status: PROVISIONAL        # PROVISIONAL | CONFIRMED | OVERRIDDEN by D-0NN
 
 ---
 
-(no open questions)
+## OQ-001 — SPEC needs a premise sentence, but the interview never asked the premise question
+raised: 2026-11-08 by phase0-spec
+options: A draft it from locked artifacts | B leave it blank, blocking Gate A | C ask
+took: A
+because: Gate A's test is "describe the game in 20 seconds", and that can't run with a blank
+premise. The sentence uses only what is already locked: the title, STYLE-BIBLE §7's exile, Q5's
+ascent, Q2's torii and crow channels. No mechanic hangs off it, so overriding it costs one line.
+status: PROVISIONAL
+
+## OQ-002 — Where does the machine-checked NOT table live?
+raised: 2026-11-08 by phase0-spec
+options: A in SPEC.md between markers, parsed by the lint | B a JSON file that SPEC.md copies | C both
+took: A
+because: one copy. SPEC.md is what agents read, and tools/lint-not-list.mjs parses that exact table.
+A JSON file plus a prose table is two sources, which is the drift class D-002 exists to stop.
+status: PROVISIONAL
+
+## OQ-003 — The NOT list has rows that are violated today, before the schema cut. Is CI red until it lands?
+raised: 2026-11-08 by phase0-spec
+options: A CI red | B rows marked pending, CI green | C per-check `!` marks for known-open checks, CI green
+took: C
+because: A blocks every PR on queued work. B lets a pending row absorb new violations: row 14 was
+pending only for `damage`, so a new `playerHealth` would have passed. Tested: it slipped through
+under B and is caught under C. A `!` check that starts holding also fails the lint, so the marks
+can't go stale.
+status: PROVISIONAL
+
+## OQ-004 — How does a `src` NOT check match identifiers?
+raised: 2026-11-08 by phase0-spec
+options: A plain grep | B whole identifiers only | C comments stripped, identifiers split on camelCase/snake_case, word match
+took: C
+because: A fires on comments ("number lives in TUNING") and on substrings (`hp` inside unrelated
+words). B misses `playerHealth`. C catches compound names and ignores prose. String literals are
+still scanned, deliberately: `'collect_all'` in a type union is a real reference.
+status: PROVISIONAL
+
+## OQ-005 — P0.1 asks for placeholder tuning constants. The engine already has measured ones.
+raised: 2026-11-08 by phase0-spec
+options: A placeholders as written | B the measured values, each citing its source constant
+took: B
+because: placeholders in SPEC.md would disagree with TUNING and the MOVE table on day one, which is
+the drift MEASUREMENTS.md warns about. The prompt predates the gym measurements.
+status: PROVISIONAL
+
+## OQ-006 — Q7 is half built (lint:not-list exists, the schema cut does not). What goes in its implemented_by?
+raised: 2026-11-08 by phase0-spec
+options: A this commit | B leave empty until the cut lands
+took: B
+because: D-002 says the field stays empty until the commit implementing the decision lands. A
+partial fill would assert the code has properties it lacks. The open part is tracked visibly by the
+`!` checks in SPEC §7. Q4 got `afb3e4b` because it is fully built.
+status: PROVISIONAL
