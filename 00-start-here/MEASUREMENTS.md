@@ -102,8 +102,8 @@ is raised here with the new measurement and the reason.
 
 | Asset | Triangles | Compressed bytes | Export bytes | Textures | Max tex px | Materials | Draw calls (once) |
 |---|---|---|---|---|---|---|---|
-| kit_torii | 108 / 108 | 2412 / 2412 | 9104 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
-| kit_rock_mass | 216 / 216 | 3436 / 3436 | 16016 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_torii | 108 / 108 | 2436 / 2436 | 9120 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_rock_mass | 216 / 216 | 3460 / 3460 | 16032 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 
 Cells are measured / limit. Renderer cross-check (SwiftShader): torii 1 call / 108 tris,
 rock 1 call / 216 tris. Placed in 00-gym the scene went 30 -> 33 peak draw calls and
@@ -112,12 +112,14 @@ rock 1 call / 216 tris. Placed in 00-gym the scene went 30 -> 33 peak draw calls
 Budget history:
   - kit_rock_mass first measured at 310 tris / 3984 B (11-sided strata, 0.16 jitter). That
     read as a drum in the harness frames; STYLE-BIBLE 4 has no rounded rock. Rebuilt 7-sided,
-    0.3 jitter, offset strata: 216 tris / 3436 B. Budget LOWERED to match. No budget raised.
+    0.3 jitter, offset strata: 216 tris / 3436 B. Budget LOWERED to match.
+  - RAISED, both assets, +24 B (torii 2412 -> 2436, rock 3436 -> 3460), D-001: the shared
+    palette texture gained four cells (three accent candidates + the seed_red comparison
+    fixture), 12 of 16 cells now filled. Geometry, triangles and texture size unchanged.
 
-Accent colour, measured (STYLE-BIBLE 2 names vermilion but gives no value; palette.json omits
-it because it never clustered): saturated red-orange pixels across all 36 seed frames,
-median `#603633`, 2,205 px = 0.012% of frame area (peak frame 0.061%). Hero frames agree:
-median `#5d3531`, 0.013%. The kit uses `#603633`. Both are far under the 1% budget.
+Seed red, measured (a FACT ABOUT THE SEED, not the accent — see D-001 below): saturated
+red-orange pixels across all 36 seed frames, median `#603633`, 2,205 px = 0.012% of frame
+area (peak frame 0.061%). Hero frames agree: median `#5d3531`, 0.013%.
 
 Compression choices, measured on the 32x32 palette texture:
   - UASTC (level 2, no mips) 364 B vs ETC1S 385 B — at this size ETC1S's codebook costs more
@@ -131,7 +133,50 @@ Compression choices, measured on the 32x32 palette texture:
 Palette fidelity in the harness (Tier-2, recorded, not asserted): asset rendered unlit with
 tone mapping off on a magenta background; share of covered pixels within 6/255 of a palette
 texel: rock 95.6%, torii 92.7%. The rest are MSAA edge blends with the magenta. Top colours
-render EXACTLY as authored (`#383838`, `#534e4b`, `#603633`, `#20201e`).
+render EXACTLY as authored (`#383838`, `#534e4b`, `#20201e`, and the accent `#e34234`).
+
+## D-001 accent contrast (2026-11-08)
+
+PHASE-0-DECISIONS D-001: the navigational accent is AUTHORED; `#603633` (above) is rejected as
+the accent. `ACCENT_CONTRAST` (`tools/assets/accent.mjs`, `npm run lint:accent`, run by
+`assets:build` before Blender and by CI) checks every candidate in `assets/src/accent.json`
+against every `reference/palette.json` entry. Its thresholds are measured from the palette,
+not typed in; only the multipliers are policy:
+
+| Measured from palette.json | Value | Rule |
+|---|---|---|
+| largest adjacent ramp step, CIEDE2000 | 9.9 (steps are 7.1-9.9) | dE2000 to nearest entry >= 2 x = **19.7** |
+| largest palette chroma C*ab | 11.0 (paper-cream) | C* >= 3 x = **33.0** |
+| L* of wash-mid, darkest non-ink value | 42.7 | L* >= **42.7** |
+
+CIEDE2000 verified against six Sharma (2005) reference pairs, all exact to 4 decimals.
+Why three conditions, not one: dE2000 alone compresses large chroma gaps (SC = 1 + 0.045 C), so
+even `#e34234` is only dE 27.6 from stone-mid and a flat dE 40 would reject every red; and
+dark `#5a0000` clears dE (24.5) while being exactly D-001's "another dark shape" — the
+lightness floor is what rejects it.
+
+| | hex | L* | C* | nearest, dE2000 | ACCENT_CONTRAST |
+|---|---|---|---|---|---|
+| vermilion_a (default until H2.5) | `#e34234` | 52.4 | 75.5 | stone-mid 27.6 | pass |
+| vermilion_b | `#ef5b3b` | 58.2 | 72.9 | wash-light 26.7 | pass |
+| vermilion_c | `#c8371f` | 45.8 | 73.0 | wash-mid 26.7 | pass |
+| seed_red (must_fail fixture) | `#603633` | 27.7 | 20.9 | ink-grey 16.0 | **fails all three** |
+
+Rendered on the gym torii by `node tools/harness/accent-renders.ts` -> `docs/build-log/accent/`
+(per-shot PNGs, `contact-sheet.png`, `accent-renders.json`). Switch in place with
+`?accent=<name>`. Accent share of frame, identical for every candidate (it is geometry, not
+colour):
+
+| shot | framing | accent area |
+|---|---|---|
+| follow | gameplay camera, 7 m arm behind a player at x=44, torii at x=50 | **2.056%** |
+| approach | ~16 m from the x=50 torii | 1.165% |
+| goal | goal-pad torii against open sky | 1.471% |
+| scan | harness cam0, whole gym | 0.076% |
+
+**One torii at gameplay distance is ~2x the Q2 1% budget**, whatever its colour. Not changed
+here: Q2 is closed, and the levers (less accent on the torii: e.g. ink lower posts; or a budget
+defined at a stated camera distance) are a decision, not a measurement.
 
 ## Open (H4)
 

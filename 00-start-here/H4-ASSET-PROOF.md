@@ -29,7 +29,7 @@ its `*.actual.png` files as `tools/harness/golden/linux/00-gym/camN.png`, as was
 |---|---|
 | Headless export (.py kit module or .blend hero) | `tools/blender/export.py` |
 | Procedural primitives, hard-edged, palette-law colours | `tools/blender/lib.py` |
-| Torii (vermilion path marker) | `assets/src/kit_torii.py` |
+| Torii (accent path marker) | `assets/src/kit_torii.py` |
 | Rock mass (the dark wall) | `assets/src/kit_rock_mass.py` |
 | Pipeline | `tools/assets/build.mjs` |
 | Measurement (one source for every number) | `tools/assets/measure.mjs` |
@@ -48,12 +48,15 @@ nothing to bake.
 
 ## Measured
 
+(Current figures, after D-001 added four palette cells: +16 B export, +24 B shipped per asset.
+The run logs in sections a and c below are the original H4 runs, before that change.)
+
 | | kit_torii | kit_rock_mass |
 |---|---|---|
 | triangles | 108 | 216 |
-| Blender export (uncompressed) | 9,104 B | 16,016 B |
-| after style / resize / ktx2 | 9,056 / 8,864 / 9,160 B | 15,972 / 15,780 / 16,076 B |
-| shipped (Draco) | **2,412 B** (3.77x) | **3,436 B** (4.66x) |
+| Blender export (uncompressed) | 9,120 B | 16,032 B |
+| after style / resize / ktx2 | 9,072 / 8,880 / 9,184 B | 15,988 / 15,796 / 16,100 B |
+| shipped (Draco) | **2,436 B** (3.74x) | **3,460 B** (4.63x) |
 | textures | 1 x 32x32 KTX2 UASTC | 1 x 32x32 KTX2 UASTC |
 | materials | 1 (KHR_materials_unlit) | 1 |
 | draw calls placed once (renderer.info) | 1 | 1 |
@@ -183,9 +186,10 @@ pad at z=-9. Frames: `tools/harness/golden/darwin/00-gym/cam3.png` and `cam4.png
 | N3 | manifest hand-edited: `"color"` added to prim_box | `assets:budget` (not tested: the game should also refuse to boot, since it uses the same ajv schema; CI runs `assets:budget` first, so the failure gets a clear name) | exit 1, `must NOT have additional properties "color"` |
 | N4 | `BLENDER=/nonexistent` | `assets:build` | exit 2, `Blender not runnable … assets/dist/ left unchanged` |
 | N5 | kit with an Array modifier | `export.py` | exit 1, `has modifiers ['ARRAY'] — kit geometry is built, not modified` |
-| N6 | vermilion on a non-torii asset | `lib.py` | exit 1, `vermilion is torii-only (STYLE-BIBLE section 2); set accent=True` |
+| N6 | the accent on a non-torii asset | `lib.py` | exit 1, `vermilion is torii-only (STYLE-BIBLE section 2); set accent=True` (message now reads `the accent is torii-only (STYLE-BIBLE 2, PHASE-0 Q2)`) |
 | N7 | `collider: "box"` | `export.py` | exit 1, `trimesh \| none only (box sinks; see check:physics)` |
 | N8 | .blend without its meta sidecar | `export.py` | exit 1 |
+| N10 | accent candidate `#b0302a` (dE 25.1, but L* 40.4) | `lint:accent`, `assets:build` | exit 1 / exit 3 (dist unchanged), `L* 40.4 < 42.7 (wash-mid) — reads as another dark shape` |
 | N9 | torii draw_calls budget 1 -> 0 | harness `assets` stage | exit 1 LEVEL_FAILURE, `✗ kit_torii draw calls <= 0   1 rendered alone` |
 
 ## The risk, resolved: KTX2 and Draco on SwiftShader
@@ -209,6 +213,44 @@ anyway:
   memory and palette fidelity. ASTC on SwiftShader says nothing about a player's GPU. Linux CI's
   SwiftShader may choose differently, and the stage logs its choice on every run.
 
+## D-001 — authored accent (follow-up, 2026-11-08)
+
+- `ACCENT_CONTRAST` rule: `tools/assets/accent.mjs` (`npm run lint:accent`; also inside
+  `assets:build`, before Blender, and `assets:budget`; own CI step). Thresholds derived from
+  palette.json, table and basis in MEASUREMENTS.md "D-001 accent contrast".
+- Candidates (all pass): `vermilion_a #e34234` (default until the feel test), `vermilion_b
+  #ef5b3b`, `vermilion_c #c8371f`. `seed_red #603633` is a must_fail fixture: if the rule ever
+  passes it, the rule fails.
+- One build carries every candidate: `lib.py` reads the ramp from `reference/palette.json` and
+  the candidates from `assets/src/accent.json` (no hand-copied hex left in code), each gets a
+  palette cell, and `?accent=<name>` moves the torii's UVs to that cell at load — the H2.5 feel
+  test switches in place, like the Q2b landing-mark flag.
+- Renders: `docs/build-log/accent/contact-sheet.png` (rows: a, b, c, seed_red; cols: follow,
+  approach, goal, scan). In the scan column seed_red is lost among the dark shapes; all three
+  candidates read at a glance. Grey-box gym, not the STYLE-BIBLE render — judge separation, not
+  look.
+- **Finding for the approver:** one torii at gameplay distance covers 2.06% of the frame, ~2x
+  Q2's 1% accent budget, for any colour. Left unchanged (Q2 is closed).
+- Budgets raised +24 B per asset for the four new texture cells (MEASUREMENTS.md). Cold rebuild
+  still byte-identical. Playtest green, goldens re-recorded (Linux again copied from Darwin).
+
+## stair_run_12 (PR 2) through the generic exporter
+
+PR 2's `tools/blender/stair_run_12.py` was a standalone script that exported itself. To test
+`export.py`, its body ran VERBATIM (export section removed) inside a 6-line kit-module wrapper,
+and `export.py` did the export:
+
+| | PR 2 (target) | rebuilt here |
+|---|---|---|
+| src `assets/src/stair_run_12.glb` | `34aef116bc7f241d…` | `34aef116bc7f241d…` **match**, 208,220 B |
+| dist, PR 2's stages (resize 256 -> etc1s q128 c2 jobs 1 -> same Draco flags) | `b8622d225da83bb1…` | `b8622d225da83bb1…` **match**, 13,380 B |
+
+What transfers: the export and compression determinism. What does NOT: (1) through THIS
+pipeline's stages (unlit style + UASTC, no mips) the stair would ship a different file — by
+design, its lit bevelled stone material is not STYLE-BIBLE-compliant anyway; (2) PR 2's
+InstancedMesh runtime (12 treads, one draw call) — this branch's loader places single meshes and
+has no instancing, so PR 2's instancing draw-call proof is not covered here.
+
 ## What surprised me
 
 1. **The harness found a colour bug that no static check could.** The first build shipped every
@@ -224,7 +266,8 @@ anyway:
    future post pass (§6) must preserve them too.
 3. **The vermilion has no number in the Style Bible.** §2 names it, and palette.json omits it
    because it never clustered. I measured it from the 36 seed frames: median `#603633`, 0.012%
-   of frame area. That is a muted, misted red, not the bright vermilion one would guess.
+   of frame area. **Superseded by D-001:** that is a fact about the seed, rejected as the accent
+   (it fails ACCENT_CONTRAST on distance, chroma and lightness). See "D-001" below.
 4. **ETC1S is larger than UASTC at this size** (385 B vs 364 B). The codebook overhead dominates
    a 32x32 texture. Mipmaps are off: every face samples one texel, so there is nothing to
    minify.
