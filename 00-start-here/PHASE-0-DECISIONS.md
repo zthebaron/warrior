@@ -206,6 +206,8 @@ This is 3/2/2/1 rather than a flat spread: chapter 1 carries 3 moves plus 1 sign
 teach rate Q4 deliberately left unmeasured. Measure it in the vertical slice, then set the
 chapter-length rule from the measurement.
 
+implemented_by: cf642c7 (moves_allowed + MOVES_ALLOWED/CHAPTER_MOVE). The four chapter levels themselves are content, not yet authored.
+
 ## D-001 — The navigational accent is **authored, not measured.** DECIDED
 
 H4 measured the reddest pixels across all 36 seed frames and found median `#603633` at 0.012% of
