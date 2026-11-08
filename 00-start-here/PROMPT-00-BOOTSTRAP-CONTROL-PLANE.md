@@ -185,3 +185,18 @@ the proof, then remove the fixtures.
 Write `BOOTSTRAP-PROOF.md`: each rule, the fixture that triggered it, the exact error output, and
 a plain GREEN / AMBER / RED. Seed `FAILURES.md` with anything that broke during the bootstrap
 itself. Commit in logical steps. Do not push.
+
+---
+
+## Addendum — two rules learned after this prompt was written
+
+**`git push origin HEAD:main`, never `git push origin main`.** The second names a ref regardless
+of which branch you are standing on, so it exits 0 and pushes nothing when you are somewhere else.
+The first pushes what you actually committed and fails loudly when it is not a fast-forward. This
+already caused two commits to be reported as pushed when they were not.
+
+**Claim the checkout, not just the task.** `CLAIMS.jsonl` covers prompt ids; it does not cover the
+working directory. Add to the project's agent rules: *every agent works in its own worktree and
+never in the main checkout*, and every commit step asserts its expected branch with
+`git rev-parse --abbrev-ref HEAD` before committing. A shared mutable cwd between two actors is the
+three-way-race problem one level down, and it is cheaper to forbid than to detect.

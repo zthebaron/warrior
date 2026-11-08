@@ -116,3 +116,32 @@ sales asset the agency has, because it is evidence of a control system rather th
 And because prompts-as-files makes the build replayable, the final artifact can be: the repo, the
 ordered prompt list, and the commit each prompt produced. That is a much stronger showcase than a
 video, and it costs nothing if done from the start.
+
+---
+
+## Addendum: failure 7, found while writing this file
+
+**The main checkout is an unclaimed shared resource, and the control plane above does not protect
+it.**
+
+What happened: the interview agent created `phase0-q4-amendments` in the main worktree and switched
+to it, to implement the Q4 amendments. Two later review commits — PROMPT 00 and the Q5/D-001
+ruling — were then made from that same directory and landed on *that* branch. `git push origin main`
+was run after each and **returned exit 0 both times**, because `main` genuinely had nothing to
+push. The commits were reported to the user as pushed. They were not. Nothing was lost, but the
+state was asserted without being verified, which is the failure this whole document is about.
+
+Two fixes, in order of cheapness:
+
+1. **Never `git push origin main`. Always `git push origin HEAD:main`.** `main` names a ref
+   regardless of where you are standing, so it silently no-ops when you are on another branch.
+   `HEAD:main` pushes what you actually committed, and fails loudly when that is not a
+   fast-forward. One character of discipline, and it converts a silent wrong answer into an error.
+2. **`CLAIMS.jsonl` claims prompts; nothing claims the checkout.** Add to PROMPT 00: agents work
+   only in their own worktree and never in the main checkout, and any commit step asserts the
+   expected branch (`git rev-parse --abbrev-ref HEAD`) before committing. A shared mutable cwd
+   between two actors is the same class of problem as the three-way H4 race, one level down.
+
+Worth noting what caught it: not the linters, not CI, and not a failing command. It was reading
+`git log main` for an unrelated reason and noticing two commits missing. That is luck, and luck is
+not a control. Rule 1 above is what turns it into one.
