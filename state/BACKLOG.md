@@ -10,7 +10,6 @@ Verified against the repository on 2026-11-08, not taken from any report.
 |---|---|---|---|---|
 | B-3 | Landing mark behind a flag, default off | Q2b | **MISSING** | no match for landing-mark identifiers anywhere in `src/` |
 | B-4 | `moves_allowed` per chapter + its linter check | Q5 | MISSING | — |
-| B-6 | `ACCENT_AREA` — D-006: a FLOOR at scanning distance, set from where findability fails | D-003, D-006 | **PARTIAL** | PR 3 asserts D-003's band [0.505%, 5.08%] at a 6 m framing; D-006 drops the ceiling and moves the floor to scanning distance. Claimed by kit. |
 | B-9 | Respawn gated on a furthest-index counter | Q6 | MISSING | `src/main.ts` reassigns `respawn` for any checkpoint in radius |
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
 | B-14 | Measure the 0.5u autostep ceiling, or make `measured` per-field in the MOVE table | RB-002 | MISSING | `MOVE.ground` is `measured: true` while `MEASUREMENTS.md` records its autostep as not measured directly |
@@ -28,6 +27,7 @@ arithmetic (an arrival waits at the torii), so it is the next item that protects
 | 15-25 min session target retired in place | Q4 | struck through with a `[SUPERSEDED — PHASE-0-DECISIONS Q4]` block; 5 supersede markers |
 | `HAZARD_ON_PATH`, `FALL_DAMAGE`, `NO_FALL_PLANE`, `UNMEASURED_MOVE`, `NO_VIA` | playbook | all present in the linter |
 | B-16 test-level loader decodes mesh assets | — | `7f63d8d`: `buildLevel`/`install` take only a `PreparedLevel`, made only by `await prepareLevel(data)` (decodes the meshes); skipping it is a typecheck error (TS2345, proven). Harness `startJson` for `tools/harness/fixtures/`; assets stage loads `fixtures/mesh-asset.json` on a COLD page: kit_torii on screen (accent 5.514%); a cast past the gate fails with "not decoded" |
+| B-6 `ACCENT_AREA` — floor at scanning distance | D-003, D-006 | `29b41c0`: harness `accent` stage: each torii scanned from the previous anchor, only its own pixels counted, floor 0.0204% (measured: last distance its largest blob beats the seed red's 27.6 px failure). Gym 0.0603% / 0.1033%; floor 0.08% fails. Swatches vs the ramp for H2.5 |
 | B-5 `ACCENT_CONTRAST` lint rule | D-001 | `e8b0f8b`: `tools/assets/accent.mjs`, `npm run lint:accent` (CI; also in `assets:build` and `assets:budget`). dE2000 >= 2x ramp step, C* >= 3x palette max chroma, L* >= wash-mid, all derived from palette.json; 3 candidates pass, `#603633` must fail |
 | B-1 `speed`/`phase` on patrollers | Q2 | `19234ab`: required in schema (if/then) and lint errors `NO_SPEED`/`NO_PHASE`/`NO_PATROL_PATH`; probes rejected by both |
 | B-2 fire/torch cut, water a flat wash | Q2c | `19234ab`: `fire` and `interactables` absent; water requires `y`, forbids period/path/speed/phase (OQ-008) |

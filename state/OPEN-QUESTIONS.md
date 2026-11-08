@@ -230,7 +230,7 @@ took: A, frozen as a number in assets/src/accent.json, labelled PROVISIONAL in t
 because: B is the value D-001 showed fails, so it cannot be a findability floor; C leaves the
   floor D-003 asked for unenforced. A rests on a STYLE-BIBLE §3 rule (the next waypoint reads as
   a near form) plus a measurement, and H2.5 can replace it with one number in accent.json.
-status: PROVISIONAL
+status: OVERRIDDEN by D-006 (no ceiling; a floor measured at scanning distance — see OQ-026..028)
 
 ## OQ-021 — ACCENT_AREA ceiling: what anchors "dominates"?
 raised: 2026-11-08 by h4-asset-kit
@@ -240,7 +240,7 @@ took: A, read from reference/palette.json at run time
 because: C is the withdrawn number; B is circular (the asset sets its own limit). A says the
   accent may never cover more of the frame than any structural value of the ramp does, so it
   stays a signal. Crossed only with the player within ~2 m of the gate (5.14% at 2 m).
-status: PROVISIONAL
+status: OVERRIDDEN by D-006 (no ceiling; a floor measured at scanning distance — see OQ-026..028)
 
 ## OQ-022 — ACCENT_AREA: assert at one framing or along the whole approach?
 raised: 2026-11-08 by h4-asset-kit
@@ -250,7 +250,7 @@ took: A
 because: share is ~inverse-square in distance (9% at 0 m, 0.15% at 40 m), so B fails every gate
   at both ends by construction. The rule is about the frame in which the player looks FOR the
   next gate; walking through one is not a violation. The full curve is recorded, not asserted.
-status: PROVISIONAL
+status: OVERRIDDEN by D-006 (no ceiling; a floor measured at scanning distance — see OQ-026..028)
 
 ## OQ-023 — ACCENT_CONTRAST: add a lightness floor beyond D-001's dE2000 + chroma?
 raised: 2026-11-08 by h4-asset-kit
@@ -277,3 +277,34 @@ took: A (merge commits 3f89647, 86be6b4; both clean, playtest green after)
 because: PR 3 targets main, implemented_by has to be written in PHASE-0-DECISIONS (only on main),
   and testing against main's Q4 schema is what CI will run once merged.
 status: PROVISIONAL
+
+## OQ-026 — ACCENT_AREA floor: where does findability "actually fail" without a person to ask?
+raised: 2026-11-08 by b6-accent-floor (kit)
+options: A the share where the accent vanishes (200 m) | B the share where its largest connected blob
+  falls below the seed red's observed failure area (0.012% = 27.6 px at 640x360) | C wait for H2.5
+took: B, the last sample above it: 90 m, 0.0204%
+because: A is visibility, not findability: one pixel is not found. B anchors on the only observed failure
+  (D-006 names it), and measures the blob, not total pixels, because at 100 m the posts fracture into
+  18 px pieces while the total stays higher (52 px). C leaves D-006's floor unenforced. H2.5 can replace
+  the number in accent.json; the curve gives it the distances to show.
+status: PROVISIONAL
+
+## OQ-027 — ACCENT_AREA: from where is the next gate scanned for?
+raised: 2026-11-08 by b6-accent-floor (kit)
+options: A a fixed distance before each gate | B the previous anchor (previous torii, else spawn), camera
+  facing the gate | C every point along the approach
+took: B
+because: Q3 makes the torii the checkpoint, so the previous torii is where a player arrives and looks for
+  the next one; that is the hardest real scanning distance, and it turns the rule into a level-design check
+  on gate spacing. A is what D-006 replaced. C fails by construction at the far end of any long segment.
+status: PROVISIONAL
+
+## OQ-028 — ACCENT_AREA: count the whole frame's accent, or only the target gate's?
+raised: 2026-11-08 by b6-accent-floor (kit)
+options: A all accent pixels in the frame | B only the target gate's (render with and without it)
+took: B
+because: measured, A is wrong. Scanning from the x=50 gate puts that gate in the frame, so A reported 9.04%
+  for the x=88 gate, which is the near gate's area. B keeps real occlusion (a nearer gate hiding it counts
+  against it) and credits no other gate. Cost: two renders per gate.
+status: PROVISIONAL
+

@@ -179,7 +179,7 @@ not adjusted; **D-003 withdrew the 1% budget** (its basis was an absence, not an
 replaced it with ACCENT_AREA, below. (These shots are hand-placed; the exact follow rig gives
 2.30%, see D-003.)
 
-## D-003 accent area (2026-11-08)
+## D-003 accent area (2026-11-08) — SUPERSEDED by D-006 below (no ceiling; floor at scanning distance)
 
 `ACCENT_AREA` (harness `accent` stage, every level, CI): for each kit_torii, the player 6 m
 before it along the critical path, camera at CAMERA_TUNING's rest pose (read from
@@ -211,6 +211,55 @@ Gym, asserted: torii x=50 **2.300%**, torii x=88 **2.247%**: in band. Negative p
 at 1 m -> 6.658% / 6.564%, exit 1 (ceiling); at 25 m -> 0.319% / 0.296%, exit 1 (floor).
 The band is asserted only at the canonical 6 m framing; walking through a gate (9% at 0 m) is
 not a violation — the rule is about the frame in which the player is looking FOR the next one.
+
+## D-006 accent floor (2026-11-08)
+
+`tools/harness/accent-floor.ts` -> `docs/build-log/accent/palette/curve.json`. kit_torii alone, at
+the follow rig's rest pose (CAMERA_TUNING, read from src/engine/camera.ts), 640x360, on a
+paper-cream background. Area is geometry, not colour, so one candidate stands for all. Largest blob =
+the largest 4-connected run of accent pixels, the shape a scanning eye has to find.
+
+| player before gate | camera to gate | accent % | accent px | largest blob px |
+|---|---|---|---|---|
+| 0 m | 7.6 m | 8.9332% | 20582 | 20582 |
+| 6 m | 13.18 m | 2.2465% | 5176 | 5176 |
+| 25 m | 31.87 m | 0.2960% | 682 | 682 |
+| 50 m | 56.78 m | 0.0621% | 143 | 143 |
+| 70 m | 76.74 m | 0.0273% | 63 | 61 |
+| 80 m | 86.73 m | 0.0313% | 72 | 72 (pixel-grid aliasing: not monotonic) |
+| **90 m** | 96.73 m | **0.0204%** | 47 | **46: last above 27.6** |
+| 100 m | 106.72 m | 0.0226% | 52 | 18: fractures, posts no longer one shape |
+| 120 m | 126.71 m | 0.0056% | 13 | 5 |
+| 200 m | 206.69 m | 0% | 0 | 0: vanishes |
+
+**Findability boundary.** The one observed failure is the seed's red at 0.012% of the frame, which
+is 27.6 px at 640x360. The last distance at which the largest blob exceeds it is 90 m.
+**Floor = 0.0204%**, the share there. PROVISIONAL until H2.5 measures findability with a person;
+the curve gives the feel test the distances to show. Frozen in `assets/src/accent.json` as a
+number, so a smaller gate fails it rather than moving it. Note that 90 m is past STYLE-BIBLE §3's
+far-band edge (80u), so in a styled level the band treatment, not pixel size, will usually bind
+first.
+
+**The rule (harness stage `accent`).** Each torii, in route order, is scanned for from the
+previous anchor (the previous torii, or spawn for the first), with the follow rig facing it. Only
+that gate's own accent pixels count: the frame is rendered with and without it, so occlusion
+counts against it and other gates in view are not credited to it. Gym: x=50 gate scanned from
+spawn (50 m) **0.0603%**; x=88 gate scanned from x=50 (38 m) **0.1033%**. Negative proof: a floor
+of 0.08% fails the first gate, exit 1.
+
+**Against the ramp** (`swatches-near.png` at 6 m, `swatches-floor.png` at 90 m; rows a, b, c,
+seed_red; columns paper-cream to ink-black). All three candidates separate on every ramp value.
+seed_red sinks into ink-grey, ink-deep and ink-black. Minimum CIEDE2000 against any ramp value:
+
+| | vermilion_a #e34234 | vermilion_b #ef5b3b | vermilion_c #c8371f | seed_red #603633 |
+|---|---|---|---|---|
+| min dE2000 vs ramp | 27.6 | 26.7 | 26.7 | 16.0 |
+
+For the feel test; this chooses nothing.
+
+One correction found while measuring: the first render pass captured the menu HUD, a DOM overlay,
+inside the canvas screenshot, over the gate. It is now hidden on those pages. In-level stages are
+unaffected, because the HUD is empty in `play`.
 
 ## Open (H4)
 
