@@ -4,6 +4,6 @@ node_modules/
 *.log
 harness-report.json
 tools/harness/golden/**/*.actual.png
-reference/seed/*.mp4
 dist-harness/
 /assets/build/
+.claude/
