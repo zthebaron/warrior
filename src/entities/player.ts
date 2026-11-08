@@ -316,11 +316,17 @@ export class Player {
     this.grounded = this.ctrl.computedGrounded();
 
     let wallThisTick = false;
+    // Autostep: the controller lifted us onto a step this tick. The riser still reports a
+    // wall-like normal, but it is a STEP — cancelling into-wall velocity here killed the climb
+    // (snap-to-ground pulled us back down next tick), so 0.4u stairs were unwalkable. Found by
+    // the H3 nav bot on the gym staircase. Airborne contacts are untouched (wall slide/jump).
+    const steppedUp = this.grounded && mv.y > 1e-4 && desired.y <= 0;
     for (let i = 0; i < this.ctrl.numComputedCollisions(); i++) {
       const c = this.ctrl.computedCollision(i);
       if (!c) continue;
       const n = c.normal1; // outward normal on the obstacle
       if (Math.abs(n.y) <= t.wallNormalMaxY) {
+        if (steppedUp) continue; // a stair riser: neither a wall contact nor a velocity stop
         wallThisTick = true;
         this.wallNormal.set(n.x, 0, n.z).normalize();
         this.wallStickTimer = t.wallStickSec;

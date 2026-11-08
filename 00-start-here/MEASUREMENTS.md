@@ -80,3 +80,13 @@ measurements were taken with this behaviour.
 - OPEN: single-jump rise from a running approach was not measured directly. jump maxRise
   is set to 2.00, derived conservatively from the double-jump running ratio (3.5/4.0
   applied to the measured 2.25). Measure it directly and tighten or relax.
+- RESOLVED (H3, 2026-11-07): the gym staircase (8 x 0.4 rise / 0.6 tread, critical_path seg
+  11->12 `via: ground`) was UNWALKABLE, and linted clean. Found by the H3 nav bot on its first
+  run: stuck at x=57.64 against the first riser. Cause: Rapier's autostep lifted the capsule, but
+  the riser reports a wall-like normal and Player cancelled all into-wall velocity that same
+  tick; snap-to-ground pulled it back down next tick, and from rest it never re-climbed. Fix in
+  src/entities/player.ts: a grounded tick where the controller moved us UP (mv.y > 0, desired
+  y <= 0) treats horizontal-normal contacts as steps — no velocity cancel, no wall contact.
+  Airborne contacts (wall slide / wall jump / ledge grab) are untouched; every earlier nav segment
+  time is identical to the tick, so ballistic moves are unaffected. 0.4u risers are now verified
+  by the gym walk; the 0.5u autostep ceiling in MOVE.ground is still not measured directly.
