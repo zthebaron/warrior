@@ -435,10 +435,16 @@ Measured facts it must use (not invent):
 | goal height tolerance | 2.0 m | `GAME_RULES.goalHeightTolerance` |
 | player capsule radius | 0.35 m | `TUNING.capsuleRadius` |
 | player capsule half-height | 0.6 m → total height 1.9 m | `TUNING.capsuleHalfHeight` |
-| patroller extent | `size` (vec3 half-extents) | schema |
+| patroller extent | `size` (vec3, **FULL** extents — halve it) | schema; `tools/lint-level.mjs` line 40 |
 | patroller route | `path`, 2-12 points | schema |
 
 ### Four things the obvious implementation gets wrong
+
+> **Correction (OQ-017).** This section originally called `size` *half-extents*. It is **full**
+> extents — `lint-level.mjs` states so and halves it before use. The implementer trusted the code
+> over this prose and got it right, which is `CLAUDE.md`'s precedence rule working as written:
+> where prose and a linter disagree, the linter holds and the prose is the bug. Nothing shipped
+> wrong; the spec above is corrected rather than the code.
 
 **1. Both volumes need inflating, not just one.** The test is not "does the `path` polyline come
 within 2.0 m of the torii." A patroller is a box, not a point on a line, and the player is a
@@ -566,4 +572,34 @@ Flag convention: follow the accent's `?accent=<name>` precedent with `?landingma
 `TUNING` constant so it is switchable in place during the feel test. Scale the disc by the
 downward raycast distance — `physics.castRay` already exists for the camera rig, so no new system.
 
+<<<<<<< Updated upstream
 implemented_by: bf19ded
+=======
+implemented_by:
+
+## D-008 — A water hazard needs a kill volume or it is not a hazard (OQ-016). DECIDED
+
+`HazardDef` makes `y`, `pos` and `size` all optional, so a `water` hazard carrying only a height
+has no kill volume and never kills anything. The schema currently permits a hazard that does
+nothing, which is worse than forbidding it: a level author gets a water hazard that silently
+isn't one, and the linter says nothing.
+
+Q2c restricted water to a flat wash for a **visual** reason — §9.8 forbids a reflective surface —
+not to demote it to decoration. It is still a hazard, rendered flat.
+
+So water must carry one of two things, and the linter errors when it carries neither:
+
+- a **plane**: `y`, behaving like `fall` — anything below it dies, which is what a flat wash at a
+  fixed level naturally means; or
+- a **volume**: `pos` + `size` (full extents), for a bounded pool.
+
+New code `NO_KILL_VOLUME`, at error severity, alongside the existing `NO_PATROL_SIZE` — which
+already applies the same principle to patrollers and whose message is the right precedent: *"its
+kill volume. There is no default (no unmeasured numbers)."*
+
+The general rule worth extracting: **a hazard type that can be authored with no effect is a
+schema defect, not an author error.** Audit `spike` and `crush` for the same hole while
+implementing this.
+
+implemented_by:
+>>>>>>> Stashed changes
