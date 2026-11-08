@@ -27,6 +27,7 @@ jobs:
       - run: npm run typecheck
 
       - run: npm run lint:levels
+      - run: npm run lint:self # D-015: READABLE_RISE and CHAPTER_TEACH must be seen to FAIL, not just pass
 
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list

@@ -146,9 +146,14 @@ draw calls, 500,000 triangles) still apply on top.
 | Level | Peak draw calls | Peak triangles |
 |---|---|---|
 | 00-gym | 34 / 34 | 1,104 / 1,104 |
-| 01-lower-stair | 43 / 43 | 3,852 / 3,852 |
+| 01-lower-stair | 46 / 46 | 3,888 / 3,888 |
 
 01-lower-stair (CHAPTER-1, CI run 42505174534, landing mark on): 13 kit_rock_mass (13 x 216 = 2,808 tris), 4 kit_torii (432), greybox ledges/stair/knobs, 2 patrollers, 2 crows, the landing mark.
+
+01-lower-stair, raised 43 / 3,852 -> 46 / 3,888 (D-015a + D-015c, PROVISIONAL with them): three
+greybox prim_box added (the 1.25 jump-teach step at x 6-10, the two 1.75 shelves at x 38.5-41.5 and
+91.5-94.5). Exactly +3 draw calls and +3 x 12 = +36 triangles, one unbatched box each, measured by the
+harness `counters` stage on Darwin SwiftShader. Revert D-015a and this line reverts with it.
 
 History:
   - 30 calls / 640 tris: greybox gym before H4.
@@ -289,6 +294,39 @@ BEST frame over every pitch the follow rig allows (CAMERA_TUNING `pitchMinDeg`..
 step fovDeg/6 = 10, plus rest 18), with the arm pulled in by the rig's own collision (`allowedArm`,
 harness `rigCamera`). Verified: chapter 1's original two-climb T2 reads 0.0000% at rest and 0.3468%
 at -25 (looking up), so it passes. A gate behind a 30 m wall reads 0.0000% at all 12 pitches, so it fails.
+
+## D-015 readable rise (2026-11-08)
+
+Arithmetic, not a render: every number below is computed by `readableBandDeg()` in
+`tools/lint-level.mjs` from the rig constants IMPORTED from `src/engine/camera-tuning.ts` and
+`src/engine/render-config.ts` (never retyped; `npm run lint:self` prints them).
+
+Rig at rest (D-015): eye **3.66 u** above the feet (`pivotHeight + distance*sin(initialPitchDeg)`
+= 1.5 + 7 sin 18), **6.66 u** behind them (`distance*cos(initialPitchDeg)`), looking 18 deg down,
+vertical frustum -48..+12 deg (`fovDeg` 60).
+
+| constant | value | status |
+|---|---|---|
+| `READABLE_RISE.standoffM` | 2.0 u | D-015's measuring condition (the player 2 m off the face) |
+| `READABLE_RISE.minBandDeg` | 2.0 deg | D-015b's ruling. **PROVISIONAL**: a threshold picked between the table's failing (0.7) and passing (6.9) rows, never measured against players. B-17's per-segment deaths are the measurement that would move it |
+
+Top-surface band, degrees, for a landing `rise` above the feet and `depth` deep along the approach.
+A top at or above the eye is back-facing (the eye sees the face, never the ground): 0 (OQ-046).
+
+| rise | depth 1.5 | 2.0 | 2.5 | 15 |
+|---|---|---|---|---|
+| 1.75 | **1.79** | 2.28 | 2.73 | 7.84 |
+| 2.00 | 1.58 | 2.00 | 2.40 | 6.85 |
+| 3.00 | 0.64 | 0.82 | 0.98 | 2.77 |
+| 3.50 | 0.16 | 0.20 | 0.24 | 0.68 |
+| 3.75 | 0 | 0 | 0 | 0 |
+| 4.50 | 0 | 0 | 0 | 0 (D-015's table: 3.5, OQ-046) |
+
+Chapter 1, measured by the linter: pre-split, the two +3.50 climb faces read **0.89 deg** (onto
+geometry[10], 41 u deep) and **0.67 deg** (geometry[15], 14 u): both fail. Post-split, each +1.75 shelf
+is 2.5 u readable (2.73 deg), the step off each shelf lands on deep ground (>= 7.8 deg), and the
+D-015c teach step (+1.25 onto 4 u) reads 4.78 deg. D-015a's "1.5-wide shelf" as written reads 1.79
+deg and would fail D-015b: that is why the shelves are 2.5 u.
 
 ## Open (H4)
 

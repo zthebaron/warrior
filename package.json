@@ -15,6 +15,7 @@
     "assets:budget": "node tools/assets/budget.mjs",
     "lint:accent": "node tools/assets/accent.mjs",
     "lint:levels": "for f in levels/[0-9]*.json; do node tools/lint-level.mjs \"$f\" assets/dist/manifest.json || exit 1; done",
+    "lint:self": "node tools/lint-self.mjs",
     "lint:example": "node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json",
     "lint:not-list": "node tools/lint-not-list.mjs",
     "check:physics": "node tools/rapier-determinism.mjs",

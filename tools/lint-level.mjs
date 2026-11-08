@@ -16,6 +16,71 @@ const MOVE = {
   platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity, measured: true }
 };
 
+// READABLE_RISE (D-015b). The rig is IMPORTED, never retyped: src/engine/camera-tuning.ts and
+// src/engine/render-config.ts are import-free modules split out of camera.ts / renderer.ts so Node can
+// load them, and both carry the reverse cross-reference. Change the rig and this check moves with it.
+import { CAMERA_TUNING } from '../src/engine/camera-tuning.ts';
+import { RENDER_CONFIG } from '../src/engine/render-config.ts';
+
+// standoffM and minBandDeg: D-015b's ruling, recorded in MEASUREMENTS.md "D-015 readable rise".
+export const READABLE_RISE = { standoffM: 2.0, minBandDeg: 2.0 };
+const DEG = 180 / Math.PI;
+// The rest-pose eye relative to the player's feet (D-015 "The camera measurement").
+export const REST_EYE = (() => {
+  const t = CAMERA_TUNING, p = t.initialPitchDeg / DEG;
+  return { aboveFeet: t.pivotHeight + t.distance * Math.sin(p), behind: t.distance * Math.cos(p),
+    lookDeg: -t.initialPitchDeg, halfFovDeg: RENDER_CONFIG.fovDeg / 2 };
+})();
+// Vertical angle the landing's TOP SURFACE subtends, from the rest-pose eye with the player standing
+// standoffM off the face, for a landing `rise` above the feet and `depth` deep along the approach.
+//   lip  = atan2(rise - eye, standoff + behind),  far = atan2(rise - eye, standoff + behind + depth)
+// Clipped to the vertical frustum. A top surface at or above the eye faces away from it: you see the
+// face and a silhouette, never the ground, so the band is 0 (this is where D-015's 4.50 row, "3.5 deg",
+// is wrong: that is the angle between two edges of a surface the eye is under. OQ-046).
+export function readableBandDeg(rise, depth){
+  const h = rise - REST_EYE.aboveFeet;
+  if (h >= 0 || !(depth > 0)) return 0;
+  const dEye = READABLE_RISE.standoffM + REST_EYE.behind;
+  const lo = REST_EYE.lookDeg - REST_EYE.halfFovDeg, hi = REST_EYE.lookDeg + REST_EYE.halfFovDeg;
+  const clip = v => Math.min(hi, Math.max(lo, v));
+  return Math.abs(clip(Math.atan2(h, dEye + depth) * DEG) - clip(Math.atan2(h, dEye) * DEG));
+}
+
+// Axis-aligned prim_box footprints, for the two checks below that need the floor. A rotated box, or any
+// other asset, is not measurable here: a landing on one cannot be proven readable.
+function boxesOf(level){
+  return (level.geometry??[]).map((g,gi)=>{
+    if(g.asset!=='prim_box'||!Array.isArray(g.pos)||!Array.isArray(g.scale)) return null;
+    if(Array.isArray(g.rot)&&g.rot.some(v=>v!==0)) return null;
+    return { gi, x0:g.pos[0]-g.scale[0]/2, x1:g.pos[0]+g.scale[0]/2, z0:g.pos[2]-g.scale[2]/2, z1:g.pos[2]+g.scale[2]/2, top:g.pos[1]+g.scale[1]/2 };
+  }).filter(Boolean);
+}
+const under=(bx,x,z)=>x>=bx.x0&&x<=bx.x1&&z>=bx.z0&&z<=bx.z1;
+// Ray a->c in xz against a box footprint: [tEnter, tExit] in metres along the ray, or null.
+function slab(bx,a,u){
+  let t0=-Infinity,t1=Infinity;
+  for(const [o,du,lo,hi] of [[a[0],u[0],bx.x0,bx.x1],[a[2],u[1],bx.z0,bx.z1]]){
+    if(Math.abs(du)<1e-12){ if(o<lo||o>hi) return null; continue; }
+    let p=(lo-o)/du, q=(hi-o)/du; if(p>q) [p,q]=[q,p]; t0=Math.max(t0,p); t1=Math.min(t1,q);
+  }
+  return t0<=t1?[t0,t1]:null;
+}
+// The landing's readable depth: from where the approach ray enters the box the landing waypoint stands on
+// (its top within MOVE.ground.autostep of the waypoint) to where it leaves it, or to where a box taller
+// than the landing (the next riser) begins, whichever is first. Adjacent boxes at the same top are NOT
+// merged: conservative, a false fail costs one edit.
+function landingDepth(boxes,a,c){
+  const L=Math.hypot(c[0]-a[0],c[2]-a[2]); if(L<1e-9) return null;
+  const u=[(c[0]-a[0])/L,(c[2]-a[2])/L], step=MOVE.ground.autostep;
+  const sup=boxes.filter(bx=>under(bx,c[0],c[2])&&Math.abs(bx.top-c[1])<=step).sort((p,q)=>q.top-p.top)[0];
+  if(!sup) return null;
+  const s=slab(sup,a,u); if(!s) return null;
+  const t0=Math.max(0,s[0]); let t1=s[1];
+  for(const bx of boxes){ if(bx===sup||bx.top<=sup.top+step) continue;
+    const o=slab(bx,a,u); if(o&&o[0]>t0&&o[0]<t1) t1=o[0]; }
+  return { depth:t1-t0, gi:sup.gi };
+}
+
 // A SEGMENT is the run between two consecutive torii: spawn -> checkpoint[0] -> ... ->
 // checkpoint[n-1] -> goal. So segments = checkpoints.length + 1. This is the ONE definition:
 // CHAPTER_LENGTH below and the nav bot's time budget (tools/harness/nav.ts, via run.mjs) both
@@ -77,7 +142,7 @@ const bodyHits=(b,p,r)=>b.hi[1]>p[1]&&b.lo[1]<p[1]+RESPAWN_RULES.bodyHeight&&
 // in the data: a level declares `moves_allowed`, which must EQUAL its chapter's set (an agent cannot
 // widen it), and every `via` must be in it. Source: PHASE-0-DECISIONS Q5's move-order table.
 const ALL_MOVES=Object.keys(MOVE);
-export const CHAPTER_MOVES_ADDED={1:['ground','jump','climb'],2:['wall','double'],3:['platform','dash'],4:['dashjump']};
+export const CHAPTER_MOVES_ADDED={1:['ground','jump'],2:['wall','double','climb'],3:['platform','dash'],4:['dashjump']};
 export function chapterMoves(ch){
   if(ch===0||ch>4) return [...ALL_MOVES];
   const out=[]; for(let c=1;c<=ch;c++) out.push(...(CHAPTER_MOVES_ADDED[c]??[])); return out;
@@ -139,6 +204,22 @@ export function lintLevel(level, manifest){
       if(!pid||ids.get(pid)!=='platforms') E('BAD_PLATFORM_REF',`seg ${i-1}->${i} via platform needs a valid "platform" id`);
     }
     if(h>m.maxH*0.9&&h<=m.maxH) W('TIGHT',`seg ${i-1}->${i} via ${via} is at ${((h/m.maxH)*100).toFixed(0)}% of the limit`);
+  }
+
+  // READABLE_RISE (D-015b, Tier-1). Every critical_path rise onto a landing must show the player ground up
+  // there: the landing's top surface subtends >= minBandDeg from the rest-pose eye at standoffM. Chapters
+  // only (the gym is a budget rig authored AT the move limits; OQ-046). `ground` rises are skipped as
+  // stairs/slopes read face by face; that is ASSUMED (this linter bounds a ground rise only by its slope),
+  // so a tall face authored as `ground` is caught by nav, not here (OQ-046, RB-003). A `platform` ride
+  // has no face.
+  const boxes=boxesOf(level);
+  if(typeof level.chapter==='number'&&level.chapter>=1) for(let i=1;i<cp.length;i++){
+    const via=typeof cp[i]==='object'&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
+    const a=P(cp[i-1]), c=P(cp[i]), rise=c[1]-a[1]; if(rise<=0) continue;
+    const L=landingDepth(boxes,a,c);
+    if(!L){ E('READABLE_RISE',`critical_path[${i}] via ${via}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
+    const band=readableBandDeg(rise,L.depth);
+    if(band<READABLE_RISE.minBandDeg) E('READABLE_RISE',`critical_path[${i}] via ${via}: +${rise.toFixed(2)}u rise onto geometry[${L.gi}] (${L.depth.toFixed(2)}u readable depth): its top surface subtends ${band.toFixed(2)}deg from the rest-pose eye (${REST_EYE.aboveFeet.toFixed(2)}u above the feet) at a ${READABLE_RISE.standoffM}u standoff, needs >= ${READABLE_RISE.minBandDeg}deg.${rise>=REST_EYE.aboveFeet?' The top is at or above the eye, so the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
   }
 
   if(d(P(cp[0]),level.spawn.pos)>3) E('PATH_START','critical_path[0] not at spawn');
@@ -236,6 +317,24 @@ export function lintLevel(level, manifest){
         return u; });
       const intro=Object.fromEntries(items.map(it=>[it,segUse.findIndex(u=>u.has(it))]));
       for(const it of items) if(intro[it]<0) E('CHAPTER_TEACH',`chapter ${ch} adds "${it}" but no segment uses it. Every new move whose misunderstanding is unrecoverable within the segment (all but ${RECOVERABLE_MOVES.join(', ')}), and every new signal, gets a teaching segment (D-011, OQ-042, Q5)`);
+      // D-015c: presence is not teaching. The FIRST use of each new thing is its teaching instance, and
+      // failing it must not cost the segment. Recoverable means one of:
+      //   (a) the approach waypoint is a torii (RESPAWN_RULES radius/height): a miss respawns you AT the
+      //       approach, so retrying costs nothing but the retry;
+      //   (b) a miss cannot fall: every point of the span a->c, sampled every bodyRadius (a gap narrower
+      //       than the body cannot swallow it), has prim_box floor no lower than the approach minus
+      //       MOVE.ground.autostep, so a miss leaves you standing where you can walk back.
+      // "Bypassable" (D-015c's other branch) is not expressible from this data and is NOT credited: OQ-046.
+      for(const it of items){ if(intro[it]<0) continue;
+        const j=cp.findIndex((w,k)=>k>0&&typeof w==='object'&&!Array.isArray(w)&&(it==='crow'?w.cue!==undefined:w.via===it)); if(j<1) continue;
+        const a=P(cp[j-1]), c=P(cp[j]);
+        if(atTorii(a)) continue;
+        const L=Math.hypot(c[0]-a[0],c[2]-a[2]), n=Math.max(1,Math.ceil(L/RR.bodyRadius));
+        let hole=null;
+        for(let k=0;k<=n&&!hole;k++){ const x=a[0]+(c[0]-a[0])*k/n, z=a[2]+(c[2]-a[2])*k/n;
+          if(!boxes.some(bx=>under(bx,x,z)&&bx.top>=a[1]-MOVE.ground.autostep)) hole=[x,z]; }
+        if(hole) E('CHAPTER_TEACH',`chapter ${ch}: the first use of "${it}" (critical_path[${j}], segment ${intro[it]}) is its teaching instance, and missing it costs the segment. Its approach critical_path[${j-1}] ${JSON.stringify(a)} is not a torii, so a death does not return you there, and there is no floor within ${MOVE.ground.autostep}u of the approach at x=${hole[0].toFixed(2)} z=${hole[1].toFixed(2)}, so a miss falls. Teach it where a miss is recoverable: from a torii, or over floor (D-015c)`);
+      }
       const kinds=segUse.map((u,s)=>{ const here=items.filter(it=>intro[it]===s);
         if(here.length>1) E('CHAPTER_TEACH',`segment ${s} introduces ${here.length} new things at once (${here.join(', ')}). Misunderstanding any of them loses the segment, so a player who dies cannot tell which one they misread: one per teaching segment (D-011, OQ-042)`);
         return here.length?'teach':'other'; });

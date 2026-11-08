@@ -367,6 +367,45 @@
         -5.7
       ],
       "tag": "cliff"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        8.0,
+        -3.375,
+        0
+      ],
+      "scale": [
+        4.0,
+        9.25,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        40.0,
+        -0.25,
+        0
+      ],
+      "scale": [
+        3.0,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        93.0,
+        3.25,
+        0
+      ],
+      "scale": [
+        3.0,
+        8.0,
+        7.0
+      ]
     }
   ],
   "hazards": [
@@ -494,12 +533,30 @@
     ],
     {
       "pos": [
+        4,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "2u short of the step"
+    },
+    {
+      "pos": [
+        8,
+        1.25,
+        0
+      ],
+      "via": "jump",
+      "note": "the first jump: up a 1.25 step, over floor. A miss lands you where you stood (D-015c)"
+    },
+    {
+      "pos": [
         12,
         0,
         0
       ],
       "via": "ground",
-      "note": "the seam ledge, to the first break"
+      "note": "off the step, to the first break"
     },
     {
       "pos": [
@@ -556,12 +613,21 @@
     },
     {
       "pos": [
-        39,
+        36.5,
         2.0,
         0
       ],
       "via": "ground",
-      "note": "2u short of the face"
+      "note": "2u short of the first riser"
+    },
+    {
+      "pos": [
+        39.75,
+        3.75,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 onto the shelf (D-015a: was one 3.5 climb face)"
     },
     {
       "pos": [
@@ -569,8 +635,8 @@
         5.5,
         0
       ],
-      "via": "climb",
-      "note": "climb the 3.5 face"
+      "via": "jump",
+      "note": "+1.75 off the shelf"
     },
     {
       "pos": [
@@ -621,12 +687,21 @@
     },
     {
       "pos": [
-        92,
+        89.5,
         5.5,
         0
       ],
       "via": "ground",
-      "note": "through the sweep, 2u short of the face"
+      "note": "2u short of the first riser, inside the sweep lane: crossed on the crow, like the run it replaces"
+    },
+    {
+      "pos": [
+        92.75,
+        7.25,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 onto the shelf (D-015a: was one 3.5 climb face)"
     },
     {
       "pos": [
@@ -634,8 +709,8 @@
         9.0,
         0
       ],
-      "via": "climb",
-      "note": "climb the 3.5 face"
+      "via": "jump",
+      "note": "+1.75 off the shelf"
     },
     {
       "pos": [
@@ -650,7 +725,6 @@
   "difficulty": 1,
   "moves_allowed": [
     "ground",
-    "jump",
-    "climb"
+    "jump"
   ]
 }

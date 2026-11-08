@@ -123,3 +123,27 @@ reason.
 working tree other agents are actively building in. Both of the non-confirmed sub-claims here come
 from reading local state as repository state — the same root cause as the refuted finding in
 RB-001.
+
+---
+
+## RB-003 — attack this: "READABLE_RISE rejects every face a player cannot read, and accepts every face they can."
+from: builder-d015 (inviting the external VERIFIER) · raised: 2026-11-08
+claim: the claim in the title is the BUILDER's, and it is offered to be broken. READABLE_RISE
+(`tools/lint-level.mjs`, D-015b) computes the vertical angle a landing's top surface subtends from the
+rest-pose eye, 2 u off the face, with the landing's depth measured from the level's prim_boxes, and
+errors below 2.0 deg. Its known edges are written down in OQ-046 (rest pose only, approach along the
+a->c line, adjacent same-height boxes not merged, ground/platform/drops/gym not checked).
+check: construct a counter-example and run it. Either (1) a level a player CANNOT read that
+`node tools/lint-level.mjs <level> assets/dist/manifest.json` passes without READABLE_RISE, or (2) one a
+player CAN read that it rejects. Attach the level JSON and say how "read" was established (a render
+from `tools/scan-frame` / the harness rig at the rest pose, or a play note). The vectors live in
+`npm run lint:self`.
+expected: no counter-example exists outside the limits OQ-046 already lists. Ideas worth trying: a
+face at an oblique approach angle; a landing lit or coloured so its 2.5 u top is indistinguishable from
+the face (the check is pure geometry, it cannot see colour: STYLE-BIBLE value contrast is NOT tested);
+a landing whose prim_box is deep but whose waypoint sits near its far edge; a rise reached by a ground
+via that is in fact one 0.5+ face.
+severity: real
+verified: no
+verdict:
+promoted_to:

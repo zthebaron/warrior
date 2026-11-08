@@ -2,14 +2,9 @@
 
 import * as THREE from 'three';
 
-export const RENDER_CONFIG = {
-  maxPixelRatio: 2,
-  toneMappingExposure: 1.0,
-  fovDeg: 60,
-  near: 0.1,
-  far: 600,
-  clearColor: 0x9fb4c7,
-};
+import { RENDER_CONFIG } from './render-config';
+
+export { RENDER_CONFIG };
 
 export class Renderer {
   readonly renderer: THREE.WebGLRenderer;
