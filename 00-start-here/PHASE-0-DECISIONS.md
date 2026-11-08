@@ -970,12 +970,12 @@ the one check whose entire purpose was to prevent this.
 
 ### Rulings
 
-- **D-015a (PROVISIONAL, needs APPROVER):** chapter 1 drops `climb`. Each +3.50 face becomes a
+- **D-015a (APPROVED 2026-11-08 by the chat REVIEWER, on a call Tim delegated to it):** chapter 1 drops `climb`. Each +3.50 face becomes a
   1.5-wide shelf at the midpoint — two +1.75 steps, both inside `MOVE.jump.maxRise` 2.00, both
   with a 5–7° readable top surface. `CHAPTER_MOVES_ADDED` becomes
   `{1:['ground','jump'], 2:['wall','double','climb']}`; climb debuts in chapter 2 beside wall and
   double, where Q5 already plans a teach beat. Data-only in the level; one table edit in the
-  linter. The alternative — keep climb and add a teach shelf before it — costs a segment, still
+  linter. **Chapter 1 ships `ground` + `jump`.** The alternative — keep climb and add a teach shelf before it — costs a segment, still
   needs the camera work to be readable, and introduces chapter 1's riskiest move twice.
 - **D-015b:** `READABLE_RISE` (Tier-1, CI). For every critical_path rise, the top surface must
   subtend ≥ 2.0° from the eye at a 2m standoff. Derivable from the rig constants and the rise; no
@@ -993,4 +993,63 @@ the one check whose entire purpose was to prevent this.
 A budget says a move *can* clear a gap. It says nothing about whether the player can *see* that
 it can. Both belong under CI, and until D-015b exists only one of them was.
 
-implemented_by: 8b5a4ac (D-015b READABLE_RISE; D-015c CHAPTER_TEACH made falsifiable, kept live rather than deleted: OQ-047), 286259f (D-015a level data + move table, PROVISIONAL, one revert; plus the D-015c teach step it forced), 05f3ffa (lint:self in CI: both checks proven to fail). D-015d NOT done: B-18. Deviations from the text, recorded not edited: shelves 2.5 u not 1.5 (1.5 fails D-015b), the 4.50 row reads 0 not 3.5 (OQ-046).
+implemented_by: 8b5a4ac (D-015b READABLE_RISE; D-015c CHAPTER_TEACH made falsifiable, kept live rather than deleted: OQ-047), 286259f (D-015a level data + move table, APPROVED by delegation 2026-11-08, still one revert; plus the D-015c teach step it forced), 05f3ffa (lint:self in CI: both checks proven to fail). D-015d NOT done: B-18. Deviations from the text, recorded not edited: shelves 2.5 u not 1.5 (1.5 fails D-015b), the 4.50 row reads 0 not 3.5 (OQ-046).
+
+---
+
+## D-016 — the rest pose cannot present the rise that justifies wall or climb. Chapter 2 is blocked on D-015d
+
+Surfaced by approving D-015a, 2026-11-08 (chat REVIEWER, delegated by Tim). Climb did not land in
+chapter 1 by a pacing mistake. With the rig as it stands, it cannot be taught readably anywhere.
+
+### The measurement (recomputed by the builder, not taken from the brief)
+
+The figures come from `readableBandDeg()` and `REST_EYE` in `tools/lint-level.mjs`, using rig constants
+imported from `src/engine/camera-tuning.ts` and `render-config.ts`:
+
+- **Rest pose:** eye 3.663 u above the feet, 6.657 u behind them.
+- **Standoff:** 2.0 u off the face.
+- **Threshold:** a rise is readable if the landing's top surface subtends at least 2.0°.
+
+The table gives the largest rise, at 0.01 u resolution, whose top surface still clears that threshold.
+
+| landing depth | 2.5 | 5 | 6 | 15 | 41 | any (limit) |
+|---|---|---|---|---|---|---|
+| max readable rise | **2.28** | 2.83 | **2.92** | **3.18** | 3.29 | **3.36** |
+
+- **The limit column:** this is the asymptote. As the landing deepens, the far edge tends to the horizon, so the band can never exceed `atan((eye - rise) / (standoff + behind))`. That gives `3.663 - 8.657 * tan 2°` = 3.361.
+- **The brief's three figures:** all three (2.28, 2.92, 3.18) are confirmed.
+- **The earlier figures were wrong:** the builder's own figures in OQ-046 and B-18 (3.19, 3.30, 2.29) were rounded *up*, and each of them fails. They are corrected in place.
+- **Pinned in lint:self:** each ceiling is checked at its value and at +0.01. If the rig moves, the pinned values go red rather than stale.
+
+### The consequence, with one correction to the brief
+
+In chapter 2's set, a rise needs more than `jump` once it exceeds `MOVE.jump.maxRise` 2.00. By rise, each move's characteristic band is the range of rises where it is the cheapest move that clears the face:
+
+| move | characteristic band | readable at the rest pose |
+|---|---|---|
+| `double` | (2.00, 3.50] | only (2.00, 3.18] onto a 15 u landing; (2.00, 2.28] onto a 2.5 u shelf |
+| `wall` | (3.50, 4.00] | none, for any landing depth |
+| `climb` | (4.00, 4.50] | none, for any landing depth |
+
+- **Wall and climb:** both bands lie wholly above the 3.36 hard ceiling. Neither move can be presented readably at the height that justifies it existing.
+- **Double:** this is the correction. The brief's "every one of those ranges sits above 3.18" is wrong for double. Only its top (3.36, 3.50] is unreadable everywhere. Double's other characteristic, horizontal reach (5.0, 9.5] at rise 0, is not a rise and READABLE_RISE never touches it. Double alone is teachable today.
+- **The conclusion holds anyway:** chapter 2 adds wall and climb as well as double (Q5, D-015a). The claim offered for attack is the strong form, which follows from the ceiling: **no move can be taught above a 3.36 rise at the rest pose, nor above 3.18 onto a landing up to 15 u deep.**
+
+### Rulings
+
+- **D-016a: READABLE_RISE is an ERROR on a move's teaching instance and a WARNING elsewhere.**
+  - **Why:** a practised move may legitimately ask the player to pitch the camera up. A move being taught may not, because the rest pose is what the player meets.
+  - **Which instance teaches:** the teaching instance is the move's first critical_path use in the chapter that adds it (`CHAPTER_MOVES_ADDED`). It is the same `firstUse` index CHAPTER_TEACH uses, so the two checks cannot disagree about which segment teaches.
+  - **Proven both ways in `npm run lint:self`:** the pre-D-015 faces were relabelled into chapter 2. In that fixture, climb's first +3.50 face ERRORs and the second only WARNs. On the shipped chapter 1 there are two mutations:
+    - cutting the teach step to 1 u ERRORs the jump's teaching instance;
+    - cutting shelf 1 to 1.5 u only WARNs.
+  - **Mutation tests:** "always warn" turns lint:self red with 3 failures, "always error" with 4, so the split is load-bearing in both directions.
+  - **Known edge, for the VERIFIER:** a move whose first use is a low rise makes every later, taller use "practice". Teaching climb on a 0.5 face and then gating on a 4.5 face passes with a warning.
+- **D-016b: D-015d (camera pitch assist, B-18) is promoted from backlog to a BLOCKER on chapter 2.**
+  - The brief gave this as "none of the three can be taught at its characteristic height". That holds for wall and climb. It holds for double only above 3.18 (above 3.36 for any landing); see the correction above. The blocker stands on wall and climb alone.
+  - Once it lands, READABLE_RISE must model the assisted pitch rather than the rest pose. Otherwise the check keeps rejecting what the player can then see.
+  - The claim is on the review board as RB-004.
+- **The standing TIGHT warning:** it is on the gym, not chapter 1. It is accepted, with the reason on the waypoint (OQ-051). Chapter 1 lints with zero warnings.
+
+implemented_by: 62ce5fc (D-016a in tools/lint-level.mjs; proven both ways in tools/lint-self.mjs; gym TIGHT note, OQ-051). D-016b is documentation: B-18 promoted to BLOCKER, RB-004 posted. D-015d itself NOT done.
