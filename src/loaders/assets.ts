@@ -66,12 +66,30 @@ export function getAccent(): string {
   return accentChoice;
 }
 
+/**
+ * LIVE accent switch for the H2.5 feel test: moves every decoded asset's accent UVs from the current
+ * candidate's palette cell to `name`'s. Level meshes share the cached geometry, so placed torii
+ * recolour in place, no reload. Same candidate set ACCENT_CONTRAST validates (accent.json).
+ */
+export function switchAccent(name: string): string {
+  if (!(name in ACCENT_HEX)) throw new Error(`[assets] accent "${name}": not in assets/src/accent.json (${Object.keys(ACCENT_HEX).join(', ')})`);
+  if (name === accentChoice) return name;
+  for (const asset of cache.values()) for (const part of asset.parts) remapCells(part.geometry, accentChoice, name);
+  accentChoice = name;
+  return name;
+}
+export const ACCENT_CANDIDATES: string[] = Object.keys(accentJson.candidates);
+
 function remapAccent(geometry: THREE.BufferGeometry): void {
   if (accentChoice === ACCENT_DEFAULT) return;
+  remapCells(geometry, ACCENT_DEFAULT, accentChoice);
+}
+
+function remapCells(geometry: THREE.BufferGeometry, from: string, to: string): void {
   const uv = geometry.getAttribute('uv');
   if (!uv) return;
-  const [u0, v0] = cellUv(ACCENT_DEFAULT);
-  const [u1, v1] = cellUv(accentChoice);
+  const [u0, v0] = cellUv(from);
+  const [u1, v1] = cellUv(to);
   const half = CELL / 2 / TEX;
   for (let i = 0; i < uv.count; i++) {
     if (Math.abs(uv.getX(i) - u0) < half && Math.abs(uv.getY(i) - v0) < half) uv.setXY(i, uv.getX(i) + u1 - u0, uv.getY(i) + v1 - v0);

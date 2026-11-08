@@ -13,7 +13,7 @@ import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
 import { LandingMark } from './entities/landing-mark';
 import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
-import { ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, type Ktx2Support } from './loaders/assets';
+import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
 
 export const GAME_RULES = {
@@ -36,6 +36,10 @@ interface DevHook {
   loop: GameLoop;
   input: InputSystem;
   tuning: typeof TUNING;
+  /** Rule constants, live (e.g. __DEV__.rules.respawnDelaySec = 0.5 between deaths). */
+  rules: typeof GAME_RULES;
+  /** Get, or switch live, the accent candidate: __DEV__.accent('vermilion_b'). */
+  accent: (name?: string) => string;
   probe: () => AirSegment[];
   player: () => { feet: Vec3; vel: Vec3; state: string; grounded: boolean } | null;
   teleport: (x: number, y: number, z: number, facingDeg?: number) => void;
@@ -140,8 +144,14 @@ function seededRandom(seed: number): () => number {
 
 const HARNESS_SEED = 0x5eed1234;
 const HARNESS_MODE = __HARNESS__ && new URLSearchParams(location.search).get('harness') === '1';
-// Feel-test flags follow the accent's ?accent=<name> precedent (D-007).
+// Feel-test flags follow the accent's ?accent=<name> precedent (D-007). Defaults are unchanged; each is
+// also live in the ~ panel's "feel test" group (FEELTEST-SWITCHES).
 if (new URLSearchParams(location.search).get('landingmark') === 'on') TUNING.landingMark = 1;
+{
+  // ?respawn=<seconds>: D-004 wants a 0.5 s target against the 1.2 s CI ceiling; the default stays 0.8.
+  const r = Number(new URLSearchParams(location.search).get('respawn') ?? NaN);
+  if (Number.isFinite(r) && r >= 0) GAME_RULES.respawnDelaySec = r;
+}
 if (HARNESS_MODE) Math.random = seededRandom(HARNESS_SEED);
 
 function el(id: string): HTMLElement {
@@ -364,6 +374,25 @@ async function boot(): Promise<void> {
   const loop = new GameLoop({ onFixedUpdate, onRender, shouldSimulate: () => state.worldRunning() });
 
   const raycaster = new THREE.Raycaster();
+  // The H2.5 feel test's three switches, live in the ~ panel (numbers only, so accent is an index into
+  // the ACCENT_CONTRAST-validated candidates: 0 vermilion_a, 1 vermilion_b, 2 vermilion_c).
+  // respawnDelaySec is read at each death, so a change applies from the next one.
+  const FEEL_TEST = {
+    get respawnDelaySec(): number { return GAME_RULES.respawnDelaySec; },
+    set respawnDelaySec(v: number) {
+      if (v < 0) return;
+      if (v > 1.2) console.warn(`[feel test] respawnDelaySec ${v} is above the 1.2 s CI ceiling (Q6)`);
+      GAME_RULES.respawnDelaySec = v;
+    },
+    get landingMark(): number { return TUNING.landingMark; },
+    set landingMark(v: number) { TUNING.landingMark = v ? 1 : 0; },
+    get accent(): number { return Math.max(0, ACCENT_CANDIDATES.indexOf(getAccent())); },
+    set accent(v: number) {
+      const name = ACCENT_CANDIDATES[Math.round(v)];
+      if (name) switchAccent(name);
+    },
+  };
+
   const tools = new DevTools({
     overlay,
     state,
@@ -380,6 +409,7 @@ async function boot(): Promise<void> {
     tunables: [
       { name: 'player', values: TUNING },
       { name: 'camera', values: CAMERA_TUNING },
+      { name: 'feel test', values: FEEL_TEST },
     ],
   });
 
@@ -443,6 +473,8 @@ async function boot(): Promise<void> {
       loop,
       input,
       tuning: TUNING,
+      rules: GAME_RULES,
+      accent: (name) => (name ? switchAccent(name) : getAccent()),
       probe: () => tools.probe.history.map((s) => ({ ...s })),
       player: () => (player ? { feet: v3(player.feet()), vel: v3(player.vel), state: player.state, grounded: player.grounded } : null),
       teleport: (x, y, z, facingDeg) => player?.teleport({ x, y, z }, facingDeg === undefined ? undefined : facingDeg * DEG2RAD),
