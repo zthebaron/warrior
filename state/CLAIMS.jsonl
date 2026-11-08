@@ -33,5 +33,7 @@
 {"id":"B-11","agent":"unknown","ts":"2026-11-08T16:25:55.483Z","released":true}
 {"id":"D-008","agent":"phase0-spec","ts":"2026-11-08T16:31:46.898Z","ttl_min":90}
 {"id":"OQ-032","agent":"phase0-spec","ts":"2026-11-08T16:31:46.926Z","ttl_min":600}
+{"id":"B6-fold","agent":"kit","ts":"2026-11-08T16:32:47.095Z","ttl_min":90}
+{"id":"B12-PR","agent":"kit","ts":"2026-11-08T16:32:47.128Z","ttl_min":90}
 {"id":"D-008","agent":"phase0-spec","ts":"2026-11-08T16:40:44.824Z","released":true}
 {"id":"OQ-032","agent":"phase0-spec","ts":"2026-11-08T16:40:44.851Z","released":true}

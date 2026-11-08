@@ -350,6 +350,33 @@
         3
       ],
       "tag": "test"
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        50,
+        0,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        88,
+        3.2,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        52,
+        -6,
+        -9
+      ],
+      "tag": "cliff"
     }
   ],
   "platforms": [

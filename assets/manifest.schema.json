@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dbai.agency/schemas/asset-manifest.v1.json",
+  "title": "Asset manifest (assets/dist/manifest.json) — a BUILD OUTPUT of tools/assets/build.mjs, never hand-written",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["generated_by", "assets"],
+  "properties": {
+    "generated_by": { "const": "tools/assets/build.mjs" },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "oneOf": [{ "$ref": "#/definitions/primitive" }, { "$ref": "#/definitions/mesh" }] }
+    }
+  },
+  "definitions": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "maxLength": 48 },
+    "collider": { "description": "trimesh | none. No box: box colliders sink (MEASUREMENTS.md, check:physics).", "enum": ["trimesh", "none"] },
+    "vec3": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "count": { "type": "integer", "minimum": 0 },
+    "primitive": {
+      "description": "Built in code by the level loader. Sources: assets/src/primitives.json.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "shape", "size", "collider"],
+      "properties": {
+        "name": { "$ref": "#/definitions/name" },
+        "kind": { "const": "primitive" },
+        "shape": { "const": "box" },
+        "size": { "type": "array", "items": { "type": "number", "exclusiveMinimum": 0 }, "minItems": 3, "maxItems": 3 },
+        "collider": { "$ref": "#/definitions/collider" }
+      }
+    },
+    "mesh": {
+      "description": "A compressed glb in assets/dist/. Every number is measured from the shipped file by the build.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "file", "source", "sha256", "collider", "triangles", "bytes", "bytes_export", "bbox", "materials", "draw_calls", "textures", "compression"],
+      "properties": {
+        "name": { "$ref": "#/definitions/name" },
+        "kind": { "const": "mesh" },
+        "file": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.glb$" },
+        "source": { "type": "string", "pattern": "^assets/src/[a-z][a-z0-9_]*\\.(py|blend)$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "collider": { "$ref": "#/definitions/collider" },
+        "triangles": { "$ref": "#/definitions/count" },
+        "bytes": { "description": "compressed .glb as shipped", "$ref": "#/definitions/count" },
+        "bytes_export": { "description": "uncompressed .glb straight out of Blender", "$ref": "#/definitions/count" },
+        "bbox": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": { "min": { "$ref": "#/definitions/vec3" }, "max": { "$ref": "#/definitions/vec3" } }
+        },
+        "materials": { "$ref": "#/definitions/count" },
+        "draw_calls": { "description": "mesh primitives in the scene = draw calls when placed once, uninstanced", "$ref": "#/definitions/count" },
+        "textures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "mime", "width", "height"],
+            "properties": {
+              "name": { "type": "string" },
+              "mime": { "enum": ["image/ktx2", "image/png", "image/jpeg", "image/webp"] },
+              "width": { "type": "integer", "minimum": 1 },
+              "height": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "compression": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["geometry", "textures"],
+          "properties": { "geometry": { "type": "string" }, "textures": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

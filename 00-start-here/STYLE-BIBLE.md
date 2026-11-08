@@ -52,16 +52,35 @@ colour that is not on this ramp is a violation unless it is the accent below.
 
 ### The accent
 
-Vermilion, and only on torii gates.
+Vermilion, and only on torii gates. *(Amended 2026-11-08 by PHASE-0-DECISIONS D-001, D-003 and D-006,
+on measurement. The original 1% ceiling is withdrawn; its reasoning — "the vermilion never
+clustered at k=8" — shows the seed contains no vermilion and says nothing about area.)*
 
-**Budget: the accent must not exceed 1% of frame area.** This is measured, not a guess —
-when the palette was extracted by k-means at k=8 across all 36 frames, the vermilion did
-not form a cluster at all. It is that rare.
+**Hue — authored, not measured (D-001).** The seed's reddest pixels (median `#603633`) read as
+another dark shape and are recorded in MEASUREMENTS.md as a fact about the seed, not as the
+accent. The accent must pass `ACCENT_CONTRAST` against every ramp value above: CIEDE2000
+>= 2x the largest ramp step, chroma >= 3x the ramp's largest chroma, and lightness at or above
+wash-mid. Candidates live in `assets/src/accent.json`; the H2.5 feel test chooses between them.
 
+**Area — a floor at scanning distance, never a ceiling (D-003, revised by D-006).** The same gate
+fills 9% of the frame from inside it and nothing at 200u. That is distance, not intent, and a
+player walking through a gate is the moment the accent is meant to dominate. So there is no
+ceiling. What matters is that the **next** gate can be found. `ACCENT_AREA` stands the player at
+the previous torii (or spawn), turns the follow camera toward the next gate, and counts only that
+gate's accent pixels. It must cover **at least 0.0204% of the frame**.
+
+That floor is measured, not chosen. The one observed findability failure is the seed's red at
+0.012% of the frame, about 28 px at 640x360. A torii's largest accent blob stays above that out
+to 90u (0.0204%) and fractures at 100u. Provisional until the H2.5 feel test measures
+findability with a person. Basis and full curve: MEASUREMENTS.md "D-006 accent floor".
+
+The restraint that carries the weight is unchanged: **what** may carry the accent.
+
+- Torii only, and nothing else, ever
 - Never on the character
 - Never on terrain, stone, trees, mist or sky
 - Never on UI
-- A frame may contain more than one torii; the 1% total still holds
+- A frame may contain more than one torii. The band applies to the whole frame.
 
 The character's robe is **desaturated blue-grey**, not blue. It sits near `#7d8590` in
 value and saturation. It is not a second accent.
@@ -190,7 +209,7 @@ The section that prevents the most drift. An agent unsure whether something is a
 should assume it is not.
 
 1. Any light source you can locate
-2. Any colour off the §2 ramp, except vermilion on torii within the 1% budget
+2. Any colour off the §2 ramp, except the accent on torii
 3. Saturated colour of any kind on the character
 4. Rounded or organic rock — all stone is faceted and planar
 5. Spiral stairs, arches, domes
@@ -209,8 +228,9 @@ should assume it is not.
 In order. Any failure is a failure.
 
 1. Can you tell where the light is? → fail
-2. Is any colour off-ramp other than torii vermilion? → fail
-3. Does the accent exceed roughly 1% of frame area? → fail
+2. Is any colour off-ramp other than the accent on torii? → fail
+3. Scanning from one torii, does the next gate's accent cover less than 0.0204% of the frame? → fail
+   (`ACCENT_AREA`, D-006. A waypoint nobody finds is not a waypoint. There is no upper limit.)
 4. Are there three distinguishable depth bands? → if not, fail
 5. Is there a dark mass on one side and a bright void on the other? → if not, fail
 6. Does the hat disc read as a clean shape? → if not, fail
@@ -219,4 +239,5 @@ In order. Any failure is a failure.
 ---
 
 *Derived from the locked seed. If the seed changes, this document is void and must be
-re-derived — do not patch it.*
+re-derived — do not patch it. Amendments made on MEASUREMENT under a recorded decision are
+the one exception, and each is marked in place (section 2: D-001, D-003, D-006).*

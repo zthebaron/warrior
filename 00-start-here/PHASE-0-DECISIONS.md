@@ -238,6 +238,8 @@ render them on the torii in the gym, and let the H2.5 feel test choose — the s
 used for the landing mark. A real vermilion is near `#E34234`; expect the answer in that
 neighbourhood, at palette lightness or above.
 
+implemented_by: e8b0f8b (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 837c057 (?accent=<name> in-place switch), 31fb4a5 (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
+
 ## Q6 — Failure model: **A, with one addition and one change.** CLOSED
 
 All seven parts stand except the respawn time. The reasoning is good throughout; two parts are
@@ -290,6 +292,8 @@ same mechanism as Q2b and D-001.
 "A reload restarts the game" is fine for the sprint, but it has a showcase consequence: anyone
 trying the game from the case-study page who refreshes loses everything. Post-gold showcase item,
 not a design change. Noted so it is a known trade rather than a surprise.
+
+implemented_by:
 
 ## D-002 — Decisions must name their implementing commit. DECIDED
 
@@ -353,7 +357,7 @@ Amending a locked Gate B artifact is legitimate here, and only here, because the
 a measurement. That is the distinction Q2b drew: do not amend the Style Bible on a hypothesis;
 do amend it on evidence.
 
-implemented_by:
+implemented_by: 1dc3a33 (ACCENT_AREA harness stage + band in accent.json), be27071 (STYLE-BIBLE §2 / §9 / §10 amended) — branch h4-asset-kit, PR 3. Floor provisional: state/OPEN-QUESTIONS.md OQ-020.
 
 ## Q7 — The NOT list: **A, with one addition.** CLOSED
 
@@ -541,7 +545,7 @@ Extend the curve past 4 m out to the distance at which the next gate first becom
 set the floor from where findability actually fails — the same way `#603633` failed at 0.012%.
 Do not set it from the values above, which are all near-field.
 
-implemented_by:
+implemented_by: 29b41c0 (floor at scanning distance in the `accent` stage; curve + swatches against the ramp, tools/harness/accent-floor.ts) — branch h4-asset-kit, PR 3 (folded in from b6-accent-floor). Floor provisional: OQ-026..028.
 
 
 ## D-007 — Landing mark (B-3): the constraints, before the code
