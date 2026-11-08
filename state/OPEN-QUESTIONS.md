@@ -121,3 +121,42 @@ because: both are derived from the decisions, measurements, style bible and lint
 their own first paragraphs. Leaving them out (C) is how a conflict ends up resolved by whichever was
 read last. SPEC §7 is the one exception, because lint:not-list executes it.
 status: PROVISIONAL
+
+## OQ-010 — D-004 says the clock runs during death, but the respawn delay was counted in render-frame time
+raised: 2026-11-08 by phase0-spec
+options: A advance the clock by render frameDt during death | B keep ticking the world in fixed ticks during death; respawn becomes a tick countdown
+took: B
+because: A makes hazard phase at respawn depend on frame rate, which is exactly the
+nondeterminism D-004 protects against, and the harness could never reproduce it. In B the loop
+ticks while `worldRunning()` (play or death): it poses the world and steps physics, but does not
+advance the player or sample input, so recorded traces stay aligned. Respawn becomes
+round(respawnDelaySec × 60) = 48 ticks, using the existing constant (no new number).
+status: PROVISIONAL
+
+## OQ-011 — Platforms kept their own `p.time += dt` clock. Do they move onto the world clock too?
+raised: 2026-11-08 by phase0-spec
+options: A only hazards use the world clock | B platforms and hazards both pure in world time
+took: B
+because: under A, platforms freeze during death while hazards keep moving, so their relative timing
+drifts with every death. B-7 would then be sweeping a combination the game never holds still. B also
+removes the last per-entity mutable clock. Identical with no deaths: replay is still 1671/1671 ticks
+and goldens still 0.000%.
+status: PROVISIONAL
+
+## OQ-012 — What motion does a patroller follow, and what is `phase` a fraction of?
+raised: 2026-11-08 by phase0-spec
+options: A ping-pong along the polyline, phase = fraction of one out-and-back loop | B cycle (wrap to start) | C a `loop` field like platforms
+took: A
+because: "patrol" reads as back and forth, and wrapping (B) teleports a hazard from end to start, which
+is translation the player cannot read. One loop is 2·length/speed seconds, so phase ∈ [0,1) covers
+every pose exactly once: the set PHASE_SWEEP's 8 offsets sample. C adds a field nobody asked for.
+status: PROVISIONAL
+
+## OQ-013 — A patroller kills on contact, but with what volume?
+raised: 2026-11-08 by phase0-spec
+options: A required `size` (schema + lint NO_PATROL_SIZE) | B an engine default size
+took: A
+because: a default would be an unmeasured number (CLAUDE.md). Static hazards with pos+size (spike,
+crush, bounded water) use the same box-vs-capsule test. Crush's `period` still has no runtime meaning,
+so it is treated as a static volume until something decides what crush does.
+status: PROVISIONAL

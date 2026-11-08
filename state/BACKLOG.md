@@ -16,11 +16,10 @@ Verified against the repository on 2026-11-08, not taken from any report.
 | B-8 | `HAZARD_AT_CHECKPOINT` lint rule | Q6 | MISSING | — |
 | B-9 | Respawn gated on a furthest-index counter | Q6 | MISSING | `src/main.ts` reassigns `respawn` for any checkpoint in radius |
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
-| B-12 | Patroller runtime — position as a pure function of `phase + t·speed`, no per-hazard mutable state | Q6 | MISSING | no `patrol` identifier anywhere in `src/`; only the loader type exists |
-| B-13 | World clock advances during the `death` state, not during `pause` | D-004 | MISSING | `runTimeSec += dt` is behind `if (!state.is('play')) return` in `src/main.ts` |
 
-**B-7 is unblocked:** B-1 landed, so the schema now carries `phase` and `speed`. Note that the patroller has a
-schema and lint presence but **no runtime yet**: nothing moves or kills. That runtime is the first half of B-7.
+**B-7 is unblocked:** B-1, B-12 and B-13 have all landed. The schema carries `phase`/`speed`, patrollers move as a
+pure function of the world clock and kill on contact, and the clock runs through `death`. The harness snapshot now
+exposes `hazards[].pos`, which is what a sweep reads.
 
 ## Confirmed already done
 
@@ -34,3 +33,6 @@ schema and lint presence but **no runtime yet**: nothing moves or kills. That ru
 | B-2 fire/torch cut, water a flat wash | Q2c | `19234ab`: `fire` and `interactables` absent; water requires `y`, forbids period/path/speed/phase (OQ-008) |
 | B-10 `lint:not-list` | Q7 | `1191a34` (in CI); `19234ab` closed all 9 known-open checks: 17 enforced, 0 pending, 5 unenforced |
 | Q7 schema cut | Q7 | `19234ab`: enemies, interactables, collectibles, other goal types, damage, triggered, lighting direction |
+| B-12 patroller runtime | Q6 | `6dcc157`: `patrollerAt()` in `src/loaders/level.ts`, a pure function of (path, speed, phase, t). Platforms moved onto the same clock (OQ-011). Probe: two runs with different death histories give identical patroller poses at the same tick, equal to an independent closed form |
+| B-13 world clock runs during `death` | D-004 | `6dcc157`: `worldTick` in `src/main.ts`; `StateMachine.worldRunning()` = play or death. Death and respawn run in fixed ticks (OQ-010). Probe: +5.000 s over 300 ticks with 7 deaths; pause freezes ticks, clock and patroller |
+| Hazard contact → death | Q6 part 1 | `6dcc157`: `LevelInstance.hazardHit()`; same `death` path as falling. Probe: a spike on spawn killed 7× in 300 ticks |
