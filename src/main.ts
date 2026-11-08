@@ -101,8 +101,10 @@ export interface AssetProbe {
   error: string | null;
   calls: number;
   triangles: number;
-  maps: { width: number; height: number; compressed: boolean; format: number; mipmaps: number }[];
+  maps: { width: number; height: number; compressed: boolean; format: number; mipmaps: number; colorSpace: string }[];
   materials: string[];
+  /** Most frequent rendered colours on the asset, '#rrggbb:count'. */
+  top: string[];
   ktx2: Ktx2Support | null;
   /** Pixels sampled on the asset (non-background) and how many sit within 6/255 of a source texel. */
   pixels: { covered: number; nearPalette: number; maxError: number };
@@ -518,7 +520,7 @@ async function boot(): Promise<void> {
         cameraOverride = null;
       },
       assetProbe: async (name) => {
-        const fail = (error: string): AssetProbe => ({ ok: false, error, calls: 0, triangles: 0, maps: [], materials: [], ktx2: getKtx2Support(), pixels: { covered: 0, nearPalette: 0, maxError: 0 } });
+        const fail = (error: string): AssetProbe => ({ ok: false, error, calls: 0, triangles: 0, maps: [], materials: [], top: [], ktx2: getKtx2Support(), pixels: { covered: 0, nearPalette: 0, maxError: 0 } });
         const a = MANIFEST.get(name);
         if (!a || a.kind !== 'mesh') return fail(`"${name}" is not a mesh asset in the manifest`);
         try {
@@ -552,10 +554,13 @@ async function boot(): Promise<void> {
         let covered = 0;
         let near = 0;
         let maxError = 0;
+        const hist = new Map<number, number>();
         for (let i = 0; i < px.length; i += 4) {
           const [R, G, B] = [px[i]!, px[i + 1]!, px[i + 2]!];
           if (R > 240 && G < 15 && B > 240) continue; // background
           covered++;
+          const key = (R << 16) | (G << 8) | B;
+          hist.set(key, (hist.get(key) ?? 0) + 1);
           let best = 255;
           for (const t of texels) best = Math.min(best, Math.max(Math.abs(R - t[0]), Math.abs(G - t[1]), Math.abs(B - t[2])));
           if (best <= 6) near++;
@@ -566,9 +571,10 @@ async function boot(): Promise<void> {
           const t = (m as THREE.MeshBasicMaterial).map;
           if (!t) return [];
           const img = t.image as { width: number; height: number };
-          return [{ width: img.width, height: img.height, compressed: (t as THREE.CompressedTexture).isCompressedTexture === true, format: t.format as number, mipmaps: t.mipmaps?.length ?? 0 }];
+          return [{ width: img.width, height: img.height, compressed: (t as THREE.CompressedTexture).isCompressedTexture === true, format: t.format as number, mipmaps: t.mipmaps?.length ?? 0, colorSpace: t.colorSpace }];
         });
-        return { ok: true, error: null, ...info, maps, materials: mats.map((m) => m.type), ktx2: getKtx2Support(), pixels: { covered, nearPalette: near, maxError } };
+        const top = [...hist.entries()].sort((x, y) => y[1] - x[1]).slice(0, 6).map(([k, n]) => `#${k.toString(16).padStart(6, '0')}:${n}`);
+        return { ok: true, error: null, ...info, maps, materials: mats.map((m) => m.type), top, ktx2: getKtx2Support(), pixels: { covered, nearPalette: near, maxError } };
       },
     };
     state.transition('menu');
