@@ -1,0 +1,6 @@
+{
+  "assets": [
+    { "name": "prim_box", "kind": "primitive", "shape": "box", "size": [1, 1, 1], "collider": "trimesh" },
+    { "name": "prim_slab", "kind": "primitive", "shape": "box", "size": [4, 0.5, 4], "collider": "trimesh" }
+  ]
+}

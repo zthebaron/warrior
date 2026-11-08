@@ -214,6 +214,100 @@ legs), so the error is biased the right way. A measured margin, if one is ever w
 MEASUREMENTS.md first.
 status: PROVISIONAL
 
+## OQ-019 — Push the D-001 / D-003 / stair commits to PR 3?
+raised: 2026-11-08 by h4-asset-kit (H4 follow-up session)
+options: A push to origin/h4-asset-kit so PR 3's CI checks them | B commit locally only
+took: B
+because: the original H4 instruction was an explicit "Do not push", and the reviewer pushed PR 3
+  themselves. Pushing is reversible, but an explicit instruction outranks the protocol default.
+status: OVERRIDDEN by the reviewer, 2026-11-08 07:38: "push it to PR 3" (after a rebase onto main). Done.
+
+## OQ-020 — ACCENT_AREA floor: what anchors "findable"?
+raised: 2026-11-08 by h4-asset-kit
+options: A share of a torii at the near-band edge, 25 u from camera (0.505%) | B the seed's
+  measured red share (0.012%) | C wait for H2.5 player data before asserting any floor
+took: A, frozen as a number in assets/src/accent.json, labelled PROVISIONAL in the Style Bible
+because: B is the value D-001 showed fails, so it cannot be a findability floor; C leaves the
+  floor D-003 asked for unenforced. A rests on a STYLE-BIBLE §3 rule (the next waypoint reads as
+  a near form) plus a measurement, and H2.5 can replace it with one number in accent.json.
+status: OVERRIDDEN by D-006 (no ceiling; a floor measured at scanning distance — see OQ-026..028)
+
+## OQ-021 — ACCENT_AREA ceiling: what anchors "dominates"?
+raised: 2026-11-08 by h4-asset-kit
+options: A ink-black's seed share, the least-used ramp value (5.08%) | B a multiple of the
+  measured torii share | C the old 1%
+took: A, read from reference/palette.json at run time
+because: C is the withdrawn number; B is circular (the asset sets its own limit). A says the
+  accent may never cover more of the frame than any structural value of the ramp does, so it
+  stays a signal. Crossed only with the player within ~2 m of the gate (5.14% at 2 m).
+status: OVERRIDDEN by D-006 (no ceiling; a floor measured at scanning distance — see OQ-026..028)
+
+## OQ-022 — ACCENT_AREA: assert at one framing or along the whole approach?
+raised: 2026-11-08 by h4-asset-kit
+options: A only at the canonical framing, 6 m before each torii (D-003's "next torii ~6m ahead")
+  | B at every distance along the approach
+took: A
+because: share is ~inverse-square in distance (9% at 0 m, 0.15% at 40 m), so B fails every gate
+  at both ends by construction. The rule is about the frame in which the player looks FOR the
+  next gate; walking through one is not a violation. The full curve is recorded, not asserted.
+status: OVERRIDDEN by D-006 (no ceiling; a floor measured at scanning distance — see OQ-026..028)
+
+## OQ-023 — ACCENT_CONTRAST: add a lightness floor beyond D-001's dE2000 + chroma?
+raised: 2026-11-08 by h4-asset-kit
+options: A dE2000 + chroma only, as D-001 worded it | B also require L* >= wash-mid (42.7)
+took: B
+because: measured: dark #5a0000 clears dE2000 (24.5) and chroma (45) yet is exactly D-001's
+  "another dark shape". dE2000 also compresses large chroma gaps, so a flat dE can't separate
+  the two cases. Thresholds are derived from palette.json (2x ramp step, 3x max chroma).
+status: PROVISIONAL
+
+## OQ-024 — Which accent candidate ships until H2.5?
+raised: 2026-11-08 by h4-asset-kit
+options: vermilion_a #e34234 | vermilion_b #ef5b3b | vermilion_c #c8371f
+took: vermilion_a
+because: it is the reference vermilion D-001 named. All three pass, and `?accent=<name>` switches
+  them in place, so the default only decides what CI goldens show. Changing it is one line in
+  assets/src/accent.json plus re-recorded goldens.
+status: PROVISIONAL
+
+## OQ-025 — Merge origin/main into h4-asset-kit?
+raised: 2026-11-08 by h4-asset-kit
+options: A merge (picks up PHASE-0-DECISIONS, Q4 par_time removal, this file) | B stay on the old base
+took: A (merge commits 3f89647, 86be6b4; both clean, playtest green after)
+because: PR 3 targets main, implemented_by has to be written in PHASE-0-DECISIONS (only on main),
+  and testing against main's Q4 schema is what CI will run once merged.
+status: PROVISIONAL
+
+## OQ-026 — ACCENT_AREA floor: where does findability "actually fail" without a person to ask?
+raised: 2026-11-08 by b6-accent-floor (kit)
+options: A the share where the accent vanishes (200 m) | B the share where its largest connected blob
+  falls below the seed red's observed failure area (0.012% = 27.6 px at 640x360) | C wait for H2.5
+took: B, the last sample above it: 90 m, 0.0204%
+because: A is visibility, not findability: one pixel is not found. B anchors on the only observed failure
+  (D-006 names it), and measures the blob, not total pixels, because at 100 m the posts fracture into
+  18 px pieces while the total stays higher (52 px). C leaves D-006's floor unenforced. H2.5 can replace
+  the number in accent.json; the curve gives it the distances to show.
+status: PROVISIONAL
+
+## OQ-027 — ACCENT_AREA: from where is the next gate scanned for?
+raised: 2026-11-08 by b6-accent-floor (kit)
+options: A a fixed distance before each gate | B the previous anchor (previous torii, else spawn), camera
+  facing the gate | C every point along the approach
+took: B
+because: Q3 makes the torii the checkpoint, so the previous torii is where a player arrives and looks for
+  the next one; that is the hardest real scanning distance, and it turns the rule into a level-design check
+  on gate spacing. A is what D-006 replaced. C fails by construction at the far end of any long segment.
+status: PROVISIONAL
+
+## OQ-028 — ACCENT_AREA: count the whole frame's accent, or only the target gate's?
+raised: 2026-11-08 by b6-accent-floor (kit)
+options: A all accent pixels in the frame | B only the target gate's (render with and without it)
+took: B
+because: measured, A is wrong. Scanning from the x=50 gate puts that gate in the frame, so A reported 9.04%
+  for the x=88 gate, which is the near gate's area. B keeps real occlusion (a nearer gate hiding it counts
+  against it) and credits no other gate. Cost: two renders per gate.
+status: PROVISIONAL
+
 ## OQ-029 — D-007: batch the landing mark into an existing draw call, or exempt the budget under the flag?
 raised: 2026-11-08 by phase0-spec
 options: A batch | B exempt the Tier-1 assertion when the flag is set | C neither: show it stays under budget

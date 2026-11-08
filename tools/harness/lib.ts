@@ -245,6 +245,20 @@ declare global {
       setCamera(pos: Vec3, target: Vec3): void;
       releaseCamera(): void;
       respawnAt(pos: Vec3, facing: number, tick: number): Snapshot;
+      setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;
+      renderTorii(bg: string, cam: Vec3, target: Vec3): Promise<{ ok: boolean; error: string | null }>;
+      startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+      assetProbe(name: string): Promise<{
+        ok: boolean;
+        error: string | null;
+        calls: number;
+        triangles: number;
+        maps: { width: number; height: number; compressed: boolean; format: number; mipmaps: number; colorSpace: string }[];
+        materials: string[];
+        top: string[];
+        ktx2: Record<string, boolean> | null;
+        pixels: { covered: number; nearPalette: number; maxError: number };
+      }>;
     };
   }
 }

@@ -1,6 +1,101 @@
 {
+  "generated_by": "tools/assets/build.mjs",
   "assets": [
-    { "name": "prim_box",  "kind": "primitive", "shape": "box", "size": [1, 1, 1],   "collider": "trimesh" },
-    { "name": "prim_slab", "kind": "primitive", "shape": "box", "size": [4, 0.5, 4], "collider": "trimesh" }
+    {
+      "name": "prim_box",
+      "kind": "primitive",
+      "shape": "box",
+      "size": [
+        1,
+        1,
+        1
+      ],
+      "collider": "trimesh"
+    },
+    {
+      "name": "prim_slab",
+      "kind": "primitive",
+      "shape": "box",
+      "size": [
+        4,
+        0.5,
+        4
+      ],
+      "collider": "trimesh"
+    },
+    {
+      "name": "kit_rock_mass",
+      "kind": "mesh",
+      "file": "kit_rock_mass.glb",
+      "source": "assets/src/kit_rock_mass.py",
+      "sha256": "c1b264ba34c351d7469400d9619c21f257647cd29ed6c403b69b5e3cf1e3dc38",
+      "collider": "trimesh",
+      "triangles": 216,
+      "bytes": 3460,
+      "bytes_export": 16032,
+      "bbox": {
+        "min": [
+          -4.29814,
+          0,
+          -2.13188
+        ],
+        "max": [
+          4.25926,
+          12,
+          2.11715
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_torii",
+      "kind": "mesh",
+      "file": "kit_torii.glb",
+      "source": "assets/src/kit_torii.py",
+      "sha256": "07956ca0c846fb091765fbb0711d0ced7b7ca117eea865a734808c9bde2c4a74",
+      "collider": "trimesh",
+      "triangles": 108,
+      "bytes": 2436,
+      "bytes_export": 9120,
+      "bbox": {
+        "min": [
+          -0.31,
+          0,
+          -3.6
+        ],
+        "max": [
+          0.31011,
+          5.34979,
+          3.6
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    }
   ]
 }
