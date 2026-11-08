@@ -93,6 +93,7 @@ export interface Snapshot {
   pstate: string;
   grounded: boolean;
   platforms: { id: string; pos: Vec3 }[];
+  hazards: { index: number; type: string; pos: Vec3 }[];
   checkpoints: number[];
   deaths: number;
   lastDeath: Vec3 | null;

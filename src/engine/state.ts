@@ -32,9 +32,18 @@ export class StateMachine {
     return states.includes(this.current);
   }
 
-  /** The only question physics, input and gameplay should ask: may the simulation advance? */
+  /** May the PLAYER simulation advance (input, character, rules)? Only in `play`. */
   simulating(): boolean {
     return this.current === 'play';
+  }
+
+  /**
+   * Does the WORLD clock run? In `play` and in `death` (D-004): the world keeps moving while you are
+   * dead, so you respawn at a new phase and read the crow. Frozen in `pause`, `menu`, `loading`
+   * and `results`. Counted in fixed ticks, never wall time, so replays stay deterministic.
+   */
+  worldRunning(): boolean {
+    return this.current === 'play' || this.current === 'death';
   }
 
   can(to: GameState): boolean {

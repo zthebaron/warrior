@@ -355,12 +355,14 @@
               "required": [
                 "path",
                 "speed",
-                "phase"
+                "phase",
+                "size"
               ],
               "properties": {
                 "path": true,
                 "speed": true,
-                "phase": true
+                "phase": true,
+                "size": true
               }
             }
           },

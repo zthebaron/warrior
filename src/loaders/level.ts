@@ -77,6 +77,7 @@ export interface ManifestAsset {
 export const LEVEL_VISUAL = {
   defaultColor: 0xb8b2a6,
   platformColor: 0x8fa3b8,
+  hazardColor: 0x2a2622,   // greybox: patrollers and hazard volumes read as dark ink masses
   tagColors: { goal_pad: 0x3fd08f, spawn: 0xd9c27a, test: 0xa89a8a } as Record<string, number>,
   checkpointColor: 0x6fb3ff,
   checkpointSize: [1.2, 0.06, 1.2] as const,
@@ -186,7 +187,8 @@ interface PlatformInstance {
   body: RigidBody;
   collider: Collider;
   mesh: THREE.Mesh;
-  time: number;
+  // prev/curr are a per-tick cache derived from the world clock (render interpolation and the
+  // carry delta). Neither is authoritative: both are recomputed from t every tick (B-12, D-004).
   prev: THREE.Vector3;
   curr: THREE.Vector3;
   delta: THREE.Vector3;
@@ -200,14 +202,25 @@ export interface LevelInstance {
   /** Meshes for ray picking (teleport-to-cursor). */
   pickables: THREE.Object3D[];
   fallY: number | null;
-  /** Advance moving platforms by one fixed tick (call before the player moves). */
-  fixedUpdate(dt: number): void;
-  /** Interpolate platform visuals. */
+  /**
+   * Pose every moving thing (platforms, patrollers) at world time `t`. Pure in t: nothing moving
+   * keeps state of its own, so a level's motion is fully determined by the clock (B-12, Q6 part 4).
+   * Call once per fixed tick, before the player moves.
+   */
+  fixedUpdate(t: number, dt: number): void;
+  /** Interpolate visuals between the last two posed ticks. */
   render(alpha: number): void;
+  /**
+   * Index of the hazard whose volume the player's capsule box overlaps at the last posed tick, or
+   * -1. Q6 part 1: touching a hazard is death, exactly like falling. Fall planes are not volumes.
+   */
+  hazardHit(feet: Vec3Like, radius: number, height: number): number;
   /** Per-tick displacement of a platform collider, or null if it is not a platform. */
   platformDelta(collider: Collider): Vec3Like | null;
   /** Current platform centres by id (debug / harness). */
   platformPositions(): { id: string; pos: Vec3 }[];
+  /** Current hazard-volume centres by hazard index (debug / harness; PHASE_SWEEP reads these). */
+  hazardPositions(): { index: number; type: HazardDef['type']; pos: Vec3 }[];
   dispose(): void;
 }
 
@@ -231,6 +244,29 @@ function ease(kind: PlatformDef['easing'], u: number): number {
     case 'step': return u < LEVEL_VISUAL.stepLegs ? 0 : 1;
     default: return u;
   }
+}
+
+/**
+ * Patroller position at world time t: a pure function of (path, speed, phase, t), with no stored
+ * state. It ping-pongs along the polyline at `speed` u/s; one loop (out and back) is 2·length, and
+ * `phase` is the start offset as a fraction of that loop (OQ-012).
+ */
+export function patrollerAt(path: Vec3[], speed: number, phase: number, t: number, out: THREE.Vector3): THREE.Vector3 {
+  const lens = path.slice(1).map((b, i) => Math.hypot(b[0] - path[i]![0], b[1] - path[i]![1], b[2] - path[i]![2]));
+  const total = lens.reduce((a, b) => a + b, 0);
+  if (!(total > 0)) return out.set(...path[0]!);
+  const s = (((phase + (t * speed) / (2 * total)) % 1) + 1) % 1; // [0,1) around the loop
+  let d = s < 0.5 ? s * 2 * total : (1 - s) * 2 * total; // distance from path[0]
+  for (let i = 0; i < lens.length; i++) {
+    const len = lens[i]!;
+    if (d <= len || i === lens.length - 1) {
+      const a = path[i]!, b = path[i + 1]!;
+      const u = len > 0 ? Math.min(d / len, 1) : 0;
+      return out.set(a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u);
+    }
+    d -= len;
+  }
+  return out.set(...path[0]!);
 }
 
 function pointOnPath(path: Vec3[], u: number, out: THREE.Vector3): THREE.Vector3 {
@@ -329,7 +365,22 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
     mesh.position.copy(start);
     root.add(mesh);
     pickables.push(mesh);
-    return { def, body, collider, mesh, time: 0, prev: start.clone(), curr: start.clone(), delta: new THREE.Vector3() };
+    return { def, body, collider, mesh, prev: start.clone(), curr: start.clone(), delta: new THREE.Vector3() };
+  });
+
+  // hazard volumes: patrollers (moving, posed from the clock) and static boxes (pos + size)
+  interface HazardVolume { index: number; def: HazardDef; half: THREE.Vector3; prev: THREE.Vector3; curr: THREE.Vector3; mesh: THREE.Mesh }
+  const volumes: HazardVolume[] = [];
+  (data.hazards ?? []).forEach((def, index) => {
+    if (def.type === 'fall' || !def.size) return;
+    const isPatroller = def.type === 'patroller';
+    if (!isPatroller && !def.pos) return;
+    const start = isPatroller ? patrollerAt(def.path!, def.speed!, def.phase!, 0, new THREE.Vector3()) : new THREE.Vector3(...def.pos!);
+    const mesh = new THREE.Mesh(boxGeo, mat(V.hazardColor));
+    mesh.scale.set(...def.size);
+    mesh.position.copy(start);
+    root.add(mesh);
+    volumes.push({ index, def, half: new THREE.Vector3(...def.size).multiplyScalar(0.5), prev: start.clone(), curr: start.clone(), mesh });
   });
 
   // checkpoints (visual only)
@@ -369,23 +420,40 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
     debugRoot,
     pickables,
     fallY,
-    fixedUpdate(dt) {
+    fixedUpdate(t, dt) {
       for (const p of platforms) {
-        p.time += dt;
-        p.prev.copy(p.curr);
-        pointOnPath(p.def.path, ease(p.def.easing, platformParam(p.def, p.time)), p.curr);
+        pointOnPath(p.def.path, ease(p.def.easing, platformParam(p.def, t - dt)), p.prev);
+        pointOnPath(p.def.path, ease(p.def.easing, platformParam(p.def, t)), p.curr);
         p.delta.subVectors(p.curr, p.prev);
         p.body.setNextKinematicTranslation(p.curr);
+      }
+      for (const h of volumes) {
+        if (h.def.type !== 'patroller') continue;
+        patrollerAt(h.def.path!, h.def.speed!, h.def.phase!, t - dt, h.prev);
+        patrollerAt(h.def.path!, h.def.speed!, h.def.phase!, t, h.curr);
       }
     },
     render(alpha) {
       for (const p of platforms) p.mesh.position.lerpVectors(p.prev, p.curr, alpha);
+      for (const h of volumes) h.mesh.position.lerpVectors(h.prev, h.curr, alpha);
+    },
+    hazardHit(feet, radius, height) {
+      for (const h of volumes) {
+        const c = h.curr, e = h.half;
+        if (feet.x + radius > c.x - e.x && feet.x - radius < c.x + e.x &&
+            feet.z + radius > c.z - e.z && feet.z - radius < c.z + e.z &&
+            feet.y + height > c.y - e.y && feet.y < c.y + e.y) return h.index;
+      }
+      return -1;
     },
     platformDelta(collider) {
       return byHandle.get(collider.handle)?.delta ?? null;
     },
     platformPositions() {
       return platforms.map((p, i) => ({ id: p.def.id ?? `platforms[${i}]`, pos: [p.curr.x, p.curr.y, p.curr.z] }));
+    },
+    hazardPositions() {
+      return volumes.map((h) => ({ index: h.index, type: h.def.type, pos: [h.curr.x, h.curr.y, h.curr.z] }));
     },
     dispose() {
       physics.removeBody(fixed);
