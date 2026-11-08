@@ -870,3 +870,57 @@ The crow is the one exception and it is the right one: Q5 named it the riskiest 
 the whole design, which outranks any move.
 
 implemented_by: c03fe4a (OQ-042: RECOVERABLE_MOVES = [ground], "unrecoverable within the segment" in the lint messages), aa55016 (OQ-043: CHAPTER_RISKIEST) — branch d011-d012, PR #8
+
+## D-014 — Chapter 1 shipped unreachable. "Playable" was never defined. FINDING
+
+Tim played the vertical slice, reported 15 s and "I don't see any crows." Both are explained by
+one line:
+
+```
+src/main.ts:202
+const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
+```
+
+`?level=` is honoured **only in harness mode**. Normal play always loads `GAME_RULES.startLevel`,
+still `'00-gym'`. The menu even says so — *"WARRIOR — H2 gym"*. Chapter 1 merged to main and is
+reachable by the nav bot and by nobody else.
+
+So the 15 s was the gym, not chapter 1, and the crow comparison was never made. Both earlier
+readings of that data were wrong.
+
+### What let it through
+
+Every gate passed, and each was measuring something true:
+
+- `PHASE_SWEEP`, `HAZARD_AT_CHECKPOINT`, the linter, the visual goldens — all run the level
+  **through the harness**, which sets `HARNESS_MODE` and therefore *can* reach it
+- `CHAPTER-1-MEASURED.md` reports a real 19.75 s bot clear — also via the harness
+- CI was green on both levels
+
+Nothing in the stack asks **"can a person get to this level?"** The build verified the level
+exhaustively and never verified that the level is reachable from the game's own front door. That
+is D-013's pattern again — every signal green, measuring the wrong property — but at the level of
+the *product* rather than a tool or a cue.
+
+### The root cause is a missing definition
+
+`PROMPT-CHAPTER-1.md` called chapter 1 "the first playable thing" and never said what playable
+means. The harness definition — *the bot can complete it* — was the only one written down, so it
+is the only one that got enforced.
+
+**Define it:** a level is playable when a person who loads the game with no query string and no
+documentation can reach it and finish it. Until that is true, a level is *authored*, not shipped.
+
+### Fixes, smallest first
+
+1. **Now:** honour `?level=` outside harness mode. A dev affordance, no effect on defaults,
+   goldens or CI.
+2. **Now:** `GAME_RULES.startLevel` → `01-lower-stair`. The gym is a test fixture; it should not
+   be what a player meets. Update the menu string, which still says "H2 gym".
+3. **Before chapter 2:** chapter progression — finishing a chapter loads the next. Without it,
+   every future chapter ships unreachable by exactly this route.
+4. **The gate that would have caught it:** a harness check that loads the game **with no query
+   string**, plays to the end, and asserts which level it reached. Call it `REACHABLE`. It is the
+   only check in the suite that would run as a player rather than as the harness.
+
+implemented_by:
