@@ -47,6 +47,30 @@ unproven part of the design, and movement is already proven by the gym. There is
 - ambient crows, if any, **perch and never lift off** — Q2a makes any other translation a false
   positive in the one channel that means *go now*
 
+## Author each segment against a picture, not against the schema alone (D-009)
+
+The original Sumiro build generated up to 8 concept images per level from the established art
+style, then built the scene from the concept. We have a Style Bible that governs the *global* look
+and **no per-level visual target at all**, so without this step chapter 1 gets authored from the
+schema against no picture. That is a real hole and this is where it closes.
+
+Before authoring each segment, generate a concept image for it:
+
+- derived **from** `STYLE-BIBLE.md` and the locked seed frames — it is a *subordinate* artifact,
+  not a new source of truth. Where a concept image and the Style Bible disagree, the Style Bible
+  wins and the image is regenerated. Precedence matters here; this build has been bitten twice by
+  documents competing for authority.
+- the composition is the testable part: §5 requires a dark cliff mass on one side, a bright void on
+  the other, and the navigable path on the seam between them. A concept image either shows that or
+  it does not.
+- use whichever generator is to hand — `FAL_KEY` is in `.env`, and the playbook routes concept art
+  to GPT Image. Keep prompts and seeds in the repo beside the images so a segment's target is
+  reproducible.
+- save to `docs/build-log/chapter-1/concepts/`.
+
+Greybox still applies: the concept is a target for **layout and composition**, not for textures or
+shading. You are matching where the mass and the void and the path go, not what they look like.
+
 ## Everything must pass
 
 ```
