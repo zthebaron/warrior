@@ -10,6 +10,10 @@ import type { Collider, KinematicCharacterController, RigidBody } from '@dimforg
 import type { Physics, Vec3Like } from '../engine/physics';
 
 export const TUNING = {
+  // --- presentation (feel test) ---
+  landingMark: 0,             // 1 = ink disc under the player (B-3, D-007). Default OFF; ?landingmark=on sets it at boot,
+                              // and the ~ cheat console flips it in place during the H2.5 feel test.
+
   // --- body ---
   capsuleHalfHeight: 0.6,     // m, cylinder half-height (total height = 2*(halfHeight+radius) = 1.9m). Respawn to apply.
   capsuleRadius: 0.35,        // m. Respawn to apply.

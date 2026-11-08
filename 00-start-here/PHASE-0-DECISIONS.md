@@ -439,10 +439,16 @@ Measured facts it must use (not invent):
 | goal height tolerance | 2.0 m | `GAME_RULES.goalHeightTolerance` |
 | player capsule radius | 0.35 m | `TUNING.capsuleRadius` |
 | player capsule half-height | 0.6 m → total height 1.9 m | `TUNING.capsuleHalfHeight` |
-| patroller extent | `size` (vec3 half-extents) | schema |
+| patroller extent | `size` (vec3, **FULL** extents — halve it) | schema; `tools/lint-level.mjs` line 40 |
 | patroller route | `path`, 2-12 points | schema |
 
 ### Four things the obvious implementation gets wrong
+
+> **Correction (OQ-017).** This section originally called `size` *half-extents*. It is **full**
+> extents — `lint-level.mjs` states so and halves it before use. The implementer trusted the code
+> over this prose and got it right, which is `CLAUDE.md`'s precedence rule working as written:
+> where prose and a linter disagree, the linter holds and the prose is the bug. Nothing shipped
+> wrong; the spec above is corrected rather than the code.
 
 **1. Both volumes need inflating, not just one.** The test is not "does the `path` polyline come
 within 2.0 m of the torii." A patroller is a box, not a point on a line, and the player is a
@@ -541,3 +547,63 @@ Do not set it from the values above, which are all near-field.
 
 implemented_by: 29b41c0 (floor at scanning distance in the `accent` stage; curve + swatches against the ramp, tools/harness/accent-floor.ts) — branch b6-accent-floor, stacked on PR 3. Floor provisional: OQ-026..028.
 
+
+## D-007 — Landing mark (B-3): the constraints, before the code
+
+Q2b put the landing mark behind a default-off flag so the H2.5 feel test decides it. Three things
+are not obvious, and one of them breaks CI if missed.
+
+**1. It must not imply a light source.** §10 test 1 is "can you tell where the light is?" So: a
+hard-edged flat disc directly beneath the capsule, no softness, no penumbra, no directional
+offset. The moment it has a soft edge or sits off-centre it is a shadow, and §1 and §9 forbid
+shadows. Colour comes from the palette — `ink-black #20201e` or `ink-deep #383838` — never a new
+value, and it is **not** the accent, so it does not touch `ACCENT_CONTRAST` or `ACCENT_AREA`.
+
+**2. Turning it on changes `renderer.info` and will fail the Tier-1 budgets.** The harness
+asserts draw calls, and adding a per-frame mesh adds one. Default-off keeps CI and the visual
+goldens untouched, which is the mechanical reason default-off matters, not just the political one.
+But the feel test runs with it **on**, so either batch it into an existing draw call or give the
+budget assertion an explicit exemption when the flag is set. Decide that before writing it, or the
+first toggled run reports a budget regression that is not one.
+
+**3. It answers "how far down is the ground," not "where will I land."** Q2b specified a mark
+*straight down under the player*, which reports current ground distance. A landing *predictor*
+integrates ballistic motion and marks the arrival point — a different and stronger affordance.
+Keep what Q2b specified. But record the distinction now, because if the feel test comes back
+"still cannot judge depth," the correct next move is the predictor, **not a bigger dot.**
+
+Flag convention: follow the accent's `?accent=<name>` precedent with `?landingmark=on`, plus a
+`TUNING` constant so it is switchable in place during the feel test. Scale the disc by the
+downward raycast distance — `physics.castRay` already exists for the camera rig, so no new system.
+
+<<<<<<< Updated upstream
+implemented_by: bf19ded
+=======
+implemented_by:
+
+## D-008 — A water hazard needs a kill volume or it is not a hazard (OQ-016). DECIDED
+
+`HazardDef` makes `y`, `pos` and `size` all optional, so a `water` hazard carrying only a height
+has no kill volume and never kills anything. The schema currently permits a hazard that does
+nothing, which is worse than forbidding it: a level author gets a water hazard that silently
+isn't one, and the linter says nothing.
+
+Q2c restricted water to a flat wash for a **visual** reason — §9.8 forbids a reflective surface —
+not to demote it to decoration. It is still a hazard, rendered flat.
+
+So water must carry one of two things, and the linter errors when it carries neither:
+
+- a **plane**: `y`, behaving like `fall` — anything below it dies, which is what a flat wash at a
+  fixed level naturally means; or
+- a **volume**: `pos` + `size` (full extents), for a bounded pool.
+
+New code `NO_KILL_VOLUME`, at error severity, alongside the existing `NO_PATROL_SIZE` — which
+already applies the same principle to patrollers and whose message is the right precedent: *"its
+kill volume. There is no default (no unmeasured numbers)."*
+
+The general rule worth extracting: **a hazard type that can be authored with no effect is a
+schema defect, not an author error.** Audit `spike` and `crush` for the same hole while
+implementing this.
+
+implemented_by:
+>>>>>>> Stashed changes
