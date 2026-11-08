@@ -384,3 +384,39 @@ the schema. Nothing stops an agent adding `health` to the player entity, and no 
 to prevent it.
 
 implemented_by: 1191a34 (lint:not-list), 19234ab (schema cut)
+
+## D-004 — The world clock must advance during the death state. DECIDED
+
+Found while verifying the ground for B-7, before the patroller runtime was written.
+
+The good part first: `runTimeSec = 0` is inside `install()` in `src/main.ts`, which is called only
+from `startLevel()` and `hotReload()`. The respawn path in `onRender` teleports the player and
+nothing more. **The world clock is therefore not reset on death**, and Q6 part 4 is achievable by
+reading it.
+
+The problem: `runTimeSec += dt` is guarded by `if (!state.is('play')) return;`, so the clock
+**freezes** for the whole death state. A hazard reading it would resume at exactly the phase it
+held when the player died — every single time.
+
+That is a third behaviour, and nobody chose it:
+
+| behaviour | what the player sees | status |
+|---|---|---|
+| clock runs during death | you respawn at a new phase, wait for the crow, go | **Q6 part 4 as written** |
+| clock resets to zero | every attempt identical from the start | Q6 option C, **rejected** |
+| clock frozen at death | every attempt identical from the death phase | **what the code does today** |
+
+Frozen is not a compromise between the other two — it delivers the *outcome* C was rejected for.
+Q6 rejected C because per-respawn repeatability makes timing memorisable instead of readable, and
+freezing reproduces that exactly while also giving each checkpoint a different fixed phase
+depending on where the player happened to die.
+
+It would also have made `PHASE_SWEEP` (B-7) a test of something the game never produces: the
+sweep would exercise eight arrival phases while the running game only ever delivers one.
+
+**Decision: advance `runTimeSec` during the `death` state.** Keep it frozen during `pause` —
+pausing should not let the world move, and a play-time clock rather than a wall-time clock keeps
+replays deterministic. The gate becomes "advance in `play` or `death`, not in `pause`, `menu`,
+`loading` or `results`."
+
+implemented_by:

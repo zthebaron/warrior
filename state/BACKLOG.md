@@ -16,6 +16,8 @@ Verified against the repository on 2026-11-08, not taken from any report.
 | B-8 | `HAZARD_AT_CHECKPOINT` lint rule | Q6 | MISSING | — |
 | B-9 | Respawn gated on a furthest-index counter | Q6 | MISSING | `src/main.ts` reassigns `respawn` for any checkpoint in radius |
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
+| B-12 | Patroller runtime — position as a pure function of `phase + t·speed`, no per-hazard mutable state | Q6 | MISSING | no `patrol` identifier anywhere in `src/`; only the loader type exists |
+| B-13 | World clock advances during the `death` state, not during `pause` | D-004 | MISSING | `runTimeSec += dt` is behind `if (!state.is('play')) return` in `src/main.ts` |
 
 **B-7 is unblocked:** B-1 landed, so the schema now carries `phase` and `speed`. Note that the patroller has a
 schema and lint presence but **no runtime yet**: nothing moves or kills. That runtime is the first half of B-7.
