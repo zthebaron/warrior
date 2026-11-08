@@ -11,3 +11,5 @@ dist-harness/
 .env
 .env.*
 !.env.example
+
+assets/build/

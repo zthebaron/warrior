@@ -1,0 +1,7 @@
+{
+  "basis": "Tier-1 per-asset ceilings, each set AT the value measured from the shipped .glb on 2026-11-08 (H4). A ratchet: raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'H4 asset budgets'.",
+  "assets": {
+    "kit_rock_mass": { "triangles": 310, "bytes": 3984, "textures": 1, "texture_px": 32, "materials": 1, "draw_calls": 1 },
+    "kit_torii": { "triangles": 108, "bytes": 2412, "textures": 1, "texture_px": 32, "materials": 1, "draw_calls": 1 }
+  }
+}
