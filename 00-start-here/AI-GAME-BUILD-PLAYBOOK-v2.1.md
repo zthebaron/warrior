@@ -376,8 +376,16 @@ list of things agents may never do).
 **Test:** describe the game in 20 seconds. If you can't, it isn't scoped.
 **🚦 GATE A — SCOPE LOCKED.**
 
-### ☐ PHASE 1 — THE SEED VIDEO · *2–3 hours*
-6–10 candidates on fal (~$40). Judge on four criteria only: readable silhouette at 5% screen
+### ☒ PHASE 1 — THE SEED VIDEO · ⛔ CLOSED — SEED LOCKED (fcf673a)
+> **⛔ CLOSED — SEED LOCKED (fcf673a). Do not run this phase.** The seed is
+> `reference/seed/seed.mp4` (Runway sample 4, 12.097 s, LFS). It was locked in commit `fcf673a`,
+> and two artifacts derive from it: `reference/palette.json` (k-means k=8 over its 36 frames)
+> and `00-start-here/STYLE-BIBLE.md` (from its 6 hero frames). Generating candidates now can only
+> drift from the visual target or re-open it. Re-opening it invalidates both artifacts. Do that
+> only by an explicit, committed decision. The original phase text below is kept for the record.
+> Its prompt is closed in Prompt Pack §P1.1.
+
+~~*2–3 hours.*~~ *(record only)* 6–10 candidates on fal (~$40). Judge on four criteria only: readable silhouette at 5% screen
 height · buildable (blocky, reconstructable) geometry · under 8 dominant hues · shippable
 third-person camera. Pick **one**, commit to `reference/seed/`, no backup. Extract frames at
 3 fps plus 6 hero frames.

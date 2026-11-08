@@ -57,10 +57,18 @@ node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json  
 
 ## H1 — SEED VIDEO · 60 min · *the thesis itself*
 
-### H1.1 — Generate
+### H1.1 — Generate · ⛔ CLOSED — SEED LOCKED (fcf673a)
 
-**PASTE INTO FAL** *(Flux 3 Max video / Veo / Runway — run 6 variants, ~$40)*
-```
+> **⛔ CLOSED — SEED LOCKED (fcf673a). Do not run this prompt.** The seed is
+> `reference/seed/seed.mp4` (Runway sample 4, 12.097 s, LFS). It was locked in commit `fcf673a`,
+> and two artifacts derive from it: `reference/palette.json` (k-means k=8 over its 36 frames)
+> and `00-start-here/STYLE-BIBLE.md` (from its 6 hero frames). Generating variants now can only
+> drift from the visual target or re-open it. Re-opening it invalidates both artifacts. Do that
+> only by an explicit, committed decision. The prompt below is kept for the record and has no
+> destination. It matches Prompt Pack §P1.1, which is closed the same way.
+
+**⛔ CLOSED — DO NOT PASTE** *(was: PASTE INTO FAL · Flux 3 Max video / Veo / Runway · 6 variants, ~$40)*
+```closed-do-not-run
 A lone wandering <CHARACTER_ARCHETYPE> walks a narrow stone path along a sheer cliff face,
 high above a sea of mist. Third-person camera, behind and slightly above the figure at
 shoulder height, following smoothly — no crane moves, no cuts.

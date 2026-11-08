@@ -24,6 +24,7 @@ Each prompt is labelled with its **destination** in bold above the block. Paste 
 | **PASTE INTO GPT IMAGE** | ChatGPT image generation |
 | **PASTE INTO TRIPO** | Tripo AI upload prompt field |
 | **PASTE INTO ELEVENLABS / UDIO** | Audio generation |
+| **⛔ CLOSED — DO NOT PASTE** | Nowhere. The prompt is kept as a record of what was run. Re-opening it takes an explicit, committed decision (see the banner on the section). |
 
 Replace every `<ANGLE_BRACKET>` placeholder before pasting. `<PROJECT>` is your repo name, `<GAME>` your title.
 
@@ -64,10 +65,30 @@ the lane isolation rules, and the list of things agents may never do.
 
 # §P1 — THE SEED VIDEO
 
-### P1.1 — Seed video generation
+### P1.1 — Seed video generation · ⛔ CLOSED — SEED LOCKED (fcf673a)
 
-**PASTE INTO FAL** *(model: Flux 3 Max video / Veo / Runway — generate 6–10 variants)*
-```
+> **⛔ CLOSED — SEED LOCKED (fcf673a). Do not run this prompt.**
+>
+> - **Chosen seed:** `reference/seed/seed.mp4`, Runway sample 4, 12.097 s, 1920×1080, in LFS.
+>   It is a one-off and cannot be regenerated.
+> - **Locked by:** commit `fcf673a` ("art: lock the visual target — seed, palette, Style Bible").
+> - **Derived from it:** `reference/palette.json` (k-means k=8 over the 36 frames in
+>   `reference/seed/frames/`) and `00-start-here/STYLE-BIBLE.md` (drafted from the 6 hero
+>   frames in `reference/seed/hero/`).
+>
+> The whole visual target is anchored to that one video. Generating variants now can only
+> drift from it or re-open it. Re-opening it invalidates `palette.json` and `STYLE-BIBLE.md`
+> the same way a moveset change invalidates every measured MOVE budget.
+>
+> **To re-open:** make an explicit decision and record it in a commit. That commit must also
+> mark `palette.json` and `STYLE-BIBLE.md` superseded. Until then, the block below is kept for
+> the record only. It has no destination, so nothing should paste it.
+>
+> fal is not in the build dependency graph. Any later fal use is image-to-video on the locked
+> hero frames, for case-study media only.
+
+**⛔ CLOSED — DO NOT PASTE** *(was: PASTE INTO FAL · Flux 3 Max video / Veo / Runway · 6–10 variants)*
+```closed-do-not-run
 A lone wandering <CHARACTER_ARCHETYPE> walks a narrow stone path along a sheer cliff
 face, high above a sea of mist. Third-person camera, roughly behind and slightly above
 the figure at shoulder height, following smoothly — no crane moves, no cuts.
