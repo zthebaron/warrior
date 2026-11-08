@@ -31,7 +31,7 @@ jobs:
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
 
-      # schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> visual
+      # schema -> lint-level -> preflight -> nav -> replay -> chaos -> hazards -> counters -> visual
       # exit 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
       - run: npm run playtest
 

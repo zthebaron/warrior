@@ -98,6 +98,7 @@ export interface Snapshot {
   deaths: number;
   lastDeath: Vec3 | null;
   runTime: number;
+  inputTicks: number;
 }
 
 export interface Waypoint {
@@ -237,6 +238,9 @@ declare global {
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       setCamera(pos: Vec3, target: Vec3): void;
       releaseCamera(): void;
+      rules: { respawnDelaySec: number; fixedDt: number };
+      startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+      teleportPlayer(pos: Vec3): void;
     };
   }
 }

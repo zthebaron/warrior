@@ -160,3 +160,19 @@ because: a default would be an unmeasured number (CLAUDE.md). Static hazards wit
 crush, bounded water) use the same box-vs-capsule test. Crush's `period` still has no runtime meaning,
 so it is treated as a static volume until something decides what crush does.
 status: PROVISIONAL
+
+## OQ-014 — B-12/B-13 were implemented twice, in parallel. Which lands?
+raised: 2026-11-08 by b12-b13-world-clock-patroller
+options: A open a PR with this session's runtime | B drop it; land only what main lacks
+took: B
+because: 6dcc157 landed first and does more (platforms on the same clock, static hazard volumes).
+  Two runtimes for one decision is the drift D-002 exists to stop. What main lacked, and this branch
+  adds: (1) CI proof — harness stage `hazards` (fixture level; runtime vs an independent oracle to
+  1.8e-15u; touch = death; +0.8000s across death; new phase at respawn; pause frozen); (2) chaos
+  asserts the clock across every gym death; (3) a chaos bug D-004 exposed: it counted death ticks
+  as input, reporting "3600/3600" while playing 3360 frames (5 deaths x 48). The superseded runtime
+  commits were force-replaced on this branch (with lease). Cause: no claim on backlog items;
+  state/CLAIMS.jsonl is unbuilt, and claiming in a first commit message is only visible after the work.
+  Numbering note: PR 3 (h4-asset-kit) also used OQ-010..016; it is renumbered when it is rebased.
+status: PROVISIONAL
+

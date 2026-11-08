@@ -54,6 +54,8 @@ export interface HarnessSnapshot {
   grounded: boolean;
   platforms: { id: string; pos: Vec3 }[];
   hazards: { index: number; type: string; pos: Vec3 }[];
+  /** fixed ticks that consumed an input frame (every executed tick except `death` ticks) */
+  inputTicks: number;
   checkpoints: number[];
   deaths: number;
   lastDeath: Vec3 | null;
@@ -78,6 +80,10 @@ interface HarnessApi {
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   setCamera(pos: Vec3, target: Vec3): void;
   releaseCamera(): void;
+  rules: { respawnDelaySec: number; fixedDt: number };
+  /** Start a fixture level from JSON text (tools/harness/fixtures/), same validation as levels/. */
+  startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+  teleportPlayer(pos: Vec3): void;
 }
 
 declare global {
@@ -132,6 +138,9 @@ async function boot(): Promise<void> {
   // is a pure function of it (B-12). Reset only by install(), i.e. a level (re)load, never by death.
   let worldTick = 0;
   let deathTicksLeft = 0;
+  // Ticks that consumed an input frame. Since D-004 the world also ticks in `death` without reading
+  // input, so world ticks != input frames; the harness (chaos) needs this count to stay aligned.
+  let inputTicks = 0;
   const worldTime = (): number => worldTick * loop.dt;
   const tmpFeet = new THREE.Vector3();
   const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
@@ -275,6 +284,7 @@ async function boot(): Promise<void> {
     }
     profiler.begin('gameplay');
     const frame = input.sample(camRig.yaw, !tools.freeCamActive);
+    inputTicks++;
     level.fixedUpdate(worldTime(), dt);
     player.fixedUpdate(dt, frame);
     profiler.end('gameplay');
@@ -426,6 +436,7 @@ async function boot(): Promise<void> {
       deaths,
       lastDeath,
       runTime: worldTime(),
+      inputTicks,
     });
     // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
     // Mirrors GameLoop.frame's gate: ticks run while the world runs (play AND death, D-004), not in pause.
@@ -467,6 +478,23 @@ async function boot(): Promise<void> {
       },
       releaseCamera: () => {
         cameraOverride = null;
+      },
+      rules: { respawnDelaySec: GAME_RULES.respawnDelaySec, fixedDt: loop.dt },
+      startJson: async (text) => {
+        // Harness-only: run a FIXTURE level (tools/harness/fixtures/) that is not in levels/.
+        // Same parseLevel validation and install() as a level load; only the source differs.
+        state.transition('loading');
+        try {
+          install(parseLevel(text, 'harness fixture'));
+          state.transition('play');
+        } catch (err) {
+          showError(err);
+          state.transition('menu');
+        }
+        return { ok: state.is('play'), error: errorBanner.style.display === 'block' ? errorBanner.textContent : null };
+      },
+      teleportPlayer: (pos) => {
+        player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
       },
     };
     state.transition('menu');
