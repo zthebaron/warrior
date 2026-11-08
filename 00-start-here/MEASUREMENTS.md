@@ -174,9 +174,43 @@ colour):
 | goal | goal-pad torii against open sky | 1.471% |
 | scan | harness cam0, whole gym | 0.076% |
 
-**One torii at gameplay distance is ~2x the Q2 1% budget**, whatever its colour. Not changed
-here: Q2 is closed, and the levers (less accent on the torii: e.g. ink lower posts; or a budget
-defined at a stated camera distance) are a decision, not a measurement.
+One torii at gameplay distance was ~2x the then-current 1% budget, whatever its colour. Flagged,
+not adjusted; **D-003 withdrew the 1% budget** (its basis was an absence, not an area) and
+replaced it with ACCENT_AREA, below. (These shots are hand-placed; the exact follow rig gives
+2.30%, see D-003.)
+
+## D-003 accent area (2026-11-08)
+
+`ACCENT_AREA` (harness `accent` stage, every level, CI): for each kit_torii, the player 6 m
+before it along the critical path, camera at CAMERA_TUNING's rest pose (read from
+src/engine/camera.ts: arm 7 m, pivot 1.5 m, pitch 18 deg; fov 60), real level, real occlusion.
+Accent share of the frame must lie in the band:
+
+| bound | value | measured from |
+|---|---|---|
+| floor (findable) | **0.505%** | kit_torii with the gate 25.26 u from the camera — the STYLE-BIBLE 3 near-band edge. PROVISIONAL until H2.5 measures findability directly. Frozen as a number in accent.json. |
+| ceiling (not dominant) | **5.08%** | the smallest share in reference/palette.json (ink-black), read at run time |
+
+Distance curve, x=50 torii, default accent, exact follow rig
+(`node tools/harness/accent-renders.ts --area-curve` -> docs/build-log/accent/accent-area-curve.json):
+
+| player before gate | camera -> gate | accent share |
+|---|---|---|
+| 0 m | 7.6 m | 9.036% |
+| 2 m | 9.4 m | 5.139% (just over the ceiling) |
+| 4 m | 11.27 m | 3.313% |
+| **6 m (asserted)** | 13.18 m | **2.300%** |
+| 8 m | 15.11 m | 1.647% |
+| 12 m | 19.01 m | 0.970% |
+| 18.34 m | 25.26 m | 0.505% (= floor) |
+| 25 m | 31.87 m | 0.319% |
+| 30 m | 36.84 m | 0.234% |
+| 40 m | 46.8 m | 0.148% |
+
+Gym, asserted: torii x=50 **2.300%**, torii x=88 **2.247%**: in band. Negative proofs: framing
+at 1 m -> 6.658% / 6.564%, exit 1 (ceiling); at 25 m -> 0.319% / 0.296%, exit 1 (floor).
+The band is asserted only at the canonical 6 m framing; walking through a gate (9% at 0 m) is
+not a violation — the rule is about the frame in which the player is looking FOR the next one.
 
 ## Open (H4)
 

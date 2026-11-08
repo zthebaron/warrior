@@ -120,6 +120,69 @@ took: B
 because: both are derived from the decisions, measurements, style bible and linters, and say so in
 their own first paragraphs. Leaving them out (C) is how a conflict ends up resolved by whichever was
 read last. SPEC §7 is the one exception, because lint:not-list executes it.
+
+## OQ-010 — Push the D-001 / D-003 / stair commits to PR 3?
+raised: 2026-11-08 by h4-asset-kit (H4 follow-up session)
+options: A push to origin/h4-asset-kit so PR 3's CI checks them | B commit locally only
+took: B
+because: the original H4 instruction was an explicit "Do not push", and the reviewer pushed PR 3
+  themselves. Pushing is reversible, but an explicit instruction outranks the protocol default.
+status: OVERRIDDEN by the reviewer, 2026-11-08 07:38: "push it to PR 3" (after a rebase onto main). Done.
+
+## OQ-011 — ACCENT_AREA floor: what anchors "findable"?
+raised: 2026-11-08 by h4-asset-kit
+options: A share of a torii at the near-band edge, 25 u from camera (0.505%) | B the seed's
+  measured red share (0.012%) | C wait for H2.5 player data before asserting any floor
+took: A, frozen as a number in assets/src/accent.json, labelled PROVISIONAL in the Style Bible
+because: B is the value D-001 showed fails, so it cannot be a findability floor; C leaves the
+  floor D-003 asked for unenforced. A rests on a STYLE-BIBLE §3 rule (the next waypoint reads as
+  a near form) plus a measurement, and H2.5 can replace it with one number in accent.json.
+status: PROVISIONAL
+
+## OQ-012 — ACCENT_AREA ceiling: what anchors "dominates"?
+raised: 2026-11-08 by h4-asset-kit
+options: A ink-black's seed share, the least-used ramp value (5.08%) | B a multiple of the
+  measured torii share | C the old 1%
+took: A, read from reference/palette.json at run time
+because: C is the withdrawn number; B is circular (the asset sets its own limit). A says the
+  accent may never cover more of the frame than any structural value of the ramp does, so it
+  stays a signal. Crossed only with the player within ~2 m of the gate (5.14% at 2 m).
+status: PROVISIONAL
+
+## OQ-013 — ACCENT_AREA: assert at one framing or along the whole approach?
+raised: 2026-11-08 by h4-asset-kit
+options: A only at the canonical framing, 6 m before each torii (D-003's "next torii ~6m ahead")
+  | B at every distance along the approach
+took: A
+because: share is ~inverse-square in distance (9% at 0 m, 0.15% at 40 m), so B fails every gate
+  at both ends by construction. The rule is about the frame in which the player looks FOR the
+  next gate; walking through one is not a violation. The full curve is recorded, not asserted.
+status: PROVISIONAL
+
+## OQ-014 — ACCENT_CONTRAST: add a lightness floor beyond D-001's dE2000 + chroma?
+raised: 2026-11-08 by h4-asset-kit
+options: A dE2000 + chroma only, as D-001 worded it | B also require L* >= wash-mid (42.7)
+took: B
+because: measured: dark #5a0000 clears dE2000 (24.5) and chroma (45) yet is exactly D-001's
+  "another dark shape". dE2000 also compresses large chroma gaps, so a flat dE can't separate
+  the two cases. Thresholds are derived from palette.json (2x ramp step, 3x max chroma).
+status: PROVISIONAL
+
+## OQ-015 — Which accent candidate ships until H2.5?
+raised: 2026-11-08 by h4-asset-kit
+options: vermilion_a #e34234 | vermilion_b #ef5b3b | vermilion_c #c8371f
+took: vermilion_a
+because: it is the reference vermilion D-001 named. All three pass, and `?accent=<name>` switches
+  them in place, so the default only decides what CI goldens show. Changing it is one line in
+  assets/src/accent.json plus re-recorded goldens.
+status: PROVISIONAL
+
+## OQ-016 — Merge origin/main into h4-asset-kit?
+raised: 2026-11-08 by h4-asset-kit
+options: A merge (picks up PHASE-0-DECISIONS, Q4 par_time removal, this file) | B stay on the old base
+took: A (merge commits 3f89647, 86be6b4; both clean, playtest green after)
+because: PR 3 targets main, implemented_by has to be written in PHASE-0-DECISIONS (only on main),
+  and testing against main's Q4 schema is what CI will run once merged.
 status: PROVISIONAL
 
 ## OQ-010 — D-004 says the clock runs during death, but the respawn delay was counted in render-frame time

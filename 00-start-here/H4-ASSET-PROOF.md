@@ -229,10 +229,23 @@ anyway:
   approach, goal, scan). In the scan column seed_red is lost among the dark shapes; all three
   candidates read at a glance. Grey-box gym, not the STYLE-BIBLE render — judge separation, not
   look.
-- **Finding for the approver:** one torii at gameplay distance covers 2.06% of the frame, ~2x
-  Q2's 1% accent budget, for any colour. Left unchanged (Q2 is closed).
+- **Finding:** one torii at gameplay distance covered ~2% of the frame, ~2x the 1% accent
+  budget, for any colour. Flagged, not adjusted. **D-003 withdrew the 1% budget** and replaced
+  it with ACCENT_AREA (below).
 - Budgets raised +24 B per asset for the four new texture cells (MEASUREMENTS.md). Cold rebuild
   still byte-identical. Playtest green, goldens re-recorded (Linux again copied from Darwin).
+
+## D-003 — ACCENT_AREA replaces the 1% ceiling (follow-up, 2026-11-08)
+
+- Harness stage `accent` (between `assets` and `visual`; runs in CI with the playtest). Every
+  kit_torii in the level is framed by the REAL follow rig (constants parsed from
+  `src/engine/camera.ts`, not retyped) with the player 6 m before it along the critical path.
+  The accent's share of that frame must be in **[0.505%, 5.08%]**.
+- Floor 0.505% = a torii at the near-band edge (25 u from camera), PROVISIONAL until H2.5.
+  Ceiling 5.08% = ink-black's seed share, the least-used ramp value, read from palette.json.
+- Gym: 2.300% and 2.247%, PASS. Framing moved to 1 m: 6.66%, exit 1. Moved to 25 m: 0.32%, exit 1.
+- STYLE-BIBLE §2, §9 item 2 and §10 test 3 amended in place, marked D-001/D-003. Full distance
+  curve in MEASUREMENTS.md "D-003 accent area".
 
 ## stair_run_12 (PR 2) through the generic exporter
 
