@@ -57,13 +57,15 @@ export interface HarnessSnapshot {
   deaths: number;
   lastDeath: Vec3 | null;
   runTime: number;
+  /** fixed ticks that consumed an input frame — every tick except those spent in `death` */
+  inputTicks: number;
 }
 
 interface HarnessApi {
   version: string;
   seed: number;
   start(): Promise<{ ok: boolean; error: string | null }>;
-  /** n deterministic frames: one fixed tick each (only while simulating) + one render pass. */
+  /** n deterministic frames: one fixed tick each (while the world runs: play, death) + one render pass. */
   advance(n: number, renderEvery?: number): HarnessSnapshot;
   /** setInput(frame) then advance(1) — one round trip per tick for the bot. */
   step(frame: InputFrame | null, render: boolean): HarnessSnapshot;
@@ -77,6 +79,7 @@ interface HarnessApi {
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   setCamera(pos: Vec3, target: Vec3): void;
   releaseCamera(): void;
+  rules: { respawnDelaySec: number; fixedDt: number };
 }
 
 declare global {
@@ -129,6 +132,7 @@ async function boot(): Promise<void> {
   let respawn: { pos: Vec3; facing: number } = { pos: [0, 0, 0], facing: 0 };
   let deathTimer = 0;
   let runTimeSec = 0;
+  let inputTicks = 0; // fixed ticks that consumed an input frame (all but `death` ticks) — harness bookkeeping
   const tmpFeet = new THREE.Vector3();
   const levelId = (HARNESS_MODE && new URLSearchParams(location.search).get('level')) || GAME_RULES.startLevel;
   // Rule log for the playtest harness (cheap; kept in all builds).
@@ -223,18 +227,32 @@ async function boot(): Promise<void> {
   }
 
   // ---------- rules (checkpoints, goal, fall) — run inside the fixed tick ----------
+  const die = (f: THREE.Vector3): void => {
+    deathTimer = 0;
+    deaths++;
+    lastDeath = [f.x, f.y, f.z];
+    state.transition('death');
+  };
   const rulesTick = (dt: number): void => {
     if (!level || !player) return;
-    // Frame-stepping while paused runs ticks too; rule transitions only fire from `play`
-    // (a stepped fall is picked up on the first real tick after resuming).
-    if (!state.is('play')) return;
+    // The world clock (D-004): advances in `play` AND `death`, never in `pause` — frame-stepping
+    // while paused runs ticks for debugging but must not move the world's time.
+    if (!state.worldRunning()) return;
     runTimeSec += dt;
+    if (state.is('death')) {
+      // respawn on the fixed tick (was: on the render frame), so the death interval is exact ticks
+      deathTimer += dt;
+      if (deathTimer >= GAME_RULES.respawnDelaySec) {
+        const [x, y, z] = respawn.pos;
+        player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
+        camRig.snap(player.feet(tmpFeet));
+        state.transition('play');
+      }
+      return;
+    }
     const f = player.feet(tmpFeet);
     if (level.fallY !== null && f.y < level.fallY) {
-      deathTimer = 0;
-      deaths++;
-      lastDeath = [f.x, f.y, f.z];
-      state.transition('death');
+      die(f);
       return;
     }
     level.data.checkpoints.forEach((c, i) => {
@@ -253,9 +271,13 @@ async function boot(): Promise<void> {
   const onFixedUpdate = (dt: number): void => {
     if (!level || !player) return;
     profiler.begin('gameplay');
-    const frame = input.sample(camRig.yaw, !tools.freeCamActive);
     level.fixedUpdate(dt);
-    player.fixedUpdate(dt, frame);
+    // The player (and its input stream) only advances in `play`; during `death` the world ticks on
+    // without it (D-004). Input is not sampled while dead, so recordings/playback stay aligned.
+    if (!state.is('death')) {
+      player.fixedUpdate(dt, input.sample(camRig.yaw, !tools.freeCamActive));
+      inputTicks++;
+    }
     profiler.end('gameplay');
     profiler.begin('physics');
     physics.step(dt);
@@ -265,15 +287,6 @@ async function boot(): Promise<void> {
   };
 
   const onRender = (alpha: number, frameDt: number): void => {
-    if (state.is('death') && player) {
-      deathTimer += frameDt;
-      if (deathTimer >= GAME_RULES.respawnDelaySec) {
-        const [x, y, z] = respawn.pos;
-        player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
-        camRig.snap(player.feet(tmpFeet));
-        state.transition('play');
-      }
-    }
     profiler.begin('animation');
     level?.render(alpha);
     player?.render(alpha);
@@ -297,7 +310,7 @@ async function boot(): Promise<void> {
     profiler.endFrame();
   };
 
-  const loop = new GameLoop({ onFixedUpdate, onRender, shouldSimulate: () => state.simulating() });
+  const loop = new GameLoop({ onFixedUpdate, onRender, shouldSimulate: () => state.worldRunning() });
 
   const raycaster = new THREE.Raycaster();
   const tools = new DevTools({
@@ -413,12 +426,13 @@ async function boot(): Promise<void> {
       deaths,
       lastDeath,
       runTime: runTimeSec,
+      inputTicks,
     });
     // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
-    // Mirrors GameLoop.frame's gate — no ticks while not simulating (death delay, pause...).
+    // Mirrors GameLoop.frame's gate — ticks while the world runs (play, death: D-004), none in pause/menu.
     const advance = (n: number, renderEvery = 1): HarnessSnapshot => {
       for (let i = 0; i < n; i++) {
-        if (state.simulating()) loop.stepOnce();
+        if (state.worldRunning()) loop.stepOnce();
         skipRender = !(i === n - 1 || (renderEvery > 0 && loop.frameCount % renderEvery === 0));
         onRender(0, loop.dt);
         loop.frameCount++;
@@ -445,6 +459,7 @@ async function boot(): Promise<void> {
       snapshot,
       level: () => level?.data ?? null,
       tuning: TUNING,
+      rules: { respawnDelaySec: GAME_RULES.respawnDelaySec, fixedDt: loop.dt },
       rendererInfo: () => {
         const info = renderer.renderer.info;
         return { calls: info.render.calls, triangles: info.render.triangles, geometries: info.memory.geometries, textures: info.memory.textures };

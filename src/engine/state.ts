@@ -32,9 +32,19 @@ export class StateMachine {
     return states.includes(this.current);
   }
 
-  /** The only question physics, input and gameplay should ask: may the simulation advance? */
+  /** May the PLAYER act (input, character movement)? Only in `play`. */
   simulating(): boolean {
     return this.current === 'play';
+  }
+
+  /**
+   * Does the WORLD advance — fixed ticks, physics, platforms, hazards and the world clock? In `play`
+   * and in `death` (D-004): the world keeps moving while the player is dead, so a respawn lands at a
+   * new hazard phase, never the one they died at (Q6 rejected per-attempt repeatability). Stopped in
+   * `pause`, `menu`, `loading` and `results`; a play-time clock keeps replays deterministic.
+   */
+  worldRunning(): boolean {
+    return this.current === 'play' || this.current === 'death';
   }
 
   can(to: GameState): boolean {
