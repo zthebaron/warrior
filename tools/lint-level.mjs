@@ -142,7 +142,7 @@ const bodyHits=(b,p,r)=>b.hi[1]>p[1]&&b.lo[1]<p[1]+RESPAWN_RULES.bodyHeight&&
 // in the data: a level declares `moves_allowed`, which must EQUAL its chapter's set (an agent cannot
 // widen it), and every `via` must be in it. Source: PHASE-0-DECISIONS Q5's move-order table.
 const ALL_MOVES=Object.keys(MOVE);
-export const CHAPTER_MOVES_ADDED={1:['ground','jump','climb'],2:['wall','double'],3:['platform','dash'],4:['dashjump']};
+export const CHAPTER_MOVES_ADDED={1:['ground','jump'],2:['wall','double','climb'],3:['platform','dash'],4:['dashjump']};
 export function chapterMoves(ch){
   if(ch===0||ch>4) return [...ALL_MOVES];
   const out=[]; for(let c=1;c<=ch;c++) out.push(...(CHAPTER_MOVES_ADDED[c]??[])); return out;
