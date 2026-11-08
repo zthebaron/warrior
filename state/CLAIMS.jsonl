@@ -31,3 +31,5 @@
 {"id":"B-9","agent":"phase0-spec","ts":"2026-11-08T16:24:48.004Z","released":true}
 {"id":"B12-harvest","agent":"unknown","ts":"2026-11-08T16:25:55.457Z","released":true}
 {"id":"B-11","agent":"unknown","ts":"2026-11-08T16:25:55.483Z","released":true}
+{"id":"D-008","agent":"phase0-spec","ts":"2026-11-08T16:31:46.898Z","ttl_min":90}
+{"id":"OQ-032","agent":"phase0-spec","ts":"2026-11-08T16:31:46.926Z","ttl_min":600}
