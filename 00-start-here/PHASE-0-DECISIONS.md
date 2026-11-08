@@ -238,6 +238,8 @@ render them on the torii in the gym, and let the H2.5 feel test choose — the s
 used for the landing mark. A real vermilion is near `#E34234`; expect the answer in that
 neighbourhood, at palette lightness or above.
 
+implemented_by: dc84f02 (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 29af4a0 (?accent=<name> in-place switch), 6abe6b6 (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
+
 ## Q6 — Failure model: **A, with one addition and one change.** CLOSED
 
 All seven parts stand except the respawn time. The reasoning is good throughout; two parts are
@@ -291,7 +293,7 @@ same mechanism as Q2b and D-001.
 trying the game from the case-study page who refreshes loses everything. Post-gold showcase item,
 not a design change. Noted so it is a known trade rather than a surprise.
 
-implemented_by: dc84f02 (ACCENT_CONTRAST rule, accent.json, lib.py reads palette + candidates), 29af4a0 (?accent=<name> in-place switch), 6abe6b6 (candidate renders) — branch h4-asset-kit, PR 3. Choice of candidate: H2.5, open.
+implemented_by:
 
 ## D-002 — Decisions must name their implementing commit. DECIDED
 
