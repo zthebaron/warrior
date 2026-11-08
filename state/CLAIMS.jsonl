@@ -83,3 +83,5 @@
 {"id":"D-015","agent":"reviewer-chat","ts":"2026-11-08T19:02:21.153Z","released":true}
 {"id":"D-015-BUILD","agent":"builder-d015","ts":"2026-11-08T19:05:34.655Z","ttl_min":90}
 {"id":"D-015-BUILD","agent":"builder-d015","ts":"2026-11-08T19:28:54.931Z","released":true}
+{"id":"B-17","agent":"kit","ts":"2026-11-08T21:26:27.998Z","ttl_min":90}
+{"id":"OQ-048","agent":"kit","ts":"2026-11-08T21:26:28.025Z","ttl_min":90}
