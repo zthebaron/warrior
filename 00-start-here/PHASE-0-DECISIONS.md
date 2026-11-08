@@ -783,3 +783,52 @@ Implementation note: `tools/harness/scan-frame.ts` already renders the scan; it 
 pitch across the rig's range and take the best frame rather than the rest frame.
 
 implemented_by:
+
+## D-013 — The dominant failure of this build: success signals that measure the wrong thing. FINDING
+
+Five instances in one day, across two actors and three layers. They were handled as separate
+incidents. They are one bug.
+
+| # | what reported success | what it actually measured | what it missed |
+|---|---|---|---|
+| 1 | `git push origin main` exited 0 | that the ref named `main` reached the remote | the committer was on another branch, so nothing was pushed |
+| 2 | `do script` delivered text to the TUI | that characters reached the terminal | Claude Code showed `[Pasted text]` and waited; nothing was submitted |
+| 3 | `rev-parse HEAD == rev-parse origin/main` | that the local tip matched the remote | the commit had failed on unmerged paths, so **conflict markers reached main** |
+| 4 | a push step in a script | nothing — the result was never read | the push was refused; the script deleted the PR branch anyway, closed PR #7 unmerged, and waited for a CI run that could never come |
+| 5 | `visual` stage, six Linux goldens | that two byte-identical files matched | the goldens were **copies of the macOS set**; a ±1-per-channel floor sat under tolerance, hiding any regression that size |
+
+Four of the five are mine or the reviewer's. The fifth is a test that had passed every run since it
+was written.
+
+### The statement
+
+**A success signal that does not measure the effect you care about is worse than no signal, because
+it stops you looking.** Each of these was checked. Each check returned green. The check and the
+effect had quietly come apart, and in every case they had come apart for a *mechanical* reason that
+was obvious in hindsight and invisible at the time.
+
+### The fix has one shape
+
+Assert the **effect**, not the call:
+
+- a push → compare SHAs *and* grep the content on the remote
+- a commit → confirm it committed before acting as though it did
+- an injection → confirm the token count moved and the input line cleared
+- any scripted step after a fallible one → gate on the previous step's result, never proceed on
+  assumption
+- a test → **prove it can fail**
+
+That last is the general form, and it is already written into `PROMPT-00-BOOTSTRAP-CONTROL-PLANE.md`:
+*a linter that has never been shown to fail is not a linter.* Instance 5 is that principle applied
+to visual tests, and it was violated for the entire life of those goldens. Before trusting any gate,
+break it on purpose once and watch it go red.
+
+### For the case study
+
+This is the most repeated finding of the build and the most transferable, because it is not
+game-specific and not AI-specific. It is the reason the method is worth selling: **the control
+system kept catching itself, and the thing it kept catching was its own instrumentation.** Five
+green lights that meant nothing, found and fixed in one day, is a stronger claim than any number of
+tests that passed.
+
+implemented_by: n/a — finding. The per-instance fixes are D-010, CLAUDE.md push rule, and dce7755.
