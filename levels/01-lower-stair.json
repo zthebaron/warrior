@@ -15,7 +15,7 @@
     "type": "reach",
     "pos": [
       101,
-      12.5,
+      9.0,
       0
     ],
     "radius": 1.5
@@ -36,12 +36,12 @@
     {
       "asset": "prim_box",
       "pos": [
-        2.0,
+        3.0,
         -4.0,
         0
       ],
       "scale": [
-        16,
+        18,
         8.0,
         7.0
       ]
@@ -49,7 +49,33 @@
     {
       "asset": "prim_box",
       "pos": [
-        10.3,
+        16.0,
+        -4.0,
+        0
+      ],
+      "scale": [
+        4,
+        8.0,
+        5.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        24.5,
+        -4.0,
+        0
+      ],
+      "scale": [
+        7,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        28.3,
         -3.8,
         0
       ],
@@ -62,7 +88,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        10.9,
+        28.9,
         -3.6,
         0
       ],
@@ -75,7 +101,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        11.5,
+        29.5,
         -3.4,
         0
       ],
@@ -88,7 +114,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        12.1,
+        30.1,
         -3.2,
         0
       ],
@@ -101,7 +127,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        12.7,
+        30.7,
         -3.0,
         0
       ],
@@ -114,38 +140,12 @@
     {
       "asset": "prim_box",
       "pos": [
-        16.5,
+        36.0,
         -3.0,
         0
       ],
       "scale": [
-        7,
-        10.0,
-        7.0
-      ]
-    },
-    {
-      "asset": "prim_box",
-      "pos": [
-        24.0,
-        -3.0,
-        0
-      ],
-      "scale": [
-        4,
-        10.0,
-        4.0
-      ]
-    },
-    {
-      "asset": "prim_box",
-      "pos": [
-        35.0,
-        -3.0,
-        0
-      ],
-      "scale": [
-        12,
+        10,
         10.0,
         7.0
       ]
@@ -162,7 +162,51 @@
     {
       "asset": "prim_box",
       "pos": [
-        45.5,
+        61.5,
+        -1.25,
+        0
+      ],
+      "scale": [
+        41,
+        13.5,
+        7.0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        55,
+        5.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        63.0,
+        5.7,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        77,
+        5.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        89.5,
         -1.25,
         0
       ],
@@ -175,65 +219,34 @@
     {
       "asset": "prim_box",
       "pos": [
-        66.0,
-        0.5,
-        0
-      ],
-      "scale": [
-        32,
-        17.0,
-        7.0
-      ]
-    },
-    {
-      "asset": "kit_torii",
-      "pos": [
-        55,
-        9.0,
-        0
-      ],
-      "tag": "torii"
-    },
-    {
-      "asset": "kit_torii",
-      "pos": [
-        77,
-        9.0,
-        0
-      ],
-      "tag": "torii"
-    },
-    {
-      "asset": "prim_box",
-      "pos": [
-        89.5,
-        0.5,
-        0
-      ],
-      "scale": [
-        9,
-        17.0,
-        7.0
-      ]
-    },
-    {
-      "asset": "prim_box",
-      "pos": [
         101.0,
-        2.25,
+        0.5,
         0
       ],
       "scale": [
         14,
-        20.5,
+        17.0,
         7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        81.0,
+        5.7,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
       ]
     },
     {
       "asset": "kit_torii",
       "pos": [
         99,
-        12.5,
+        9.0,
         0
       ],
       "tag": "torii"
@@ -260,7 +273,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         15,
-        0,
+        -2,
         -5.7
       ],
       "tag": "cliff"
@@ -269,7 +282,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         23.5,
-        0,
+        -2,
         -5.7
       ],
       "tag": "cliff"
@@ -296,7 +309,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         54,
-        7,
+        3.5,
         -5.7
       ],
       "tag": "cliff"
@@ -305,7 +318,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         62.5,
-        7,
+        3.5,
         -5.7
       ],
       "tag": "cliff"
@@ -314,7 +327,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         71,
-        7,
+        3.5,
         -5.7
       ],
       "tag": "cliff"
@@ -323,7 +336,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         80,
-        7,
+        3.5,
         -5.7
       ],
       "tag": "cliff"
@@ -332,7 +345,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         89,
-        7,
+        3.5,
         -5.7
       ],
       "tag": "cliff"
@@ -341,7 +354,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         98,
-        10.5,
+        7,
         -5.7
       ],
       "tag": "cliff"
@@ -350,7 +363,7 @@
       "asset": "kit_rock_mass",
       "pos": [
         106.5,
-        10.5,
+        7,
         -5.7
       ],
       "tag": "cliff"
@@ -366,12 +379,12 @@
       "path": [
         [
           66,
-          10.0,
+          6.5,
           -5.0
         ],
         [
           66,
-          10.0,
+          6.5,
           5.0
         ]
       ],
@@ -384,14 +397,14 @@
       "phase": 0.0,
       "crow": {
         "perch": [
-          63.5,
-          11.0,
-          -4.1
+          63.0,
+          6.1,
+          3.2
         ],
         "to": [
-          61.0,
-          15.0,
-          -7.5
+          60.0,
+          10.5,
+          9.5
         ],
         "size": [
           0.35,
@@ -407,12 +420,12 @@
       "path": [
         [
           89,
-          10.0,
+          6.5,
           -5.0
         ],
         [
           89,
-          10.0,
+          6.5,
           5.0
         ]
       ],
@@ -425,14 +438,14 @@
       "phase": 0.0,
       "crow": {
         "perch": [
-          86.0,
-          11.0,
-          -4.1
+          81.0,
+          6.1,
+          3.2
         ],
         "to": [
-          83.5,
-          15.0,
-          -7.5
+          78.0,
+          10.5,
+          9.5
         ],
         "size": [
           0.35,
@@ -456,7 +469,7 @@
     {
       "pos": [
         57,
-        9.0,
+        5.5,
         0
       ],
       "facing": -90
@@ -464,7 +477,7 @@
     {
       "pos": [
         79,
-        9.0,
+        5.5,
         0
       ],
       "facing": -90
@@ -481,35 +494,17 @@
     ],
     {
       "pos": [
-        9,
+        12,
         0,
         0
       ],
       "via": "ground",
-      "note": "the seam ledge"
+      "note": "the seam ledge, to the first break"
     },
     {
       "pos": [
-        13.4,
-        2.0,
-        0
-      ],
-      "via": "ground",
-      "note": "straight stair: 5 x 0.4 rise / 0.6 tread"
-    },
-    {
-      "pos": [
-        20,
-        2.0,
-        0
-      ],
-      "via": "ground",
-      "note": "edge of the first gap"
-    },
-    {
-      "pos": [
-        22,
-        2.0,
+        14,
+        0,
         0
       ],
       "via": "jump",
@@ -517,20 +512,38 @@
     },
     {
       "pos": [
-        26,
-        2.0,
+        18,
+        0,
         0
       ],
       "via": "ground"
     },
     {
       "pos": [
-        29,
-        2.0,
+        21,
+        0,
         0
       ],
       "via": "jump",
       "note": "gap 3"
+    },
+    {
+      "pos": [
+        27.6,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "foot of the stair"
+    },
+    {
+      "pos": [
+        31.4,
+        2.0,
+        0
+      ],
+      "via": "ground",
+      "note": "straight stair: 5 x 0.4 rise / 0.6 tread"
     },
     {
       "pos": [
@@ -548,7 +561,7 @@
         0
       ],
       "via": "ground",
-      "note": "2u short of the first face"
+      "note": "2u short of the face"
     },
     {
       "pos": [
@@ -561,26 +574,8 @@
     },
     {
       "pos": [
-        48,
-        5.5,
-        0
-      ],
-      "via": "ground",
-      "note": "2u short of the second face"
-    },
-    {
-      "pos": [
-        51,
-        9.0,
-        0
-      ],
-      "via": "climb",
-      "note": "climb the 3.5 face"
-    },
-    {
-      "pos": [
         57,
-        9.0,
+        5.5,
         0
       ],
       "via": "ground",
@@ -589,7 +584,7 @@
     {
       "pos": [
         72,
-        9.0,
+        5.5,
         0
       ],
       "via": "ground",
@@ -599,7 +594,7 @@
     {
       "pos": [
         79,
-        9.0,
+        5.5,
         0
       ],
       "via": "ground",
@@ -608,7 +603,7 @@
     {
       "pos": [
         82,
-        9.0,
+        5.5,
         0
       ],
       "via": "ground",
@@ -618,7 +613,7 @@
     {
       "pos": [
         85,
-        9.0,
+        5.5,
         0
       ],
       "via": "jump",
@@ -627,7 +622,7 @@
     {
       "pos": [
         92,
-        9.0,
+        5.5,
         0
       ],
       "via": "ground",
@@ -636,7 +631,7 @@
     {
       "pos": [
         95,
-        12.5,
+        9.0,
         0
       ],
       "via": "climb",
@@ -645,12 +640,17 @@
     {
       "pos": [
         101,
-        12.5,
+        9.0,
         0
       ],
       "via": "ground",
       "note": "goal"
     }
   ],
-  "difficulty": 1
+  "difficulty": 1,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "climb"
+  ]
 }

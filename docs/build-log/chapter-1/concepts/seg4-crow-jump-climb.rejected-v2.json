@@ -1,0 +1,20 @@
+{
+  "segment": "seg4-crow-jump-climb",
+  "model": "fal-ai/gpt-image-1.5/edit",
+  "params": {
+    "image_size": "1536x1024",
+    "quality": "medium",
+    "input_fidelity": "high",
+    "output_format": "png",
+    "num_images": 1
+  },
+  "references": [
+    "reference/seed/hero/hero_3s.png",
+    "reference/seed/hero/hero_9s.png"
+  ],
+  "prompt": "Same art style as the reference frames, which are the locked seed: sumi-e ink wash on warm paper, flat fills, palette limited to paper-cream, mist-pale, wash greys and ink-black. Third-person follow view from slightly above and behind a small traveller in a straw hat. COMPOSITION (STYLE-BIBLE section 5, mandatory): a dark near-vertical cliff mass fills the LEFT side of the frame with vertical fracture lines; a bright cloud-sea void fills the RIGHT side; the walkable path is the narrow lighter ledge on the seam between them, with a defined dark edge where it meets the void. Horizon high, void fills the lower-right. Cliff tops flat, faces near-vertical, no rounded rock. Torii are vermilion post-and-lintel gates placed in sequence along the path as waypoints; vermilion appears on the torii and nowhere else. Crows are ink-black, never coloured. No floating platforms: every ledge is attached to the cliff. No text, no UI, no light source, no cast shadows. Birds: none anywhere unless the segment text asks for one crow; never a bird in flight.\n\nSegment 4, the last of the chapter. The path never leaves the cliff: every ledge, the gap and the summit are part of the cliff mass on the LEFT, with the bright void on the right; there is no bridge, no pillar standing apart and no floating platform. From a vermilion torii behind the traveller, the ledge ends at a short gap; across the gap the ledge resumes, and a dark stone slab slides out of the cliff across that landing ledge and back. Exactly one black crow is perched on a knob of the cliff face beside the gap. After the slab the ledge meets a single sheer rock face about twice a person's height, cut into the same cliff, and on top of it the final vermilion torii stands at the edge of the summit ledge against the bright void.",
+  "generated": "2026-11-08T17:05:56.712Z",
+  "ms": 23047,
+  "width": null,
+  "height": null
+}
