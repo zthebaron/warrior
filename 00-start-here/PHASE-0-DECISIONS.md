@@ -420,3 +420,69 @@ replays deterministic. The gate becomes "advance in `play` or `death`, not in `p
 `loading` or `results`."
 
 implemented_by: 6dcc157
+
+## D-005 — `HAZARD_AT_CHECKPOINT` (B-8): the geometry, written before the code
+
+B-8 is correctly the next item: `PHASE_SWEEP`'s wait arithmetic assumes standing at a torii is
+safe, and nothing establishes that. But there is an implementation of this check that *passes* while
+under-reporting, so the geometry goes on the record first.
+
+Measured facts it must use (not invent):
+
+| quantity | value | source |
+|---|---|---|
+| checkpoint activation radius | 2.0 m horizontal | `GAME_RULES.checkpointRadius` |
+| goal height tolerance | 2.0 m | `GAME_RULES.goalHeightTolerance` |
+| player capsule radius | 0.35 m | `TUNING.capsuleRadius` |
+| player capsule half-height | 0.6 m → total height 1.9 m | `TUNING.capsuleHalfHeight` |
+| patroller extent | `size` (vec3 half-extents) | schema |
+| patroller route | `path`, 2-12 points | schema |
+
+### Four things the obvious implementation gets wrong
+
+**1. Both volumes need inflating, not just one.** The test is not "does the `path` polyline come
+within 2.0 m of the torii." A patroller is a box, not a point on a line, and the player is a
+capsule, not a point. The swept volume is `path ⊕ patroller half-extents`, and it is tested against
+the player capsule, not against a bare position. Testing the polyline alone under-reports by
+roughly `size + 0.35` in every direction.
+
+**2. The vertical window is the player's body, not `goalHeightTolerance`.** `c.pos` is a *feet*
+position — `main.ts` compares against `player.feet()`. So a player standing at a checkpoint occupies
+y from `c.pos[1]` to `c.pos[1] + 1.9`. A patroller 1.5 m above the feet hits the player's head.
+Using `goalHeightTolerance: 2.0` as the vertical window looks right and is wrong for a different
+reason — it happens to be numerically close to 1.9, which is exactly what makes the mistake
+invisible. Use the capsule extent.
+
+**3. The check is 3D. A 2D xz test is worse than no check.** Activation requires horizontal
+distance **and** `|Δy| < tolerance`, so a patroller crossing 5 m overhead is not a threat. An
+xz-only test reports it as one, which blocks legitimate layouts, and a rule that produces false
+positives gets weakened — which is how a real check dies.
+
+**4. Error on the respawn point; warn on the activation disc.** Two different claims:
+
+- **error** — the player capsule at `c.pos` intersects the swept volume. This is the unwinnable
+  case: you respawn inside a hazard. Inflate by `capsuleRadius` plus a small margin.
+- **warn** — the swept volume enters the activation disc (`2.0 + 0.35 = 2.35 m`) without touching
+  the respawn point. A player waiting off-centre can be clipped, but it is a skill matter, not an
+  unwinnable state. Demanding the whole disc be clear would forbid a lot of valid level geometry.
+
+This mirrors the existing split: `NO_FALL_PLANE` and `FALL_DAMAGE` warn, structural faults error.
+
+### Why it is static, and must stay static
+
+Patrollers are periodic and the wait is unbounded, so **any** overlap at **any** phase will
+eventually occur while the player stands there. Phase therefore does not enter this check — do not
+evaluate it "at phase 0," which would miss most defects. That phase-independence is precisely what
+makes it a linter rule rather than a harness stage, and it is why it complements `PHASE_SWEEP`
+rather than duplicating it.
+
+Conservatism is the correct bias: treat each path leg as an AABB expanded by the half-extents. It
+over-reports slightly at corners. A false positive costs a level author one edit; a false negative
+ships a checkpoint that kills the player on arrival.
+
+### Scope
+
+Apply to every place the player stands still: `spawn`, every entry in `checkpoints`, and `goal`
+(using the goal's own `radius` where it is set).
+
+implemented_by:
