@@ -145,3 +145,28 @@ Two fixes, in order of cheapness:
 Worth noting what caught it: not the linters, not CI, and not a failing command. It was reading
 `git log main` for an unrelated reason and noticing two commits missing. That is luck, and luck is
 not a control. Rule 1 above is what turns it into one.
+
+## Addendum: failure 8 — blocking questions make the human the transport
+
+Phase 0 was built as seven sequential A/B/C questions, each one printed to a terminal and waited
+on. The reviewer polls every four minutes. Tim was sitting in front of the terminals.
+
+The outcome was inevitable and it was a design error, not a bug: **in any setup where an agent
+blocks on a question, whoever is physically present answers it.** A human in the room always beats
+a four-minute poll, so he spent the morning hand-relaying A/B/C answers between windows — the exact
+job the takeover was supposed to remove. A mechanism bug made it worse (`do script` pastes into the
+TUI without submitting, so injected answers sat in input buffers looking delivered) but the
+mechanism was not the cause. Fix the mechanism and a human in the room still answers first.
+
+The fix is `state/OPEN-QUESTIONS.md` and the non-blocking protocol: an agent that would have asked
+instead **decides, records the question and its reasoning as PROVISIONAL, and keeps working.** The
+reviewer confirms or overrides asynchronously. Overriding a recorded decision costs one commit;
+blocking on it costs a person's morning, and that asymmetry is the whole argument.
+
+The only legitimate stop is a decision both irreversible and genuinely two-sided — a destructive
+migration, a deploy, a financial commitment, anything published externally. "I would like a second
+opinion" is not that.
+
+Worth noting for the case study: every one of the seven answers was better for having been
+reviewed, so the *review* was not the waste. The waste was making review **synchronous**. Those are
+separable, and only one of them is expensive.

@@ -200,3 +200,18 @@ working directory. Add to the project's agent rules: *every agent works in its o
 never in the main checkout*, and every commit step asserts its expected branch with
 `git rev-parse --abbrev-ref HEAD` before committing. A shared mutable cwd between two actors is the
 three-way-race problem one level down, and it is cheaper to forbid than to detect.
+
+## Addendum — the non-blocking rule, which belongs in the bootstrap
+
+Add `state/OPEN-QUESTIONS.md` to the control plane, and this rule to the project's agent brief:
+
+> **Never print a question and wait.** Decide, append the question and your reasoning to
+> `state/OPEN-QUESTIONS.md` as PROVISIONAL, and keep working. The reviewer confirms or overrides
+> asynchronously. Stop only for a decision that is both irreversible and genuinely two-sided.
+
+Reason: a reviewer who polls on an interval cannot beat a human sitting in front of the terminal,
+so a blocking question does not get answered faster — it just makes the nearest human the
+transport. Overriding a recorded decision costs one commit. Blocking costs a morning.
+
+This was learned by building a seven-question interview as seven blocking questions and watching
+the user hand-relay every answer.
