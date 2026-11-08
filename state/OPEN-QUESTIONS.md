@@ -480,6 +480,13 @@ only shows where they diverge, and every divergence is a counter-example the VER
      slope; the linter only bounds a ground rise by run*tan(50 deg), so one tall face authored as
      `ground` skips this check and is caught only by nav failing to walk it. RB-003 names it.
      `platform` rides have no face.
+  5. **Consequence for chapter 2+ (not a choice, a result): at the rest pose the highest readable rise
+     is 3.19 u onto a 15 u landing** (3.30 onto 41 u, 2.83 onto 5 u, 2.29 onto 2.5 u; bisected with
+     `readableBandDeg`). `MOVE.climb.maxRise` 4.5, `wall` 4.0 and `double` 3.5 exist for faces a jump
+     cannot clear, and READABLE_RISE rejects that whole range. D-015a moves climb into chapter 2 beside
+     wall and double, so **chapter 2 cannot be authored against this linter until D-015d (B-18) lands**
+     and the check models a pitch the player can actually be at. This is D-015b's stated intent
+     ("rejects ... anything at eye level"); it is written here so the APPROVER rules on D-015a knowing it.
 Also: CAMERA_TUNING and RENDER_CONFIG moved into import-free modules (`src/engine/camera-tuning.ts`,
 `render-config.ts`) because Node's type stripping rejects the parameter properties in camera.ts /
 renderer.ts; both re-export them, and `tools/harness/accent.ts` (which regex-reads the rig) now reads
