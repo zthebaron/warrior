@@ -1,0 +1,55 @@
+{
+  "source": "seed.mp4 (Runway sample 4)",
+  "frames": 36,
+  "colors": [
+    {
+      "name": "paper-cream",
+      "hex": "#cabfac",
+      "share": 0.341,
+      "role": "far distance / paper"
+    },
+    {
+      "name": "mist-pale",
+      "hex": "#afa79c",
+      "share": 0.1117,
+      "role": "high mist"
+    },
+    {
+      "name": "wash-light",
+      "hex": "#979189",
+      "share": 0.1444,
+      "role": "light wash"
+    },
+    {
+      "name": "stone-mid",
+      "hex": "#827d76",
+      "share": 0.0919,
+      "role": "mid stone"
+    },
+    {
+      "name": "wash-mid",
+      "hex": "#69645f",
+      "share": 0.0892,
+      "role": "mid wash"
+    },
+    {
+      "name": "ink-grey",
+      "hex": "#534e4b",
+      "share": 0.0825,
+      "role": "near forms"
+    },
+    {
+      "name": "ink-deep",
+      "hex": "#383838",
+      "share": 0.0885,
+      "role": "deep shadow"
+    },
+    {
+      "name": "ink-black",
+      "hex": "#20201e",
+      "share": 0.0508,
+      "role": "brush black"
+    }
+  ],
+  "note": "8 clusters, k-means in RGB over 36 frames. No saturated accent clustered at k=8 \u2014 the vermilion torii is under 1% of frame area. Treat the accent as a deliberate exception, not a palette member."
+}
