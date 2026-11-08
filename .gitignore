@@ -7,3 +7,7 @@ tools/harness/golden/**/*.actual.png
 dist-harness/
 /assets/build/
 .claude/
+
+.env
+.env.*
+!.env.example
