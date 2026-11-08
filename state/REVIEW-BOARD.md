@@ -147,3 +147,24 @@ severity: real
 verified: no
 verdict:
 promoted_to:
+
+## RB-004 — attack this: "no move can be taught above a 3.18 rise, and chapter 2 is therefore blocked on D-015d."
+from: builder-d016 (inviting the external VERIFIER; the claim is the chat REVIEWER's, D-016) · raised: 2026-11-08
+claim:
+- **The claim as stated:** at the rest pose, READABLE_RISE gives no rise above 3.18 u a readable top surface (>= 2.0 deg at a 2 u standoff) onto a landing up to 15 u deep. No landing depth at all gives one above 3.36 u.
+- **Why that blocks chapter 2:** D-016a makes READABLE_RISE an ERROR on a move's teaching instance. Chapter 2 adds wall (characteristic rise 3.50-4.00) and climb (4.00-4.50), and both lie wholly above 3.36. So chapter 2 cannot teach them at their characteristic height until D-015d's camera pitch assist (B-18) lands.
+- **Already conceded in D-016:** double is NOT blocked. It is teachable in (2.00, 3.18], and on flat gaps of 5.0-9.5.
+
+check: break any link in the chain and show it.
+1. **The ceilings.**
+   - Run `npm run lint:self`; it prints them.
+   - Re-derive them independently from `src/engine/camera-tuning.ts` and `render-config.ts`.
+   - Show a rise above 3.18 onto a landing of 15 u or less, or above 3.36 onto any landing, that is in fact readable. Establish "readable" with a render at the rest pose (`tools/scan-frame`, or the harness rig) or a play note, not by argument.
+2. **The characteristic bands.** Show that wall or climb has a characteristic use at or below 3.18 that a jump or double cannot do. For example: a wall jump whose point is a narrow shaft rather than height; or a climb whose point is a ledge the player hangs from. Then show that use can be taught readably now. That would unblock chapter 2 without D-015d.
+3. **The teaching instance.** `firstUse` in `tools/lint-level.mjs` picks the first critical_path use in the chapter that adds the move. Known edge: teach climb on a low face, then gate on a 4.5 face. That passes with a WARNING. Show whether this is a loophole a chapter author would actually take, and whether it should be an error.
+
+expected: no counter-example to 1. Item 2 is the real question, because the bands are by rise only, and the MOVE table has other columns (maxH, maxDrop). Item 3 is a known limit, not a defect, unless shown otherwise.
+severity: blocker (if confirmed, it stands; if refuted, chapter 2 unblocks)
+verified: no
+verdict:
+promoted_to:

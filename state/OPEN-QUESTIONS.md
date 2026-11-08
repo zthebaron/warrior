@@ -509,12 +509,15 @@ only shows where they diverge, and every divergence is a counter-example the VER
      `ground` skips this check and is caught only by nav failing to walk it. RB-003 names it.
      `platform` rides have no face.
   5. **Consequence for chapter 2+ (not a choice, a result): at the rest pose the highest readable rise
-     is 3.19 u onto a 15 u landing** (3.30 onto 41 u, 2.83 onto 5 u, 2.29 onto 2.5 u; bisected with
+     is 3.18 u onto a 15 u landing** (3.29 onto 41 u, 2.83 onto 5 u, 2.28 onto 2.5 u; bisected with
      `readableBandDeg`). `MOVE.climb.maxRise` 4.5, `wall` 4.0 and `double` 3.5 exist for faces a jump
      cannot clear, and READABLE_RISE rejects that whole range. D-015a moves climb into chapter 2 beside
      wall and double, so **chapter 2 cannot be authored against this linter until D-015d (B-18) lands**
      and the check models a pitch the player can actually be at. This is D-015b's stated intent
      ("rejects ... anything at eye level"); it is written here so the APPROVER rules on D-015a knowing it.
+     *[Corrected under D-016: this item first said 3.19 / 3.30 / 2.29. Those were the bisection rounded to
+     the nearest 0.01, and each rounded value itself FAILS; the figures above are the largest passing value at
+     0.01 u. The hard ceiling for any landing depth is 3.36 u. D-016 rules on the consequence.]*
 Also: CAMERA_TUNING and RENDER_CONFIG moved into import-free modules (`src/engine/camera-tuning.ts`,
 `render-config.ts`) because Node's type stripping rejects the parameter properties in camera.ts /
 renderer.ts; both re-export them, and `tools/harness/accent.ts` (which regex-reads the rig) now reads
@@ -551,6 +554,8 @@ edge-triggered, so it stood at the second riser; it now releases for one tick (`
 `npm run lint:example` (not in CI) now fails: its landings are kit meshes (unmeasurable) and its first
 dash is over the void. Both are true of that file; chapter 3 is not authored here.
 status: PROVISIONAL (needs APPROVER with D-015a)
+D-015a (the data change this took A under) was APPROVED 2026-11-08 by the chat REVIEWER on a call Tim
+delegated; see D-015. This entry's own status is unchanged.
 
 ## OQ-043 — D-011's transfer segment is for "the riskiest". Which is the riskiest in chapters 2-4?
 raised: 2026-11-08 by kit (D-011)
@@ -587,4 +592,42 @@ resolutions of the same function, and the first one is thrown away. B does it on
 this branch's `startJson` fails TS2345, which is the intended B-16 gate: take PR 3's `startJson`, and
 keep `teleportPlayer` plus `rules.respawnDelaySec`/`fixedDt`. C would couple PR 4's review to PR 3's.
 Cost: PR 4 shows no CI until PR 3 merges.
+status: PROVISIONAL
+
+## OQ-050 — D-014 fix 3 says "finishing a chapter loads the next". What decides "next", and what happens around it?
+raised: 2026-11-08 by kit (D-014-PROGRESSION)
+options: A derive from each level's `chapter` (lowest chapter above this one) | B a hand-kept ordered list in GAME_RULES | C file-name order
+took: A (`src/systems/progression.ts`: entryLevel / nextLevel / chapterChain, one copy shared by the game, REACHABLE and check:progression)
+because: chapter agents cannot see each other (the reason MOVES_ALLOWED lives in the data), so a list
+someone must remember to extend is exactly how chapter 1 shipped unreachable. `chapter` is already a
+required schema field. C would make an id prefix carry meaning nothing enforces.
+Sub-choices taken, each the smallest that keeps a player moving:
+- Enter at results loads the next chapter directly (results -> loading -> play). The HUD says
+  `COMPLETE / Enter: next chapter`, or `COMPLETE / Enter: menu` after the last. Still no time, score,
+  par or rank (Q4, NOT-list #20 passes).
+- After the last chapter, Enter returns to the menu, and the menu starts from the front door again
+  (the entry chapter). Quitting mid-chapter (pause, M) keeps that chapter, so Enter at the menu resumes it.
+  There is no save: a reload starts at chapter 1. Persistence is not asked for anywhere and would be new
+  state, so it is not built.
+- A gap in the numbering is skipped, not a dead end. The gym (chapter 0, reached only by `?level=00-gym`)
+  leads to chapter 1.
+- Two files on one chapter: the tie breaks on id, so the order is total, and the losing file is then
+  unreachable. REACHABLE fails on it ("every chapter is on the progression chain"), and so does
+  check:progression on levels/, instead of a schema rule.
+Cost: REACHABLE now plays EVERY chapter end to end, about 20 s each on CI.
+status: PROVISIONAL
+
+## OQ-051 — The standing TIGHT warning (gym seg 14->15, jump at 100% of maxH): accept, with the reason written down
+raised: 2026-11-08 by builder-d016 (D-016)
+options: A accept it, reason on the waypoint and here | B shorten the gap to <= 4.5 (90%) | C suppress TIGHT on chapter 0
+took: A
+because: the brief placed this on "a shipped chapter 1 segment". It is not: `lint:levels` prints it for
+`levels/00-gym.json` (chapter 0), critical_path[14]->[15], a 5.0 u gap via jump, i.e. exactly
+`MOVE.jump.maxH` 5.0 (MEASUREMENTS: "clears 5.0, fails 6.0"). Chapter 1 lints with zero warnings. The gym
+is the budget rig, authored AT the move limits on purpose (OQ-046 item 4 exempts it from READABLE_RISE for
+the same reason): nav clearing a 5.0 gap on every CI run is the only standing evidence that 5.0 is still
+a true ceiling for the current physics. B would remove that evidence and leave the limit untested; C
+would hide the warning for any future gym edit that is tight by accident. Zero margin is the point of
+this segment, so the warning stays visible and the waypoint's `note` now says why ("TIGHT accepted
+(D-016, OQ-051)"). Any TIGHT on a chapter (>= 1) segment remains a level fix, not this.
 status: PROVISIONAL
