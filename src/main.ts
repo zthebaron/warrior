@@ -148,7 +148,12 @@ const HARNESS_SEED = 0x5eed1234;
 const HARNESS_MODE = __HARNESS__ && new URLSearchParams(location.search).get('harness') === '1';
 // Feel-test flags follow the accent's ?accent=<name> precedent (D-007). Defaults are unchanged; each is
 // also live in the ~ panel's "feel test" group (FEELTEST-SWITCHES).
-if (new URLSearchParams(location.search).get('landingmark') === 'on') TUNING.landingMark = 1;
+{
+  // D-010: the mark ships ON. ?landingmark=off keeps the A/B available in place (and =on still works).
+  const lm = new URLSearchParams(location.search).get('landingmark');
+  if (lm === 'off') TUNING.landingMark = 0;
+  else if (lm === 'on') TUNING.landingMark = 1;
+}
 {
   // ?respawn=<seconds>: D-004 wants a 0.5 s target against the 1.2 s CI ceiling; the default stays 0.8.
   const r = Number(new URLSearchParams(location.search).get('respawn') ?? NaN);

@@ -23,6 +23,7 @@ Flat sumi-e ink wash on aged paper. It is a **painting**, not a render of a pain
 - Specular highlights of any kind
 - Cast shadows with a direction — no sun, no key light, no shadow angle
 - Ambient occlusion, contact shadows, bloom, lens flare, chromatic aberration
+  *(The landing mark is not a contact shadow. It is the one documented exception, specified in §9. [D-010])*
 - Depth of field or any lens blur
 - Film grain (paper grain is different — see §6)
 - Any surface that reads as wet, polished, metallic or glass
@@ -221,6 +222,20 @@ should assume it is not.
 11. A frame with no dark mass, or no bright void — see §5
 12. Cloud or mist treated as a surface you can stand on
 
+**The one exception: the landing mark. [Amended on evidence, D-010: the H2.5 feel test.]**
+A flat ink disc under the player is allowed, and it is NOT a shadow, *only* while all of these hold:
+
+- **hard-edged**: no softness, no penumbra, no blur, no opacity falloff
+- **opaque, flat, palette ink** (`ink-black #20201e`): never the accent, never a tint of the ground
+- **directly beneath the capsule centre**: no offset in any direction, so it points at no light
+- **under the player only**: nothing else in the world gets one
+- **size from height alone**: capsule radius at the ground, shrinking as the player rises
+
+It reports how far down the ground is, and implies no light direction, so it passes §10 test 1.
+Break any one property (soften it, offset it, put one under a crow) and it becomes a shadow, which
+§1 and item 1 above forbid. A ballistic landing *predictor* is not covered: D-010 dropped it.
+Implementation: `src/entities/landing-mark.ts`. `?landingmark=off` shows the frame without it.
+
 ---
 
 ## 10. HOW TO CHECK A SCREENSHOT
@@ -228,6 +243,7 @@ should assume it is not.
 In order. Any failure is a failure.
 
 1. Can you tell where the light is? → fail
+   (The §9 landing mark does not count: it sits dead centre under the player and has no direction.)
 2. Is any colour off-ramp other than the accent on torii? → fail
 3. Scanning from one torii, does the next gate's accent cover less than 0.0204% of the frame? → fail
    (`ACCENT_AREA`, D-006. A waypoint nobody finds is not a waypoint. There is no upper limit.)
@@ -240,4 +256,5 @@ In order. Any failure is a failure.
 
 *Derived from the locked seed. If the seed changes, this document is void and must be
 re-derived — do not patch it. Amendments made on MEASUREMENT under a recorded decision are
-the one exception, and each is marked in place (section 2: D-001, D-003, D-006).*
+the one exception, and each is marked in place (section 2: D-001, D-003, D-006; sections 1, 9, 10:
+D-010, the landing mark).*

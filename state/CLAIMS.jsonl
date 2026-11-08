@@ -51,3 +51,9 @@
 {"id":"OQ-037","agent":"kit","ts":"2026-11-08T16:55:18.224Z","ttl_min":600}
 {"id":"OQ-038","agent":"kit","ts":"2026-11-08T16:55:18.250Z","ttl_min":600}
 {"id":"OQ-039","agent":"kit","ts":"2026-11-08T16:55:18.278Z","ttl_min":600}
+{"id":"LANDING-MARK-DEFAULT","agent":"phase0-spec","ts":"2026-11-08T17:06:18.552Z","ttl_min":90}
+{"id":"OQ-040","agent":"phase0-spec","ts":"2026-11-08T17:06:52.710Z","ttl_min":600}
+{"id":"OQ-041","agent":"phase0-spec","ts":"2026-11-08T17:09:19.211Z","ttl_min":600}
+{"id":"LANDING-MARK-DEFAULT","agent":"phase0-spec","ts":"2026-11-08T17:23:21.217Z","released":true}
+{"id":"OQ-040","agent":"phase0-spec","ts":"2026-11-08T17:23:21.244Z","released":true}
+{"id":"OQ-041","agent":"phase0-spec","ts":"2026-11-08T17:23:21.272Z","released":true}

@@ -135,6 +135,26 @@ tone mapping off on a magenta background; share of covered pixels within 6/255 o
 texel: rock 95.6%, torii 92.7%. The rest are MSAA edge blends with the magenta. Top colours
 render EXACTLY as authored (`#383838`, `#534e4b`, `#20201e`, and the accent `#e34234`).
 
+## Scene budgets (2026-11-08)
+
+Per-level peak `renderer.info` over the harness `counters` trace (SwiftShader, CI-valid: counters
+are CPU-side bookkeeping). Limits live in `tools/assets/budgets.json` `scenes` and are set AT the
+measured value, the same ratchet as the asset budgets: a scene that grows fails `counters` until
+its line is raised here with the measurement and the reason (OQ-040). The Tier-1 ceilings (300
+draw calls, 500,000 triangles) still apply on top.
+
+| Level | Peak draw calls | Peak triangles |
+|---|---|---|
+| 00-gym | 34 / 34 | 1,104 / 1,104 |
+
+History:
+  - 30 calls / 640 tris: greybox gym before H4.
+  - 33 / 1,072: kit_torii x2 + kit_rock_mass placed (H4, PR 3): +3 calls, +2 x 108 +216 tris.
+  - 34 / 1,104 (ratchet set here): the landing mark ships ON (D-010). Exactly +1 draw call and
+    +32 triangles, the disc (CircleGeometry, 32 segments). Not batched: it moves on its own every
+    frame and shares no geometry or material. Measured with `?landingmark=off`: 33 / 1,072,
+    unchanged.
+
 ## D-001 accent contrast (2026-11-08)
 
 PHASE-0-DECISIONS D-001: the navigational accent is AUTHORED; `#603633` (above) is rejected as

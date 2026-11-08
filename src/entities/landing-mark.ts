@@ -1,15 +1,15 @@
-// Landing mark (B-3, Q2b, D-007): a hard-edged flat ink disc directly beneath the player, so a
-// fixed follow camera over flat fills can still read jump depth. Behind a flag, default OFF;
-// the H2.5 feel test decides whether it ships.
+// Landing mark (B-3, Q2b, D-007, D-010): a hard-edged flat ink disc directly beneath the player, so a
+// fixed follow camera over flat fills can still read jump depth. Built default-off; the H2.5 feel
+// test chose it, so it ships ON (D-010). ?landingmark=off is the in-place comparison. It is the
+// documented exception in STYLE-BIBLE §9: not a shadow (no softness, no offset, no light direction).
 //
 // D-007's constraints, and how each is met:
 //  1. No implied light. Flat, opaque, hard-edged, exactly under the capsule centre: no softness, no
 //     penumbra, no offset, no opacity falloff. Palette ink-black, never the accent.
-//  2. Budgets. When off, the mesh is invisible: three.js does not draw it or upload its geometry,
-//     so renderer.info and the goldens are byte-identical. When on it is ONE draw call against a
-//     Tier-1 ceiling of 300 (the gym peaks near 30): no exemption needed (OQ-029).
-//  3. It reports "how far down is the ground", not "where will I land". If the feel test still
-//     cannot judge depth, the next move is a ballistic landing PREDICTOR, not a bigger dot.
+//  2. Budgets. It is ONE draw call and 32 triangles, recorded in MEASUREMENTS.md and held by the
+//     gym's scene ratchet (OQ-040). Off, it is invisible and costs nothing.
+//  3. It reports "how far down is the ground", not "where will I land". The feel test found that
+//     sufficient, so the ballistic landing predictor D-007 reserved is DROPPED (D-010), not deferred.
 //
 // Render-only: it reads physics (castRay) and never writes it, so the simulation and replays are
 // unaffected. No new numbers: radius is the capsule radius, shrinking with height over the body

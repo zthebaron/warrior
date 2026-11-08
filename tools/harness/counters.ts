@@ -4,6 +4,7 @@
 // playback plus every visual camera.
 
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Stage, guard, openGame, type Ctx, type InputFrame, type StageResult } from './lib.ts';
 import { tracePath } from './replay.ts';
 import { cameras } from './visual.ts';
@@ -52,6 +53,14 @@ export async function counters(ctx: Ctx): Promise<StageResult> {
       const src = frames.length ? `trace playback (${frames.length} frames) + ${cameras(ctx.level).length} cameras` : `${NO_TRACE_FRAMES} idle frames (no trace) + cameras`;
       st.data['peak'] = peak;
       st.check(`draw calls < ${TIER1.calls}`, peak.calls < TIER1.calls, `peak ${peak.calls}`);
+      // Scene ratchet (OQ-040): the level's measured peak, so a +1 cannot ride in unexplained under the
+      // 300 ceiling. tools/assets/budgets.json `scenes`, reasons in MEASUREMENTS.md 'Scene budgets'.
+      const scene = (JSON.parse(readFileSync(join(ctx.root, 'tools/assets/budgets.json'), 'utf8')).scenes ?? {})[ctx.levelId] as { draw_calls: number; triangles: number } | undefined;
+      st.check('scene budget recorded', !!scene, scene ? `budgets.json scenes["${ctx.levelId}"]` : `no line for ${ctx.levelId}: measure it, record it in MEASUREMENTS.md 'Scene budgets', add it to budgets.json`);
+      if (scene) {
+        st.check(`draw calls <= ${scene.draw_calls} (scene)`, peak.calls <= scene.draw_calls, `peak ${peak.calls}`);
+        st.check(`triangles <= ${scene.triangles} (scene)`, peak.triangles <= scene.triangles, `peak ${peak.triangles}`);
+      }
       st.check(`triangles < ${TIER1.triangles.toLocaleString('en-US')}`, peak.triangles < TIER1.triangles, `peak ${peak.triangles.toLocaleString('en-US')}`);
       st.check(`geometries < ${TIER1.geometries}`, peak.geometries < TIER1.geometries, `peak ${peak.geometries}`);
       st.check(`textures < ${TIER1.textures}`, peak.textures < TIER1.textures, `peak ${peak.textures}`);
