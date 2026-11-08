@@ -29,6 +29,9 @@ jobs:
       - run: npm run lint:levels
       - run: npm run lint:self # D-015: READABLE_RISE and CHAPTER_TEACH must be seen to FAIL, not just pass
 
+      # B-12: the patroller runtime (src/systems/patrol.ts) is a pure function of phase + t*speed
+      - run: npm run check:patrol
+
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
 
@@ -39,7 +42,7 @@ jobs:
       # shipped .glb, every measurement against tools/assets/budgets.json.
       - run: npm run assets:budget
 
-      # schema -> lint-level -> preflight -> nav -> replay -> chaos -> counters -> assets -> accent -> visual
+      # schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual
       # exit 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
       - run: npm run playtest
 

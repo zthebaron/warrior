@@ -31,6 +31,7 @@
 
 import { FIXED_HZ, Stage, fmt, guard, hdist, openGame, wp, type Ctx, type StageResult, type Vec3, type Waypoint } from './lib.ts';
 import { NAV_CONFIG, walk } from './nav.ts';
+import { patrolPeriod } from '../../src/systems/patrol.ts';
 
 export const SWEEP_CONFIG = {
   offsets: 8, // Q6: "8 is a reasonable N"
@@ -45,11 +46,14 @@ interface RespawnPoint {
   untilCheckpoint?: number; // the next torii; undefined = the goal ends this segment
 }
 
-const len = (p: Vec3[]): number => p.slice(1).reduce((a, b, i) => a + Math.hypot(b[0] - p[i]![0], b[1] - p[i]![1], b[2] - p[i]![2]), 0);
 
 export function sweepPeriod(L: Ctx['level']): number | null {
   const periods: number[] = [];
-  for (const h of L.hazards ?? []) if (h.type === 'patroller' && h.path && h.speed) periods.push((2 * len(h.path)) / h.speed);
+  for (const h of L.hazards ?? []) {
+    if (h.type !== 'patroller' || !h.path || !h.speed) continue;
+    const P = patrolPeriod(h.path, h.speed); // the runtime's own definition (src/systems/patrol.ts)
+    if (P !== null) periods.push(P);
+  }
   for (const p of L.platforms ?? []) {
     const loop = p.loop ?? 'pingpong';
     if (loop === 'pingpong') periods.push(2 * p.duration);

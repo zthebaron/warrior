@@ -86,3 +86,6 @@
 {"id":"B-17","agent":"kit","ts":"2026-11-08T21:26:27.998Z","ttl_min":90}
 {"id":"OQ-048","agent":"kit","ts":"2026-11-08T21:26:28.025Z","ttl_min":90}
 {"id":"PR4-REBASE-3","agent":"phase0-spec","ts":"2026-11-08T21:26:36.110Z","ttl_min":90}
+{"id":"B-17","agent":"kit","ts":"2026-11-08T21:29:39.625Z","released":true}
+{"id":"PR4-REBASE-3","agent":"phase0-spec","ts":"2026-11-08T21:41:18.945Z","released":true}
+{"id":"PR10-MERGE-MAIN","agent":"kit","ts":"2026-11-08T22:00:39.841Z","ttl_min":90}

@@ -76,15 +76,27 @@ export async function chaos(ctx: Ctx): Promise<StageResult> {
           let oob: string | null = null;
           let nan: string | null = null;
           let s = H.snapshot();
-          let lastTick = s.tick;
+          let lastInput = s.inputTicks;
           let guardFrames = 0;
-          // advance until every chaos frame has been consumed (deaths pause ticks, not frames)
-          while ((H.isPlayingBack() || s.tick === lastTick) && guardFrames < fr.length * 3) {
+          // D-004: the world keeps ticking during `death`, so world ticks != input frames. Count a chaos
+          // frame consumed only when inputTicks advances; and measure the world clock across each death.
+          const deathSpans: number[] = [];
+          let deathAt: number | null = null;
+          let lastDeaths = s.deaths;
+          while ((H.isPlayingBack() || s.inputTicks === lastInput) && guardFrames < fr.length * 3) {
             s = H.advance(1, 60);
             guardFrames++;
-            if (s.tick === lastTick) continue; // death delay / not simulating: no input consumed
+            if (s.deaths > lastDeaths) {
+              lastDeaths = s.deaths;
+              deathAt = s.runTime;
+            }
+            if (deathAt !== null && s.state === 'play') {
+              deathSpans.push(s.runTime - deathAt);
+              deathAt = null;
+            }
+            if (s.inputTicks === lastInput) continue; // a `death` tick: the world moved, no input consumed
             const idx = feet.length;
-            lastTick = s.tick;
+            lastInput = s.inputTicks;
             const f = fr[idx];
             active.push(!!f && Math.hypot(f.x, f.y) > 0.15);
             feet.push(s.feet);
@@ -96,7 +108,7 @@ export async function chaos(ctx: Ctx): Promise<StageResult> {
             maxV = Math.max(maxV, Math.abs(s.vel[1]));
             if (feet.length >= fr.length) break;
           }
-          return { feet, active, maxH, maxV, oob, nan, deaths: s.deaths, capH: Math.max(T['dashSpeed']!, T['sprintSpeed']!), capV: Math.max(T['maxFallSpeed']!, T['jumpVelocity']!) };
+          return { feet, active, maxH, maxV, oob, nan, deathSpans, rules: H.rules, deaths: s.deaths, capH: Math.max(T['dashSpeed']!, T['sprintSpeed']!), capV: Math.max(T['maxFallSpeed']!, T['jumpVelocity']!) };
         },
         [frames, ctx.level.bounds] as const,
       );
@@ -120,6 +132,17 @@ export async function chaos(ctx: Ctx): Promise<StageResult> {
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');
       st.check(`velocity under cap x${C.capMultiplier}`, r.maxH <= capH && r.maxV <= capV, `|h| max ${r.maxH.toFixed(2)} <= ${capH} ; |v| max ${r.maxV.toFixed(2)} <= ${capV}`);
       st.check('no NaN transforms', !r.nan, r.nan ?? 'feet, velocity, platforms finite every tick');
+      // D-004 / B-13: the world clock runs through death. Every death -> respawn interval must show the
+      // clock advancing by the respawn delay (to within one tick), never frozen at the death phase.
+      const want = r.rules.respawnDelaySec;
+      const bad = r.deathSpans.filter((d) => d < want - 1e-9 || d > want + r.rules.fixedDt + 1e-9);
+      st.check(
+        'world clock runs through death',
+        r.deathSpans.length > 0 && bad.length === 0,
+        r.deathSpans.length === 0
+          ? 'no death in this run — the D-004 gate was not exercised'
+          : `${r.deathSpans.length} deaths, clock advanced ${[...new Set(r.deathSpans.map((d) => d.toFixed(4)))].join('/')}s across each (respawn delay ${want}s)${bad.length ? `; WRONG: ${bad.map((d) => d.toFixed(4)).join(', ')}` : ''}`,
+      );
     } finally {
       await g.close();
     }
