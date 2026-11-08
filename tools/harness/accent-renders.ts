@@ -1,6 +1,6 @@
 // D-001 evidence for the H2.5 feel test: every accent candidate (and the rejected seed red, for
 // contrast) rendered on the gym torii from fixed cameras, with the accent's share of each frame
-// measured against the Q2 1% budget. It renders; it does not choose.
+// measured (--area-curve: the D-003 distance curve). It renders; it does not choose.
 //
 //   node tools/harness/accent-renders.ts [--skip-build]
 //
@@ -18,6 +18,8 @@ import pngjs from 'pngjs';
 import { VIEWPORT, type Vec3 } from './lib.ts';
 import { preflight } from './preflight.ts';
 import { cameras } from './visual.ts';
+import { accentShare, followFraming, followRig } from './accent.ts';
+import { wp } from './lib.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const OUT = join(ROOT, 'docs/build-log/accent');
@@ -40,6 +42,32 @@ const pf = await preflight(ROOT, { skipBuild: args.has('--skip-build') });
 if (!pf.result.ok || !pf.browser) {
   console.error('preflight failed:', JSON.stringify(pf.result.checks.filter((c) => !c.ok)));
   process.exit(3);
+}
+
+// --area-curve: D-003 measurement. The x=50 torii framed by the real follow rig with the player d metres
+// before it along the critical path; accent share of frame for each d. Writes accent-area-curve.json.
+if (args.has('--area-curve')) {
+  const rig = followRig(ROOT);
+  const path = level.critical_path.map((w: Parameters<typeof wp>[0]) => wp(w).pos);
+  const torii: Vec3 = [50, 0, 0];
+  const page = await pf.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+  await page.goto(`${pf.baseUrl}/?harness=1&level=00-gym`);
+  await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
+  await page.evaluate(() => window.__HARNESS__!.start());
+  const rows = [];
+  // <= 40 m: the gym's critical path runs straight along +x from x=10 to the x=50 torii; further back it
+  // turns into the spawn zig-zag and the framing would no longer face the gate.
+  for (const d of [0, 2, 4, 6, 8, 12, 18.34, 25, 30, 40]) {
+    const f = followFraming(path, torii, d, rig);
+    const camDist = Math.hypot(torii[0] - f.cam[0], torii[1] - f.cam[1], torii[2] - f.cam[2]);
+    rows.push({ ahead_m: d, cam_to_torii_m: +camDist.toFixed(2), accent_pct: +(await accentShare(page, f.cam, f.target, HEX[accent.default]!)).toFixed(3) });
+  }
+  await page.close();
+  await pf.browser.close().catch(() => {});
+  pf.server?.kill();
+  writeFileSync(join(OUT, 'accent-area-curve.json'), `${JSON.stringify({ rig, torii, accent: accent.default, rows }, null, 2)}\n`);
+  for (const r of rows) console.log(`  ahead ${String(r.ahead_m).padStart(6)} m · camera->torii ${String(r.cam_to_torii_m).padStart(6)} m · accent ${r.accent_pct}%`);
+  process.exit(0);
 }
 mkdirSync(OUT, { recursive: true });
 const results: Record<string, Record<string, { file: string; accentPct: number }>> = {};
@@ -95,7 +123,7 @@ writeFileSync(join(OUT, 'contact-sheet.png'), PNG.sync.write(sheet));
 const report = {
   decision: 'PHASE-0-DECISIONS D-001 — candidates for the H2.5 feel test; this file chooses nothing',
   default: accent.default,
-  budget: 'Q2: accent <= 1% of frame area',
+  budget: 'ACCENT_AREA band at the follow framing (D-003; assets/src/accent.json area) — the 1% ceiling is withdrawn',
   caveat: 'grey-box gym (lit primitives, blue sky), not the STYLE-BIBLE render',
   contactSheet: { file: 'contact-sheet.png', rows: NAMES, cols: SHOTS.map((s) => s.name) },
   shots: SHOTS,

@@ -7,7 +7,7 @@ high (to the underside of the tie beam). Origin: ground centre, between the post
 Colour: posts, tie beam, strut and lower lintel are the accent (assets/src/accent.json, D-001)
 — the only off-ramp colour in the game.
 The top lintel and the post plinths are ink_black, as on a real torii, which keeps the accent
-area down: the 1% budget is per frame and two or three gates recede together.
+area inside the ACCENT_AREA band (STYLE-BIBLE 2, D-003), which is measured per gameplay frame.
 """
 
 ASSET = {"collider": "trimesh"}
