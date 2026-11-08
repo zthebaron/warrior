@@ -755,6 +755,8 @@ Two things to pin down while implementing:
 
 `CHAPTER_LENGTH_PENDING` can be retired once C is implemented.
 
+implemented_by: aa55016 (derivation lint CHAPTER_TEACH / CHAPTER_TRANSFER / SEGMENT_UNPLACED; 4-6 as a CHAPTER_LENGTH warn; CHAPTER_LENGTH_PENDING retired; example fixture fixed), c03fe4a (OQ-042 renaming: RECOVERABLE_MOVES, the reason in every message) — branch d011-d012, PR #8
+
 ## D-012 — `ACCENT_AREA` is measured at a reachable camera, not only at rest pitch. OQ-038. DECIDED
 
 Chapter 1: **A was correct, ship it.** The level changed, the rule did not, and refusing to weaken
@@ -782,7 +784,7 @@ findable from **no** reachable angle still fails, which is the case the rule exi
 Implementation note: `tools/harness/scan-frame.ts` already renders the scan; it needs to sweep
 pitch across the rig's range and take the best frame rather than the rest frame.
 
-implemented_by:
+implemented_by: aa55016 (accent stage: best frame over the rig pitch clamp, arm pulled in by the shared allowedArm collision; harness rigCamera; scan-frame.ts sweeps the same pitches) — branch d011-d012, PR #8
 
 ## D-013 — The dominant failure of this build: success signals that measure the wrong thing. FINDING
 
@@ -867,4 +869,4 @@ data the agent already holds, so two agents reach it independently.
 The crow is the one exception and it is the right one: Q5 named it the riskiest unproven element of
 the whole design, which outranks any move.
 
-implemented_by:
+implemented_by: c03fe4a (OQ-042: RECOVERABLE_MOVES = [ground], "unrecoverable within the segment" in the lint messages), aa55016 (OQ-043: CHAPTER_RISKIEST) — branch d011-d012, PR #8
