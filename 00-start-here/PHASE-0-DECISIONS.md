@@ -923,4 +923,4 @@ documentation can reach it and finish it. Until that is true, a level is *author
    string**, plays to the end, and asserts which level it reached. Call it `REACHABLE`. It is the
    only check in the suite that would run as a player rather than as the harness.
 
-implemented_by:
+implemented_by: ec87689 (fix 1: ?level= outside harness mode), 290cc37 (fix 2: startLevel 01-lower-stair, menu string), f79e500 (fix 4: REACHABLE stage, proven to fail with startLevel = 00-gym). Fix 3 (chapter progression) NOT done: due before chapter 2.
