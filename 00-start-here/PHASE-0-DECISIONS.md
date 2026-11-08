@@ -576,10 +576,7 @@ Flag convention: follow the accent's `?accent=<name>` precedent with `?landingma
 `TUNING` constant so it is switchable in place during the feel test. Scale the disc by the
 downward raycast distance — `physics.castRay` already exists for the camera rig, so no new system.
 
-<<<<<<< Updated upstream
 implemented_by: bf19ded
-=======
-implemented_by:
 
 ## D-008 — A water hazard needs a kill volume or it is not a hazard (OQ-016). DECIDED
 
@@ -606,4 +603,3 @@ schema defect, not an author error.** Audit `spike` and `crush` for the same hol
 implementing this.
 
 implemented_by: 6a88496
->>>>>>> Stashed changes
