@@ -247,6 +247,7 @@ declare global {
       rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       setCamera(pos: Vec3, target: Vec3): void;
+      rigCamera(pivot: Vec3, dir: Vec3): Vec3;
       releaseCamera(): void;
       respawnAt(pos: Vec3, facing: number, tick: number): Snapshot;
       setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;

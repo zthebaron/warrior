@@ -27,6 +27,12 @@ export type CameraRaycast = (origin: THREE.Vector3, dir: THREE.Vector3, maxDista
 
 const damp = (k: number, dt: number): number => 1 - Math.exp(-k * dt);
 
+/** Arm length the rig allows given a raycast hit along the arm (null = clear). Shared with the harness (D-012). */
+export function allowedArm(hit: number | null): number {
+  const t = CAMERA_TUNING;
+  return hit === null ? t.distance : Math.max(t.minDistance, hit - t.collisionPadding);
+}
+
 export class SpringArmCamera {
   yaw = 0;
   pitch = CAMERA_TUNING.initialPitchDeg * DEG2RAD;
@@ -73,7 +79,7 @@ export class SpringArmCamera {
     // raycast pushback: snap IN immediately (never clip), ease back OUT
     this.armDirection(this.tmpDir);
     const hit = this.raycast(this.pivot, this.tmpDir, t.distance);
-    const allowed = hit === null ? t.distance : Math.max(t.minDistance, hit - t.collisionPadding);
+    const allowed = allowedArm(hit);
     this.armLength = allowed < this.armLength ? allowed : this.armLength + (allowed - this.armLength) * damp(t.armReturnDamping, dt);
     this.apply();
   }
