@@ -79,3 +79,47 @@ promoted_to: B-1, B-2, B-3 in state/BACKLOG.md; the stale heading was fixed dire
 - 15-25 min target still live in the playbook — **REFUTED**: already struck through with a
   `[SUPERSEDED — PHASE-0-DECISIONS Q4]` block, 5 supersede markers; and all five linter codes
   including `CHAPTER_LENGTH` are present
+
+## RB-002 — cold verification of the Day-0 spike and linter/physics alignment
+from: Gemini · raised: 2026-11-08
+claim: KCC physics parameters and the linter MOVE table are perfectly synchronised; `lint:not-list`
+passes cleanly (17/17 enforced); level linting requires a generated `assets/dist/manifest.json`
+check: `node tools/lint-not-list.mjs && node tools/lint-level.mjs levels/00-gym.json assets/dist/manifest.json`
+verified: yes — re-run by the reviewer-of-record, not accepted from the report
+verdict: **PARTIAL** — 1 confirmed, 1 misreported, 1 refuted
+promoted_to: B-14 (reassigned), B-15. **The originally proposed B-14 is cancelled.**
+
+**Sub-claim 1 — physics/linter sync: CONFIRMED, and stronger than reported.**
+`src/engine/physics.ts` carries `maxSlopeClimbDeg: 50` and `autostepMaxHeight: 0.5`, matching
+`MOVE.ground { slope: 50, autostep: 0.5 }`, and lines 5-6 of that file hold explicit
+cross-reference comments naming both couplings. The coupling is deliberate and documented.
+
+But "perfectly synchronised" conceals something: `MEASUREMENTS.md` records that *"the 0.5u autostep
+ceiling in MOVE.ground is still not measured directly."* The two constants agree with **each
+other**; neither has been measured against the game. Meanwhile `MOVE.ground` is tagged
+`measured: true`, which `UNMEASURED_MOVE` reads as a guarantee covering every field in the row.
+That is a live inconsistency between the MOVE table and the measurement record. → **B-14**
+
+**Sub-claim 2 — `lint:not-list`: MISREPORTED.** The command exits 0, but the actual output is
+`22 rows: 17 enforced, 0 pending, 5 unenforced`. Not 17/17. Five rows are explicitly unenforced,
+including **#20, "a death counter or any run metric shown to the player"** — which is precisely the
+Q4 constraint, and it is unguarded. The linter is honest about its own gaps; the summary was not.
+Q7's addition anticipated exactly this: a row that resolves to no mechanical check is unenforced,
+and the column must say so rather than implying coverage. → **B-15**
+
+**Sub-claim 3 — manifest ENOENT: REFUTED.** `assets/dist/manifest.json` is **tracked** on
+`origin/main`, is not gitignored, and `.gitattributes` carries a guard written specifically so that
+"lint:levels reads [it] on every CI run and every clone." A fresh clone of `origin/main` contains
+it — verified by cloning. The file was missing from the *working tree* only, because a session ran
+`rm -rf assets/dist` during the H4 rebuild and had not rebuilt; `git checkout -- ` restored it.
+
+The ENOENT was an artifact of the dirty working tree that happened to be audited, not a property of
+the repository. **There is no missing dependency to guard**, so the proposed B-14 ("assets build
+dependency check prior to level linting") is cancelled rather than promoted. Building it would have
+added a guard against a non-problem and coupled the level linter to the asset pipeline for no
+reason.
+
+*Method note for the reviewer:* run checks against a clean checkout of `origin/main`, not against a
+working tree other agents are actively building in. Both of the non-confirmed sub-claims here come
+from reading local state as repository state — the same root cause as the refuted finding in
+RB-001.
