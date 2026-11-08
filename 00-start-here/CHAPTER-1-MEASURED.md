@@ -29,7 +29,7 @@ or still need, a human:
 | crow system built (schema, runtime, lint, bot, sweep) and first draft level green on nav + phase-sweep | ~09:00 | 13 min |
 | concept step added mid-run (D-009); concepts generated, reviewed, regenerated | 09:01-09:08 | 7 min |
 | level re-authored against concepts; ACCENT_AREA failures diagnosed and fixed; **all 11 stages green locally** | 09:12 | **25 min** |
-| measurements (reaction window), OQs, backlog, this file; CI | 09:12-CI_DONE | — |
+| measurements (reaction window), OQs, backlog, this file; CI green on PR #6 | 09:12-09:4x | ~1 h total |
 
 **25 minutes from claim to green on every stage**, including building the crow system. The level
 data alone, excluding the crow system, took about 15 minutes. That is one data point from one agent
@@ -51,9 +51,15 @@ unset (`CHAPTER_LENGTH_PENDING`); OQ-037 records the proposal for Tim.
 
 ## 3. Nav bot clear time per segment (budget ≤ 12 s)
 
-From spawn, no deaths, one continuous run (CI log, NAV_SOURCE):
+From spawn, no deaths, one continuous run (CI log, CI run 42505174534, Linux SwiftShader):
 
-NAV_TABLE
+| seg | torii reached at | segment time | budget | waits for the crow |
+|---|---|---|---|---|
+| 1 spawn → T1 | 5.37 s | **5.37 s** | 12 s | — |
+| 2 T1 → T2 | 9.00 s | **3.63 s** | 12 s | — |
+| 3 T2 → T3 | 15.57 s | **6.57 s** | 12 s | yes (the wait is part of the segment) |
+| 4 T3 → goal | 19.75 s | **4.18 s** | 12 s | yes |
+| **total** | | **19.75 s** | 48 s (12 s x 4) | |
 
 From each respawn point at all 8 arrival phases (PHASE_SWEEP), the worst case, counting the wait
 for the crow:
@@ -130,6 +136,8 @@ the camera up to find the next gate is the normal case, not the exception. The r
 weakened; the level changed. Whether the scan should pitch toward the gate is OQ-038, for Tim.
 Without the render, the 0.0000% figure gave no hint of the cause, and the first fix (more distance)
 was wrong. **Pair every visibility rule with a way to see its frame.**
+
+| 5 | harness `counters` (CI) | `scene budget recorded: no line for 01-lower-stair` | OQ-040's scene ratchet landed on main mid-authoring (second rule to do so, after B-4) | recorded the measured 43 calls / 3,852 tris in `budgets.json` + MEASUREMENTS 'Scene budgets' | No. But it can only be satisfied by a run that measures first, so a new level always fails CI once |
 
 ## 6. Where the schema fought, and what was harder than it should be
 

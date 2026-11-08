@@ -146,6 +146,9 @@ draw calls, 500,000 triangles) still apply on top.
 | Level | Peak draw calls | Peak triangles |
 |---|---|---|
 | 00-gym | 34 / 34 | 1,104 / 1,104 |
+| 01-lower-stair | 43 / 43 | 3,852 / 3,852 |
+
+01-lower-stair (CHAPTER-1, CI run 42505174534, landing mark on): 13 kit_rock_mass (13 x 216 = 2,808 tris), 4 kit_torii (432), greybox ledges/stair/knobs, 2 patrollers, 2 crows, the landing mark.
 
 History:
   - 30 calls / 640 tris: greybox gym before H4.
