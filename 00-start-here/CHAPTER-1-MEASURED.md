@@ -29,7 +29,7 @@ or still need, a human:
 | crow system built (schema, runtime, lint, bot, sweep) and first draft level green on nav + phase-sweep | ~09:00 | 13 min |
 | concept step added mid-run (D-009); concepts generated, reviewed, regenerated | 09:01-09:08 | 7 min |
 | level re-authored against concepts; ACCENT_AREA failures diagnosed and fixed; **all 11 stages green locally** | 09:12 | **25 min** |
-| measurements (reaction window), OQs, backlog, this file; CI green on PR #6 | 09:12-09:4x | ~1 h total |
+| measurements (reaction window), OQs, backlog, this file; CI green on PR #6 (run 42505822450, both levels 11/11) | 09:12-09:48 | **61 min claim to CI-green** |
 
 **25 minutes from claim to green on every stage**, including building the crow system. The level
 data alone, excluding the crow system, took about 15 minutes. That is one data point from one agent
