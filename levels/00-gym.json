@@ -50,7 +50,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        14.0,
+        14,
         -0.5,
         0
       ],
@@ -63,7 +63,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        21.0,
+        21,
         -0.5,
         0
       ],
@@ -76,7 +76,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        29.0,
+        29,
         -0.5,
         0
       ],
@@ -89,7 +89,7 @@
     {
       "asset": "prim_box",
       "pos": [
-        38.0,
+        38,
         -0.5,
         0
       ],
@@ -168,12 +168,12 @@
       "asset": "prim_box",
       "pos": [
         60.7,
-        1.0,
+        1,
         0
       ],
       "scale": [
         0.6,
-        2.0,
+        2,
         4
       ]
     },
@@ -261,7 +261,7 @@
       "asset": "prim_box",
       "pos": [
         -4,
-        2.0,
+        2,
         -7
       ],
       "scale": [
@@ -336,6 +336,20 @@
         4
       ],
       "tag": "test"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        0,
+        1.75,
+        7
+      ],
+      "scale": [
+        3,
+        3.5,
+        3
+      ],
+      "tag": "test"
     }
   ],
   "platforms": [
@@ -398,6 +412,69 @@
       0,
       0
     ],
+    {
+      "pos": [
+        -5,
+        0,
+        3.5
+      ],
+      "via": "ground",
+      "note": "move lane: in front of the climb block"
+    },
+    {
+      "pos": [
+        -5,
+        3.5,
+        6.5
+      ],
+      "via": "climb",
+      "note": "jump, grab the 3.5 ledge, climb"
+    },
+    {
+      "pos": [
+        -4,
+        3.5,
+        7
+      ],
+      "via": "ground",
+      "note": "block east edge"
+    },
+    {
+      "pos": [
+        -0.5,
+        3.5,
+        7
+      ],
+      "via": "dash",
+      "note": "dash the 2u gap to the wall ledge"
+    },
+    {
+      "pos": [
+        3,
+        0,
+        7
+      ],
+      "via": "ground",
+      "note": "drop into the corridor beside the x=4 wall"
+    },
+    {
+      "pos": [
+        0,
+        3.5,
+        7
+      ],
+      "via": "wall",
+      "note": "jump into the x=4 wall, wall-jump back onto the ledge"
+    },
+    {
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "via": "dashjump",
+      "note": "dash off the ledge, jump, land at spawn"
+    },
     {
       "pos": [
         10,

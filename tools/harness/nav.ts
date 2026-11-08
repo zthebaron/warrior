@@ -7,7 +7,10 @@
 //   double   move + jump + second jump near apex
 //   dash     move + dash
 //   dashjump dash, then jump as the dash ends
-//   wall     into surface + jump, jump again on wall contact
+//   wall     into surface + jump, jump again on wall contact. "Into surface" comes from the
+//            WAYPOINTS, not geometry: a wall jump pushes AWAY from the wall, so to land at b the
+//            wall must lie beyond a on the side away from b. The bot presses along (a - b) until
+//            the wall jump fires, then steers for b. Author wall segments accordingly.
 //   climb    jump + grab (into the wall), jump from the hang to climb
 //   platform board the named platform, wait to be carried, step off
 //
@@ -24,6 +27,7 @@ export const NAV_CONFIG = {
   landProgress: 0.9,         // fraction of the a->b run a ballistic landing must reach
   landDy: 0.6,               // m: landed at the target's height
   landLateral: 1.5,          // m off the a->b line still counts as on target
+  landReach: 1.5,            // m: OR landed this close to b (a ledge climb ends 0.6u past the lip, short of landProgress)
   risingJumpDy: 0.3,         // b higher than a by this -> jump at the takeoff point (no edge to walk off)
   groundedPastTakeoff: 0.25, // fraction of the run past a while still grounded -> jump anyway (floor continues)
   coyoteJumpDelayTicks: 2,   // ticks after walk-off before pressing jump (inside TUNING.coyoteTimeSec)
@@ -108,6 +112,9 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   const reached: number[] = [0];
   let minYSeen = snap.feet[1];
   let failure: string | null = null;
+  const movesDone = new Map<string, number>();
+  // --trace-seg=N: log every tick of segment N (debugging a move the bot cannot complete)
+  const traceSeg = ctx.args['trace-seg'] !== undefined ? Number(ctx.args['trace-seg']) : -1;
 
   const segLabel = (k: number): string => {
     const w = path[k]!;
@@ -129,6 +136,9 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
     const prevDeaths = snap.deaths;
     snap = await step(frame, (snap.tick - t0) % C.renderEvery === 0);
     minYSeen = Math.min(minYSeen, snap.feet[1]);
+    if (traceSeg === i) {
+      ctx.log(`      [seg ${i} t${snap.tick - segStartTick}] in(${frame.x.toFixed(2)},${frame.y.toFixed(2)})${frame.jump ? ' J' : ''}${frame.dash ? ' D' : ''} feet ${fmt(snap.feet)} vel ${fmt(snap.vel)} ${snap.pstate}${snap.grounded ? ' G' : ''}`);
+    }
 
     if (snap.feet[1] < minY) {
       failure = `fell below bounds.min.y (${minY}) on ${segLabel(Math.min(i, path.length - 1))} at ${fmt(snap.feet)}`;
@@ -141,6 +151,8 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
     }
     if (i < path.length && arrived(path[i - 1]!, path[i]!, path[i + 1], snap, seg)) {
       reached.push(i);
+      const v = path[i]!.via ?? 'ground';
+      movesDone.set(v, (movesDone.get(v) ?? 0) + 1);
       ctx.log(`    reached ${String(i).padStart(2)} ${segLabel(i).padEnd(58)} t=${((snap.tick - t0) / FIXED_HZ).toFixed(2)}s at ${fmt(snap.feet)}`);
       i++;
       seg = newSeg();
@@ -162,6 +174,8 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   // waypoint sits in the goal by lint rule PATH_END, so entering the goal reaches it.
   if (!failure && snap.state === 'results' && i === path.length - 1 && hdist(snap.feet, path[i]!.pos) <= (L.goal.radius ?? 1) + C.groundReach) {
     reached.push(i);
+    const v = path[i]!.via ?? 'ground';
+    movesDone.set(v, (movesDone.get(v) ?? 0) + 1);
     ctx.log(`    reached ${String(i).padStart(2)} ${segLabel(i).padEnd(58)} t=${((snap.tick - t0) / FIXED_HZ).toFixed(2)}s at ${fmt(snap.feet)} (goal)`);
   }
   const ticks = snap.tick - t0;
@@ -170,6 +184,13 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   st.check(`within par_time x${C.parMultiplier}`, ticks <= tickBudget, `${(ticks / FIXED_HZ).toFixed(2)}s / ${(tickBudget / FIXED_HZ).toFixed(0)}s`);
   st.check('never below bounds.min.y', minYSeen >= minY, `min feet y ${minYSeen.toFixed(2)} vs ${minY}`);
   st.check('waypoints reached in order', inOrder && reached.length === path.length, `${reached.length}/${path.length}: [${reached.join(',')}]`);
+  // Every move the path declares must have been completed at least once by the bot.
+  const declared = new Map<string, number>();
+  for (const w of path.slice(1)) declared.set(w.via ?? 'ground', (declared.get(w.via ?? 'ground') ?? 0) + 1);
+  const tally = [...declared].map(([v, n]) => `${v} ${movesDone.get(v) ?? 0}/${n}`).join(', ');
+  const missed = [...declared].filter(([v, n]) => (movesDone.get(v) ?? 0) < n).map(([v]) => v);
+  st.check('every declared move completed', missed.length === 0, missed.length ? `NOT completed: ${missed.join(', ')} — ${tally}` : tally);
+  st.data['moves'] = Object.fromEntries(movesDone);
   const frames = await page.evaluate(() => window.__HARNESS__!.record());
   st.data['ticks'] = ticks;
   st.data['reached'] = reached;
@@ -190,7 +211,9 @@ function control(a: Waypoint, b: Waypoint, next: Waypoint | undefined, s: Snapsh
       if (!p) return { ...NEUTRAL }; // named platform does not exist — wait; the segment timeout reports it
       const here = hdist(p.pos, b.pos) < C.boardAlign;
       if (hdist(s.feet, b.pos) < C.boardWaitDist && !here && seg.phase === 'approach') return { ...NEUTRAL };
-      if (here) seg.phase = 'air'; // committed: keep walking on even as the platform starts moving
+      // Commit only from the wait point: committing from further back means arriving after the
+      // platform has left. Once committed, keep walking on even as the platform starts moving.
+      if (here && hdist(s.feet, b.pos) < C.boardWaitDist + C.groundReach) seg.phase = 'air';
     }
     return f;
   }
@@ -203,13 +226,22 @@ function control(a: Waypoint, b: Waypoint, next: Waypoint | undefined, s: Snapsh
 
   const { s: prog } = along(a.pos, b.pos, s.feet);
   if (!s.grounded) seg.airborneSeen = true;
+  const intoWall = toward(b.pos, a.pos); // wall segments only: the surface lies along (a - b)
+  // Judge the wall jump by OUTCOME (player state), not by which press we think caused it.
+  if (via === 'wall' && s.pstate === 'wall_jump') seg.pressed.add('walljumped');
+  const wallJumped = via === 'wall' && seg.pressed.has('walljumped');
+  if (via === 'wall' && !wallJumped) {
+    f.x = intoWall.x;
+    f.y = intoWall.y;
+  }
 
   if (seg.phase === 'approach') {
     // Walk-off detection: first ungrounded tick in `fall` = we left the edge; coyote is running.
     if (!s.grounded && s.pstate === 'fall' && seg.walkOffTick === null) seg.walkOffTick = s.tick;
     const rising = b.pos[1] - a.pos[1] > C.risingJumpDy;
     const fire =
-      (seg.walkOffTick !== null && s.tick - seg.walkOffTick >= C.coyoteJumpDelayTicks) ||
+      (via !== 'wall' && seg.walkOffTick !== null && s.tick - seg.walkOffTick >= C.coyoteJumpDelayTicks) ||
+      (s.grounded && via === 'wall') || // jump into the surface straight away
       (s.grounded && rising && prog >= 0) ||
       (s.grounded && prog >= C.groundedPastTakeoff);
     if (fire) {
@@ -228,7 +260,7 @@ function control(a: Waypoint, b: Waypoint, next: Waypoint | undefined, s: Snapsh
 
   // phase 'air'. Past the target, steer for the next waypoint as a player would — steering back
   // toward b would reverse air control and drop us on the near lip of the landing.
-  if (prog >= 1) {
+  if (prog >= 1 && (via !== 'wall' || wallJumped)) {
     const d = next ? toward(s.feet, next.pos) : { x: 0, y: 0 };
     f.x = d.x;
     f.y = d.y;
@@ -273,7 +305,8 @@ function control(a: Waypoint, b: Waypoint, next: Waypoint | undefined, s: Snapsh
 function arrivedBallistic(a: Waypoint, b: Waypoint, s: Snapshot): boolean {
   const C = NAV_CONFIG;
   const { s: prog, lateral } = along(a.pos, b.pos, s.feet);
-  return s.grounded && prog >= C.landProgress && Math.abs(s.feet[1] - b.pos[1]) < C.landDy && lateral < C.landLateral;
+  const onTarget = (prog >= C.landProgress && lateral < C.landLateral) || hdist(s.feet, b.pos) < C.landReach;
+  return s.grounded && onTarget && Math.abs(s.feet[1] - b.pos[1]) < C.landDy;
 }
 
 function arrived(a: Waypoint, b: Waypoint, _next: Waypoint | undefined, s: Snapshot, seg: SegState): boolean {
@@ -284,5 +317,6 @@ function arrived(a: Waypoint, b: Waypoint, _next: Waypoint | undefined, s: Snaps
     return !!p && s.grounded && hdist(p.pos, b.pos) < C.rideArrive && hdist(s.feet, b.pos) < C.rideFeetSlack;
   }
   if (BALLISTIC.has(via)) return seg.airborneSeen && arrivedBallistic(a, b, s);
-  return hdist(s.feet, b.pos) < C.groundReach && Math.abs(s.feet[1] - b.pos[1]) < C.groundReachDy;
+  // grounded: a waypoint passed mid-fall is not reached (the next move would start airborne)
+  return s.grounded && hdist(s.feet, b.pos) < C.groundReach && Math.abs(s.feet[1] - b.pos[1]) < C.groundReachDy;
 }

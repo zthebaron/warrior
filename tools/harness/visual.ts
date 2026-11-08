@@ -1,9 +1,13 @@
-// visual — 6 fixed cameras, pixelmatch against committed goldens, fail over 2% drift.
+// visual — 6 fixed cameras, pixelmatch against committed goldens, fail over 0.5% drift.
+// The measured noise floor is 0.000% (deterministic mode), so the gate is set just above zero:
+// a broken shader on one object must not hide under it.
 // Cameras are derived from critical_path (not geometry), so deleting or moving geometry changes
 // the picture but never the viewpoint. Deterministic mode makes every frame reproducible: the
 // player is at spawn and platforms are at tick 1 when each golden is taken.
-// Goldens: tools/harness/golden/<level>/camN.png (regenerate: --update-goldens).
-// On failure: camN.actual.png + camN.diff.png beside them (gitignored; uploaded by CI).
+// Goldens: tools/harness/golden/<platform>/<level>/camN.png, platform = process.platform — macOS
+// and Linux SwiftShader need not agree pixel-for-pixel, so each keeps its own set.
+// Regenerate: --update-goldens. On failure or a missing golden: camN.actual.png (+ diff) beside
+// them (gitignored; uploaded by CI — a new platform's first CI artifact IS its golden set).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,7 +17,7 @@ import { FAILURE, Stage, guard, openGame, wp, type Ctx, type LevelJson, type Sta
 
 export const VISUAL_CONFIG = {
   cameraCount: 6,
-  maxDriftFraction: 0.02,
+  maxDriftFraction: 0.005,
   pixelThreshold: 0.1,           // pixelmatch per-pixel colour threshold (0..1)
   offset: [-7, 7, 11] as Vec3,   // camera position relative to its target
   overviewOffset: [-25, 28, 34] as Vec3,
@@ -36,9 +40,10 @@ export async function visual(ctx: Ctx): Promise<StageResult> {
   const st = new Stage('visual');
   return guard(st, async () => {
     const C = VISUAL_CONFIG;
-    const dir = join(ctx.root, 'tools/harness/golden', ctx.levelId);
+    const dir = join(ctx.root, 'tools/harness/golden', process.platform, ctx.levelId);
     const update = ctx.args['update-goldens'] === true;
-    if (update) mkdirSync(dir, { recursive: true });
+    mkdirSync(dir, { recursive: true });
+    st.data['goldens'] = dir.replace(`${ctx.root}/`, '');
     const g = await openGame(ctx);
     try {
       for (const cam of cameras(ctx.level)) {
@@ -55,7 +60,8 @@ export async function visual(ctx: Ctx): Promise<StageResult> {
         }
         if (!existsSync(golden)) {
           st.failureClass = FAILURE.SETUP;
-          st.check(`${cam.name} drift <= ${C.maxDriftFraction * 100}%`, false, `golden missing: ${golden.replace(`${ctx.root}/`, '')} — run with --update-goldens`);
+          writeFileSync(join(dir, `${cam.name}.actual.png`), PNG.sync.write(shot));
+          st.check(`${cam.name} drift <= ${C.maxDriftFraction * 100}%`, false, `golden missing: ${golden.replace(`${ctx.root}/`, '')} — wrote ${cam.name}.actual.png; review it, rename to ${cam.name}.png (or run --update-goldens on this platform)`);
           continue;
         }
         const ref = PNG.sync.read(readFileSync(golden));
