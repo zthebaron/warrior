@@ -1,3 +1,14 @@
-assets/dist/** filter=lfs diff=lfs merge=lfs -text
-*.glb filter=lfs diff=lfs merge=lfs -text
-*.ktx2 filter=lfs diff=lfs merge=lfs -text
+# LFS targets binary ASSET TYPES, never a whole directory.
+# assets/dist/ also holds manifest.json, which lint:levels reads on every CI run and
+# every clone. An LFS pointer file there breaks the linter on any checkout without LFS.
+*.glb    filter=lfs diff=lfs merge=lfs -text
+*.gltf   filter=lfs diff=lfs merge=lfs -text
+*.bin    filter=lfs diff=lfs merge=lfs -text
+*.ktx2   filter=lfs diff=lfs merge=lfs -text
+*.basis  filter=lfs diff=lfs merge=lfs -text
+*.png    filter=lfs diff=lfs merge=lfs -text
+*.jpg    filter=lfs diff=lfs merge=lfs -text
+*.mp4    filter=lfs diff=lfs merge=lfs -text
+
+# Guard: never LFS the manifest, whatever rules get added above.
+assets/dist/manifest.json -filter -diff -merge text

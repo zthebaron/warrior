@@ -5,15 +5,15 @@
 // Linter v2 — critical_path waypoints are now MOVE-ANNOTATED.
 // Fix for the v1 defect: v1 assumed every segment was a jump and rejected normal running.
 
-const MOVE = {                       // measured in the gym level, written back from SPEC.md
-  ground:   { maxH: Infinity, slope: 50, autostep: 0.5, maxDrop: 14.0 },  // slope limit matches Rapier maxSlopeClimbAngle
-  jump:     { maxH: 5.2,      maxRise:  3.1, maxDrop: 14.0 },
-  double:   { maxH: 8.4,      maxRise:  5.6, maxDrop: 14.0 },
-  dash:     { maxH: 7.0,      maxRise:  0.8, maxDrop: 14.0 },
-  dashjump: { maxH: 12.6,     maxRise:  3.1, maxDrop: 14.0 },
-  wall:     { maxH: 3.0,      maxRise:  6.2, maxDrop:  2.0 },  // wall-run into wall-jump
-  climb:    { maxH: 1.5,      maxRise:  2.4, maxDrop:  0.5 },  // ledge grab + climb
-  platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity } // carried by a moving platform
+const MOVE = {
+  ground:   { maxH: Infinity, slope: 50, autostep: 0.5, maxDrop: 14.0, measured: true },
+  jump:     { maxH:  5.0, maxRise: 2.3, maxDrop: 14.0, measured: true },
+  double:   { maxH:  9.5, maxRise: 4.1, maxDrop: 14.0, measured: true },
+  platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity, measured: true },
+  dash:     { maxH:  7.0, maxRise: 0.8, maxDrop: 14.0, measured: false },
+  dashjump: { maxH: 12.6, maxRise: 3.1, maxDrop: 14.0, measured: false },
+  wall:     { maxH:  3.0, maxRise: 6.2, maxDrop:  2.0, measured: false },
+  climb:    { maxH:  1.5, maxRise: 2.4, maxDrop:  0.5, measured: false }
 };
 
 export function lintLevel(level, manifest){
@@ -49,6 +49,7 @@ export function lintLevel(level, manifest){
     if(!via){ E('NO_VIA',`critical_path[${i}] has no "via" — agent must declare the move`); continue; }
     const m=MOVE[via];
     if(!m){ E('BAD_VIA',`critical_path[${i}] via "${via}" is not a known move`); continue; }
+    if(m.measured===false){ E('UNMEASURED_MOVE',`critical_path[${i}] via "${via}": this move has never been measured in the gym. Its budget is a guess, so a level using it cannot be proven playable. Measure it, set measured:true, then use it.`); continue; }
     const h=d(a,c), rise=c[1]-a[1];
     // slope-based moves (ground) allow rise proportional to run; ballistic moves use a fixed ceiling
     const riseLimit = (m.slope!==undefined)

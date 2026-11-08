@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warrior — H2 spike</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #111; }
+      #app { position: fixed; inset: 0; }
+      #hud { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+             pointer-events: none; font: 600 20px/1.5 system-ui, sans-serif; color: #fff;
+             text-shadow: 0 1px 3px #000; text-align: center; white-space: pre-line; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="hud"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

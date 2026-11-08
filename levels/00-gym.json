@@ -1,0 +1,534 @@
+{
+  "id": "00-gym",
+  "title": "Gym",
+  "chapter": 0,
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      0,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      92,
+      3.2,
+      0
+    ],
+    "radius": 1.5
+  },
+  "bounds": {
+    "min": [
+      -20,
+      -15,
+      -20
+    ],
+    "max": [
+      110,
+      40,
+      20
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        20,
+        1,
+        20
+      ],
+      "tag": "spawn"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        14.0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        21.0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        29.0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        38.0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        52,
+        -0.5,
+        0
+      ],
+      "scale": [
+        12,
+        1,
+        8
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        58.3,
+        0.2,
+        0
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        58.9,
+        0.4,
+        0
+      ],
+      "scale": [
+        0.6,
+        0.8,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        59.5,
+        0.6,
+        0
+      ],
+      "scale": [
+        0.6,
+        1.2,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        60.1,
+        0.8,
+        0
+      ],
+      "scale": [
+        0.6,
+        1.6,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        60.7,
+        1.0,
+        0
+      ],
+      "scale": [
+        0.6,
+        2.0,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        61.3,
+        1.2,
+        0
+      ],
+      "scale": [
+        0.6,
+        2.4,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        61.9,
+        1.4,
+        0
+      ],
+      "scale": [
+        0.6,
+        2.8,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        62.5,
+        1.6,
+        0
+      ],
+      "scale": [
+        0.6,
+        3.2,
+        4
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        67.4,
+        2.7,
+        0
+      ],
+      "scale": [
+        9.2,
+        1,
+        6
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        91,
+        2.7,
+        0
+      ],
+      "scale": [
+        10,
+        1,
+        8
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        92,
+        3.25,
+        0
+      ],
+      "scale": [
+        3,
+        0.1,
+        3
+      ],
+      "collider": "none",
+      "tag": "goal_pad"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        -4,
+        2.0,
+        -7
+      ],
+      "scale": [
+        6,
+        0.4,
+        2.5
+      ],
+      "rot": [
+        0,
+        0,
+        45
+      ],
+      "tag": "test"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        4,
+        2.3,
+        -7
+      ],
+      "scale": [
+        6,
+        0.4,
+        2.5
+      ],
+      "rot": [
+        0,
+        0,
+        55
+      ],
+      "tag": "test"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        -5,
+        1.75,
+        7
+      ],
+      "scale": [
+        3,
+        3.5,
+        3
+      ],
+      "tag": "test"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        4.5,
+        4,
+        7
+      ],
+      "scale": [
+        1,
+        8,
+        4
+      ],
+      "tag": "test"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        8.5,
+        4,
+        7
+      ],
+      "scale": [
+        1,
+        8,
+        4
+      ],
+      "tag": "test"
+    }
+  ],
+  "platforms": [
+    {
+      "id": "plat_a",
+      "asset": "prim_slab",
+      "path": [
+        [
+          74,
+          2.95,
+          0
+        ],
+        [
+          84,
+          2.95,
+          0
+        ]
+      ],
+      "duration": 3,
+      "easing": "sine",
+      "loop": "pingpong",
+      "collider": "trimesh"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        52,
+        0,
+        0
+      ],
+      "facing": -90
+    }
+  ],
+  "lighting": {
+    "preset": "greybox",
+    "sunAngle": [
+      50,
+      135
+    ],
+    "intensity": 1.6
+  },
+  "critical_path": [
+    [
+      0,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        10,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "spawn plane edge"
+    },
+    {
+      "pos": [
+        12,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 2"
+    },
+    {
+      "pos": [
+        16,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        19,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 3"
+    },
+    {
+      "pos": [
+        23,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        27,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 4"
+    },
+    {
+      "pos": [
+        31,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        36,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 5"
+    },
+    {
+      "pos": [
+        40,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        46,
+        0,
+        0
+      ],
+      "via": "double",
+      "note": "gap 6"
+    },
+    {
+      "pos": [
+        58,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        62.8,
+        3.2,
+        0
+      ],
+      "via": "ground",
+      "note": "staircase: 8 x 0.4 rise / 0.6 tread"
+    },
+    {
+      "pos": [
+        74,
+        3.2,
+        0
+      ],
+      "via": "ground",
+      "note": "onto plat_a at its start"
+    },
+    {
+      "pos": [
+        84,
+        3.2,
+        0
+      ],
+      "via": "platform",
+      "platform": "plat_a"
+    },
+    {
+      "pos": [
+        92,
+        3.2,
+        0
+      ],
+      "via": "ground",
+      "note": "goal pad"
+    }
+  ],
+  "par_time": 30,
+  "difficulty": 1
+}

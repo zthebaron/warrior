@@ -1,7 +1,7 @@
 {
   "name": "warrior",
   "version": "1.0.0",
-  "description": "Warrior \u2014 AI-built 3D browser action-platformer. Proofline game track PGT-01.",
+  "description": "Warrior — AI-built 3D browser action-platformer. Proofline game track PGT-01.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -23,10 +23,11 @@
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
     "ajv": "^8.20.0",
-    "three": "^0.187.0"
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
+    "@types/three": "0.187.0",
     "pixelmatch": "^8.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6"

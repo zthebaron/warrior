@@ -40,11 +40,11 @@
     "collider": {
       "enum": [
         "trimesh",
-        "box",
         "capsule",
         "sphere",
         "none"
-      ]
+      ],
+      "description": "No 'box': with the verified KCC (snapToGround 0.5) a standing capsule sinks through cuboid colliders, fixed or kinematic. Proven by npm run check:physics (FLOOR SINK). Use trimesh."
     },
     "action": {
       "type": "object",
