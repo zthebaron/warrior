@@ -11,4 +11,4 @@
 *.mp4    filter=lfs diff=lfs merge=lfs -text
 
 # Guard: never LFS the manifest, whatever rules get added above.
-assets/dist/manifest.json -filter -diff -merge text
+assets/dist/manifest.json -filter !diff !merge text

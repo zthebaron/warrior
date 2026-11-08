@@ -7,13 +7,13 @@
 
 const MOVE = {
   ground:   { maxH: Infinity, slope: 50, autostep: 0.5, maxDrop: 14.0, measured: true },
-  jump:     { maxH:  5.0, maxRise: 2.3, maxDrop: 14.0, measured: true },
-  double:   { maxH:  9.5, maxRise: 4.1, maxDrop: 14.0, measured: true },
-  platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity, measured: true },
-  dash:     { maxH:  7.0, maxRise: 0.8, maxDrop: 14.0, measured: false },
-  dashjump: { maxH: 12.6, maxRise: 3.1, maxDrop: 14.0, measured: false },
-  wall:     { maxH:  3.0, maxRise: 6.2, maxDrop:  2.0, measured: false },
-  climb:    { maxH:  1.5, maxRise: 2.4, maxDrop:  0.5, measured: false }
+  jump:     { maxH:  5.0, maxRise: 2.0, maxDrop: 14.0, measured: true },
+  double:   { maxH:  9.5, maxRise: 3.5, maxDrop: 14.0, measured: true },
+  dash:     { maxH:  4.0, maxRise: 0.5, maxDrop: 14.0, measured: true },
+  dashjump: { maxH: 10.0, maxRise: 2.75, maxDrop: 14.0, measured: true },
+  wall:     { maxH:  4.2, maxRise: 4.0, maxDrop:  2.0, measured: true },
+  climb:    { maxH:  7.0, maxRise: 4.5, maxDrop:  0.5, measured: true },
+  platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity, measured: true }
 };
 
 export function lintLevel(level, manifest){
