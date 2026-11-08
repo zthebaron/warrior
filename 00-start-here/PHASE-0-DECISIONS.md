@@ -1,0 +1,98 @@
+# Phase 0 — Decisions (APPROVER: Tim, via REVIEWER)
+
+Answered questions are CLOSED. Do not re-ask them. Record new answers here as they land.
+
+## Q1 — Core verb: **A, leap / traversal.** CLOSED
+
+Not combat, not a chase. The deciding argument is harness integrity, not taste: the moment an
+enemy pursues the player with pathfinding, the nav bot's route stops being reproducible, and the
+replay harness is the thing the whole build rests on. Traversal keeps every level's test a
+deterministic path.
+
+## Q2 — No 9th move. **A.** CLOSED
+
+Ruled out: glide, or any addition to the moveset. Every budget in the MOVE table was *measured*
+against the current eight moves. Adding a move invalidates `MEASUREMENTS.md` wholesale and
+re-opens the gym. The moveset is frozen.
+
+Signal channels, locked:
+- **Vermilion means WHERE.** Torii only, in sequence along the path as waypoint markers (§4).
+  Never on a crow, never on a hazard. Under the 1% budget.
+- **Crow motion means WHEN.** A lift-off is keyed to a hazard's timer.
+- `speed` and `phase` on patrollers are mandatory linter errors, same severity as a missing `via`.
+- `HAZARD_ON_PATH` stays a static check. Moving-hazard collisions are the nav bot's job, and the
+  spec says so, so nobody expects the linter to catch them.
+
+## Q2a — Ambient crows: **confirmed, with a sharper rule.** CLOSED
+
+Yes: if lift-off always means a timing cue, ambient crows can never lift off. A moving ambient
+element is a false positive in the one channel the game uses to say "go now," and signal
+exclusivity is worth more than ambience.
+
+Write the rule as translation, not animation — it is lintable that way:
+
+> **Nothing translates except the player and hazards.**
+
+A perched crow's idle head-turn is rotation in place and is allowed. Distant flocks in the far
+band (80u+) are painted in place. Mist and pines do not animate.
+
+## Q2b — Landing readability: **do not amend the Style Bible yet.** CONDITIONAL
+
+The conflict is real. §1 and §9 forbid cast and contact shadows, and with a fixed follow camera
+(§8) over flat fills, jump depth is hard to read. The proposed ink dot does pass §10 test 1 — a
+mark directly beneath the player implies no light direction — but "it's a brush mark, not a
+shadow" is a rationalisation, so decide it on evidence instead of on the category.
+
+The better objection is that the game may not need it. The composition rule (§5) puts the path on
+the seam between a dark cliff mass and a bright void, which means a landing target is silhouetted
+against the void — more readable than a shadow. Shadows solve landings on platforms floating in
+open space. If no platform ever floats in open space, the problem does not arise.
+
+So: **solve it with geometry first.** Keep every platform attached to the cliff mass. Implement
+the landing mark behind a flag, **default off**, so the H2.5 feel test can toggle it in place.
+If the feel test says depth is unreadable, the mark ships and §9 gets a documented exception.
+Do not amend the Style Bible on a hypothesis — same discipline as not putting an unmeasured
+number in the budget table.
+
+## Q2c — Schema cuts the Style Bible forces: **approved.** CLOSED
+
+- Cut the fire hazard and the torch interactable. Both need either an off-ramp colour or a
+  locatable light source; both are forbidden.
+- Water hazard survives only as a flat wash.
+
+## Q3 — End of segment: **A, progress only.** CLOSED
+
+The torii is the checkpoint, the next torii comes into view, and the whole game is reading routes
+and timing. Zero new systems; every hour of the sprint goes into level quality.
+
+The costs of B and C are understated in the question:
+
+- **B (pickups) is not 2-3 days.** It doubles the nav bot's proof obligation per segment. Each
+  level needs a second proven route, which turns `critical_path` into `critical_paths` — a schema
+  change to the one strict, load-bearing file — and the MOVE validation has to run across both.
+  That is a change to the thing that makes fan-out safe, not a content feature.
+- **C (gate puzzle) is worse in kind.** Ordered state turns a level's test from "can this route be
+  walked" into "can this route be walked in this order." Every level author then has to reason
+  about sequencing. That is precisely the complexity levels-as-data exists to exclude.
+
+A does not foreclose B. Pickups are additive to level JSON and can land as a post-gold content
+pass, once `critical_paths` is a considered change rather than a sprint-time one.
+
+### Segment length: **30 seconds**, not 45
+
+45s is too long for a *first-time* player when the torii is the checkpoint: a timing-based
+traversal game kills first-timers often, and 45s is 45s of lost progress per death. Precision
+platformers sit at 20-40s between checkpoints.
+
+Make it a budget rather than a feeling, since the nav bot already times segments:
+
+| measure | target |
+|---|---|
+| nav bot (expert, no deaths) | <= 12s per segment |
+| first-time human | 25-35s per segment |
+| core loop (2-3 segments) | 30-90s |
+
+That reconciles the 30-90s core loop with a checkpoint interval short enough to stay fair, and it
+is CI-checkable on the bot side.
+
+## Q4-Q7 — outstanding
