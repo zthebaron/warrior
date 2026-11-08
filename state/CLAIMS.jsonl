@@ -51,3 +51,4 @@
 {"id":"OQ-037","agent":"kit","ts":"2026-11-08T16:55:18.224Z","ttl_min":600}
 {"id":"OQ-038","agent":"kit","ts":"2026-11-08T16:55:18.250Z","ttl_min":600}
 {"id":"OQ-039","agent":"kit","ts":"2026-11-08T16:55:18.278Z","ttl_min":600}
+{"id":"LANDING-MARK-DEFAULT","agent":"phase0-spec","ts":"2026-11-08T17:06:18.552Z","ttl_min":90}
