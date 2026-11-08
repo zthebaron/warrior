@@ -487,3 +487,16 @@ only accepts a fast-forward anyway. B gives the same result (PR 6 MERGEABLE, CI 
 that lands) with every hash intact. D-011 checked rather than assumed: chapter 1 lints with 0
 errors, 0 warnings, as 3 teaching (jump, climb, crow) + 1 transfer + 0 practice.
 status: PROVISIONAL
+
+## OQ-033 — b12-harvest conflicts with main and with PR 3. Resolve now, or after PR 3 lands?
+raised: 2026-11-08 by kit (PR 4)
+options: A merge main in now, so PR 4 gets CI | B leave it conflicting until PR 3 is on main, then merge once | C stack PR 4 on h4-asset-kit
+took: B
+because: the five conflicts (ci.yml, level.ts, main.ts, harness lib.ts, run.mjs) are the same against
+main and against PR 3. If PR 4 merged main now, it would have to resolve `startJson` against main's
+no-decode version, and then again against PR 3's `prepareLevel` version once PR 3 lands. That is two
+resolutions of the same function, and the first one is thrown away. B does it once. On PR 3's base
+this branch's `startJson` fails TS2345, which is the intended B-16 gate: take PR 3's `startJson`, and
+keep `teleportPlayer` plus `rules.respawnDelaySec`/`fixedDt`. C would couple PR 4's review to PR 3's.
+Cost: PR 4 shows no CI until PR 3 merges.
+status: PROVISIONAL
