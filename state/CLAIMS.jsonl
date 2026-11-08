@@ -85,3 +85,4 @@
 {"id":"D-015-BUILD","agent":"builder-d015","ts":"2026-11-08T19:28:54.931Z","released":true}
 {"id":"B-17","agent":"kit","ts":"2026-11-08T21:26:27.998Z","ttl_min":90}
 {"id":"OQ-048","agent":"kit","ts":"2026-11-08T21:26:28.025Z","ttl_min":90}
+{"id":"PR4-REBASE-3","agent":"phase0-spec","ts":"2026-11-08T21:26:36.110Z","ttl_min":90}
