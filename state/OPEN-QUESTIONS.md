@@ -330,3 +330,74 @@ Q4 amendment 2 (a field an agent sees gets wired up). B would be a design decisi
 does, and no decision covers it. C is the defect itself. Neither level used it. If crush cycling is
 decided later, `period` returns as a schema addition with its runtime and a decision entry.
 status: PROVISIONAL
+
+## OQ-034 — The crow's lead time: a fixed constant, or authored per crow?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A one fixed lead constant in code, lift = window_open - lead | B `lift` authored per crow as a loop fraction, sufficiency proven by the harness, the effective lead measured and reported | C as A, with the window computed from the patroller's geometry against the cue path
+took: B
+because: PROMPT-CHAPTER-1 says "lifts off on a fixed lead time before the safe window opens", but no
+lead is in MEASUREMENTS.md, and CLAUDE.md forbids a number in code that is not there. The right lead
+is a human-reaction number, and only H2.5 can measure it. So under B the crow carries `lift`, and the
+harness proves it is a sufficient "go now": the bot departs on the lift-off edge and must clear from
+all 8 arrival phases. A quarter-loop mistimed `lift` fails 0/8 (verified). Measured in chapter 1: lift
+to window-open is 0.83 s (seg 3) and 1.19 s (seg 4), and departing up to 0.75 s / 0.95 s after
+lift-off still clears every phase (tools/harness/cue-window.ts). C is the upgrade once H2.5 picks a
+lead: a lint rule then derives `lift` and the authored field goes away.
+status: PROVISIONAL
+
+## OQ-035 — Where does a crow live in the level schema?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A a top-level `crows` array, each referencing a hazard | B a `crow` block inside the patroller it cues
+took: B
+because: Q2a: "nothing translates except the player and hazards." Under B the only crow that can move
+is part of a hazard, and a crow keyed to anything but a timed hazard cannot be represented: the schema
+allows `crow` on `type: patroller` only, so there is no rule to lint. Ambient crows cannot be authored
+at all yet; chapter 1 needs none. If they are wanted, they get their own array with no motion fields,
+which makes NOT row 18 enforceable as a schema check. A waypoint's `cue: <hazard index>` says where
+the player waits for it, and lint checks that it waits at a torii (BAD_CUE, CUE_NOT_AT_TORII).
+NO_CROW_CUE makes Q5's "chapter 1 carries the crow" executable.
+status: PROVISIONAL
+
+## OQ-036 — Q6 part 6 (per-segment death counts) does not exist. What stands in for the teach-rate proxy?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A build the per-segment counter first | B report PHASE_SWEEP "blind" departures (the bot ignoring the crow) as deaths per segment, labelled as a proxy | C report nothing
+took: B
+because: the harness has only a total `deaths` counter, and nav fails on the first death, so the expert
+bot always shows 0. That measures nothing. A blind departure is exactly a first-time player who does
+not read the crow, so its failure count is a direct per-segment death measure for the one unproven
+mechanic. It is report-only and never fails CI. A is real work owed to Q6, now B-17 in the backlog.
+status: PROVISIONAL
+
+## OQ-037 — Chapter 1 is 4 segments. What does that set for chapters 2-4?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A leave CHAPTER_SEGMENTS (4-6, chapter 2+) as it is; chapter 1 needs no rule of its own | B tighten to 4-5 | C set a per-move rule, "one segment per new move or signal that can kill you, plus one transfer segment for the riskiest"
+took: A, recording C as what chapter 1 actually did
+because: four came from C: ground cannot kill on a 7 m seam ledge, so it shares a segment with jump;
+climb gets one; the crow gets two (introduce it alone, then transfer it to a jump), because Q5 calls it
+the riskiest unproven element. Bot time is 19.75 s total, inside 12 s per segment. Chapters 2-4 add
+2/2/1 moves and no new signal, so C predicts 2-4 teaching segments plus practice: that lands in 4-6.
+The lint warning CHAPTER_LENGTH_PENDING stays until Tim sets the rule. The number is an input to
+that decision, not the decision.
+status: PROVISIONAL
+
+## OQ-038 — ACCENT_AREA (D-006) made a two-climb segment impossible. Is the scanning frame right for a climbing game?
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A keep the rule; author one climb per torii-to-torii rise | B scan with the rig pitched toward the gate | C exempt gates above the anchor
+took: A (the level was changed, the rule was not)
+because: the scan stands 6.7 m behind the previous torii, at the rig's rest pitch, facing the next one,
+so the previous torii is always dead centre. With two stacked 3.5 m faces in between, the upper lip
+hides everything below +8.4 degrees, and the previous gate's crossbeams cover +5..14 (frame top +12). Rendered with
+tools/harness/scan-frame.ts: 0.0000% at 21 m and at 33 m. Weakening a measured rule to fit content is
+forbidden. But this game climbs a mountain, so a player looking up for the next gate is the normal
+case. B is worth Tim's decision before chapters 2-4 author more vertical segments.
+status: PROVISIONAL
+
+## OQ-039 — `npm run lint:levels` never validates the schema
+raised: 2026-11-08 by kit (CHAPTER-1)
+options: A add ajv validation to lint:levels | B leave the schema to the playtest/game load
+took: B for now (out of CHAPTER-1 scope); recorded as a finding
+because: lint-level.mjs is semantic only. A level can print LINT PASS and still fail
+level.schema.json; only `npm run playtest` or a game load catches it. While authoring, a schema
+error (strict-mode `if/required`) crashed the harness at compile, and LINT PASS had already been
+printed. The cheapest fix is a few lines in the lint:levels loop.
+status: PROVISIONAL

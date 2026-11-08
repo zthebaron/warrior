@@ -58,10 +58,11 @@ interface SegState {
   platDist: number | null; // last tick's platform-to-boarding-point distance (is it arriving or leaving?)
   cueWait: boolean;            // holding for the crow's lift-off
   cueSeen: boolean | null;     // crow airborne at the last observed tick (null = not yet observed)
+  cueLift: number | null;      // tick the lift-off edge was seen
 }
 
 function newSeg(cue = false): SegState {
-  return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0, platDist: null, cueWait: cue, cueSeen: null };
+  return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0, platDist: null, cueWait: cue, cueSeen: null, cueLift: null };
 }
 
 function toward(from: Vec3, to: Vec3): { x: number; y: number } {
@@ -120,6 +121,8 @@ export interface WalkOptions {
   quiet?: boolean;
   /** Depart cue segments without waiting for the crow (PHASE_SWEEP's blind runs: what the cue saves). */
   ignoreCues?: boolean;
+  /** Ticks to keep holding AFTER the lift-off edge (a slower reaction; tools/harness/cue-window.ts). */
+  cueDelayTicks?: number;
 }
 
 export interface WalkResult {
@@ -181,8 +184,12 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
 
     if (seg.cueWait && i < path.length) {
       const airborne = snap.crows.find((c) => c.index === cueOf(i))?.airborne ?? false;
-      if (seg.cueSeen === false && airborne) seg.cueWait = false; // lift-off: go now
-      else seg.cueSeen = airborne;
+      if (seg.cueLift !== null) {
+        if (snap.tick - seg.cueLift >= (opts.cueDelayTicks ?? 0)) seg.cueWait = false; // reacted: go
+      } else if (seg.cueSeen === false && airborne) {
+        seg.cueLift = snap.tick; // lift-off: go now (after cueDelayTicks, default 0)
+        if (!opts.cueDelayTicks) seg.cueWait = false;
+      } else seg.cueSeen = airborne;
     }
     const holding = seg.cueWait && i < path.length;
     if (holding) cueWaitTicks++;
