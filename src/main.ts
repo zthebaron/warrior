@@ -11,7 +11,8 @@ import { SpringArmCamera, CAMERA_TUNING } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
-import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
+import { buildLevel, fetchLevelFresh, loadLevel, parseLevel, preloadLevelAssets, type LevelData, type LevelInstance, type Vec3 } from './loaders/level';
+import { configureAssetLoaders } from './loaders/assets';
 
 export const GAME_RULES = {
   startLevel: '00-gym',
@@ -118,6 +119,7 @@ async function boot(): Promise<void> {
 
   const state = new StateMachine();
   const renderer = new Renderer(el('app'));
+  configureAssetLoaders(renderer.renderer);
   const physics = await Physics.create();
   const input = new InputSystem(window);
   const profiler = new Profiler();
@@ -183,7 +185,9 @@ async function boot(): Promise<void> {
   const startLevel = async (): Promise<void> => {
     state.transition('loading');
     try {
-      install(await loadLevel(levelId));
+      const data = await loadLevel(levelId);
+      await preloadLevelAssets(data); // glTF assets decode before the (synchronous) build
+      install(data);
       state.transition('play');
     } catch (err) {
       showError(err);
@@ -205,7 +209,9 @@ async function boot(): Promise<void> {
   const reloadFromDisk = async (): Promise<void> => {
     const id = level?.data.id ?? levelId;
     try {
-      hotReload(import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id));
+      const data = import.meta.env.DEV ? await fetchLevelFresh(id) : await loadLevel(id);
+      await preloadLevelAssets(data);
+      hotReload(data);
     } catch (err) {
       showError(err);
     }
@@ -215,7 +221,8 @@ async function boot(): Promise<void> {
     import.meta.hot.on('level:changed', (msg: { id: string; text: string }) => {
       if (msg.id !== level?.data.id) return;
       try {
-        hotReload(parseLevel(msg.text, `levels/${msg.id}.json`));
+        const data = parseLevel(msg.text, `levels/${msg.id}.json`);
+        preloadLevelAssets(data).then(() => hotReload(data), showError);
       } catch (err) {
         showError(err);
       }

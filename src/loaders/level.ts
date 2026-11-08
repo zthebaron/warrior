@@ -8,6 +8,7 @@ import type { RigidBody, Collider } from '@dimforge/rapier3d-compat';
 import schema from '../../levels/level.schema.json';
 import manifestJson from '../../assets/dist/manifest.json';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
+import { getLoadedAsset, preloadAssets } from './assets';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
 export type Vec3 = [number, number, number];
@@ -68,13 +69,25 @@ export interface LevelData {
   difficulty: number;
 }
 
-export interface ManifestAsset {
+export interface PrimitiveAsset {
   name: string;
   kind: 'primitive';
   shape: 'box';
   size: Vec3;
   collider: ColliderKind;
 }
+
+/** Built by tools/build_assets.mjs. One mesh, repeated `instancing.count` times at runtime. */
+export interface GltfAsset {
+  name: string;
+  kind: 'gltf';
+  file: string;
+  collider: 'trimesh';
+  collision_mesh: string | null;
+  instancing: { count: number; step: Vec3 } | null;
+}
+
+export type ManifestAsset = PrimitiveAsset | GltfAsset;
 
 export const LEVEL_VISUAL = {
   defaultColor: 0xb8b2a6,
@@ -137,10 +150,23 @@ function parseManifest(json: unknown): Map<string, ManifestAsset> {
   const assets = (json as { assets?: unknown }).assets;
   if (!Array.isArray(assets)) throw new Error('[manifest] assets/dist/manifest.json: "assets" must be an array');
   assets.forEach((a: unknown, i) => {
-    const e = a as Partial<ManifestAsset>;
+    const e = a as Partial<PrimitiveAsset>;
     if (typeof e.name !== 'string') throw new Error(`[manifest] assets[${i}].name missing`);
+    if ((a as { kind?: unknown }).kind === 'gltf') {
+      const g = a as Partial<GltfAsset>;
+      if (typeof g.file !== 'string') throw new Error(`[manifest] assets[${i}] "${e.name}": gltf asset needs "file"`);
+      if (g.collider !== 'trimesh') {
+        throw new Error(`[manifest] assets[${i}] "${e.name}": collider "${String(g.collider)}" not allowed (trimesh only; box sinks — see check:physics)`);
+      }
+      const inst = g.instancing ?? null;
+      if (inst && (!Number.isInteger(inst.count) || inst.count < 1 || !Array.isArray(inst.step) || inst.step.length !== 3)) {
+        throw new Error(`[manifest] assets[${i}] "${e.name}": instancing needs integer count >= 1 and step [x,y,z]`);
+      }
+      out.set(e.name, { name: e.name, kind: 'gltf', file: g.file, collider: 'trimesh', collision_mesh: g.collision_mesh ?? null, instancing: inst });
+      return;
+    }
     if (e.kind !== 'primitive' || e.shape !== 'box') {
-      throw new Error(`[manifest] assets[${i}] "${e.name}": only kind=primitive shape=box is supported until the H4 asset pipeline lands`);
+      throw new Error(`[manifest] assets[${i}] "${e.name}": kind must be primitive (shape box) or gltf`);
     }
     if (!Array.isArray(e.size) || e.size.length !== 3 || !e.size.every((n) => typeof n === 'number')) {
       throw new Error(`[manifest] assets[${i}] "${e.name}": size must be [x,y,z]`);
@@ -155,6 +181,13 @@ function parseManifest(json: unknown): Map<string, ManifestAsset> {
 }
 
 export const MANIFEST = parseManifest(manifestJson);
+
+/** Decode every glTF asset the level places. Must complete before buildLevel(data). */
+export async function preloadLevelAssets(data: LevelData): Promise<void> {
+  const names = new Set(data.geometry.map((p) => p.asset));
+  const gltf = [...names].map((n) => MANIFEST.get(n)).filter((a): a is GltfAsset => a?.kind === 'gltf');
+  await preloadAssets(gltf.map((a) => ({ name: a.name, file: a.file, collisionMesh: a.collision_mesh })));
+}
 
 // ---------- loading ----------
 const SOURCES = import.meta.glob<string>(['../../levels/*.json', '!../../levels/*.schema.json'], { query: '?raw', import: 'default' });
@@ -211,7 +244,12 @@ export interface LevelInstance {
   dispose(): void;
 }
 
-function sizeOf(asset: ManifestAsset, scale: Placement['scale']): THREE.Vector3 {
+function scaleOf(scale: Placement['scale']): THREE.Vector3 {
+  if (typeof scale === 'number') return new THREE.Vector3(scale, scale, scale);
+  return scale ? new THREE.Vector3(...scale) : new THREE.Vector3(1, 1, 1);
+}
+
+function sizeOf(asset: PrimitiveAsset, scale: Placement['scale']): THREE.Vector3 {
   const s = new THREE.Vector3(...asset.size);
   if (typeof scale === 'number') s.multiplyScalar(scale);
   else if (scale) s.multiply(new THREE.Vector3(...scale));
@@ -296,12 +334,60 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
 
   // static geometry: one fixed body, one collider per placement
   const fixed = physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+
+  // glTF placement: one InstancedMesh per part (1 draw call each, however many instances) and ONE
+  // merged trimesh collider for every instance. Instances are offset by i * instancing.step in
+  // asset-local space, then the placement transform applies — the level JSON places the run once.
+  const placeGltf = (a: GltfAsset, p: Placement, q: THREE.Quaternion, where: string): void => {
+    const loaded = getLoadedAsset(a.name);
+    if (!loaded) throw new Error(`[level] ${where}: asset "${a.name}" not preloaded — call preloadLevelAssets(data) before buildLevel`);
+    const count = a.instancing?.count ?? 1;
+    const step = new THREE.Vector3(...(a.instancing?.step ?? [0, 0, 0]));
+    const scale = scaleOf(p.scale);
+    const place = new THREE.Matrix4().compose(new THREE.Vector3(...p.pos), q, scale);
+    const m = new THREE.Matrix4();
+    for (const part of loaded.parts) {
+      const im = new THREE.InstancedMesh(part.geometry, part.material, count);
+      im.name = `${a.name}${loaded.parts.length > 1 ? `:${part.geometry.name}` : ''}`;
+      im.userData['sharedGeometry'] = true; // cached across levels: never dispose
+      for (let k = 0; k < count; k++) {
+        m.makeTranslation(step.x * k, step.y * k, step.z * k).premultiply(place);
+        im.setMatrixAt(k, m);
+      }
+      im.instanceMatrix.needsUpdate = true;
+      im.computeBoundingSphere();
+      root.add(im);
+      pickables.push(im);
+    }
+    const kind = p.collider ?? a.collider;
+    if (kind === 'none') return;
+    if (kind !== 'trimesh') throw new Error(`[level] ${where}: collider "${kind}" not supported (trimesh only)`);
+    const src = loaded.collision;
+    const nv = src.positions.length / 3;
+    const verts = new Float32Array(src.positions.length * count);
+    const idx = new Uint32Array(src.indices.length * count);
+    for (let k = 0; k < count; k++) {
+      for (let j = 0; j < nv; j++) {
+        const o = (k * nv + j) * 3;
+        verts[o] = (src.positions[j * 3]! + step.x * k) * scale.x;
+        verts[o + 1] = (src.positions[j * 3 + 1]! + step.y * k) * scale.y;
+        verts[o + 2] = (src.positions[j * 3 + 2]! + step.z * k) * scale.z;
+      }
+      for (let j = 0; j < src.indices.length; j++) idx[k * src.indices.length + j] = src.indices[j]! + k * nv;
+    }
+    const desc = RAPIER.ColliderDesc.trimesh(verts, idx).setTranslation(...p.pos).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
+    physics.world.createCollider(desc, fixed);
+  };
   data.geometry.forEach((p, i) => {
     const a = asset(p.asset, `geometry[${i}]`);
-    const size = sizeOf(a, p.scale);
     const q = new THREE.Quaternion().setFromEuler(
       new THREE.Euler((p.rot?.[0] ?? 0) * DEG2RAD, (p.rot?.[1] ?? 0) * DEG2RAD, (p.rot?.[2] ?? 0) * DEG2RAD),
     );
+    if (a.kind === 'gltf') {
+      placeGltf(a, p, q, `geometry[${i}]`);
+      return;
+    }
+    const size = sizeOf(a, p.scale);
     const mesh = new THREE.Mesh(boxGeo, mat((p.tag && V.tagColors[p.tag]) || V.defaultColor));
     mesh.position.set(...p.pos);
     mesh.quaternion.copy(q);
@@ -319,6 +405,7 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
   // moving platforms
   const platforms: PlatformInstance[] = (data.platforms ?? []).map((def, i) => {
     const a = asset(def.asset, `platforms[${i}]`);
+    if (a.kind !== 'primitive') throw new Error(`[level] platforms[${i}]: "${a.name}" is a ${a.kind} asset — moving platforms are primitive-only for now`);
     const size = new THREE.Vector3(...a.size);
     const start = pointOnPath(def.path, platformParam(def, 0), new THREE.Vector3());
     const body = physics.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(start.x, start.y, start.z));
@@ -394,6 +481,10 @@ export function buildLevel(data: LevelData, physics: Physics): LevelInstance {
       root.removeFromParent();
       debugRoot.removeFromParent();
       root.traverse((o) => {
+        if (o instanceof THREE.InstancedMesh && o.userData['sharedGeometry']) {
+          o.dispose(); // instance buffers only; the geometry/material belong to the asset cache
+          return;
+        }
         if (o instanceof THREE.Mesh && o.geometry !== boxGeo) o.geometry.dispose();
       });
       boxGeo.dispose();
