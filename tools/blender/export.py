@@ -25,6 +25,7 @@ import sys
 
 import bpy
 
+sys.dont_write_bytecode = True  # no __pycache__ in tools/blender/ (the tree stays clean)
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import lib  # noqa: E402  (tools/blender/lib.py — must import after the path insert)
