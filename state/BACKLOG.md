@@ -8,7 +8,6 @@ Verified against the repository on 2026-11-08, not taken from any report.
 
 | # | item | decision | state | verified how |
 |---|---|---|---|---|
-| B-4 | `moves_allowed` per chapter + its linter check | Q5 | MISSING | — |
 | B-11 | `implemented_by:` lint rule for closed decisions | D-002 | MISSING | — |
 | B-14 | Measure the 0.5u autostep ceiling, or make `measured` per-field in the MOVE table | RB-002 | MISSING | `MOVE.ground` is `measured: true` while `MEASUREMENTS.md` records its autostep as not measured directly |
 | B-15 | Close or justify the 5 unenforced NOT-list rows — #20 (player-visible run metric) first | RB-002, Q7 | MISSING | `lint:not-list` reports `22 rows: 17 enforced, 0 pending, 5 unenforced` |
@@ -39,3 +38,4 @@ arithmetic (an arrival waits at the torii), which is why it had to land before t
 | B-3 landing mark | Q2b, D-007 | `bf19ded`: `?landingmark=on` / `TUNING.landingMark`, default off. Hard-edged ink-black disc straight under the capsule, radius shrinking with height, no new numbers. Off: goldens 0.000%, counters unchanged. On: 31 draw calls (ceiling 300), nav/replay identical. Ready for the H2.5 feel test; if depth is still unreadable, build a ballistic predictor, not a bigger dot |
 | B-9 respawn at furthest torii | Q6 part 3 | `b5a1939`: assignment gated on max(checkpointLog), no new state. Probe: walk past torii at x=3 and x=6, back through x=3, die -> respawn x=6.00; with the gate removed -> x=3.00 (bug reproduced) |
 | D-008 hazard kill volumes | D-008, OQ-016 | `6a88496`: audit of all hazard types. Schema accepts exactly each type's effective form, lint `NO_KILL_VOLUME` mirrors it, water planes kill like fall, kill plane = highest plane, `period` removed (OQ-032). Runtime-proven: a water plane at y=-1 killed at -1.04 |
+| B-4 `moves_allowed` | Q5 | `cf642c7`: required schema field; lint `MOVES_ALLOWED` (declared set must equal the chapter's, cannot be widened) and `CHAPTER_MOVE` (every via unlocked, checked against the canonical set, so declaring all eight does not dodge it). gym, example and B-16 fixture declare theirs |

@@ -2,6 +2,7 @@
   "id": "00-gym",
   "title": "Gym",
   "chapter": 0,
+  "moves_allowed": ["ground", "jump", "double", "dash", "dashjump", "wall", "climb", "platform"],
   "palette": "greybox",
   "spawn": {
     "pos": [

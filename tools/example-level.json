@@ -2,6 +2,7 @@
   "id": "03-hanging-shrines",
   "title": "The Hanging Shrines (example)",
   "chapter": 3,
+  "moves_allowed": ["ground", "jump", "climb", "wall", "double", "platform", "dash"],
   "palette": "mist-ink",
   "spawn": {
     "pos": [

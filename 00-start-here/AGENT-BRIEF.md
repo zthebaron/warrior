@@ -80,9 +80,10 @@ Levels are data, not code. You write `levels/<id>.json` against `levels/level.sc
    `NO_PATROL_PATH`, `NO_PATROL_SIZE`). Every hazard carries exactly the one form that kills, or it is
    rejected (`NO_KILL_VOLUME`, D-008): fall = a plane `y`; water = a plane `y` OR a volume
    `pos`+`size`; spike, crush = a volume `pos`+`size`. One fall plane per level.
-6. **One level file = one chapter.** Use only the moves your chapter has unlocked (SPEC §5).
-   *Pending:* the `moves_allowed` field and its check. Until they land, the SPEC §5 table is the
-   rule.
+6. **One level file = one chapter.** Declare `moves_allowed`: it must equal your chapter's set from
+   SPEC §5 exactly (`MOVES_ALLOWED`; you cannot widen it), and every `via` must be in it
+   (`CHAPTER_MOVE`). ch1 ground, jump, climb · ch2 + wall, double · ch3 + platform, dash ·
+   ch4 + dashjump. The gym (ch0) has all eight.
 7. **No `par_time`, `score` or `rank`.** The schema rejects them. That absence is the no-score rule.
 8. **Colliders are `trimesh`.** `box` is gone from the enum because the capsule sinks through it.
 9. **Asset names are `lower_snake_case`** (`assetRef` pattern) and must exist in

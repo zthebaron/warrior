@@ -206,6 +206,8 @@ This is 3/2/2/1 rather than a flat spread: chapter 1 carries 3 moves plus 1 sign
 teach rate Q4 deliberately left unmeasured. Measure it in the vertical slice, then set the
 chapter-length rule from the measurement.
 
+implemented_by: cf642c7 (moves_allowed + MOVES_ALLOWED/CHAPTER_MOVE). The four chapter levels themselves are content, not yet authored.
+
 ## D-001 — The navigational accent is **authored, not measured.** DECIDED
 
 H4 measured the reddest pixels across all 36 seed frames and found median `#603633` at 0.012% of
@@ -603,3 +605,63 @@ schema defect, not an author error.** Audit `spike` and `crush` for the same hol
 implementing this.
 
 implemented_by: 6a88496
+
+## D-009 — The harness has a feature cost, and it is now priced. FINDING
+
+Reviewed the original Sumiro build thread (@xikhar) against this build. Their pipeline is the one
+this playbook reconstructed — a single fal video as the reference for look, world and character;
+screenshot it, rebuild in Blender, place in three.js; GPT Image for a 4-view character sheet, Tripo
+for image→3D, Opus for cloth and animation; GPT Image for up to 8 concept images per level; build,
+play, report bugs, agents fix, repeat.
+
+### Two assumptions of ours that the thread refutes
+
+**They have a bot.** *"The demo video in the post was recorded by claude so it's a bot playing in
+them. Hence it looks a bit stiff."* And **they fan out**: *"dynamic workflows in Claude Code, so
+agents build and check in parallel."* Neither a playing bot nor parallel agents is a differentiator
+here.
+
+The distinction that does survive is narrower and sharper. **Their bot is a demo recorder; ours is
+an acceptance gate.** Theirs must complete a run once, well enough to film. Ours must prove every
+route from every checkpoint at eight hazard phases, on every commit, so that agents can author
+levels without a human playing each one.
+
+### The finding
+
+They ship **combat** — *"as the game progresses you fight different enemies"* — and
+**collectibles**, visible in their menu as *"Scrolls: 1 of 12."*
+
+Q1 rejected combat because chase AI breaks nav reproducibility. Q3 rejected pickups because they
+double the bot's proof obligation per segment. Both decisions were correctly argued. So were
+theirs.
+
+The difference is not judgement. **Every feature our decisions cut was cut by the verification
+architecture, not by taste or time.** A demo-recorder bot does not care whether an enemy's
+pathfinding is deterministic. An acceptance-gate bot cannot function without it.
+
+So the honest framing of this build versus that one is not careful-versus-fast. It is **more
+features verified once, against fewer features verified continuously** — and the harness has a
+feature cost that is now visible rather than implicit.
+
+### What this does NOT mean
+
+It is not an argument to reverse Q1 or Q3. The gate is what lets agents fan out, and that is the
+thing being proven. But if enemies are ever wanted, the move is **not** to weaken Q1. It is a
+second bot tier:
+
+- **tier 1, deterministic** — traversal. Route identity asserted, replay byte-stable. Unchanged.
+- **tier 2, non-deterministic** — combat encounters. Assert *survivability over N seeded runs*
+  rather than route identity: the encounter must be winnable from its entry state in k of n runs.
+
+Route identity and survivability are different claims, and only the first needs determinism. The
+same split applies to pickups: a collectible route needs reachability, not identity.
+
+### Also noted
+
+- **Audio is unsolved in both builds, for the same reason** — *"I know music sucks. Claude cannot
+  hear it."*
+- **They played the prototype at step 4 of 6.** We have built a complete verification apparatus
+  and have still never played the game. That is the real asymmetry, and it is not about speed.
+- Lineage: their thread credits Video2Game by @OdinLovis.
+
+implemented_by: n/a — finding, no code

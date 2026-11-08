@@ -43,3 +43,11 @@
 {"id":"FEELTEST-SWITCHES","agent":"phase0-spec","ts":"2026-11-08T16:45:00.136Z","released":true}
 {"id":"B6-fold","agent":"unknown","ts":"2026-11-08T16:46:17.443Z","released":true}
 {"id":"CHAPTER-1","agent":"kit","ts":"2026-11-08T16:47:30.711Z","ttl_min":600}
+{"id":"B-4","agent":"phase0-spec","ts":"2026-11-08T16:51:20.713Z","ttl_min":90}
+{"id":"B-4","agent":"phase0-spec","ts":"2026-11-08T16:53:52.154Z","released":true}
+{"id":"OQ-034","agent":"kit","ts":"2026-11-08T16:55:18.146Z","ttl_min":600}
+{"id":"OQ-035","agent":"kit","ts":"2026-11-08T16:55:18.171Z","ttl_min":600}
+{"id":"OQ-036","agent":"kit","ts":"2026-11-08T16:55:18.197Z","ttl_min":600}
+{"id":"OQ-037","agent":"kit","ts":"2026-11-08T16:55:18.224Z","ttl_min":600}
+{"id":"OQ-038","agent":"kit","ts":"2026-11-08T16:55:18.250Z","ttl_min":600}
+{"id":"OQ-039","agent":"kit","ts":"2026-11-08T16:55:18.278Z","ttl_min":600}
