@@ -2,6 +2,7 @@
   "id": "fixture-mesh-asset",
   "title": "Fixture: a mesh asset on a flat pad (B-16)",
   "chapter": 0,
+  "moves_allowed": ["ground", "jump", "double", "dash", "dashjump", "wall", "climb", "platform"],
   "palette": "greybox",
   "spawn": { "pos": [-6, 0, 0], "facing": -90 },
   "goal": { "type": "reach", "pos": [8, 0, 0], "radius": 1 },

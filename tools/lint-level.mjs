@@ -60,6 +60,17 @@ function hazardBoxes(hz){
 const bodyHits=(b,p,r)=>b.hi[1]>p[1]&&b.lo[1]<p[1]+RESPAWN_RULES.bodyHeight&&
   Math.hypot(Math.max(0,b.lo[0]-p[0],p[0]-b.hi[0]),Math.max(0,b.lo[2]-p[2],p[2]-b.hi[2]))<r;
 
+// Teaching order (Q5, B-4): moves ADDED per chapter, cumulative. Chapter 0 is the gym (every move);
+// chapters past 4 have everything unlocked. Chapter agents cannot see each other, so the order lives
+// in the data: a level declares `moves_allowed`, which must EQUAL its chapter's set (an agent cannot
+// widen it), and every `via` must be in it. Source: PHASE-0-DECISIONS Q5's move-order table.
+const ALL_MOVES=Object.keys(MOVE);
+export const CHAPTER_MOVES_ADDED={1:['ground','jump','climb'],2:['wall','double'],3:['platform','dash'],4:['dashjump']};
+export function chapterMoves(ch){
+  if(ch===0||ch>4) return [...ALL_MOVES];
+  const out=[]; for(let c=1;c<=ch;c++) out.push(...(CHAPTER_MOVES_ADDED[c]??[])); return out;
+}
+
 export function lintLevel(level, manifest){
   const err=[],warn=[];
   const E=(c,m)=>err.push(`[${c}] ${m}`), W=(c,m)=>warn.push(`[${c}] ${m}`);
@@ -82,6 +93,18 @@ export function lintLevel(level, manifest){
   if(level.goal.pos&&!inB(level.goal.pos,b)) E('OOB','goal outside bounds');
   cp.forEach((w,i)=>{ if(!inB(P(w),b)) E('OOB',`critical_path[${i}] outside bounds`); });
   (level.checkpoints??[]).forEach((c,i)=>{ if(!inB(c.pos,b)) E('OOB',`checkpoint[${i}] outside bounds`); });
+
+  // teaching order (Q5, B-4)
+  if(typeof level.chapter==='number'){
+    const want=chapterMoves(level.chapter), have=level.moves_allowed;
+    if(!Array.isArray(have)) E('MOVES_ALLOWED',`chapter ${level.chapter} declares no "moves_allowed"; it must be [${want.join(', ')}] (Q5)`);
+    else {
+      const extra=have.filter(m=>!want.includes(m)), missing=want.filter(m=>!have.includes(m));
+      if(extra.length||missing.length) E('MOVES_ALLOWED',`chapter ${level.chapter} moves_allowed must equal [${want.join(', ')}] (Q5)${extra.length?`; not yet unlocked: ${extra.join(', ')}`:''}${missing.length?`; missing: ${missing.join(', ')}`:''}`);
+    }
+    for(let i=1;i<cp.length;i++){ const v=typeof cp[i]==='object'&&cp[i].via;
+      if(v&&MOVE[v]&&!want.includes(v)) E('CHAPTER_MOVE',`critical_path[${i}] via "${v}" is not unlocked in chapter ${level.chapter} (unlocked: ${want.join(', ')}). Teaching order is Q5's`); }
+  }
 
   // move-aware reachability
   for(let i=1;i<cp.length;i++){
