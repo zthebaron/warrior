@@ -60,6 +60,8 @@ number in the budget table.
   locatable light source; both are forbidden.
 - Water hazard survives only as a flat wash.
 
+implemented_by: 19234ab
+
 ## Q3 — End of segment: **A, progress only.** CLOSED
 
 The torii is the checkpoint, the next torii comes into view, and the whole game is reading routes
@@ -381,4 +383,4 @@ Kind 2 is the gap worth naming: the schema cut cannot protect against a concept 
 the schema. Nothing stops an agent adding `health` to the player entity, and no field was removed
 to prevent it.
 
-implemented_by:
+implemented_by: 1191a34 (lint:not-list), 19234ab (schema cut)

@@ -329,7 +329,6 @@
           "speed": {
             "type": "number",
             "exclusiveMinimum": 0,
-            "maximum": 40,
             "description": "patroller: units/s along path."
           },
           "phase": {

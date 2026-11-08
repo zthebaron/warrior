@@ -112,3 +112,12 @@ because: "flat" is a horizontal plane at a height. "Wash" means it never animate
 translates except the player and hazards, and a wave is translation). pos/size stay allowed so a
 pool can be bounded. Reflectivity is a rendering property (STYLE §9.8) the schema cannot express.
 status: PROVISIONAL
+
+## OQ-009 — CLAUDE.md's precedence order does not mention SPEC.md or AGENT-BRIEF.md
+raised: 2026-11-08 by phase0-spec
+options: A rank them above the decisions | B rank them between the linters and the playbook | C leave them out
+took: B
+because: both are derived from the decisions, measurements, style bible and linters, and say so in
+their own first paragraphs. Leaving them out (C) is how a conflict ends up resolved by whichever was
+read last. SPEC §7 is the one exception, because lint:not-list executes it.
+status: PROVISIONAL

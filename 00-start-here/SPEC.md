@@ -178,22 +178,7 @@ Gate C, so a change here is a decision, not a tweak.
 
 ## 9. Decided but not built (D-002)
 
-This file must not claim properties the code lacks. These rules are decided, and **nothing checks
-them yet**. Each one's `implemented_by:` stays empty until its commit lands.
-
-| rule | decision | where it will live |
-|---|---|---|
-| patroller *runtime*: it is in the schema, but nothing moves or kills yet | Q6 | `src/loaders/level.ts` |
-| `moves_allowed` per chapter, and its linter check | Q5 | schema + linter |
-| `HAZARD_AT_CHECKPOINT` | Q6 | linter |
-| `PHASE_SWEEP` | Q6 | harness stage |
-| hazard contact → death; respawn at the furthest torii; respawn ≤ 1.2 s asserted | Q6 | `src/main.ts`, harness |
-| `ACCENT_CONTRAST` and `ACCENT_AREA` | D-001, D-003 | linter / harness |
-| `implemented_by:` lint over decisions | D-002 | `tools/` |
-| landing mark behind a flag, default off | Q2b | engine (CONDITIONAL) |
-
-Built and enforced today: the Q7 schema cut (no enemies, interactables, collectibles, other goal
-types, fire, damage, triggered platforms or level lighting direction), the patroller as a hazard
-with `speed`/`phase`/`path` mandatory (schema, Q2), `CHAPTER_LENGTH`, the derived bot budget,
-schema absence of score/par_time/rank, `UNMEASURED_MOVE`, `NO_VIA`/`BAD_VIA`, `HAZARD_ON_PATH` (static), and the
-`enforced` rows of §7.
+This file must not claim properties the code lacks. The list of decided-but-unbuilt rules lives in
+one place, **[`state/BACKLOG.md`](../state/BACKLOG.md)**, each with how its absence was verified.
+It is not copied here, so it cannot drift. Each decision's `implemented_by:` stays empty until its
+commit lands.
