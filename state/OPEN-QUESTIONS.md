@@ -459,3 +459,23 @@ only accepts a fast-forward anyway. B gives the same result (PR 6 MERGEABLE, CI 
 that lands) with every hash intact. D-011 checked rather than assumed: chapter 1 lints with 0
 errors, 0 warnings, as 3 teaching (jump, climb, crow) + 1 transfer + 0 practice.
 status: PROVISIONAL
+
+## OQ-045 — b12-harvest has been rebased three times; should it have been split into PRs that land as they finish?
+raised: 2026-11-08 by phase0-spec (PR4-REBASE-2)
+options: A keep long-lived feature branches, rebase as needed | B split along independently-testable commits and land each as soon as it is green | C keep one branch but rebase it daily
+took: B, for future branches
+because: PR 4's three commits were each independently landable (the hazards CI proof, the pure patrol
+module, a docs note), yet it waited for PR 3, then PR 8, then PR 6, and each merge invalidated it again.
+The cost is not the textual conflicts, which are mechanical. It is that rebases 2 and 3 each needed a
+SEMANTIC decision made by someone without the author's context:
+  - rebase 2: a duplicate `rules` member (B-8's vs PR 4's), declared outside the conflict hunk, so
+    taking both hunks would not have shown a conflict but would not have compiled;
+  - rebase 3: chapter 1's crow cue derives from `loopFraction` ("the ONE definition"), and PR 4 moved
+    the same math into src/systems/patrol.ts. Taking both sides would have compiled cleanly and left
+    TWO loop-fraction definitions, the crow's and the patroller's: exactly the drift a crow cue cannot
+    afford. Resolved by making patrol.ts's `patrolFraction` the single source.
+Had the pure-module commit landed on its own the morning it went green, chapter 1 would have been built
+on it and neither decision would have existed. C only shrinks the gap between invalidations. Proposed
+rule: a branch lands within the session that made it, or is split so that each green, independently
+testable commit lands alone. A branch that must wait on another PR says so in its first line.
+status: PROVISIONAL
