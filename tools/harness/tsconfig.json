@@ -15,5 +15,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["*.ts", "../check-patrol.ts", "../check-progression.ts"]
+  "include": ["*.ts", "../check-patrol.ts", "../check-progression.ts", "../measure-b20.ts"]
 }
