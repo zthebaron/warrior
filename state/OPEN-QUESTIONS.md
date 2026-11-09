@@ -746,3 +746,43 @@ Item 1 corrects a spec error; it is not a liberty taken. D-015d's two-sided 0.5 
 4.00-4.50 tops, so the trigger as written would have left chapter 2 blocked, which is the thing the item existed to
 lift. The substitution is right for the better reason that it reuses READABLE_RISE's own predicate: one definition
 instead of two that can drift.
+
+## OQ-053 — PACK-LINT: can "the pack instructs a retired concept" be checked without crying wolf on historical prose?
+raised: 2026-11-08 by phase0-spec (PACK-MARK, PACK-LINT)
+input: the brief reached this session cut off at "...EN, UNCLOSED_OUTPUT. Add one for this class." Only its
+last paragraph arrived. Recovered from the kit session's rulings (same paste, 01:45Z): "A separate session
+is marking the pack itself", over P9.2's save shape, scrolls and chapter select and the scroll SFX at
+l.959. So I read step 1 as "mark the pack's superseded sections" and the visible step as "add a lint
+rule, next to PROMPT-00's DANGLING_INPUT / STALE_OPEN / UNCLOSED_OUTPUT, for unmarked retired
+instructions". Step 2 never arrived and was NOT done. If it was something else, say so and I'll do it.
+options: A ship no rule; raise only this OQ (the brief's sanctioned outcome if it can't be precise) | B a bag-of-words rule over every NOT-table term | C NOT-table terms minus prose-ambiguous English words, scoped per sentence, exempt where marked or where the decision is cited | D a structural rule: every `### Px.y` must carry LIVE or SUPERSEDED
+took: C, shipped as `npm run lint:pack` (tools/lint-pack.mjs, code UNMARKED_RETIRED), in CI
+because: measured, both ways.
+  - B cries wolf. On today's pack, "score" hits the music section (P10.3 — Score) and "Score each 1-5";
+    "lives" hits "every magic number lives in TUNING"; and refusals like "levels have NO par_time
+    (PHASE-0-DECISIONS Q4)" flag. That is 6 of 27 hits false.
+  - C skips 9 ambiguous words (score, rank, lives, health, damage, attack, strike, chase*, unlock*).
+    On the pack it found 11 passages, 0 false (P6.3, P8.1, P9.1, P9.2). On the playbook, which was
+    never used to tune it, 5 passages, 0 false. Those 5 are B-21.
+  - The per-sentence scope came from that out-of-sample run. At paragraph scope, the playbook's one
+    "[SUPERSEDED — Q4] there is no par_time" exempted the combo, parry, hitstop and localStorage
+    sentences around it. A self-test case now holds that shut.
+  - D is precise but it checks bookkeeping, not the class. A section marked LIVE that later goes
+    stale passes it.
+  Proof: before PACK-MARK the pack exits 1 with 11 UNMARKED_RETIRED. After it, the pack exits 0. Removing
+  one bullet's mark brings back 1 error, and unmarking P9.1's heading brings back 6. Self-test: 11/11 cases.
+Disclosed weaknesses, so a reviewer can attack them:
+  1. Recall is partial by design. A stale "player has 3 lives" or "attack input" passes (skipped words),
+     and so does paraphrase ("Paper scroll being picked up" names no term; neither do bell, gate or
+     sword). PACK-MARK marked those by reading, not because the rule caught them.
+  2. A cited decision exempts its sentence on the assumption that a sentence naming the decision has been
+     reconciled with it. "Implement scrolls (Q3)" would pass.
+  3. Sentence splitting is a regex: `. ` + capital. An abbreviation followed by a capital splits early,
+     which can only narrow an exemption, never widen one.
+  4. The terms are SPEC §7's `src` checks, written as identifier tripwires. Adding a NOT row changes
+     what this rule looks for. That is intended (one source), but it is a coupling.
+  5. Marking choices that are mine: I left the sword on the character's back (P1.1, P5.1) as costume,
+     not combat. I removed six SFX lines from the ElevenLabs paste block into a marked blockquote below
+     it, rather than marking them in place, because a mark inside that block would be pasted into
+     ElevenLabs. And I left P0.1's interview topic "lives" unmarked: it is a question, already answered.
+status: PROVISIONAL
