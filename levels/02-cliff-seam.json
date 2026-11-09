@@ -51,8 +51,8 @@
     },
     {
       "asset": "prim_box",
-      "pos": [48, -0.5, 0],
-      "scale": [16, 15, 7]
+      "pos": [48, -0.4, 0],
+      "scale": [16, 15.2, 7]
     },
     {
       "asset": "prim_box",
@@ -95,7 +95,7 @@
     },
     {
       "asset": "kit_torii",
-      "pos": [44, 7, 0]
+      "pos": [44, 7.2, 0]
     },
     {
       "asset": "kit_torii",
@@ -233,7 +233,7 @@
       "facing": -90
     },
     {
-      "pos": [46, 7, 0],
+      "pos": [46, 7.2, 0],
       "facing": -90
     },
     {
@@ -276,17 +276,17 @@
       "note": "first wall jump: off a 3.25u wall 1.5u back (under the camera arm), +3.75 onto a 1u shelf, over floor (OQ-062)"
     },
     {
-      "pos": [42, 7, 0],
+      "pos": [42, 7.2, 0],
       "via": "ground",
       "note": "off the ledge"
     },
     {
-      "pos": [46, 7, 0],
+      "pos": [46, 7.2, 0],
       "via": "ground",
       "note": "T2"
     },
     {
-      "pos": [52, 7, 0],
+      "pos": [52, 7.2, 0],
       "via": "ground",
       "note": "4u short of the face: a double needs its first apex before the face"
     },

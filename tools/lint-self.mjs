@@ -47,7 +47,7 @@ aReject(5.0, 1e6);
 aReject(1.25, 1.0);
 // Assisted ceilings, per landing depth (0.01 u): pinned so a rig change turns this red rather than stale.
 for (const [rise, depth] of [[4.48, 2.5], [4.62, 6], [4.67, 15]]) { aAccept(rise, depth); aReject(rise + 0.01, depth); }
-check(`hard ceiling ${ceiling.toFixed(2)}u is below wall (4.00) and climb (4.50) maxRise, inside double (2.00..3.50)`, ceiling < 3.5 && ceiling > 2.0, `${ceiling.toFixed(3)}u`);
+check(`hard ceiling ${ceiling.toFixed(2)}u is below wall (${MOVE.wall.maxRise.toFixed(2)}) and climb (${MOVE.climb.maxRise.toFixed(2)}) maxRise, inside wall's band (${MOVE.double.maxRise.toFixed(2)}..${MOVE.wall.maxRise.toFixed(2)}] since D-017`, ceiling < MOVE.wall.maxRise && ceiling < MOVE.climb.maxRise && ceiling > MOVE.double.maxRise, `${ceiling.toFixed(3)}u`);
 
 // ---- READABLE_RISE and CHAPTER_TEACH on whole levels ---------------------------------------------
 console.log('levels');
@@ -133,6 +133,25 @@ check('fixture: one +0.50 face in a long ground run FAILS FACE_RISE, and nothing
 const gymFR = lintLevel(load('levels/00-gym.json'), manifest);
 check('gym: its 0.40 risers are a FACE_RISE WARNING (B-20), not an error', !codes(gymFR).includes('FACE_RISE') && gymFR.warnings.some((w) => w.startsWith('[FACE_RISE]')));
 check('shipped chapter 1 has no FACE_RISE (its stair is 6 x 0.333)', !post.errors.some((e) => e.startsWith('[FACE_RISE]')) && !post.warnings.some((w) => w.startsWith('[FACE_RISE]')));
+
+// ---- MOVE budgets (D-017: every timing clean) ------------------------------------------------------------
+// Each budget is pinned at its value and just above, with literal numbers from MEASUREMENTS "B-20 re-measure",
+// so moving a MOVE number turns this red instead of silently re-budgeting every level. One shipped segment
+// (02's first double, cp[9]) is re-aimed at the probe; only UNREACHABLE on that segment is read.
+console.log('MOVE budgets (D-017: a budget is clean at EVERY press timing and approach in the window)');
+const seam = load('levels/02-cliff-seam.json');
+const unreach = (via, h, rise, i = 9) => {
+  const L = structuredClone(seam), a = L.critical_path[i - 1].pos;
+  L.critical_path[i] = { ...L.critical_path[i], via, pos: [a[0] + h, a[1] + rise, a[2]] };
+  return lintLevel(L, manifest).errors.filter((e) => e.startsWith('[UNREACHABLE]') && e.includes(`seg ${i - 1}->${i} via`));
+};
+const pin = (via, what, at, above) => {
+  const [h0, r0, h1, r1] = what === 'maxH' ? [at, 0, above, 0] : [1.0, at, 1.0, above];
+  check(`${via} ${what} ${at} is reachable`, unreach(via, h0, r0).length === 0, unreach(via, h0, r0).join(' ') || 'clean');
+  check(`${via} ${what} ${above} is UNREACHABLE`, unreach(via, h1, r1).length === 1, unreach(via, h1, r1).join(' ') || 'not flagged');
+};
+pin('double', 'maxH', 8.4, 8.5);     // nav press clean k0-k5 to 8.4; 8.8 fails k0 (9.5 was a late-press-only value)
+pin('double', 'maxRise', 2.9, 3.0);  // clean from every takeoff distance to 2.9; 3.2 fails d5 (3.5 was most-distances)
 
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');
 process.exit(fails ? 1 : 0);

@@ -8,7 +8,7 @@
 export const MOVE = {
   ground:   { maxH: Infinity, slope: 49, autostep: 0.34, maxDrop: 14.0, measured: true }, // autostep: measured EFFECTIVE ceiling (B-14, MEASUREMENTS "Autostep"), not the Rapier input
   jump:     { maxH:  5.0, maxRise: 2.0, maxDrop: 14.0, measured: true },
-  double:   { maxH:  9.5, maxRise: 3.5, maxDrop: 14.0, measured: true },
+  double:   { maxH:  8.4, maxRise: 2.9, maxDrop: 14.0, measured: true }, // D-017 every timing clean (B-20): 8.4 = nav press k0-k5; 2.9 = every takeoff distance
   dash:     { maxH:  4.0, maxRise: 0.34, maxDrop: 14.0, measured: true }, // maxRise: B-20 coverage, = autostep (a grounded dash has no lift)
   dashjump: { maxH:  8.0, maxRise: 2.6, maxDrop: 14.0, measured: true },
   wall:     { maxH:  4.2, maxRise: 4.0, maxDrop:  2.0, measured: true },
