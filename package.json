@@ -22,6 +22,7 @@
     "lint:decisions": "node tools/lint-decisions.mjs --self-test && node tools/lint-decisions.mjs",
     "check:physics": "node tools/rapier-determinism.mjs",
     "check:patrol": "node tools/check-patrol.ts",
+    "measure:b20": "node tools/measure-b20.ts",
     "measure:autostep": "node tools/measure-autostep.ts",
     "check:progression": "node tools/check-progression.ts",
     "check:webgl": "node tools/webgl-preflight.mjs",

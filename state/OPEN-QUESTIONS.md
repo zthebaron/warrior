@@ -1176,3 +1176,36 @@ available if the narrow window above proves too fragile:
 - exempt `wall` from a readable top (D-016).
 status: PROVISIONAL (the rebuild; Tim may prefer one of the earlier three resolutions instead)
 
+## OQ-063 — B-20: what a MOVE number means when only some press timings clear it
+raised: 2026-11-09 by phase0-spec (B-20)
+status: PROVISIONAL (item 1 is Tim's ruling, 2026-11-09)
+
+Coverage (B-14's protocol, MEASUREMENTS "B-20 re-measure") showed that two kinds of failure behave
+differently. A value that fails at EVERY press timing or approach is out of reach: dashjump rise 2.75 (96/96
+everywhere), slope 51+. A value that fails at SOME timings and is clean at others is reachable by a player who
+presses at the clean timing, but not by one who presses anywhere in the window.
+
+1. **double maxH 9.5 kept.** A late second press (release at vy <= -6) is clean at 9.5 for every walk-off
+   timing; the nav bot's press (vy <= 0.5) is clean only to 8.4. Ruled by Tim: keep 9.5. Consequence: a double
+   gap between 8.4 and 9.5 lints clean, and nav may fail it. That shows up in CI as a loud nav failure, not a
+   silent false pass.
+2. **dash maxH 4.0 kept, PROVISIONAL.** Clean at 4.0 and 4.2 for a press at k0-k1 (0-1 ticks after walk-off);
+   later presses (k2-k5, still inside coyote time) fail 1-3 of 96 even at 3.4. Lowering to 3.4 fails the gym
+   (seg 3->4) and 04-summit-ridge (seg 9->10), both 3.5 u, both cleared by nav in CI. Kept on item 1's logic.
+3. **double maxRise 3.5 kept, PROVISIONAL.** Clean at 3.5 from five of six takeoff distances; d5 fails 1 of
+   96 at 3.2 and 3.5. Every-distance ceiling is 2.9. Lowering fails 02-cliff-seam (segs 8->9 and 9->10, +3.0).
+   Kept on item 1's logic.
+4. **Applied, because they fail at every timing or the lower value costs no shipped level:** slope 49, dash
+   maxRise 0.34 (= autostep), dashjump maxH 8.0 (adds TIGHT 94% on 04-summit-ridge's three 7.5 u gaps), dashjump
+   maxRise 2.6. Note dashjump maxH 8.0 is a worst-timing number (8.5 fails only k0-k1), which is the opposite
+   reading from items 1-3; it was approved with the rest, 2026-11-09. If Tim wants one rule, the two choices are
+   "some timing is clean" (raises dashjump back toward 8.5+, unmeasured above) or "every timing is clean"
+   (lowers dash maxH below 3.4 and double maxRise to 2.9, and three shipped levels need re-shaping).
+4a. **jump maxRise 2.0 kept, PROVISIONAL.** 2.0 fails once each at d0.8 and d1.6; 2.4 and 2.6 are clean at every
+   distance; 2.7 fails everywhere. Failing below a clean height is not a height limit. It needs a diagnosis
+   (which trials, and why), not a lower number. A value below 2.0 is unmeasured.
+5. **Dash rise, 45 deg oblique column excluded:** the dash cannot reach the face from the far trigger
+   distances at 45 deg (2.26 u of reach toward the face), so those failures are not about height.
+6. **Stair finding (B-28, B-29):** the gym's 0.40 stair fails head-on; 0.6 treads fail obliquely even at 0.30.
+
+Disclosed: every number is Darwin SwiftShader, harness build, one machine; not re-run on the CI runner.

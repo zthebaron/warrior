@@ -36,13 +36,16 @@ not 4.0. The linter cannot see the approach, so rise budgets use the RUNNING val
 Limits are set AT the measured run-speed clear, not below it. The margin comes from the
 TIGHT warning at 90%, which flags anything near the edge for human review.
 
-    ground    slope 50deg, autostep 0.34    (slope = Rapier maxSlopeClimbAngle, NOT measured; autostep
-                                            measured B-14, see "Autostep" below: Rapier is configured 0.5)
-    jump      maxH  5.0   maxRise 2.00
-    double    maxH  9.5   maxRise 3.50   (running approach, not standing-adjacent 4.0)
-    dash      maxH  4.0   maxRise 0.50   (measured clear, one sample; NOT the autostep height, which is 0.34
-                                          effective: re-measure with coverage, B-20)
-    dashjump  maxH 10.0   maxRise 2.75
+    ground    slope 49deg, autostep 0.34    (slope measured B-20, see "B-20 re-measure" below; Rapier's
+                                            maxSlopeClimbAngle is 50. autostep measured B-14: Rapier is configured 0.5)
+    jump      maxH  5.0   maxRise 2.00   (B-20: maxH clean to 5.6, the top of the grid; not raised. maxRise
+                                          2.0 has 2 single failures in 576 trials: see B-20)
+    double    maxH  9.5   maxRise 3.50   (running approach, not standing-adjacent 4.0. B-20: 9.5 clean with a late
+                                          second press, 8.4 with the nav bot's; kept at 9.5 by Tim, 2026-11-09.
+                                          maxRise 3.5 is NOT clean at every takeoff distance: see B-20)
+    dash      maxH  4.0   maxRise 0.34   (maxRise B-20 = autostep: a grounded dash has no lift. maxH 4.0 is NOT
+                                          clean at every press timing: see B-20)
+    dashjump  maxH  8.0   maxRise 2.60   (B-20; were 10.0 / 2.75 on one sample each)
     wall      maxH  4.2   maxRise 4.00
     climb     maxH  7.0   maxRise 4.50
     platform  unbounded                  (carried)
@@ -79,9 +82,10 @@ measurements were taken with this behaviour.
   capsule STANDS STILL on it — the first test missed it because the capsule was always
   walking. Pingpong platforms stand still at each end of their path, so box platforms do
   not prove clean either. Loader and manifest parser are trimesh-only.
-- OPEN: single-jump rise from a running approach was not measured directly. jump maxRise
-  is set to 2.00, derived conservatively from the double-jump running ratio (3.5/4.0
-  applied to the measured 2.25). Measure it directly and tighten or relax.
+- MEASURED (B-20, 2026-11-09): single-jump rise from a running approach, 6 takeoff distances x 96 x 5:
+  2.4 and 2.6 clean, 2.7 fails everywhere, but 2.0 has two single failures. maxRise stays 2.00
+  (was derived from the double-jump running ratio, 3.5/4.0 applied to the measured 2.25), PROVISIONAL
+  until those two are diagnosed. See "B-20 re-measure".
 - RESOLVED (H3, 2026-11-07): the gym staircase (8 x 0.4 rise / 0.6 tread, critical_path seg
   11->12 `via: ground`) was UNWALKABLE, and linted clean. Found by the H3 nav bot on its first
   run: stuck at x=57.64 against the first riser. Cause: Rapier's autostep lifted the capsule, but
@@ -130,6 +134,69 @@ The first lint caught the levels themselves:
 - **Chapter 1:** its stair was 0.40 risers (above the bound). It is rebuilt as 6 x 0.333.
 - **The gym:** its stair is 0.40 risers too. It warns until B-20 rebuilds it.
 OQ-055 records the decision.
+
+## B-20 re-measure (2026-11-09)
+
+The MOVE numbers that rested on one sample, re-measured with B-14's coverage protocol by
+`npm run measure:b20` (tools/measure-b20.ts): harness build, real Rapier, real Player, 60 Hz. Every value is
+96 phases x 5 absolute placements x 6 columns; a value is clean only at 0 failures, and the reported value
+is the largest grid value with every lower grid value clean (B-14's rule). Each table cell is the worst
+failures of 96 over the 5 placements.
+
+Columns. `stair`, `dash` rise and `slope`: the six approaches (run, rest, sprint, 30 and 45 deg oblique,
+walk). Gaps (`gap`): six press timings k = 0..5 ticks after the walk-off tick, all inside coyote time; the
+nav bot presses at k = 2. Rises (`rise`): the press made with the capsule centre d = 3.5..6 u from the
+face for double, 3..5.5 for dashjump (the far end of a running takeoff). Fixture rules are in the tool's header.
+
+    slope deg   44-49 clean · 50: oblq45 6/96 · 51+: 96/96 every approach      -> MOVE slope 49 (was 50, Rapier's)
+    dash rise   0.30, 0.34 clean (oblq45 excluded, below) · 0.38: run 2, rest 2, sprint 2, walk 1
+                                                                                 -> MOVE dash maxRise 0.34 (was 0.50)
+    dashjump    gap 7.5, 8.0 clean · 8.5: k0 90, k1 20                           -> MOVE dashjump maxH 8.0 (was 10.0)
+    dashjump    rise 2.4-2.6 clean · 2.75: 96/96 at every distance               -> MOVE dashjump maxRise 2.6 (was 2.75)
+    double      gap, nav press (release at vy <= 0.5): 8.4 clean · 8.8: k0 16 · 9.0: k0 96, k1 77
+                gap, late press (release at vy <= -6):  9.0, 9.5 clean · 10.0: k0-k3 fail
+                                                                                 -> MOVE double maxH 9.5 kept (Tim, 2026-11-09)
+    jump        gap 5.0, 5.4, 5.6 clean (top of the grid)                        -> MOVE jump maxH 5.0 unchanged
+    stair       8 risers on 0.6 treads (the gym's shape), 10 wide: see below
+
+The dash rise's 45 deg column is excluded, with this reason: dash reach is 3.2 u along the facing, so
+2.26 u toward the face at 45 deg, and the trigger distance runs to 2.9 u. With the 0.35 capsule radius, the
+dash cannot reach the face from d > 2.61, about 11 of the 96 phases, at ANY height. The column's 8 and 11
+failures at 0.30 and 0.34 are those phases. 0.34 equals the autostep ceiling (B-14), which is what a grounded
+dash with no vertical component should give.
+
+**Not clean at the current value, kept PROVISIONAL (OQ-063):**
+
+    dash gap    3.4: k4 1, k5 3 · 3.6: k3 1, k4 1, k5 3 · 3.8: k2 1, k3 1, k4 1, k5 3
+                4.0: k2 1, k3 1, k4 3, k5 2 · 4.2: k2-k5 fail · 4.4: every k fails. k0 and k1 clean to 4.2.
+    double rise 2.9 clean · 3.2: d5 1 · 3.5: d5 1 · 3.8: d3.5, d4, d5.5 1 each · 4.1: d4 1 · 4.4: d6 47
+    jump rise   2.0: d0.8 1, d1.6 1 · 2.4, 2.6 clean · 2.7: every distance fails (5-19 of 96)
+
+Neither has a clean value at or below the shipped geometry: lowering dash maxH to 3.4 fails the gym
+(seg 3->4) and 04-summit-ridge (seg 9->10), both 3.5 u dash gaps; lowering double maxRise to 2.9 fails
+02-cliff-seam (segs 8->9, 9->10, +3.0 double rises). All of those pass nav in CI. In both, some press
+timing is clean at the current value (dash pressed at k0-k1; double from most takeoff distances), the
+same shape as double maxH 9.5, which Tim kept. So 4.0 and 3.5 stay, and the every-timing ceilings
+(below 3.4 for the dash gap, 2.9 for the double rise) are recorded here, not put in code.
+
+Jump rise 2.0 is the odd one: two single failures at 2.0, then 2.4 and 2.6 clean at every distance, then a
+wall at 2.7. B-14's rule does not let a clean value above a failure raise the number, and a value below 2.0
+is unmeasured, so maxRise 2.0 stays and is PROVISIONAL. A failure below a clean height is not a height limit:
+it points at a timing or fixture effect (a lip catch on landing, say) that nobody has diagnosed yet (OQ-063).
+
+**Stair (item a):**
+
+    value   run  rest sprint oblq30 oblq45 walk
+    0.30      0     0     0     3      1     0
+    0.34      0     0     0     2      6     0
+    0.36      2     2     5     6     42     6
+    0.40      3     4     5    71     96     7
+
+The gym's 0.40 risers fail even head-on (run 3, rest 4, sprint 5 of 96): they are not walkable, and the
+gym's nav passes only because the bot walks one line at one phase. B-28 re-shapes them (a deliberate
+golden and trace re-record). New: 0.6 treads stall at 30 and 45 deg oblique even at 0.30, below the
+autostep ceiling that B-14 measured on single risers with 6 u treads. FACE_RISE bounds each face, and it
+does not see consecutive narrow treads. B-29.
 
 ## H4 asset budgets (2026-11-08)
 

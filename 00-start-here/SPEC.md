@@ -172,11 +172,11 @@ Gate C, so a change here is a decision, not a tweak.
 
 | via | max horizontal | max rise |
 |---|---|---|
-| ground | ∞ | slope 50°, autostep 0.5 |
+| ground | ∞ | slope 49°, autostep 0.34 |
 | jump | 5.0 | 2.00 |
 | double | 9.5 | 3.50 |
-| dash | 4.0 | 0.50 |
-| dashjump | 10.0 | 2.75 |
+| dash | 4.0 | 0.34 |
+| dashjump | 8.0 | 2.60 |
 | wall | 4.2 | 4.00 |
 | climb | 7.0 | 4.50 |
 | platform | carried | carried |
