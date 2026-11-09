@@ -6,13 +6,46 @@
 //   5. a WebGL2 context exists on about:blank (BEFORE the game loads, so a boot crash can never
 //      masquerade as an environment problem) — unmasked renderer string goes in every report
 //   6. the game page exposes window.__HARNESS__
+//   7. B-24: the level files the bundle carries are byte-identical to levels/*.json on disk
 // Any of 3-6 failing is HARNESS_ENVIRONMENT_FAILURE: a distinct class, never a level failure.
+// 7 failing is BUILD_FAILURE: the bundle is stale (typically --skip-build after a level edit), so
+// every result after it would judge the on-disk waypoints against the old geometry.
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium, type Browser } from '@playwright/test';
 import { CHROMIUM_ARGS, FAILURE, Stage, VIEWPORT, type StageResult } from './lib.ts';
+
+/**
+ * B-24: every way the bundled level files differ from levels/ on disk, as one line each; empty when
+ * they are identical. Compared as exact text, not mtime: a touched-but-unchanged file is not stale,
+ * and an edit inside the same second is.
+ */
+export function levelBundleDiff(disk: Record<string, string>, bundled: Record<string, string>): string[] {
+  const out: string[] = [];
+  for (const id of Object.keys(disk).sort()) {
+    const b = bundled[id];
+    if (b === undefined) { out.push(`levels/${id}.json is on disk but not in the bundle`); continue; }
+    const d = disk[id]!;
+    if (b === d) continue;
+    let i = 0;
+    while (i < d.length && i < b.length && d[i] === b[i]) i++;
+    const line = d.slice(0, i).split('\n').length;
+    out.push(`levels/${id}.json differs from the bundled copy (first difference at line ${line}; disk ${d.length} bytes, bundle ${b.length})`);
+  }
+  for (const id of Object.keys(bundled).sort()) if (!(id in disk)) out.push(`levels/${id}.json is in the bundle but not on disk`);
+  return out;
+}
+
+/** levels/*.json on disk (the schema excluded), keyed by file name, as src/loaders/level.ts globs them. */
+export function diskLevelSources(root: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of readdirSync(join(root, 'levels'))) {
+    if (f.endsWith('.json') && !f.endsWith('.schema.json')) out[f.slice(0, -'.json'.length)] = readFileSync(join(root, 'levels', f), 'utf8');
+  }
+  return out;
+}
 
 /** Strings that exist only inside the `__HARNESS__` block of src/main.ts. */
 const HARNESS_SENTINELS = ['HARNESS_API_V1', 'releaseCamera', 'rendererInfo'];
@@ -155,6 +188,23 @@ export async function preflight(root: string, opts: { skipBuild: boolean }): Pro
     st.check('harness API exposed with ?harness=1', true, 'HARNESS_API_V1');
   } catch (err) {
     st.check('harness API exposed with ?harness=1', false, String(err).slice(0, 500));
+    await page.close();
+    return finish();
+  }
+  // 7. B-24: what the browser will actually play must be what is on disk. Its own try, so a throw here is
+  //    reported under this check as BUILD, never re-labelled as the harness API missing (ENVIRONMENT).
+  try {
+    // A bundle built before B-24 has no levelSources: that is itself a stale bundle, not an environment fault.
+    const bundled = await page.evaluate(() => (typeof window.__HARNESS__!.levelSources === 'function' ? window.__HARNESS__!.levelSources() : null));
+    const diff = bundled ? levelBundleDiff(diskLevelSources(root), bundled) : ['the bundle has no levelSources() (built before B-24)'];
+    if (!st.check('bundled levels match levels/ on disk', diff.length === 0, diff.length === 0
+      ? `every levels/*.json byte-identical to dist-harness/`
+      : `STALE BUNDLE — dist-harness/ was built from different level files${opts.skipBuild ? ' (--skip-build reused it)' : ''}: ${diff.join('; ')}. Rebuild: run without --skip-build`)) {
+      st.failureClass = FAILURE.BUILD;
+    }
+  } catch (err) {
+    st.check('bundled levels match levels/ on disk', false, `could not read the bundled levels: ${String(err).slice(0, 500)}`);
+    st.failureClass = FAILURE.BUILD;
   } finally {
     await page.close();
   }

@@ -14,7 +14,7 @@ import { Player, TUNING } from './entities/player';
 import { LandingMark } from './entities/landing-mark';
 import { Instrument, type InstrumentReport } from './systems/instrument';
 import { nextLevel } from './systems/progression';
-import { buildLevel, fetchLevelFresh, levelIndex, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
+import { buildLevel, bundledLevelSources, fetchLevelFresh, levelIndex, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
 import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
 
@@ -122,6 +122,8 @@ interface HarnessApi {
   setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;
   /** Start a test level from JSON text (tools/harness/fixtures/): same validation AND decode as levels/. */
   startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+  /** B-24: the level files' text as bundled, keyed by file name; preflight compares it with levels/ on disk. */
+  levelSources(): Promise<Record<string, string>>;
   /** Harness-only: move the player (PR 4's hazards stage). */
   teleportPlayer(pos: Vec3): void;
   /**
@@ -715,6 +717,7 @@ async function boot(): Promise<void> {
         renderer.renderer.render(scene, view);
         return { ok: true, error: null };
       },
+      levelSources: () => bundledLevelSources(),
       startJson: async (text) => {
         // B-16: a test level goes through the same prepareLevel (mesh decode) as startLevel — the type
         // of install() makes skipping it a compile error.
