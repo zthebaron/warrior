@@ -250,3 +250,77 @@ The proof the rule covers the playbook, same `npm run lint:pack`: with main's un
 it exits 1 on exactly 5 passages (l.200 chapter_select, l.492 aggro*, l.530
 combo/parry/hitstop/local_storage/chapter_select, l.542 pickup*, l.632 hitstop); with the marked one it
 exits 0 on both files.
+
+## PR #20 — B-23 rebased onto main after #13, #17 and #22 merged; head `2d8f228` (pushed as `79fe4dc` after rebasing over `e86667d`, a doc-only scrub)
+verified: 2026-11-09 by kit, darwin, worktree on `b23-wall-eye` at `2d8f228f3bd961d45a0afd6ac56bbf20cfac966e`. Local only, recorded while CI was down. CI is back; its run on #20 supersedes this entry.
+
+- **Rebase:** state/ resolved by union.
+  - OQ-055 and OQ-060 (main) and OQ-062 (branch) are all kept.
+  - Where both sides had a B-23 row, a B-24 row or the OQ-056 item 3 correction, main's newer text won. It is the same final text as the branch's.
+  - `budgets.json` has 02 at 50 / 5,052 (B-23's backstop, measured) and 03 at 50 / 5,664 (main).
+  - The lint-self import line is the union of both sides.
+  - The two backlog-only commits (`1af6bfd`, `8240290`) dropped out as empty, because main already had their rows.
+
+| command | exit | result |
+|---|---|---|
+| `npm run lint:self` | 0 | `LINT-SELF PASS`: the B-23 collided-arm block and #13's FACE_RISE block both pass |
+| `npm run lint:levels` | 0 | `LINT PASS` on 00-gym (FACE_RISE and TIGHT warnings, as on main), 01-lower-stair, 02-cliff-seam and 03-drifting-stones |
+| `npm run playtest` (full) | 0 | `RESULT: PASS`, 396 check lines |
+
+- **ASSIST_CASE 02 `critical_path[5]`** (the wall teach): real rig 3.50° at 54.0°, linter modelled 54°.
+- **ASSIST_CASE 03:** no waypoint depends on the assist.
+- **Chapter 3 worst arrival per segment:** 6.63 / 7.67 / 1.03 / 8.32 / 8.25 s, all within 12 s.
+
+---
+
+## PR #23 — B-25 stale-source guard, head `8b4c6b4` (pushed as `a50b6b0` after rebasing over `e86667d`)
+verified: 2026-11-09 by kit, darwin, worktree on `b25-stale-src`. Local only; CI's run on #23 supersedes this entry.
+
+- **The false green, before and after.** `src/loaders/level.ts` was deliberately broken (`loadLevel` throws), then `run.mjs --level=01-lower-stair --only=nav` was run:
+  - main `4459119`, clean build, `--skip-build`: **exit 0, PASS**;
+  - branch, `--skip-build`: **exit 2, BUILD_FAILURE**, "src/loaders/level.ts changed";
+  - branch, fresh build: exit 1, LEVEL_FAILURE (the break is real);
+  - branch, break reverted, `--skip-build` against the broken bundle: exit 2;
+  - branch, bundles from main (no build-inputs.json): exit 2.
+- **Suite:** `lint:self` exit 0 PASS. `lint:levels` exit 0, LINT PASS on 00/01/02/03. `playtest` exit 0, `RESULT: PASS`, 390 check lines.
+
+---
+
+## CI back (repo public, 2026-11-09): CI results for PR #18 and PR #21. These supersede the local-only entries above for these heads
+
+CI executes again. The entries above stay as the record of what was checked while it was down.
+
+### PR #18 — B-22 parallel CI playtest: **CI GREEN**, run 42628995213 on `f232040`
+- **Rebase:** `f232040` is the PR rebased onto main after #13, #17 and #22.
+- **Backlog union:** B-22 is this PR's row, and B-23 and B-24 come from main. The PR's phase-sweep sharding row is renumbered B-25 -> **B-26**, because kit had already claimed B-25.
+- **Jobs:** all green.
+
+  | job | time |
+  |---|---|
+  | static | 0.4 min, including the `check:merge-reports` self-test, 7/7 |
+  | matrix | 0.2 min; it expanded to the four level jobs |
+  | level (00-gym) | 3.9 min |
+  | level (01-lower-stair) | 4.3 min |
+  | level (02-cliff-seam) | 3.3 min |
+  | level (03-drifting-stones) | 3.2 min |
+  | game (reachable, pitch-assist, run-metric, ambient-motion) | 2.9 min |
+  | playtest (merge) | 0.2 min |
+
+  The merge reported 5 reports, levels expected 00-gym, 01-lower-stair, 02-cliff-seam and 03-drifting-stones, all 4 once-per-run stages, and `RESULT: PASS`.
+- **Wall-clock, measured on CI:**
+  - **Split:** 4.9 min (13:50:24-13:55:16Z).
+  - **Serial:** 19.3 min, on the same four levels in the same hour (PR #21's run 42629083300, 13:51:00-14:10:19Z, still on the one-job workflow).
+  - **Earlier serial runs:** 28.0 min (42561268355).
+- **B-24's stale-bundle check does not trip on the split.** Every job checks out and builds fresh. Locally, all 5 job preflights passed 8/8 with "every levels/*.json byte-identical to dist-harness/". The CI run passed preflight in every job.
+- **The matrix question is answered.** The `level (${{ matrix.level }})` name during the outage was a matrix job that never expanded, not a config error. Once jobs could start, it expanded as written.
+- **Local before the push, on the rebased tree:** actionlint was clean, and all the static gates passed.
+- **Head now:** `c9087bd` adds only these measured numbers to the B-22 row and OQ-061.
+
+### PR #21 — B-21 playbook marking: **CI GREEN**, run 42629083300 on `ce18caf`
+- **Rebase:** onto main (`e86667d`), done in a detached worktree. phase0-spec's own worktree still has the branch checked out at the old head `1f8d154` and should reset to `origin/b21-playbook-mark`.
+- **State conflict:** `state/LOCAL-VERIFY.md` was resolved by union, keeping both the PR #22 section and the B-21 section.
+- **Old merge commit dropped:** `770ecb6` (merge main into the branch) is gone in the linear rebase. B-21's commit is now `60465bc`. The B-21 section above names the old sha `fd0e15a` as what was verified locally then, which is accurate history.
+- **Local, on the rebased tree before the push:**
+  - typecheck, `lint:self`, `lint:levels`, `lint:not-list`, `lint:pack` (clean on both the pack and the playbook), `lint:decisions`, `lint:accent`, `assets:budget`, `check:patrol` and `check:progression` all passed.
+  - `npm run playtest` printed `RESULT: PASS` in 651 s.
+- **CI:** the single playtest job was green in 19.3 min.
