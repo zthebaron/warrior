@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 
 import { CAMERA_TUNING } from './camera-tuning';
-import { PITCH_ASSIST, assistPitchDeg, type AssistRig } from './pitch-assist';
+import { PITCH_ASSIST, assistPitchDeg, probeHeight, type AssistRig } from './pitch-assist';
 import { RENDER_CONFIG } from './render-config';
 
 export { CAMERA_TUNING };
@@ -18,7 +18,7 @@ export type CameraRaycast = (origin: THREE.Vector3, dir: THREE.Vector3, maxDista
 
 const damp = (k: number, dt: number): number => 1 - Math.exp(-k * dt);
 
-const RIG: AssistRig = { pivotHeight: CAMERA_TUNING.pivotHeight, distance: CAMERA_TUNING.distance, pitchMaxDeg: CAMERA_TUNING.pitchMaxDeg, fovDeg: RENDER_CONFIG.fovDeg };
+const RIG: AssistRig = { pivotHeight: CAMERA_TUNING.pivotHeight, distance: CAMERA_TUNING.distance, initialPitchDeg: CAMERA_TUNING.initialPitchDeg, pitchMaxDeg: CAMERA_TUNING.pitchMaxDeg, fovDeg: RENDER_CONFIG.fovDeg };
 const DOWN = new THREE.Vector3(0, -1, 0);
 
 /** What the pitch assist's probe last found (D-015d). Read by the harness and the ~ overlay; never drawn. */
@@ -77,8 +77,8 @@ export class SpringArmCamera {
   }
 
   /**
-   * D-015d. The pitch offset (radians, >= 0) the assist wants: probe along the player's facing at pivot
-   * height for a face within probeM; find its top with a down-ray just inside it, and the landing's depth
+   * D-015d. The pitch offset (radians, >= 0) the assist wants: probe along the player's facing at
+   * probeHeight (0.5 below the rest eye) for a face within probeM; find its top with a down-ray just inside it, and the landing's depth
    * with down-rays stepped along the facing; then assistPitchDeg (the same function READABLE_RISE models).
    * 0 when nothing is faced, the top already reads, or no pitch can make it read.
    */
@@ -88,7 +88,7 @@ export class SpringArmCamera {
     const a = PITCH_ASSIST, t = CAMERA_TUNING;
     const fwd = this.tmpF.set(-Math.sin(facing), 0, -Math.cos(facing));
     const o = this.tmpO.copy(feet);
-    o.y += t.pivotHeight;
+    o.y += probeHeight(RIG);
     const standoff = this.raycast(o, fwd, a.probeM);
     if (standoff === null) return 0;
     // Down-rays start at the highest the eye can ever be (pivot + full arm): nothing above it is seen from above.

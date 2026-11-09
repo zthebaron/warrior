@@ -14,12 +14,15 @@
 export interface AssistRig {
   pivotHeight: number;
   distance: number;
+  initialPitchDeg: number;
   pitchMaxDeg: number;
   fovDeg: number;
 }
 
 export const PITCH_ASSIST = {
   probeM: 3.0, //         D-015d "inside ~3 m of a face": the face must be this close along the player's facing
+  eyeBandM: 0.5, //       D-015d "a face whose top is within 0.5 m of eye level", read as a LOWER bound: only a
+  //                      top at or above (rest eye - 0.5) is assisted. Above the eye is the worst case, not exempt
   minBandDeg: 2.0, //     = READABLE_RISE.minBandDeg (D-015b); the linter asserts the two are equal
   pitchStepDeg: 1, //     the target pitch is searched in whole degrees from the current pitch upward
   depthStepM: 0.5, //     the probe measures the landing's depth by stepping down-rays this far apart
@@ -29,6 +32,12 @@ export const PITCH_ASSIST = {
 };
 
 const DEG = 180 / Math.PI;
+
+/** Height above the feet at which the probe casts: eyeBandM below the rest-pose eye. A face whose top is
+ *  lower is never assisted (stairs, steps, the shelves D-015a cut chapter 1's faces into). */
+export function probeHeight(rig: AssistRig): number {
+  return rig.pivotHeight + rig.distance * Math.sin(rig.initialPitchDeg / DEG) - PITCH_ASSIST.eyeBandM;
+}
 
 /**
  * Vertical angle (deg) the landing's top surface subtends from the eye of a rig at `pitchDeg` (elevation
@@ -52,13 +61,13 @@ export function topBandDeg(rig: AssistRig, pitchDeg: number, rise: number, depth
 /**
  * The pitch the assist drives the camera to: `basePitchDeg` itself when the top already reads, else the
  * lowest whole-degree step above it at which it reads, or null when nothing will: the face is too low for
- * the probe (which runs at pivotHeight), or no pitch up to pitchMaxDeg makes it read. The assist then
+ * the probe (which runs at probeHeight), or no pitch up to pitchMaxDeg makes it read. The assist then
  * does nothing.
  */
 export function assistPitchDeg(rig: AssistRig, basePitchDeg: number, rise: number, depth: number, standoff: number): number | null {
   const d = Math.min(depth, PITCH_ASSIST.depthMaxM);
   if (topBandDeg(rig, basePitchDeg, rise, d, standoff) >= PITCH_ASSIST.minBandDeg) return basePitchDeg;
-  if (rise <= rig.pivotHeight) return null; // the probe ray (at pivot height) passes over this face: no assist
+  if (rise < probeHeight(rig)) return null; // the probe ray passes over this face: no assist
   for (let p = Math.ceil(basePitchDeg / PITCH_ASSIST.pitchStepDeg) * PITCH_ASSIST.pitchStepDeg; p <= rig.pitchMaxDeg; p += PITCH_ASSIST.pitchStepDeg) {
     if (p > basePitchDeg && topBandDeg(rig, p, rise, d, standoff) >= PITCH_ASSIST.minBandDeg) return p;
   }

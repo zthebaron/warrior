@@ -683,17 +683,19 @@ status: PROVISIONAL
 raised: 2026-11-08 by kit (B-18)
 took, each PROVISIONAL:
 1. **Trigger.** D-015d says the assist engages on "a face whose top is within 0.5 m of eye level". The build
-   engages instead when the top does not read at the current pitch, which is READABLE_RISE's own predicate.
-   Read literally, "within 0.5 m" covers tops from 3.16 to 4.16 u above the feet, but climb's characteristic
-   rise is 4.00 to 4.50, so a 4.5 climb (0.84 above the eye) would get no help and chapter 2 would stay
-   blocked. It would also miss a 3.0 rise onto a 2.5 u shelf, which is outside the band yet does not read.
-   The predicate covers every case the band was a proxy for, and it adds no number.
+   keeps 0.5 as the **lower** bound only: the probe casts at rest eye - 0.5 = 3.16 u, and the assist engages
+   when that top does not read at the current pitch (READABLE_RISE's own predicate). With no upper bound,
+   anything above the eye is assisted. Read as a two-sided band (3.16 to 4.16 u), it would exclude climb's
+   4.00-4.50 tops and leave chapter 2 blocked.
+   The lower bound is measured, not assumed. With the probe at pivot height (1.5 u), the assist swung the
+   camera +27.8 deg on chapter 1's staircase and engaged on 90 ticks of a nav run. At 3.16 u it engages on
+   0 of 1,161. The cost: a top below 3.16 that does not read, such as +3.0 onto a 2.5 u shelf, gets no help,
+   so READABLE_RISE still rejects it at the rest pose.
 2. **Direction.** The probe runs along the player's `facing`, not the camera yaw. That is what "released when
    the player turns away" requires. Pitch never feeds movement (`input.sample` reads only `camRig.yaw`), so
    replay and chaos are untouched.
-3. **Probe height.** The probe casts at pivot height (1.5 u, an existing rig constant). A face no taller than
-   that gets no assist and keeps its rest-pose verdict. The linter models this, so a +1.25 step onto a 1 u
-   landing still errors.
+3. **Probe height.** This follows from 1. The linter models the same cutoff (`probeHeight`), so a +1.25 step
+   onto a 1 u landing still errors.
 4. **Blend.** The blend rate is `followDamping`, so no new number. `snap()` jumps straight to the target.
 5. **Default.** The assist ships ON. `?pitchassist=off` is the comparison, as `?landingmark=off` is. Leaving it
    off by default would leave chapter 2 blocked, which defeats D-016b.
@@ -702,5 +704,11 @@ took, each PROVISIONAL:
    recorded here, not answered there: RB-004 is the reviewer's to close.
 7. **Known limit.** The linter models an unobstructed arm. An arm pushed in by an overhang behind the player
    lowers the eye, and only the harness rig sees that. Every chapter face the assist touches should get a
-   harness case: today that means the fixture only, because chapter 1 has none.
+   harness case. Today that is the fixture only: measured over a full nav run, chapter 1 engages the assist
+   on 0 ticks.
+8. **Feel, for H2.5.** While the assist holds, pulling the mouse down has no visible effect, because the
+   offset absorbs it. On release, the view blends from the assisted pitch to wherever the player's own pitch
+   ended up, which can be a large swing if they fought it. This is untested by any player.
+9. **Spawn and respawn.** `snap()` now raycasts the arm, which it did not before, so a spawn against a wall
+   starts with the arm already pulled in.
 status: PROVISIONAL
