@@ -298,3 +298,12 @@ CI executes again. The entries above stay as the record of what was checked whil
   - typecheck, `lint:self`, `lint:levels`, `lint:not-list`, `lint:pack` (clean on both the pack and the playbook), `lint:decisions`, `lint:accent`, `assets:budget`, `check:patrol` and `check:progression` all passed.
   - `npm run playtest` printed `RESULT: PASS` in 651 s.
 - **CI:** the single playtest job was green in 19.3 min.
+
+---
+
+## CI back: PR #20 and PR #23 verified by CI (supersedes their local-only entries above, which are kept as the record)
+- **PR #20** (B-23), head `34aaee2`, after rebasing over #18 and OQ-065 (state/ union, keeping every entry from both sides): run 42635868598, **all jobs pass**.
+  - Level jobs: 00-gym 3m56s, 01-lower-stair 3m17s, 02-cliff-seam 4m21s, 03-drifting-stones 2m54s.
+  - The game, static, matrix and playtest jobs also pass.
+  - Its previous head `3e3062a` was also green (run 42633886820).
+- **PR #23** (B-25), head `0f74b5d`: run 42630534733, playtest **pass** (18m59s, the serial workflow before #18). Mergeable with current main.
