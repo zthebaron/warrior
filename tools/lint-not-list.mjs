@@ -8,6 +8,11 @@
 //   src         identifier words that MUST NOT appear in src/**/*.ts. Comments are stripped;
 //               identifiers are split on camelCase and snake_case, so `playerHealth` trips `health`.
 //               `par_time` means the consecutive words par,time. A trailing * is a prefix match.
+//   harness     `stage` names: a playtest stage that must exist (tools/harness/<stage>.ts), be registered
+//               in tools/harness/run.mjs and run in CI (`npm run playtest`). This linter cannot run a
+//               browser, so it checks the wiring; the stage does the enforcing, and was shown to fail
+//               before it was listed here (B-15). Used where the refusal is behaviour, not a name:
+//               `deaths` may exist (the harness reads it) but must not reach the screen.
 //   unenforced  no mechanical check exists. Listed so the gap is visible, never implied covered.
 //
 // Known-open checks carry a trailing `!` (e.g. `damage!`): violated today, fix queued. The mark is
@@ -103,6 +108,17 @@ function srcViolations(token) {
   });
 }
 
+// ---------- harness checks ----------
+const RUN_MJS = path.join(ROOT, 'tools/harness/run.mjs');
+const CI = path.join(ROOT, '.github/workflows/ci.yml');
+// holds = the stage file exists, run.mjs registers it by name, and CI runs the playtest
+function harnessViolation(stage) {
+  if (!fs.existsSync(path.join(ROOT, 'tools/harness', `${stage}.ts`))) return `tools/harness/${stage}.ts does not exist`;
+  if (!fs.readFileSync(RUN_MJS, 'utf8').includes(`['${stage}', `)) return `stage "${stage}" is not registered in tools/harness/run.mjs`;
+  if (!/run:\s*npm run playtest\b/.test(fs.readFileSync(CI, 'utf8'))) return 'CI does not run `npm run playtest`';
+  return null;
+}
+
 // ---------- run ----------
 let rows;
 try {
@@ -119,7 +135,7 @@ const errors = [];
 const tally = { enforced: 0, pending: 0, unenforced: 0 };
 for (const r of rows) {
   const tag = `#${r.id} ${r.what}`;
-  if (!['schema', 'src', 'unenforced'].includes(r.kind)) { errors.push(`${tag}: kind "${r.kind}" must be schema, src or unenforced`); continue; }
+  if (!['schema', 'src', 'harness', 'unenforced'].includes(r.kind)) { errors.push(`${tag}: kind "${r.kind}" must be schema, src, harness or unenforced`); continue; }
   if (r.kind === 'unenforced') {
     tally.unenforced++;
     if (r.checks.length) errors.push(`${tag}: unenforced rows carry no checks`);
@@ -134,6 +150,7 @@ for (const r of rows) {
   for (const c of r.checks) {
     let violation = null;
     if (r.kind === 'schema') { if (!schemaHolds(c.expr)) violation = `schema accepts ${c.expr}`; }
+    else if (r.kind === 'harness') violation = harnessViolation(c.expr);
     else { const v = srcViolations(c.expr); if (v.length) violation = `"${c.expr}" in ${v.slice(0, 3).map((h) => `${h.file}:${h.line} (${h.id})`).join(', ')}${v.length > 3 ? ` +${v.length - 3}` : ''}`; }
     if (violation && !c.open) fresh.push(violation);
     else if (violation) stillOpen.push(violation);

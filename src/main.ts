@@ -124,6 +124,12 @@ interface HarnessApi {
   startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
   /** Harness-only: move the player (PR 4's hazards stage). */
   teleportPlayer(pos: Vec3): void;
+  /**
+   * Every visible renderable in the scene with its world position and the nearest `userData.translates`
+   * tag on it or an ancestor (player, platform, hazard), or null. B-15 / NOT #18 (Q2a): nothing
+   * translates except the player and hazards, so an untagged object that moves is ambient motion.
+   */
+  translators(): { id: string; name: string; tag: string | null; pos: Vec3 }[];
 }
 
 /** One mesh asset rendered ALONE (own scene: no level, player, lights, HUD or debug lines). */
@@ -236,6 +242,7 @@ async function boot(): Promise<void> {
   let skipRender = false;
 
   const landingMark = new LandingMark(physics);
+  landingMark.mesh.userData['translates'] = 'player'; // follows the player's ground point (D-010)
   renderer.scene.add(landingMark.mesh);
   const camRig = new SpringArmCamera(renderer.camera, (o, d, max) => physics.castRay(o, d, max, player?.collider)?.distance ?? null);
   // D-015d pitch assist ships ON (B-18); ?pitchassist=off is the comparison, as ?landingmark=off is.
@@ -264,6 +271,7 @@ async function boot(): Promise<void> {
     const facing = data.spawn.facing * DEG2RAD;
     if (!player) {
       player = new Player(physics, { x, y, z }, facing);
+      player.mesh.userData['translates'] = 'player';
       renderer.scene.add(player.mesh);
     }
     const lvl = level;
@@ -781,6 +789,23 @@ async function boot(): Promise<void> {
       },
       teleportPlayer: (pos) => {
         player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
+      },
+      translators: () => {
+        const out: { id: string; name: string; tag: string | null; pos: Vec3 }[] = [];
+        const w = new THREE.Vector3();
+        const walk = (o: THREE.Object3D, tag: string | null, path: string): void => {
+          if (!o.visible) return;
+          const t = (o.userData['translates'] as string | undefined) ?? tag;
+          const p = `${path}/${o.name || o.type}`;
+          const r = o as THREE.Mesh & { isLine?: boolean; isPoints?: boolean; isSprite?: boolean };
+          if (r.isMesh || r.isLine || r.isPoints || r.isSprite) {
+            o.getWorldPosition(w);
+            out.push({ id: o.uuid, name: p, tag: t, pos: [w.x, w.y, w.z] });
+          }
+          for (const c of o.children) walk(c, t, p);
+        };
+        walk(renderer.scene, null, '');
+        return out;
       },
     };
     state.transition('menu');

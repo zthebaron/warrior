@@ -41,7 +41,9 @@ const SPEC = path.join(ROOT, '00-start-here/SPEC.md');
 const PACK = path.join(ROOT, '00-start-here/AI-GAME-BUILD-PROMPT-PACK-v2.1.md');
 
 // English words with a live meaning in prose. Skipped in prose only; lint:not-list still checks them in src.
-const PROSE_AMBIGUOUS = new Set(['score', 'rank', 'lives', 'health', 'damage', 'attack', 'strike', 'chase*', 'unlock*']);
+// The API names (NOT #19) split into English words that collide in prose: "zero text — geometry that
+// forces a walk" (playbook Phase 11) is not TextGeometry.
+const PROSE_AMBIGUOUS = new Set(['score', 'rank', 'lives', 'health', 'damage', 'attack', 'strike', 'chase*', 'unlock*', 'text_geometry', 'font_loader', 'css2_d', 'css3_d']);
 const MARK = /\[(?:SUPERSEDED|CLOSED)\b/; // CLAUDE.md precedence 6: SUPERSEDED or CLOSED is not live
 const CITE = /PHASE-0-DECISIONS|\bQ[1-7][a-c]?\b|\bD-0\d\d\b|\bOQ-0\d\d\b/;
 
@@ -116,8 +118,8 @@ function lint(md, terms) {
     if (p.marked) continue;
     const ss = sentences(p.text);
     if (MARK.test(ss[0])) continue; // an item or paragraph that opens with the mark is wholly marked
-    const live = ss.filter((s) => !MARK.test(s) && !CITE.test(s)).join(' ');
-    const found = terms.filter((t) => hit(live, t));
+    const live = ss.filter((s) => !MARK.test(s) && !CITE.test(s));
+    const found = terms.filter((t) => live.some((s) => hit(s, t))); // per sentence: a two-word term never spans a full stop
     if (found.length) errs.push({ line: p.start, terms: found.map((t) => `${t.expr} (NOT #${t.row})`), text: p.text.trim().split('\n')[0].slice(0, 100) });
   }
   return errs;
@@ -136,6 +138,7 @@ function selfTest(terms) {
     ['a marked blockquote is exempt', '> **[SUPERSEDED — Q3]** a scroll pickup used to sit here\n> and a chapter select\n', 0],
     ['an unmarked blockquote is not', '> a scroll pickup and a chapter select\n', 1],
     ['prose-ambiguous words are skipped (known hole)', '### P10.3 — Score\nEvery magic number lives in TUNING.\n', 0],
+    ['a two-word term does not span sentences', 'Teach it with ZERO text.\nGeometry carries the route.\n', 0],
     ['identifiers split on camelCase', 'player.invulnFrames = 30\n', 1],
   ];
   let bad = 0;

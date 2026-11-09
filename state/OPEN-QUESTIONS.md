@@ -786,3 +786,50 @@ Disclosed weaknesses, so a reviewer can attack them:
      it, rather than marking them in place, because a mark inside that block would be pasted into
      ElevenLabs. And I left P0.1's interview topic "lives" unmarked: it is a question, already answered.
 status: PROVISIONAL
+
+## OQ-054 — B-15: how the 5 unenforced NOT rows became checks, and where each is weaker than its row's words
+raised: 2026-11-08 by phase0-spec (B-15)
+options: per row, either an enforced check proven by making it fail, or a recorded reason it can't be enforced. The brief allowed no row to stay green and unenforced
+took: all five enforced. `lint:not-list` reports `22 enforced, 0 unenforced`
+because: each row had a check that can be shown to fail, so none had to stay a recorded gap:
+  - #20 run metric shown to the player → `harness: run-metric`. A src name check can't express it,
+    because `deaths` and the instrument's segment times must exist. So the check is behaviour. Play
+    the entry chapter twice, clean (1 death) and heavy (15 s idle, 3 deaths, 10 s on results). The
+    player-visible text (body.innerText, which skips the hidden ~ overlay, plus document.title) must
+    match state by state and stay constant within a state. Failed on `fell (${deaths})` and on
+    `COMPLETE ${t}s`.
+  - #18 ambient motion → `harness: ambient-motion`. Every level idles 10 s, every visible renderable is
+    sampled, and anything that moves without a `userData.translates` tag fails. Failed on a bobbing
+    checkpoint.
+  - #19, #21, #22 → `src` tripwires, the standard Q7 accepted for src rows: dialogue/cutscene/subtitle
+    and the three.js text and CSS2D/3D APIs; procedural_level/perlin/simplex/level_gen/generate_level;
+    difficulty_mode/easy/hard_mode/normal_mode/assist_mode. Each failed on planted identifiers.
+  - New kind `harness` in lint-not-list: it checks that the stage file exists, that run.mjs registers
+    it and that CI runs the playtest. Failed when the registration was renamed.
+Disclosed weaknesses, so a reviewer can attack them:
+  1. PLATFORMS. Q2a says "nothing translates except the player and hazards". Moving platforms translate,
+     and I tagged them allowed. The reason: `platform` is one of the eight moves Q2 closed, so a moving
+     platform is the move's affordance, not ambience. That reads Q2a less literally than it is written.
+     Tim may rule that platforms must be hazards, or that Q2a's text needs amending.
+  2. #18 does not see shader or texture-offset motion, anything that moves only near the player or after
+     10 s, or an ambient prop tagged `hazard`. The tag is trusted.
+  3. #20 reads DOM text only. A metric drawn into the canvas is not read, and #19's src check is what
+     refuses world-text APIs. It plays only the entry chapter, because the HUD is per state, not per
+     level. The ~ debug overlay shows run time and is excluded as dev tooling; the menu names its key.
+     Checked: the overlay is built into PRODUCTION too, and its player row prints `world <t>s`. So a
+     player who presses the key the menu names sees run time. If that counts as player-visible, #20 is
+     violated today. The fix is to construct the overlay only under import.meta.env.DEV or harness mode
+     (src/main.ts), at the cost of the overlay on a deployed phone build. That costs the hardware perf
+     gate, so it is Tim's call and I made no change. The row text names this boundary.
+  4. #19, #21 and #22 are name tripwires. `vitality` beats `health` (Q7's limit), and `proceduralLevel` is
+     caught but a generator called `buildWorld` is not. #21 was narrowed from `procedural*` because
+     procedural ASSET authoring (tools/blender) is allowed, and the pack says so ("builds geometry
+     PROCEDURALLY").
+  5. lint:pack reads the same terms, so the new ones reached prose. The API names (text_geometry,
+     font_loader, css2_d, css3_d) are prose-skipped after "zero text — geometry that forces a walk"
+     matched; and a two-word term must now sit inside one sentence. Self-test 13/13. Playbook still 5
+     true, 0 false (B-21).
+  6. src/main.ts gained a harness-only `translators()` API and userData tags on the player and landing
+     mark. src/loaders/level.ts gained tags on platform, hazard and crow meshes. Neither file is in
+     src/engine/ or src/systems/. Rendering is unchanged.
+status: PROVISIONAL

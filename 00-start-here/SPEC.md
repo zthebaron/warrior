@@ -102,6 +102,11 @@ Every row resolves to one mechanical check, or says that it has none:
   **reject**. The field or value does not exist, under `additionalProperties: false`.
 - **`src`**: identifier words that must not appear in `src/`. Comments are stripped and
   identifiers are split on camelCase and snake_case, so `playerHealth` trips `health`.
+- **`harness`**: a playtest stage that must exist, be registered in `tools/harness/run.mjs` and
+  run in CI. It is used where the refusal is behaviour, not a name: `deaths` must exist for the
+  harness but must not reach the screen (#20), and things may exist but must not translate (#18).
+  The linter checks the wiring. The stage enforces the rule, and was shown to fail on a planted
+  violation before the row was listed (B-15).
 - **`unenforced`**: nothing checks it. The row exists so the gap is visible.
 
 `npm run lint:not-list` reads this table directly and runs in CI. A trailing **`!`** marks one
@@ -133,11 +138,11 @@ what *does* exist.
 | 15 | Saves, unlocks, chapter select | Q4, Q6 | src | `local_storage` `session_storage` `indexed_db` `unlock*` `chapter_select` | enforced |
 | 16 | A light with a direction | STYLE §1 | schema | `lighting.sunAngle=[0,0]` `lighting.intensity=1` | enforced |
 | 17 | Multiplayer or a backend | playbook §3 | src | `web_socket` `rtc_peer_connection` | enforced |
-| 18 | Ambient motion: anything translating except the player and hazards. A level-lint rule is planned but is neither kind. | Q2a | unenforced | — | — |
-| 19 | Dialogue, cutscenes, text in the world | STYLE §9.10 | unenforced | — | — |
-| 20 | A death counter or any run metric shown to the player. `deaths` exists legitimately for the harness. | Q4, Q6 | unenforced | — | — |
-| 21 | Procedurally generated levels | playbook | unenforced | — | — |
-| 22 | Difficulty modes | Q6 | unenforced | — | — |
+| 18 | Ambient motion: anything translating except the player and hazards. Moving platforms are allowed as the `platform` move (Q2; OQ-054). Shader-only motion is not seen | Q2a | harness | `ambient-motion` | enforced |
+| 19 | Dialogue, cutscenes, text in the world (three.js text and DOM-in-world APIs) | STYLE §9.10 | src | `dialogue*` `cutscene*` `subtitle*` `text_geometry` `font_loader` `css2_d` `css3_d` | enforced |
+| 20 | A death counter or any run metric shown to the player. `deaths` exists legitimately for the harness, so the check is behaviour: visible text must not depend on run history. Out of scope: the `~` dev overlay, which shows world time in production too (OQ-054 #3) | Q4, Q6 | harness | `run-metric` | enforced |
+| 21 | Procedurally generated levels (Blender assets authored as code are not this) | playbook | src | `procedural_level*` `perlin*` `simplex*` `level_gen*` `generate_level*` | enforced |
+| 22 | Difficulty modes (a level's `difficulty` 1-5 is a rating, not a mode) | Q6 | src | `difficulty_mode*` `easy*` `hard_mode` `normal_mode` `assist_mode` | enforced |
 <!-- NOT-LIST:END -->
 
 ## 8. Tuning constants
