@@ -914,3 +914,17 @@ Disclosed weaknesses:
      branch shas a decision cites, and this rule would then report them UNKNOWN_COMMIT, correctly. The
      fix there is to cite the merged sha.
 status: PROVISIONAL
+
+## OQ-060 — Chapter 3: the chapter 1/2 rock layout is a chaos wedge once climb and wall exist
+raised: 2026-11-08 by kit (CHAPTER-3)
+finding: the chaos stage, random input for 300-tick windows, wedged the player at (4.0, 8.2, -4.7) and later
+(1.0, 8.2, -4.5): on top of the kit_rock_mass pair at x -2 / 6.5, z -5.7. That layout is copied from chapters 1
+and 2. The rocks are 8.56 u wide and spaced 8.5 u, so neighbours overlap by 0.06 u and leave a narrow notch
+along the top. The rocks' inner faces sit at z -3.6, flush with the path edge at -3.5, so a player with climb or
+wall can get onto them. In chapter 1 you cannot (no climb), so the wedge is unreachable there. Chapter 2 has climb
+and wall and the same layout, and passes chaos only because its random walk has not found the notch.
+took (chapter 3 only): rocks at z -8 (inner face at -5.9, a 2.4 u void off the path edge) and spaced 7 u (no notch).
+Chaos then passes. Cost: 21 rocks instead of about 17, so the scene budget is 50 draw calls / 5,664 tris, recorded.
+open: whether chapter 2 (PR #12) should take the same layout. Not changed from here: it is another session's
+branch. A chaos run with a different seed on 02-cliff-seam is the test.
+status: PROVISIONAL
