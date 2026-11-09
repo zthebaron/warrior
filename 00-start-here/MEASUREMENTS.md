@@ -375,6 +375,56 @@ The limit is `eye - (standoff + behind) * tan(minBand)` = 3.663 - 8.657 tan 2 de
 depth makes a higher rise readable. Wall (maxRise 4.00) and climb (4.50) have characteristic rises wholly
 above it, so D-016 blocks chapter 2 on D-015d. This is arithmetic, not a render.
 
+## D-015d pitch assist (B-18, 2026-11-08)
+
+`src/engine/pitch-assist.ts` holds one rule, `assistPitchDeg`, that the camera runs and READABLE_RISE models.
+`tools/harness/pitch-assist.ts` then measures it in the real rig. The rig itself (`pivotHeight`, `distance`,
+`pitchMaxDeg`, `fovDeg`) is passed in and never retyped.
+
+| constant | value | status |
+|---|---|---|
+| `PITCH_ASSIST.probeM` | 3.0 u | D-015d's "inside ~3 m of a face". A design value: **PROVISIONAL** |
+| `PITCH_ASSIST.eyeBandM` | 0.5 u | D-015d's "top within 0.5 m of eye level", read as a lower bound: the probe casts at rest eye - 0.5 = **3.16 u** above the feet, so only a top at or above that is assisted. **PROVISIONAL** (OQ-052) |
+| `PITCH_ASSIST.minBandDeg` | 2.0 deg | = `READABLE_RISE.minBandDeg`. The linter throws if the two differ |
+| `PITCH_ASSIST.pitchStepDeg` | 1 deg | search resolution for the target pitch. Lint and camera use the same step, so they agree to the degree |
+| `PITCH_ASSIST.depthStepM` | 0.5 u | spacing of the probe's depth down-rays. The linter feeds the depth the probe would measure (`probedDepth`), not the true depth |
+| `PITCH_ASSIST.depthMaxM` | 15 u | depth cap, D-016's deepest measured column. Past it the assisted ceiling moves less than 0.01 u (4.67 at both 15 and 41) |
+| `PITCH_ASSIST.epsM` | 0.05 u | probe tolerance: how far inside the face the first down-ray lands, and the height match for "same top surface" |
+| blend rate | `CAMERA_TUNING.followDamping` (12 /s) | no new number: the assist eases at the follow rig's own sharpness. Running at `runSpeed` 7 u/s from 3 u to 2 u takes 0.14 s, which covers 82% of the offset. Standing at the face, it converges. `snap()` (spawn, respawn) jumps straight to the target |
+
+**Trigger.** The probe casts along the player's `facing`, at 3.16 u (rest eye - `eyeBandM`), out to `probeM`.
+The assist engages when the landing top does not read at the player's current pitch. It then drives the camera
+to the lowest whole degree at which the top subtends `minBandDeg` or more. A top below 3.16 u gets no assist
+and keeps its rest-pose verdict.
+
+**Why the probe is not at pivot height (1.5 u).** The first build cast at pivot height. Over a full nav run
+the assist then engaged on 90 ticks of shipped chapter 1, peaking at +27.8 deg on the staircase: a +1.51 step
+with a 0.55 u tread, target 46 deg. On the gym it engaged on 288 ticks. That was a visible camera swing on
+plain stairs, which READABLE_RISE never checks (`ground` rises are skipped). At 3.16 u it engages on **0 of
+1,161 ticks** of chapter 1. On the gym it engages on 79 ticks, all at its +5.27 face (standoff 0.70, target
+70 deg).
+
+**Assisted ceilings.** These are the largest rises still readable, at 0.01 u resolution, from rest, at the
+2 u standoff. They are pinned in `npm run lint:self` at the value (accepted) and at +0.01 (rejected).
+
+| landing depth | 2.5 | 6 | 15 |
+|---|---|---|---|
+| max readable rise, assisted (u) | 4.48 | 4.62 | 4.67 |
+| rest pose (D-016) | 2.28 | 2.92 | 3.18 |
+
+**Wall and climb at their characteristic rise** (lint at the pitch it settles at, then the real rig):
+
+| face | linter | harness, real rig |
+|---|---|---|
+| +3.50 onto 6 u | 24 deg | 2.42 deg band at 24.0 deg |
+| +4.00 onto 6 u (wall) | 28 deg | 2.33 deg band at 28.0 deg |
+| +4.50 onto 6 u (climb) | 32 deg | 2.17 deg band at 32.0 deg |
+| +4.50 onto 15 u (climb) | 30 deg | 2.33 deg band at 30.0 deg |
+| +4.50 onto 2.5 u | no pitch reads | 0.00 deg, assist idle |
+
+With `?pitchassist=off` every one of these reads 0.50 deg or less. A climb at maxRise 4.50 needs a landing at
+least 2.55 u deep.
+
 ## Open (H4)
 
 - Linux visual goldens for the asset-bearing gym were COPIED from Darwin, not rendered on
