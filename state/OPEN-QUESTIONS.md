@@ -874,4 +874,11 @@ took, each PROVISIONAL:
 7. **Gaps are 6 u.** That is past `jump.maxH` 5.0, so only a double clears them. Run 8 u of `double.maxH` 9.5 (84%, under TIGHT).
 8. **The seam:** 18 `kit_rock_mass` along z -5.7, set 2 u below each floor, with the bright void on the open side, as in chapter 1.
 9. **Harness trap, for the next level builder:** `--skip-build` plays the level JSON bundled at the last build (levels are Vite chunks) against the waypoints on disk. After any level edit, rebuild. Two of this build's diagnoses were briefly wrong because of it.
+10. **The CI job timeout is raised from 20 to 40 minutes** (`.github/workflows/ci.yml`).
+    - **The old 20:** set in H3 (`e99d5d1`) when the harness ran one level. It is in no decision and not in MEASUREMENTS, so it is not a budget. A guess the harness outgrew.
+    - **Main with two levels** (runs 42552389070 to 42554509191): 9.5 to 16.0 min.
+    - **This branch with chapter 2:** one pass at 17.6 min (42551964229). Two runs were cut off at the 20-min cap mid-playtest (42549986444, 42553653599), and neither had failed a check.
+    - **Why chapter 2 costs that much:** about 5 min of CI per chapter, from its phase-sweep (8 arrivals x 5 segments, plus blind runs) and REACHABLE now playing it too.
+    - **Why 40:** at roughly 5 min per chapter, chapters 3 and 4 still fit with runner-variance headroom.
+    - **The proper fix** is a faster or parallel playtest (levels are independent until the run-once stages), not more minutes. Not done here.
 status: PROVISIONAL
