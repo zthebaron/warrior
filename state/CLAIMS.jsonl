@@ -135,3 +135,4 @@
 {"id":"PACK-MARK","agent":"unknown","ts":"2026-11-09T01:54:04.121Z","released":true}
 {"id":"PACK-LINT","agent":"unknown","ts":"2026-11-09T01:54:04.147Z","released":true}
 {"id":"B-19","agent":"kit","ts":"2026-11-09T02:17:12.361Z","ttl_min":90}
+{"id":"B-15","agent":"phase0-spec","ts":"2026-11-09T02:17:21.546Z","ttl_min":90}
