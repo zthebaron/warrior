@@ -8,7 +8,7 @@ on:
 jobs:
   playtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40 # was 20 (H3, never measured); see OQ-056 item 10
     steps:
       - uses: actions/checkout@v4
         with:

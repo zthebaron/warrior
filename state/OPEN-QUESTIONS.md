@@ -865,3 +865,33 @@ Disclosed weaknesses:
      branch shas a decision cites, and this rule would then report them UNKNOWN_COMMIT, correctly. The
      fix there is to cite the merged sha.
 status: PROVISIONAL
+
+## OQ-058 — CHAPTER-4 (04-summit-ridge): the design calls I made without a ruling
+raised: 2026-11-08 by phase0-spec (CHAPTER-4)
+took:
+  1. FIVE segments: practice (jump, double), TEACH dashjump, practice (crow + sweep, dash), TRANSFER
+     (crow, dashjump onto a swept ledge, two +1.75 jumps), summit practice (dashjump, double). D-011
+     derives a minimum of 2 (one new move + transfer); 5 is the brief's 5 +/- 1 and inside CHAPTER_LENGTH.
+  2. The teaching dashjump departs FROM T1 at the lip (D-015c branch (a): a miss respawns you at the
+     approach), +1.0 over a 5.9u gap. A double (maxH 9.5) also clears that gap. No geometry here makes
+     dashjump the ONLY move that works. Only a gap with H in (9.5, 10.0] would do that, which sits within
+     0.5u of dashjump's measured ceiling and would lint TIGHT. (Double out-rises dashjump, 3.5 vs 2.75.) So "teaching" is the
+     declared `via` plus D-015c recoverability, the same standard as chapter 1. Whether a first-time
+     player reaches for dash+jump there is H2.5's to measure, not the linter's.
+  3. Crow and sweep spacing is copied from chapter 1 relative to each torii (perch T+6, patroller T+9,
+     cue target T+15; transfer perch T+2, cue at T+3), and chapter 1's `lift` values (0.11, 0.02). The
+     harness proved them for this geometry: HAZARD_INERT bites in both crow segments (blind departures
+     fail 4/8 phases in each), and reading the crow clears 8/8.
+  4. Rises are kept <= 1.75 (jump/double/dashjump faces), so every face reads at the REST pose. ASSIST_CASE
+     derives 0 assist-dependent waypoints, and pitch-assist confirms it.
+  5. CI timeout 20 -> 40 min, the same line as PR #12 (chapter 2), so the two changes merge cleanly. A
+     third level adds ~3.5 min of phase sweep on SwiftShader.
+Disclosed weaknesses:
+  - FACE_RISE is not on main (PR #13). Checked by importing that branch's lintLevel: 04 has 0 errors,
+    because it has no ground rises. (01-lower-stair fails it at seg 7->8, which is PR #13's business.)
+  - Without chapters 2 and 3 on main, the progression chain is 01 > 04: a player meets dashjump with
+    wall/double/climb/platform/dash never taught. moves_allowed is still exactly Q5's running total, as
+    MOVES_ALLOWED requires. The chain is correct once PRs #12 and the chapter 3 branch land.
+  - Bot times are an expert bot's. 24.17 s total (5.07 / 2.26 / 4.84 / 7.15 / 4.85 by torii), so the
+    25-35 s per segment human target (Q3) is untested; H2.5 measures it.
+status: PROVISIONAL

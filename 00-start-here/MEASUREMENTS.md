@@ -181,6 +181,7 @@ draw calls, 500,000 triangles) still apply on top.
 |---|---|---|
 | 00-gym | 34 / 34 | 1,104 / 1,104 |
 | 01-lower-stair | 46 / 46 | 3,888 / 3,888 |
+| 04-summit-ridge | 49 / 49 | 5,040 / 5,040 |
 
 01-lower-stair (CHAPTER-1, CI run 42505174534, landing mark on): 13 kit_rock_mass (13 x 216 = 2,808 tris), 4 kit_torii (432), greybox ledges/stair/knobs, 2 patrollers, 2 crows, the landing mark.
 

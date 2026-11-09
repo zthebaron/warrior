@@ -1,0 +1,756 @@
+{
+  "id": "04-summit-ridge",
+  "title": "The Summit Ridge",
+  "chapter": 4,
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      0,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      142.5,
+      9.5,
+      0
+    ],
+    "radius": 1.5
+  },
+  "bounds": {
+    "min": [
+      -10,
+      -15,
+      -15
+    ],
+    "max": [
+      159.5,
+      40,
+      15
+    ]
+  },
+  "lighting": {
+    "preset": "greybox"
+  },
+  "difficulty": 4,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "wall",
+    "double",
+    "climb",
+    "platform",
+    "dash",
+    "dashjump"
+  ],
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        2.0,
+        -4.0,
+        0
+      ],
+      "scale": [
+        16,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        16.25,
+        -3.5,
+        0
+      ],
+      "scale": [
+        7.5,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        30.8,
+        -2.5,
+        0
+      ],
+      "scale": [
+        11.6,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        34.0,
+        1.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        49.25,
+        -1.5,
+        0
+      ],
+      "scale": [
+        13.5,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        52.0,
+        2.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        60.0,
+        2.7,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        63.5,
+        -1.5,
+        0
+      ],
+      "scale": [
+        15,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        79.3,
+        -1.5,
+        0
+      ],
+      "scale": [
+        12.6,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        80.0,
+        2.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        94.75,
+        -0.5,
+        0
+      ],
+      "scale": [
+        6.5,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        84.0,
+        3.7,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        99.5,
+        1.25,
+        0
+      ],
+      "scale": [
+        3.0,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        107.75,
+        3.0,
+        0
+      ],
+      "scale": [
+        13.5,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        104.0,
+        7.0,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        124.5,
+        4.0,
+        0
+      ],
+      "scale": [
+        8.0,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        140.0,
+        5.5,
+        0
+      ],
+      "scale": [
+        13.0,
+        8.0,
+        7.0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        140.5,
+        9.5,
+        0
+      ],
+      "tag": "torii"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        -2.0,
+        -2,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        6.5,
+        -2,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        15.0,
+        -1.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        23.5,
+        -0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        32.0,
+        -0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        40.5,
+        0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        49.0,
+        0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        57.5,
+        0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        66.0,
+        0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        74.5,
+        0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        83.0,
+        0.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        91.5,
+        1.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        100.0,
+        5.0,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        108.5,
+        5.0,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        117.0,
+        6.0,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        125.5,
+        6.0,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        134.0,
+        7.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        142.5,
+        7.5,
+        -5.7
+      ],
+      "tag": "cliff"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [
+          63.0,
+          3.5,
+          -5.0
+        ],
+        [
+          63.0,
+          3.5,
+          5.0
+        ]
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "speed": 5.0,
+      "phase": 0.0,
+      "crow": {
+        "perch": [
+          60.0,
+          3.1,
+          3.2
+        ],
+        "to": [
+          57.0,
+          7.5,
+          9.5
+        ],
+        "size": [
+          0.35,
+          0.35,
+          0.6
+        ],
+        "lift": 0.11,
+        "away": 0.45
+      }
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [
+          96.0,
+          4.5,
+          -5.0
+        ],
+        [
+          96.0,
+          4.5,
+          5.0
+        ]
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "speed": 5.0,
+      "phase": 0.0,
+      "crow": {
+        "perch": [
+          84.0,
+          4.1,
+          3.2
+        ],
+        "to": [
+          81.0,
+          8.5,
+          9.5
+        ],
+        "size": [
+          0.35,
+          0.35,
+          0.6
+        ],
+        "lift": 0.02,
+        "away": 0.45
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        36.0,
+        1.5,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        54.0,
+        2.5,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        82.0,
+        2.5,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        106.0,
+        7.0,
+        0
+      ],
+      "facing": -90
+    }
+  ],
+  "critical_path": [
+    [
+      0,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        9.5,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the first gap"
+    },
+    {
+      "pos": [
+        13.5,
+        0.5,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 3, +0.5"
+    },
+    {
+      "pos": [
+        19.5,
+        0.5,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the wide gap"
+    },
+    {
+      "pos": [
+        26.5,
+        1.5,
+        0
+      ],
+      "via": "double",
+      "note": "gap 5 (7 waypoint to waypoint), +1.0"
+    },
+    {
+      "pos": [
+        36.0,
+        1.5,
+        0
+      ],
+      "via": "ground",
+      "note": "T1, at the lip"
+    },
+    {
+      "pos": [
+        43.5,
+        2.5,
+        0
+      ],
+      "via": "dashjump",
+      "note": "the first dash-jump: from the torii, so a miss respawns you here (D-015c); +1.0 over a 5.9u gap"
+    },
+    {
+      "pos": [
+        54.0,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "T2"
+    },
+    {
+      "pos": [
+        69.0,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "wait for the crow, then cross the sweep",
+      "cue": 1
+    },
+    {
+      "pos": [
+        70.5,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the dash gap"
+    },
+    {
+      "pos": [
+        74.0,
+        2.5,
+        0
+      ],
+      "via": "dash",
+      "note": "dash the 2u gap"
+    },
+    {
+      "pos": [
+        82.0,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "T3"
+    },
+    {
+      "pos": [
+        85.0,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the gap, on the crow",
+      "cue": 2
+    },
+    {
+      "pos": [
+        92.5,
+        3.5,
+        0
+      ],
+      "via": "dashjump",
+      "note": "dash-jump onto the swept ledge, +1.0"
+    },
+    {
+      "pos": [
+        96.0,
+        3.5,
+        0
+      ],
+      "via": "ground",
+      "note": "2u short of the riser, inside the sweep lane: crossed on the crow"
+    },
+    {
+      "pos": [
+        99.25,
+        5.25,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 onto the shelf"
+    },
+    {
+      "pos": [
+        102.0,
+        7.0,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.75 off the shelf"
+    },
+    {
+      "pos": [
+        106.0,
+        7.0,
+        0
+      ],
+      "via": "ground",
+      "note": "T4"
+    },
+    {
+      "pos": [
+        114.0,
+        7.0,
+        0
+      ],
+      "via": "ground",
+      "note": "edge"
+    },
+    {
+      "pos": [
+        121.5,
+        8.0,
+        0
+      ],
+      "via": "dashjump",
+      "note": "+1.0, the last dash-jump"
+    },
+    {
+      "pos": [
+        128.0,
+        8.0,
+        0
+      ],
+      "via": "ground",
+      "note": "edge"
+    },
+    {
+      "pos": [
+        134.5,
+        9.5,
+        0
+      ],
+      "via": "double",
+      "note": "+1.5, the last gap"
+    },
+    {
+      "pos": [
+        142.5,
+        9.5,
+        0
+      ],
+      "via": "ground",
+      "note": "goal: the summit torii"
+    }
+  ]
+}
