@@ -148,3 +148,5 @@
 {"id":"OQ-057","agent":"unknown","ts":"2026-11-09T03:21:27.492Z","released":true}
 {"id":"CHAPTER-4","agent":"phase0-spec","ts":"2026-11-09T03:40:20.195Z","ttl_min":90}
 {"id":"OQ-058","agent":"phase0-spec","ts":"2026-11-09T03:51:06.953Z","ttl_min":90}
+{"id":"CHAPTER-2","agent":"builder-ch2","ts":"2026-11-09T03:57:15.109Z","released":true}
+{"id":"OQ-056","agent":"builder-ch2","ts":"2026-11-09T03:57:15.140Z","released":true}
