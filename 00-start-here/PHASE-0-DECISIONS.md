@@ -993,7 +993,7 @@ the one check whose entire purpose was to prevent this.
 A budget says a move *can* clear a gap. It says nothing about whether the player can *see* that
 it can. Both belong under CI, and until D-015b exists only one of them was.
 
-implemented_by: 8b5a4ac (D-015b READABLE_RISE; D-015c CHAPTER_TEACH made falsifiable, kept live rather than deleted: OQ-047), 286259f (D-015a level data + move table, APPROVED by delegation 2026-11-08, still one revert; plus the D-015c teach step it forced), 05f3ffa (lint:self in CI: both checks proven to fail). D-015d: 440c982 (B-18; camera pitch assist ON by default, `?pitchassist=off`; harness stage pitch-assist runs the real rig; deviations OQ-052). Deviations from the text, recorded not edited: shelves 2.5 u not 1.5 (1.5 fails D-015b), the 4.50 row reads 0 not 3.5 (OQ-046).
+implemented_by: 8b5a4ac (D-015b READABLE_RISE; D-015c CHAPTER_TEACH made falsifiable, kept live rather than deleted: OQ-047), 286259f (D-015a level data + move table, APPROVED by delegation 2026-11-08, still one revert; plus the D-015c teach step it forced), 05f3ffa (lint:self in CI: both checks proven to fail). D-015d: 440c982 + 4697475 (B-18; camera pitch assist ON by default, `?pitchassist=off`; harness stage pitch-assist runs the real rig; deviations OQ-052). Deviations from the text, recorded not edited: shelves 2.5 u not 1.5 (1.5 fails D-015b), the 4.50 row reads 0 not 3.5 (OQ-046).
 
 ---
 
@@ -1052,4 +1052,4 @@ In chapter 2's set, a rise needs more than `jump` once it exceeds `MOVE.jump.max
   - The claim is on the review board as RB-004.
 - **The standing TIGHT warning:** it is on the gym, not chapter 1. It is accepted, with the reason on the waypoint (OQ-051). Chapter 1 lints with zero warnings.
 
-implemented_by: 62ce5fc (D-016a in tools/lint-level.mjs; proven both ways in tools/lint-self.mjs; gym TIGHT note, OQ-051). D-016b is documentation: B-18 promoted to BLOCKER, RB-004 posted. D-015d: 440c982 (READABLE_RISE models the assisted pitch: wall +4.0 and climb +4.5 read onto landings >= 2.55 u; the chapter 2 blocker is lifted, pending APPROVER on OQ-052).
+implemented_by: 62ce5fc (D-016a in tools/lint-level.mjs; proven both ways in tools/lint-self.mjs; gym TIGHT note, OQ-051). D-016b is documentation: B-18 promoted to BLOCKER, RB-004 posted. D-015d: 440c982 + 4697475 (READABLE_RISE models the assisted pitch: wall +4.0 and climb +4.5 read onto landings >= 2.55 u; the chapter 2 blocker is lifted, pending APPROVER on OQ-052).
