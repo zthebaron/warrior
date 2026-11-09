@@ -171,3 +171,5 @@
 {"id":"B-21","agent":"phase0-spec","ts":"2026-11-09T09:49:41.871Z","released":true}
 {"id":"OQ-064","agent":"phase0-spec","ts":"2026-11-09T09:49:41.900Z","released":true}
 {"id":"B-24","agent":"kit","ts":"2026-11-09T09:51:41.233Z","released":true}
+{"id":"B-23","agent":"kit","ts":"2026-11-09T13:32:23.969Z","ttl_min":90}
+{"id":"B-25","agent":"kit","ts":"2026-11-09T13:32:24.014Z","ttl_min":90}
