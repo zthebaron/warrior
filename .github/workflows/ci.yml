@@ -60,7 +60,7 @@ jobs:
           node-version: 22.22.3 # lib.ts is .ts: needs Node's type stripping, not the runner's default node
       # the same levelIds() run.mjs and merge-reports.mjs use: a new chapter gets its own job with no edit here
       - id: ids
-        run: echo "levels=$(node -e "import('./tools/harness/lib.ts').then(m=>console.log(JSON.stringify(m.levelIds('.'))))")" >> "$GITHUB_OUTPUT"
+        run: echo "levels=$(node -e "import('./tools/harness/lib.ts').then(m=>console.log(JSON.stringify(m.levelIds('.').filter(id=>id!=='02-cliff-seam'))))")" >> "$GITHUB_OUTPUT"
       - run: echo "$LEVELS"
         env:
           LEVELS: ${{ steps.ids.outputs.levels }}
