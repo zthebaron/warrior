@@ -226,6 +226,7 @@ src/engine/
   input.ts       CRITICAL: an input layer whose per-frame state is serialisable.
                  interface InputFrame { x:number; y:number; jump:boolean;
                  dash:boolean; attack:boolean; }
+                 [SUPERSEDED in part — PHASE-0-DECISIONS Q1: no attack input; there is no combat]
                  Provide record() → InputFrame[] and playback(frames) → deterministic
                  replay. Keyboard + gamepad now, touch stubbed.
   camera.ts      Third-person spring arm: target offset, damping, collision pushback
@@ -253,6 +254,7 @@ src/entities/player.ts
 src/loaders/level.ts
   Loads levels/<id>.json validated against levels/level.schema.json (use ajv).
   Build the scene graph, instantiate colliders, wire interactables, place spawn.
+  [SUPERSEDED in part — PHASE-0-DECISIONS Q3: there are no interactables to wire]
   Fail loudly with a readable error on schema violation — never silently skip.
 
 levels/level.schema.json
@@ -519,6 +521,8 @@ ANIMATION SET (minimum, all looping cleanly where applicable):
 idle, walk, run, sprint, jump_start, jump_apex, fall, land, land_hard,
 wall_slide, wall_jump, ledge_grab, ledge_climb, dash, strike_1, strike_2,
 hit_react, death
+[SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q6: drop strike_1, strike_2 and hit_react; there is
+no combat and no damage]
 
 Source from Mixamo where a good match exists and retarget; author by hand only
 where nothing fits.
@@ -659,7 +663,8 @@ BUILD (a route in the dev server, not part of the shipped game):
   - load any level by id; free-fly camera with WASD + mouse, shift to boost
   - critical_path drawn as a coloured polyline, each segment labelled with its "via",
     colour-coded by move type, with the segment's distance and rise shown
-  - checkpoints, hazards, enemy positions and aggro radii, platform paths and level
+  - [SUPERSEDED in part — PHASE-0-DECISIONS Q1: no enemies or aggro radii; the patroller is a
+    hazard and draws as one] checkpoints, hazards, enemy positions and aggro radii, platform paths and level
     bounds all drawn as wireframes
   - click any entity to see its JSON
   - scrub the nav bot along the critical path with a timeline slider, frame by frame
@@ -718,7 +723,8 @@ One paragraph each, covering:
   - The landmark the player can see from the start that tells them where they are going
   - Hazard theme (what kills you here, and is it new or a remix?)
   - The ONE new idea in this level — a mechanic, a hazard, an enemy placement, or a
-    traversal shape we have not used before
+    traversal shape we have not used before [SUPERSEDED in part — PHASE-0-DECISIONS Q1: not an
+    enemy placement; there are none. Q2: not a new mechanic either, the eight moves are closed]
   - Mood in three words
 
 Constraints: each level must be buildable from the kit in KIT.md. Flag any brief
@@ -771,7 +777,7 @@ Then write the build note that the level-building agent will receive:
   - Approximate world dimensions and total vertical rise in units
   - The traversal spine in plain language: start → 4-6 beats → goal
   - Where checkpoints go and why
-  - The hazard and enemy placement logic
+  - The hazard and enemy placement logic [SUPERSEDED in part — PHASE-0-DECISIONS Q1: hazards only]
   - The ONE new idea, stated as a concrete thing to build
   - Any asset this level needs that does NOT exist yet — list these loudly
 
@@ -822,7 +828,8 @@ BUILD IT:
    vertical shape right before adding anything decorative.
 2. Place kit geometry to realise the concepts. Reuse and rotate aggressively;
    that is what the kit is for.
-3. Place platforms, hazards, interactables, enemies, collectibles, checkpoints.
+3. [SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q3: no interactables, enemies or collectibles; the
+   schema rejects all three] Place platforms, hazards, interactables, enemies, collectibles, checkpoints.
 4. Write critical_path — the ordered waypoints a bot must traverse. This is your level's
    test spec and it is MOVE-ANNOTATED. Every waypoint after spawn declares how the player
    gets there:
@@ -875,7 +882,12 @@ Then tell me the order to launch them in — hardest first or easiest first — 
 
 # §P9 — SYSTEMS
 
-### P9.1 — Enemies and combat
+### P9.1 — Enemies and combat **[SUPERSEDED — PHASE-0-DECISIONS Q1, Q6]**
+
+> **[SUPERSEDED — PHASE-0-DECISIONS Q1, Q6]** Do not paste this prompt. Q1 refused enemies that fight
+> or pursue and every combat verb; Q6 refused health, damage and knockback. The patroller survives
+> as a hazard in `hazards` (SPEC §7 NOT row 1), not as an enemy, and kills on contact rather than
+> damaging. SPEC §7's NOT table is enforced by `npm run lint:not-list`. Kept for the record.
 
 **PASTE INTO CLAUDE CODE (BUILDER)**
 ```
@@ -914,14 +926,15 @@ that were authored without them. Report which levels now fail and why.
 ```
 Implement progression.
 
-  - Chapter select screen, styled per STYLE-BIBLE. Locked chapters shown but not
+  - [SUPERSEDED — PHASE-0-DECISIONS Q4, Q6; OQ-050] Chapter select screen, styled per STYLE-BIBLE. Locked chapters shown but not
     enterable. Completed chapters show scrolls found / total.
-  - Collectibles: scrolls per level, counted, persisted.
-  - Save to localStorage. WRAP EVERY READ AND WRITE IN TRY/CATCH — localStorage
+  - [SUPERSEDED — PHASE-0-DECISIONS Q3] Collectibles: scrolls per level, counted, persisted.
+  - [SUPERSEDED — OQ-050: no save; finishing a chapter loads the next, derived from each level's
+    chapter field] Save to localStorage. WRAP EVERY READ AND WRITE IN TRY/CATCH — localStorage
     throws in several embedded and private-browsing contexts and an unhandled
     throw here takes down the whole game. Fall back to in-memory silently.
-  - Save shape: { version, chaptersCompleted[], scrollsFound[], settings, totalTime }
-  - Version the save and handle migration from an older version by resetting rather
+  - [SUPERSEDED — OQ-050, PHASE-0-DECISIONS Q3: no save, no scrolls] Save shape: { version, chaptersCompleted[], scrollsFound[], settings, totalTime }
+  - [SUPERSEDED — OQ-050: no save to version] Version the save and handle migration from an older version by resetting rather
     than crashing.
   - Death → respawn at last checkpoint in UNDER 1.2 SECONDS including the transition.
     Measure it and tell me the number. Slow respawn is the single biggest reason
@@ -951,14 +964,15 @@ Jump exertion, light fabric rustle and a soft breath, no voice, 0.3s
 Landing on stone from a short fall, soft impact, cloth settle, 0.5s
 Heavy landing on stone from height, deep impact, dust, slight grunt, 0.8s
 Quick dash, sharp fabric whoosh, air movement, 0.4s
-Katana unsheathing, metallic slide, bright, short, 0.6s
-Sword cutting air, fast whoosh, 0.3s
-Sword striking wood, sharp percussive impact, 0.4s
-Large bronze temple bell struck once, deep fundamental, long natural decay, 8s
-Heavy stone gate grinding open, low rumble, stone on stone, 3s
-Paper scroll being picked up, soft parchment rustle, 0.5s
 Low resonant chime, single tone, warm, checkpoint marker, 2s
 ```
+
+> **[SUPERSEDED — PHASE-0-DECISIONS Q1, Q3]** Six lines were removed from the block above so they
+> cannot be pasted: there is no combat (Q1) and no bell, gate or pickup (Q3). Kept for the record:
+> `Katana unsheathing, metallic slide, bright, short, 0.6s` · `Sword cutting air, fast whoosh, 0.3s` ·
+> `Sword striking wood, sharp percussive impact, 0.4s` · `Large bronze temple bell struck once, deep
+> fundamental, long natural decay, 8s` · `Heavy stone gate grinding open, low rumble, stone on stone,
+> 3s` · `Paper scroll being picked up, soft parchment rustle, 0.5s`
 *Generate 4 variations of every footstep. Randomise playback pitch ±8% in-engine or
 it will sound like a machine gun.*
 
@@ -998,12 +1012,14 @@ Implement the audio system.
 
   src/engine/audio.ts
   - Web Audio API via three.js Audio/PositionalAudio where 3D positioning helps
-    (bells, gates, enemies), plain 2D for UI and footsteps
+    (bells, gates, enemies), plain 2D for UI and footsteps [SUPERSEDED in part —
+    PHASE-0-DECISIONS Q1, Q3: no bells, gates or enemies; hazards are the positional sources]
   - Buses: master → { sfx, music, ambience }, each with a gain node and a settings slider
   - Footstep system: surface detected from the collider's material tag, 4 variations
     per surface, random selection with no immediate repeat, pitch randomised ±8%,
     triggered from animation events not from a timer
-  - Music: crossfade between main and tension based on an "alert" flag from the
+  - [SUPERSEDED in part — PHASE-0-DECISIONS Q1: there is no combat system to raise "alert"; the
+    tension trigger is undecided] Music: crossfade between main and tension based on an "alert" flag from the
     combat system, 2s fade
   - Ambience: crossfade by level zone, defined in the level JSON lighting block
   - Mute on tab blur (visibilitychange), resume on focus
@@ -1035,6 +1051,7 @@ WebGL- or AudioContext-related; find it before a user does. Report each browser'
 specific failures.
 
 MOBILE: either a proper touch control scheme (virtual stick left, jump + dash/attack
+[SUPERSEDED in part — PHASE-0-DECISIONS Q1: jump + dash, there is no attack]
 right, both with generous touch targets and visual feedback) or an honest gate screen
 saying desktop only. Half-working touch is worse than none — make the call and tell
 me which you chose and why.
@@ -1049,7 +1066,7 @@ player needs to be told anything, the level is wrong, not the player.
 
 RESILIENCE:
   - WebGL context loss → handler that restores or shows a clean message
-  - Malformed save → reset silently, never crash
+  - [SUPERSEDED — OQ-050: there is no save to be malformed] Malformed save → reset silently, never crash
   - Asset load failure → retry twice, then a readable error, never a white screen
   - Unsupported browser → a styled fallback page, not a stack trace
 
