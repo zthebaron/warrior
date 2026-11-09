@@ -1,7 +1,8 @@
 import { defineConfig, type Plugin } from 'vite';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { basename } from 'node:path';
+import { basename, isAbsolute, relative } from 'node:path';
 
 // Level hot-reload: when levels/<id>.json changes on disk, push its raw text to the client
 // over the Vite websocket. The client re-validates and rebuilds without a page reload.
@@ -50,11 +51,40 @@ function threeDecoders(): Plugin {
   };
 }
 
+// B-25: every file this build read from the repo (src/, levels/, assets/dist/, ...), with the sha256 of its
+// bytes, emitted as build-inputs.json beside the bundle. tools/harness/preflight.ts re-hashes them on disk,
+// so a bundle older than its source (`playtest --skip-build` after an edit) is a BUILD_FAILURE, not a
+// silent run of old code. node_modules is pinned by the lockfile and is not listed.
+export const BUILD_INPUTS_FILE = 'build-inputs.json';
+function buildInputs(): Plugin {
+  let root = '';
+  return {
+    name: 'warrior-build-inputs',
+    apply: 'build',
+    configResolved(c) { root = c.root; },
+    generateBundle() {
+      const files: Record<string, string> = {};
+      for (const id of this.getModuleIds()) {
+        if (id.startsWith('\0')) continue;
+        const file = id.split('?')[0]!;
+        if (!isAbsolute(file) || file.includes('/node_modules/') || !existsSync(file) || !statSync(file).isFile()) continue;
+        const rel = relative(root, file).replace(/\\/g, '/');
+        if (rel.startsWith('..')) continue;
+        files[rel] = createHash('sha256').update(readFileSync(file)).digest('hex');
+      }
+      const config = fileURLToPath(import.meta.url);
+      files[relative(root, config).replace(/\\/g, '/')] = createHash('sha256').update(readFileSync(config)).digest('hex');
+      const sorted = Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b)));
+      this.emitFile({ type: 'asset', fileName: BUILD_INPUTS_FILE, source: JSON.stringify(sorted, null, 1) });
+    },
+  };
+}
+
 // __HARNESS__ is true ONLY for `vite build --mode harness` (tools/harness/run.mjs builds that
 // into dist-harness/). Every other build gets `false`, so the whole test API is dead code and the
 // minifier drops it — run.mjs greps the production bundle for the sentinel to prove it.
 export default defineConfig(({ mode }) => ({
-  plugins: [levelHotReload(), threeDecoders()],
+  plugins: [levelHotReload(), threeDecoders(), buildInputs()],
   define: { __HARNESS__: JSON.stringify(mode === 'harness') },
   build: { target: 'es2022' },
 }));
