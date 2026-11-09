@@ -1015,3 +1015,13 @@ took, each PROVISIONAL:
    - **Split job times:** static 0.4, matrix 0.2, game 2.9, levels 3.2-4.3 (00-gym 3.9, 01-lower-stair 4.3, 02-cliff-seam 3.3, 03-drifting-stones 3.2), merge 0.2.
    - **Item 6's projection was pessimistic:** it said about 9 min. The CI runners were faster that hour than on 42561268355.
 status: PROVISIONAL
+
+## OQ-065 — Audit of the #18 split CI: does the per-level coverage gate hold?
+raised: 2026-11-09 by ci-gate-audit (claim CI-GATE-AUDIT), verified independently of the session that wrote B-22
+took, each PROVISIONAL:
+1. **Every level has a job.** `levels/` holds 00-gym, 01-lower-stair, 02-cliff-seam, 03-drifting-stones (the schema file is excluded by `levelIds()`). The green #18 run 42628995213 has one `level` job for each, all success.
+2. **A dropped level job fails the run, in CI.** Throwaway draft PR #24 (closed unmerged, branch deleted) filtered 02-cliff-seam out of the `matrix` output and changed nothing else. Run 42634366050: static, matrix, game and the three remaining level jobs all succeeded. `playtest` failed with `COVERAGE_LEVEL: 02-cliff-seam has no report that ran all of nav,…,visual (saw only: schema,lint-level,preflight)`, `RESULT: HARNESS_SETUP_FAILURE`, exit 4, and the run concluded failure. The game job's partial 02-cliff-seam entry was correctly not counted as coverage.
+3. **A level file with no job fails the gate.** Real per-job reports from 42628995213 were merged locally with `levels/04-orphan.json` added and no report for it: `COVERAGE_LEVEL: 04-orphan … (no report at all)`, exit 4. The same reports with 02-cliff-seam's removed also gave exit 4, and the unmodified set gave PASS, exit 0. In CI an orphan can only arise through the same matrix/levelIds divergence that item 2 exercised, because both read `levelIds()`.
+4. **Verdict: the coverage gate holds.** No change to the workflow or to `merge-reports.mjs` is needed.
+5. **The gap is outside the gate: `main` has no branch protection and no rulesets.** `gh api repos/zthebaron/warrior/branches/main/protection` returns 404, and the rulesets list is `[]`. A red `playtest` marks the PR but does not block a merge, and pushes to `main` (`git push origin HEAD:main`, which the rules prescribe) bypass PR CI entirely. To make the gate binding, Tim would add a ruleset requiring the `playtest` check on PRs to `main`. That conflicts with the direct-push workflow for `state/` and claim commits, so the ruleset would need a bypass for those or a different flow. **This is Tim's call. Nothing was changed.**
+status: PROVISIONAL
