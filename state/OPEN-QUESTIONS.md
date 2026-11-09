@@ -834,7 +834,7 @@ Disclosed weaknesses, so a reviewer can attack them:
      src/engine/ or src/systems/. Rendering is unchanged.
 status: PROVISIONAL
 
-## OQ-056 — B-11: what "CLOSED with no implementing commit" means precisely, and the 8 entries I backfilled
+## OQ-057 — B-11: what "CLOSED with no implementing commit" means precisely, and the 8 entries I backfilled
 raised: 2026-11-08 by phase0-spec (B-11)
 took:
   - Closed means the heading's LAST status word is CLOSED or DECIDED. DECIDED entries (D-001..D-012)
