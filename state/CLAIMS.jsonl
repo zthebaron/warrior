@@ -163,3 +163,4 @@
 {"id":"B-22","agent":"ci-parallel","ts":"2026-11-09T07:27:18.679Z","ttl_min":90}
 {"id":"OQ-061","agent":"ci-parallel","ts":"2026-11-09T07:27:18.708Z","ttl_min":90}
 {"id":"B-20","agent":"phase0-spec","ts":"2026-11-09T07:27:40.993Z","ttl_min":90}
+{"id":"PR17-VERIFY","agent":"ci-parallel","ts":"2026-11-09T07:58:43.682Z","ttl_min":90}
