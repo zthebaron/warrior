@@ -427,13 +427,39 @@ plain stairs, which READABLE_RISE never checks (`ground` rises are skipped). At 
 
 With `?pitchassist=off` every one of these reads 0.50 deg or less.
 
-**ASSIST_CASE (OQ-052 item 7).** The table above uses an unobstructed arm. Every chapter waypoint that passes
+**ASSIST_CASE (OQ-052 item 7).** The table above uses an unobstructed arm (B-23 below models the collided one). Every chapter waypoint that passes
 READABLE_RISE only because of the assist is also run in its real level, by the `pitch-assist` stage. It must read
 in the real rig, at the pitch modelled here.
 - **Proof fixture:** the same +4.0 wall reads 2.33 deg when clean. Under an overhang 3.6 u high behind the
   approach it reads 0.00 deg (arm pulled in), and the check fails it.
 - **Today:** gym and chapter 1 have 0 cases. A climb at maxRise 4.50 needs a landing at
 least 2.55 u deep.
+
+**B-23: the collided arm (2026-11-08).** READABLE_RISE no longer assumes an unobstructed arm. It predicts
+the eye the camera actually produces, in the camera's own two steps:
+1. The assist picks its target pitch with the free-arm rig (`assistPitchDeg`).
+2. The arm then collides: a ray from the pivot back along the view, shortened by `allowedArm` (now in
+   `camera-tuning.ts`, shared with the camera).
+
+The ray is cast against every static collider of the level: prim boxes exactly, and kit meshes as their
+real collision triangles. **No new number:** `minDistance` 0.8 and `collisionPadding` 0.3 are the camera's
+own `CAMERA_TUNING` values.
+
+Linter against real rig, camera behind the facing, 2 u standoff (`pitch-assist` stage, B-23 proof):
+
+| face | wall behind the stand point | linter: eye, band | real rig band | verdict, both |
+|---|---|---|---|---|
+| +3.75 onto 3.5 u (in wall's band) | 1 u (chapter 2's shape) | +1.91 at 29 deg, 0.00 deg | 0.00 deg at 29.0 | rejected |
+| +3.75 onto 3.5 u | none | +4.89 at 29 deg, 2.39 deg | 2.42 deg at 29.0 | reads |
+| +2.50 onto 3.5 u (below the band) | 1 u | +1.75 at 18 deg, 0.00 deg | 0.00 deg at 18.0 | rejected |
+| +2.50 onto 3.5 u | none | +3.66 at 18 deg, 2.19 deg | 2.17 deg at 18.0 | reads |
+| +4.0 onto 6 u, overhang 3.6 u high behind | overhang | +3.46 at 28 deg, 0.00 deg | 0.00 deg at 28.0 | rejected |
+| shipped chapter 2 `critical_path[5]`, +2.50 | 1 u (`geometry[3]`) | +1.75 at 18 deg, 0.00 deg | 0.00 deg, eye +1.76 | **rejected** |
+
+**Wall jumps.** With its wall 1 u behind the stand point, the arm sits at `minDistance` and the eye is
++1.75 at rest. No pitch the camera will choose shows any top a wall jump is needed for. The sketch over wall
+distance 1-7 u and rise 2.1-4.0 is in OQ-062. So the unteachable region is not wall's band 3.50-4.00. It is
+every `wall` teaching face at READABLE_RISE's pose with this camera. Chapter 2's +2.50 wall is in it (OQ-062).
 
 ## B-15 harness protocol: run-metric and ambient-motion (2026-11-08)
 

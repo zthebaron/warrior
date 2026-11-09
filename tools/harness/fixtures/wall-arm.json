@@ -1,0 +1,233 @@
+{
+  "id": "fixture-wall-arm",
+  "title": "Fixture: B-23 wall-jump arm (READABLE_RISE collided eye)",
+  "chapter": 2,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "wall",
+    "double",
+    "climb"
+  ],
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      -20,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      11.75,
+      2.5,
+      30
+    ],
+    "radius": 1
+  },
+  "bounds": {
+    "min": [
+      -35,
+      -15,
+      -10
+    ],
+    "max": [
+      35,
+      20,
+      45
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        0,
+        -0.5,
+        15
+      ],
+      "scale": [
+        60,
+        1,
+        40
+      ],
+      "tag": "spawn"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        11.75,
+        1.875,
+        0
+      ],
+      "scale": [
+        3.5,
+        3.75,
+        7
+      ],
+      "tag": "band_walled"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        6.5,
+        6,
+        0
+      ],
+      "scale": [
+        1,
+        12,
+        7
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        11.75,
+        1.875,
+        10
+      ],
+      "scale": [
+        3.5,
+        3.75,
+        7
+      ],
+      "tag": "band_clear"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        11.75,
+        1.25,
+        20
+      ],
+      "scale": [
+        3.5,
+        2.5,
+        7
+      ],
+      "tag": "low_walled"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        6.5,
+        6,
+        20
+      ],
+      "scale": [
+        1,
+        12,
+        7
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        11.75,
+        1.25,
+        30
+      ],
+      "scale": [
+        3.5,
+        2.5,
+        7
+      ],
+      "tag": "low_clear"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        -20,
+        0,
+        0
+      ]
+    }
+  ],
+  "critical_path": [
+    [
+      -20,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        8,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        11.75,
+        3.75,
+        0
+      ],
+      "via": "wall",
+      "note": "band_walled: +3.75 onto 3.5u, its wall 1u behind the stand point (chapter 2 shape)"
+    },
+    {
+      "pos": [
+        8,
+        0,
+        10
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        11.75,
+        3.75,
+        10
+      ],
+      "via": "wall",
+      "note": "band_clear: +3.75 onto 3.5u, nothing behind the stand point"
+    },
+    {
+      "pos": [
+        8,
+        0,
+        20
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        11.75,
+        2.5,
+        20
+      ],
+      "via": "wall",
+      "note": "low_walled: +2.5 onto 3.5u, its wall 1u behind the stand point (chapter 2 shape)"
+    },
+    {
+      "pos": [
+        8,
+        0,
+        30
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        11.75,
+        2.5,
+        30
+      ],
+      "via": "wall",
+      "note": "low_clear: +2.5 onto 3.5u, nothing behind the stand point"
+    }
+  ],
+  "difficulty": 2
+}

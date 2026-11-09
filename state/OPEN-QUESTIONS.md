@@ -864,6 +864,7 @@ took, each PROVISIONAL:
    - **The fix:** a rise that reads at the rest pose. The ledge is 3.5 u deep, which caps it at 2.60, so the wall is +2.50 and there is no assist case.
    - **The cost is RB-004 item 3's loophole, taken knowingly.** The chapter's wall is taught below wall's band, and climb could clear the same face. A future chapter that gates on a 3.5-4.0 wall only gets a READABLE_RISE warning, and ASSIST_CASE would fail it anyway unless the arm is clear.
    - **For the verifier:** RB-004 should now carry "wall's characteristic band is unteachable even with the assist".
+   - **Correction (B-23, OQ-062):** the diagnosis held, but the 0.00° reading that seemed to prove it did not measure it. The harness's `respawnAt` moves the player, not the camera. So ASSIST_CASE measured this +z-facing case with the camera still at spawn yaw (+x), side-on, and the centre column never crossed the ledge. With the camera behind the facing, the real rig reads 0.00° for the reason given above: the eye is pulled in to +1.91 at 29°. It also reads 0.00° for the shipped +2.50 (eye +1.76): **the fix in this item does not read either.**
 4. **T1's torii stands 18 u past the first climb face** (x 30, face at x 12), outside the probe's 15 u depth range.
    - **What went wrong at x 22:** the real probe's depth rays hit the torii, reported a shallower landing, and settled at 31° where the linter models 30°. ASSIST_CASE fails on that mismatch.
    - **Rule of thumb:** keep tall props more than `PITCH_ASSIST.depthMaxM` past an assisted face, or the linter's slab model and the real probe disagree.
@@ -914,3 +915,70 @@ Disclosed weaknesses:
      branch shas a decision cites, and this rule would then report them UNKNOWN_COMMIT, correctly. The
      fix there is to cite the merged sha.
 status: PROVISIONAL
+
+## OQ-062 — B-23: a wall jump's teaching face cannot be read at READABLE_RISE's pose, at ANY height, and shipped chapter 2 now fails
+raised: 2026-11-08 by kit (B-23)
+
+**What changed.** READABLE_RISE used to put the eye where an unobstructed arm would (OQ-052 item 7's
+assumption). It now predicts the eye the camera produces, in the camera's own two steps:
+1. The assist picks its target with the free-arm rig.
+2. The arm collides: a ray from the pivot back along the view, shortened by `allowedArm`, the camera's
+   own function, moved into `camera-tuning.ts` so the linter imports it.
+
+The ray is cast against every static collider. Prim boxes are exact. Kit meshes are their real collision
+triangles, read from `assets/dist`. A torii's bbox would block an arm that really passes through the gate:
+pre-D-015 chapter 1 is flagged with the bbox and is clean with the triangles. It is pinned in lint-self.
+MEASUREMENTS "B-23: the collided arm" has the linter-against-rig table. The two agree to within 0.03° on all
+six fixture rises.
+
+**Harness bug found on the way.** `respawnAt` never turned the camera, so every real-rig check measured from
+spawn yaw. For a case facing any other way the camera was side-on: OQ-056 item 3's 0.00° was that. The fix is
+a new harness call, `cameraYaw(facing)`, made in `measureAt` before the rig settles. Every existing fixture
+faces spawn's yaw and reads as before, and both chapter 2 climb cases pass again at 30° and 26°.
+
+**The finding.** On a 3.5 u ledge (chapter 2's), at READABLE_RISE's pose (2 u off the face, facing it, camera
+behind), each cell is the band from the eye the camera actually gets, at the pitch it chooses:
+
+| wall behind | +2.10 | +2.50 | +3.00 | +3.50 | +3.75 | +4.00 |
+|---|---|---|---|---|---|---|
+| 1 u | no 0.00° @18° | no 0.00° @18° | no 0.00° @18° | no 0.00° @27° | no 0.00° @29° | no 0.00° @31° |
+| 2 u | no 0.00° @18° | no 0.00° @18° | no 0.00° @18° | no 0.00° @27° | no 0.00° @29° | no 0.00° @31° |
+| 3 u | no 1.46° @18° | no 0.00° @18° | no 0.00° @18° | no 0.00° @27° | no 0.00° @29° | no 0.00° @31° |
+| 5 u | **reads** 2.69° @18° | no 1.55° @18° | no 0.09° @18° | no 1.19° @27° | no 1.09° @29° | no 1.01° @31° |
+| 7 u | **reads** 2.91° @18° | **reads** 2.19° @18° | no 1.26° @18° | **reads** 2.41° @27° | **reads** 2.39° @29° | **reads** 2.38° @31° |
+
+- **Where it reads:** only once the wall is about 7 u back, where the arm (7 cos 18° = 6.66 u) is free.
+- **Why that is never a wall jump:** you kick off the wall and land on the ledge. The wall is then about 9 u
+  from the landing, past `MOVE.wall.maxH` 4.2.
+- **So the unteachable region is not wall's band 3.50-4.00.** It is every `wall` teaching face this camera
+  can be asked to show from this pose.
+- **Chapter 2's shipped +2.50 is in it.** The wall is 1 u behind (`geometry[3]`), the eye is +1.75 against
+  +1.76 in the rig, and the band is 0.00°.
+
+**What I did.** The rule is enforced as written. READABLE_RISE is an ERROR on a teaching instance (D-016). It
+now rejects `02-cliff-seam` `critical_path[5]`, so `lint:levels` and the playtest fail on exactly that one
+error. Things I did NOT do:
+- exempt `wall`;
+- add a band-only carve-out;
+- weaken the model;
+- move chapter 2's geometry. Nothing in the table is a wall jump to move it to.
+
+**Why this waits for Tim.** Every way to green amends D-015 or D-016:
+1. **A different readability pose for `wall`.** The player sees the ledge on the approach, before turning
+   into the wall: chapter 2's corridor runs along +x with the ledge to the side. READABLE_RISE would then
+   judge `wall` from the approach waypoint along its own heading, not from 2 u off the face. This amends
+   D-015b's pose.
+2. **A camera change.** The assist could search pitches with the collided arm, or the arm could swing aside
+   rather than shortening. This amends D-015d.
+   - An unpinned search over every pitch 18-70° with the collided arm finds **nothing** that reads with the
+     wall 1 u behind, at any rise from 2.1 to 4.0. The pitches steep enough to lift the eye above the top
+     put that top outside the 60° frustum.
+   - With the wall 2 u behind, rises up to +3.0 read at 70°, which is the rig's `pitchMaxDeg`. That is not
+     yet a design.
+3. **An exemption.** D-016 would say `wall` is taught without a readable top, and why.
+
+PROVISIONAL pick: **none.** None of the three is mine to take, and each changes a CLOSED decision. Until Tim
+rules, PR `b23-wall-eye` stays red on that one error. This is the task's fallback, "record the unteachable
+band as an enforced error rather than a note", landing where the measurement puts it.
+status: OPEN (blocks merging B-23; Tim's ruling)
+

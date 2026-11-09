@@ -255,6 +255,7 @@ declare global {
       releaseCamera(): void;
       cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: { standoff: number; rise: number; depth: number; targetDeg: number | null } | null };
       castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
+      cameraYaw(facingDeg: number): void;
       respawnAt(pos: Vec3, facing: number, tick: number): Snapshot;
       setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;
       renderTorii(bg: string, cam: Vec3, target: Vec3): Promise<{ ok: boolean; error: string | null }>;
