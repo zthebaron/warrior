@@ -864,6 +864,7 @@ took, each PROVISIONAL:
    - **The fix:** a rise that reads at the rest pose. The ledge is 3.5 u deep, which caps it at 2.60, so the wall is +2.50 and there is no assist case.
    - **The cost is RB-004 item 3's loophole, taken knowingly.** The chapter's wall is taught below wall's band, and climb could clear the same face. A future chapter that gates on a 3.5-4.0 wall only gets a READABLE_RISE warning, and ASSIST_CASE would fail it anyway unless the arm is clear.
    - **For the verifier:** RB-004 should now carry "wall's characteristic band is unteachable even with the assist".
+   - **Correction (B-23, OQ-062):** the diagnosis held, but the 0.00° reading that seemed to prove it did not measure it. Superseded by the rebuild in OQ-062: +3.75 off a 3.25 wall 1.5 u back, onto a 1 u shelf. The harness's `respawnAt` moves the player, not the camera. So ASSIST_CASE measured this +z-facing case with the camera still at spawn yaw (+x), side-on, and the centre column never crossed the ledge. With the camera behind the facing, the real rig reads 0.00° for the reason given above: the eye is pulled in to +1.91 at 29°. It also reads 0.00° for the shipped +2.50 (eye +1.76): **the fix in this item does not read either.**
 4. **T1's torii stands 18 u past the first climb face** (x 30, face at x 12), outside the probe's 15 u depth range.
    - **What went wrong at x 22:** the real probe's depth rays hit the torii, reported a shallower landing, and settled at 31° where the linter models 30°. ASSIST_CASE fails on that mismatch.
    - **Rule of thumb:** keep tall props more than `PITCH_ASSIST.depthMaxM` past an assisted face, or the linter's slab model and the real probe disagree.
@@ -873,7 +874,7 @@ took, each PROVISIONAL:
    - **No new crow timing is introduced.**
 7. **Gaps are 6 u.** That is past `jump.maxH` 5.0, so only a double clears them. Run 8 u of `double.maxH` 9.5 (84%, under TIGHT).
 8. **The seam:** 18 `kit_rock_mass` along z -5.7, set 2 u below each floor, with the bright void on the open side, as in chapter 1.
-9. **Harness trap, for the next level builder:** `--skip-build` plays the level JSON bundled at the last build (levels are Vite chunks) against the waypoints on disk. After any level edit, rebuild. Two of this build's diagnoses were briefly wrong because of it.
+9. **Harness trap, for the next level builder:** `--skip-build` plays the level JSON bundled at the last build (levels are Vite chunks) against the waypoints on disk. After any level edit, rebuild. Two of this build's diagnoses were briefly wrong because of it. *B-24 (branch `b24-stale-bundle`): preflight now fails a run whose bundled levels differ from disk, so this trap is a BUILD_FAILURE, not a habit.*
 10. **The CI job timeout is raised from 20 to 40 minutes** (`.github/workflows/ci.yml`).
     - **The old 20:** set in H3 (`e99d5d1`) when the harness ran one level. It is in no decision and not in MEASUREMENTS, so it is not a budget. A guess the harness outgrew.
     - **Main with two levels** (runs 42552389070 to 42554509191): 9.5 to 16.0 min.
@@ -913,6 +914,55 @@ Disclosed weaknesses:
   5. It depends on PRs landing as merge commits, as they do here. A squash or rebase merge rewrites the
      branch shas a decision cites, and this rule would then report them UNKNOWN_COMMIT, correctly. The
      fix there is to cite the merged sha.
+
+## OQ-055 — B-19 (FACE_RISE) as built: the shipped stairs were above the bound, so which gives?
+raised: 2026-11-08 by kit (B-19)
+finding: the per-face rule caught the levels, not just the fixture. Chapter 1's only staircase (seg 7->8) and
+the gym's (seg 18->19) use **0.40 risers**. MOVE.ground.autostep is 0.34, the measured clean ceiling.
+MEASUREMENTS "Autostep" shows 0.40 stalling on oblique approaches (up to 17 of 48 phases at 45 deg) while
+head-on is clean. CI passed them only because the nav bot walks head-on (OQ-049 weakness 4).
+options: A bound faces at a head-on number (~0.42) so the shipped stairs pass | B bound at MOVE.ground.autostep
+and fix chapter 1's stair; the gym warns until B-20 | C bound at autostep and error on the gym too
+took: B
+because:
+- A weakens a measured budget to make geometry fit (CLAUDE.md). MEASUREMENTS already argues that the linter cannot
+  see the approach angle, so the worst approach sets the budget. That is why 0.34 and not 0.42.
+- Chapter 1's stair is rebuilt as six risers of 0.333: the same five boxes and the same 0.6 treads, only their
+  heights changed, so the stair still climbs 2.0 to the same landing. Every face is now inside the clean band
+  (0.30-0.34, 0 stalls in 2,880 trials). Its goldens were re-recorded on Darwin and copied to linux (byte-identical
+  before), following D-015a's precedent. cam0-2 changed, the nav trace was re-recorded, and the scene budget is
+  unchanged.
+- The gym is chapter 0, a test rig. It already has an owner for exactly this (B-20 (a): re-measure and rebuild its
+  0.40 risers, with goldens and trace). So FACE_RISE is a WARNING there, the same exemption shape READABLE_RISE
+  uses. C would block every PR on B-20.
+how: `groundFaces()` in tools/lint-level.mjs walks a->c exactly, between box entry and exit points, with no
+sampling step. The support is the highest axis-aligned prim_box top whose box reaches down to the feet (a
+ceiling overhead is not a face). Every upward change is a face.
+proof: `tools/fixtures/lint/ch1-long-run-one-face.json` is chapter 1 with one +0.50 face 3.6 u from the end of a
+6.6 u ground run, where slope x run allows 7.9 u. The pre-B-19 linter PASSES it; the new one fails it with
+FACE_RISE and nothing else (lint:self). lint:self also pins +0.34 (walkable), +0.35 (too tall), a ceiling
+(not a face) and the 0.333 stair. The gym warns; chapter 1 and chapter 2 (PR #12's 02-cliff-seam) lint clean.
+known limits, for a reviewer:
+1. Rotated boxes and kit meshes are not measured, so a face inside one is missed. The gym's two rotated prim
+   boxes are ramps.
+2. The check follows the straight line a->c. A face beside that line, which a player cutting a corner meets,
+   is not checked.
+3. 0.333 sits 0.007 under the bound. MEASUREMENTS warns that the clean ceiling has fallen as coverage widened, so
+   a wider protocol could put this stair back over it.
+status: PROVISIONAL
+
+## OQ-060 — Chapter 3: the chapter 1/2 rock layout is a chaos wedge once climb and wall exist
+raised: 2026-11-08 by kit (CHAPTER-3)
+finding: the chaos stage, random input for 300-tick windows, wedged the player at (4.0, 8.2, -4.7) and later
+(1.0, 8.2, -4.5): on top of the kit_rock_mass pair at x -2 / 6.5, z -5.7. That layout is copied from chapters 1
+and 2. The rocks are 8.56 u wide and spaced 8.5 u, so neighbours overlap by 0.06 u and leave a narrow notch
+along the top. The rocks' inner faces sit at z -3.6, flush with the path edge at -3.5, so a player with climb or
+wall can get onto them. In chapter 1 you cannot (no climb), so the wedge is unreachable there. Chapter 2 has climb
+and wall and the same layout, and passes chaos only because its random walk has not found the notch.
+took (chapter 3 only): rocks at z -8 (inner face at -5.9, a 2.4 u void off the path edge) and spaced 7 u (no notch).
+Chaos then passes. Cost: 21 rocks instead of about 17, so the scene budget is 50 draw calls / 5,664 tris, recorded.
+open: whether chapter 2 (PR #12) should take the same layout. Not changed from here: it is another session's
+branch. A chaos run with a different seed on 02-cliff-seam is the test.
 status: PROVISIONAL
 
 ## OQ-058 — CHAPTER-4 (04-summit-ridge): the design calls I made without a ruling

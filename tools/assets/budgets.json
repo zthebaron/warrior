@@ -32,6 +32,10 @@
       "draw_calls": 49,
       "triangles": 5040
     },
+    "03-drifting-stones": {
+      "draw_calls": 50,
+      "triangles": 5664
+    },
     "04-summit-ridge": {
       "draw_calls": 49,
       "triangles": 5040

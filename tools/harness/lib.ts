@@ -259,6 +259,7 @@ declare global {
       setPlacementVisible(name: string, pos: Vec3, visible: boolean): number;
       renderTorii(bg: string, cam: Vec3, target: Vec3): Promise<{ ok: boolean; error: string | null }>;
       startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
+      levelSources(): Promise<Record<string, string>>;
       assetProbe(name: string): Promise<{
         ok: boolean;
         error: string | null;

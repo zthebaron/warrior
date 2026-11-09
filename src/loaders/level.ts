@@ -216,6 +216,14 @@ export function levelIndex(): Promise<LevelRef[]> {
   return INDEX;
 }
 
+/** B-24: every level file's text exactly as this bundle carries it, keyed by file name (levels/<key>.json).
+ *  The harness compares it byte for byte with levels/ on disk, so a stale bundle cannot pass silently. */
+export async function bundledLevelSources(): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  for (const [key, loader] of Object.entries(SOURCES)) out[key.replace('../../levels/', '').replace('.json', '')] = await loader();
+  return out;
+}
+
 export async function loadLevel(id: string): Promise<LevelData> {
   const key = `../../levels/${id}.json`;
   const loader = SOURCES[key];

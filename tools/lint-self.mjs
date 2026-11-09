@@ -3,7 +3,7 @@
 // reject and inputs it MUST accept; if a rule passes everything, this fails.
 // Usage: node tools/lint-self.mjs   (npm run lint:self; runs in CI after lint:levels)
 import fs from 'fs';
-import { assistedPitchDeg, lintLevel, readableBandDeg, READABLE_RISE, REST_EYE } from './lint-level.mjs';
+import { assistedPitchDeg, groundFaces, lintLevel, MOVE, readableBandDeg, READABLE_RISE, REST_EYE } from './lint-level.mjs';
 
 const manifest = JSON.parse(fs.readFileSync('assets/dist/manifest.json', 'utf8'));
 const load = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -86,6 +86,22 @@ check('fixture: first jump over the void FAILS CHAPTER_TEACH, and nothing else',
 
 const gym = lintLevel(load('levels/00-gym.json'), manifest);
 check('gym (chapter 0) is exempt from READABLE_RISE', !codes(gym).includes('READABLE_RISE'));
+
+// ---- FACE_RISE (B-19): a ground segment is bounded per face, not by slope x run ---------------------
+console.log(`FACE_RISE (MOVE.ground.autostep ${MOVE.ground.autostep}u)`);
+const bx = (x0, x1, top, bot = -8) => ({ gi: 0, x0, x1, z0: -3, z1: 3, top, bot });
+const tallest = (boxes, a, c) => Math.max(0, ...groundFaces(boxes, a, c).map((f) => f.rise));
+const A = MOVE.ground.autostep;
+check(`a +${A.toFixed(2)} face (= autostep) is walkable`, tallest([bx(-10, 5, 0), bx(5, 10, A)], [0, 0, 0], [8, A, 0]) <= A + 1e-9);
+check(`a +${(A + 0.01).toFixed(2)} face is found and too tall`, tallest([bx(-10, 5, 0), bx(5, 10, A + 0.01)], [0, 0, 0], [8, A + 0.01, 0]) > A);
+check('one +0.50 face at the end of a 6.6u run is found (slope x run would allow 7.9u)', Math.abs(tallest([bx(-10, 4, 0), bx(4, 10, 0.5)], [0, 0, 0], [6.6, 0.5, 0]) - 0.5) < 1e-9);
+check('a ceiling overhead is not a face', tallest([bx(-10, 10, 0), bx(2, 4, 3.0, 2.2)], [0, 0, 0], [8, 0, 0]) === 0);
+check('six 0.333 risers: every face walkable', tallest([0, 1, 2, 3, 4, 5].map((k) => bx(k * 0.6 - (k ? 0 : 10), (k + 1) * 0.6, Math.round((k * 2) / 6 * 1e4) / 1e4)).concat([bx(3.6, 10, 2)]), [-1, 0, 0], [5, 2, 0]) <= A + 1e-9);
+const lr = lintLevel(load('tools/fixtures/lint/ch1-long-run-one-face.json'), manifest);
+check('fixture: one +0.50 face in a long ground run FAILS FACE_RISE, and nothing else', codes(lr).length === 1 && codes(lr)[0] === 'FACE_RISE', codes(lr).join(', ') || 'no errors: FACE_RISE measures slope x run again');
+const gymFR = lintLevel(load('levels/00-gym.json'), manifest);
+check('gym: its 0.40 risers are a FACE_RISE WARNING (B-20), not an error', !codes(gymFR).includes('FACE_RISE') && gymFR.warnings.some((w) => w.startsWith('[FACE_RISE]')));
+check('shipped chapter 1 has no FACE_RISE (its stair is 6 x 0.333)', !post.errors.some((e) => e.startsWith('[FACE_RISE]')) && !post.warnings.some((w) => w.startsWith('[FACE_RISE]')));
 
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');
 process.exit(fails ? 1 : 0);
