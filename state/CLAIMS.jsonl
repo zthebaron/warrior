@@ -160,3 +160,5 @@
 {"id":"OQ-062","agent":"kit","ts":"2026-11-09T06:09:31.693Z","ttl_min":90}
 {"id":"B-23","agent":"kit","ts":"2026-11-09T06:16:34.265Z","released":true}
 {"id":"OQ-063","agent":"phase0-spec","ts":"2026-11-09T06:25:26.732Z","ttl_min":90}
+{"id":"B-22","agent":"ci-parallel","ts":"2026-11-09T07:27:18.679Z","ttl_min":90}
+{"id":"OQ-061","agent":"ci-parallel","ts":"2026-11-09T07:27:18.708Z","ttl_min":90}
