@@ -188,10 +188,13 @@ draw calls, 500,000 triangles) still apply on top.
 | 00-gym | 34 / 34 | 1,104 / 1,104 |
 | 01-lower-stair | 46 / 46 | 3,888 / 3,888 |
 | 02-cliff-seam | 49 / 49 | 5,040 / 5,040 |
+| 03-drifting-stones | 50 / 50 | 5,664 / 5,664 |
 
 01-lower-stair (CHAPTER-1, CI run 42505174534, landing mark on): 13 kit_rock_mass (13 x 216 = 2,808 tris), 4 kit_torii (432), greybox ledges/stair/knobs, 2 patrollers, 2 crows, the landing mark.
 
 02-cliff-seam (CHAPTER-2, set here; Darwin SwiftShader `counters`, landing mark on): 18 kit_rock_mass (18 x 216 = 3,888 tris), 5 kit_torii (540), 13 greybox prim_box (11 floors/ledges/wall + 2 crow knobs), 2 patrollers, 2 crows, the landing mark. A new line, not a raise.
+
+03-drifting-stones (CHAPTER-3, local harness run, landing mark on): 21 kit_rock_mass (21 x 216 = 4,536 tris), 5 kit_torii (540), greybox ledges, 2 lintels, the crow perch, 2 moving slabs, 1 patroller, 1 crow, the landing mark. More rocks than chapter 1, because they are spaced 7 u, not 8.5, so the overlap leaves no notch for chaos to wedge in.
 
 01-lower-stair, raised 43 / 3,852 -> 46 / 3,888 (D-015a + D-015c, PROVISIONAL with them): three
 greybox prim_box added (the 1.25 jump-teach step at x 6-10, the two 1.75 shelves at x 38.5-41.5 and

@@ -1,0 +1,723 @@
+{
+  "id": "03-drifting-stones",
+  "title": "The Drifting Stones",
+  "chapter": 3,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "wall",
+    "double",
+    "climb",
+    "platform",
+    "dash"
+  ],
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      0,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      134,
+      2.5,
+      0
+    ],
+    "radius": 1.5
+  },
+  "bounds": {
+    "min": [
+      -25,
+      -15,
+      -25
+    ],
+    "max": [
+      155,
+      45,
+      25
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        3,
+        -6,
+        0
+      ],
+      "scale": [
+        18,
+        12,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        21,
+        -6,
+        0
+      ],
+      "scale": [
+        12,
+        12,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        40.65,
+        -5.5,
+        0
+      ],
+      "scale": [
+        15.299999999999997,
+        13,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        63.15,
+        -5.5,
+        0
+      ],
+      "scale": [
+        6.700000000000003,
+        13,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        82,
+        -5.5,
+        0
+      ],
+      "scale": [
+        28,
+        13,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        103.75,
+        -4.75,
+        0
+      ],
+      "scale": [
+        13.5,
+        14.5,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        125,
+        -4.75,
+        0
+      ],
+      "scale": [
+        6,
+        14.5,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        134.75,
+        -4.75,
+        0
+      ],
+      "scale": [
+        10.5,
+        14.5,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        66.65,
+        3.25,
+        0
+      ],
+      "scale": [
+        2.299999999999997,
+        0.5,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        128.15,
+        4.75,
+        0
+      ],
+      "scale": [
+        2.3000000000000114,
+        0.5,
+        7
+      ]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        83,
+        1.2,
+        3.2
+      ],
+      "scale": [
+        0.6,
+        0.4,
+        0.6
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        46,
+        1,
+        0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        64,
+        1,
+        0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        75,
+        1,
+        0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        108.2,
+        2.5,
+        0
+      ]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        132,
+        2.5,
+        0
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        -2,
+        -2,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        5,
+        -2,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        12,
+        -2,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        19,
+        -2,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        26,
+        -2,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        33,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        40,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        47,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        54,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        61,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        68,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        75,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        82,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        89,
+        -1,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        96,
+        0.5,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        103,
+        0.5,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        110,
+        0.5,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        117,
+        0.5,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        124,
+        0.5,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        131,
+        0.5,
+        -8
+      ]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [
+        138,
+        0.5,
+        -8
+      ]
+    }
+  ],
+  "platforms": [
+    {
+      "id": "stone_a",
+      "asset": "prim_slab",
+      "path": [
+        [
+          49.8,
+          0.75,
+          0
+        ],
+        [
+          59.8,
+          0.75,
+          0
+        ]
+      ],
+      "duration": 2.5,
+      "easing": "sine",
+      "loop": "pingpong",
+      "collider": "trimesh"
+    },
+    {
+      "id": "stone_b",
+      "asset": "prim_slab",
+      "path": [
+        [
+          112,
+          2.25,
+          0
+        ],
+        [
+          122,
+          2.25,
+          0
+        ]
+      ],
+      "duration": 2.5,
+      "easing": "sine",
+      "loop": "pingpong",
+      "collider": "trimesh"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [
+          86,
+          2,
+          -5
+        ],
+        [
+          86,
+          2,
+          5
+        ]
+      ],
+      "size": [
+        2,
+        2,
+        2
+      ],
+      "speed": 5,
+      "phase": 0,
+      "crow": {
+        "perch": [
+          83,
+          1.6,
+          3.2
+        ],
+        "to": [
+          80,
+          6,
+          9.5
+        ],
+        "size": [
+          0.35,
+          0.35,
+          0.6
+        ],
+        "lift": 0.11,
+        "away": 0.45
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        48,
+        1,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        66,
+        1,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        77,
+        1,
+        0
+      ],
+      "facing": -90
+    },
+    {
+      "pos": [
+        110.2,
+        2.5,
+        0
+      ],
+      "facing": -90
+    }
+  ],
+  "lighting": {
+    "preset": "greybox"
+  },
+  "critical_path": [
+    [
+      0,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        11.5,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the first gap"
+    },
+    {
+      "pos": [
+        15.5,
+        0,
+        0
+      ],
+      "via": "jump",
+      "note": "gap 3"
+    },
+    {
+      "pos": [
+        26,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the 6u gap"
+    },
+    {
+      "pos": [
+        34,
+        1,
+        0
+      ],
+      "via": "double",
+      "note": "gap 6, +1: a jump short"
+    },
+    {
+      "pos": [
+        48,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "T1, at the edge where stone_a docks"
+    },
+    {
+      "pos": [
+        49.8,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "onto stone_a at its start"
+    },
+    {
+      "pos": [
+        59.8,
+        1,
+        0
+      ],
+      "via": "platform",
+      "platform": "stone_a",
+      "note": "the first ride: 10u over an 11.5u void (a double cannot bypass it), boarded from a torii"
+    },
+    {
+      "pos": [
+        62,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "step off"
+    },
+    {
+      "pos": [
+        66,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "T2, under the lintel edge"
+    },
+    {
+      "pos": [
+        68.5,
+        1,
+        0
+      ],
+      "via": "dash",
+      "note": "the first dash: gap 1.5 under a lintel no jump clears, from a torii"
+    },
+    {
+      "pos": [
+        77,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "T3"
+    },
+    {
+      "pos": [
+        92,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "wait for the crow, then cross the sweep",
+      "cue": 1
+    },
+    {
+      "pos": [
+        95.5,
+        1,
+        0
+      ],
+      "via": "ground",
+      "note": "1.5u short of the step"
+    },
+    {
+      "pos": [
+        98.5,
+        2.5,
+        0
+      ],
+      "via": "jump",
+      "note": "+1.5"
+    },
+    {
+      "pos": [
+        110.2,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "T4, at the edge where stone_b docks"
+    },
+    {
+      "pos": [
+        112,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "onto stone_b at its start"
+    },
+    {
+      "pos": [
+        122,
+        2.5,
+        0
+      ],
+      "via": "platform",
+      "platform": "stone_b",
+      "note": "ride again"
+    },
+    {
+      "pos": [
+        124.5,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "step off"
+    },
+    {
+      "pos": [
+        127.5,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "edge of the second lintel gap"
+    },
+    {
+      "pos": [
+        130,
+        2.5,
+        0
+      ],
+      "via": "dash",
+      "note": "transfer: dash again, straight off the ride, over the void"
+    },
+    {
+      "pos": [
+        134,
+        2.5,
+        0
+      ],
+      "via": "ground",
+      "note": "goal"
+    }
+  ],
+  "difficulty": 3
+}
