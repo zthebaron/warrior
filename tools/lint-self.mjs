@@ -140,15 +140,19 @@ check('shipped chapter 1 has no FACE_RISE (its stair is 6 x 0.333)', !post.error
 // (02's first double, cp[9]) is re-aimed at the probe; only UNREACHABLE on that segment is read.
 console.log('MOVE budgets (D-017: a budget is clean at EVERY press timing and approach in the window)');
 const seam = load('levels/02-cliff-seam.json');
-const unreach = (via, h, rise, i = 9) => {
+const probe = (via, h, rise, i = 9) => {
   const L = structuredClone(seam), a = L.critical_path[i - 1].pos;
   L.critical_path[i] = { ...L.critical_path[i], via, pos: [a[0] + h, a[1] + rise, a[2]] };
-  return lintLevel(L, manifest).errors.filter((e) => e.startsWith('[UNREACHABLE]') && e.includes(`seg ${i - 1}->${i} via`));
+  const r = lintLevel(L, manifest), seg = (s) => s.includes(`seg ${i - 1}->${i} via`);
+  return { unreach: r.errors.filter((e) => e.startsWith('[UNREACHABLE]') && seg(e)), tight: r.warnings.filter((w) => w.startsWith('[TIGHT]') && seg(w)) };
 };
+const unreach = (...a) => probe(...a).unreach;
 const pin = (via, what, at, above) => {
   const [h0, r0, h1, r1] = what === 'maxH' ? [at, 0, above, 0] : [1.0, at, 1.0, above];
   check(`${via} ${what} ${at} is reachable`, unreach(via, h0, r0).length === 0, unreach(via, h0, r0).join(' ') || 'clean');
   check(`${via} ${what} ${above} is UNREACHABLE`, unreach(via, h1, r1).length === 1, unreach(via, h1, r1).join(' ') || 'not flagged');
+  // A segment exactly AT the budget is legal and must still be flagged for review (float: 54.6 - 52 > 2.6).
+  if (what === 'maxH') check(`${via} ${what} ${at} (at the budget) is TIGHT`, probe(via, h0, r0).tight.length === 1, probe(via, h0, r0).tight.join(' ') || 'silent at 100%');
 };
 pin('double', 'maxH', 8.4, 8.5);     // nav press clean k0-k5 to 8.4; 8.8 fails k0 (9.5 was a late-press-only value)
 pin('double', 'maxRise', 2.9, 3.0);  // clean from every takeoff distance to 2.9; 3.2 fails d5 (3.5 was most-distances)

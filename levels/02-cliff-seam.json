@@ -293,7 +293,7 @@
     {
       "pos": [58, 10, 0],
       "via": "double",
-      "note": "the first double: +3, a jump short. Over floor"
+      "note": "the first double: +2.8 (D-017: double maxRise 2.9), a jump short. Over floor"
     },
     {
       "pos": [64, 10, 0],

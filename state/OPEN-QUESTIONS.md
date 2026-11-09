@@ -1212,3 +1212,26 @@ presses at the clean timing, but not by one who presses anywhere in the window.
 6. **Stair finding (B-28, B-29):** the gym's 0.40 stair fails head-on; 0.6 treads fail obliquely even at 0.30.
 
 Disclosed: every number is Darwin SwiftShader, harness build, one machine; not re-run on the CI runner.
+
+## OQ-066 — D-017: the calls the builder made applying Tim's every-timing rule
+raised: 2026-11-09 by oq063-every-timing (D-017, PR #26)
+status: PROVISIONAL (each item is a builder call; Tim ruled the rule, not these)
+
+1. **Numbers.** double maxH 8.4 and maxRise 2.9 (from B-20's tables), and dash maxH 2.6 (new run, 2.8 fails
+   k4/k5). Each is the B-14 ceiling over the measured window. Dash's floor below 2.6 was measured
+   separately; MEASUREMENTS "D-017" has the result.
+2. **jump maxRise stays 2.0 although it does not meet D-017.** No grid value in 1.4..2.6 is clean at every
+   distance: 1.4 and 1.6 fail at d1.6, and 2.0 failed in B-20's run and passed in D-017's. Lowering it
+   cannot satisfy the rule, so the builder kept 2.0 and opened B-30. This is an exception to a rule that
+   was given as single. The alternative is to treat jump rise as unbudgetable until B-30, which would make
+   every +rise jump in the shipped levels unprovable.
+3. **Dash waypoints, gym and 04.** Their gaps are 2.0 u physical. The waypoint span was cut from 3.5 to 2.5
+   (TIGHT 96%) instead of moving geometry. `measure:b20` measures gaps edge to edge, so 2.0 is inside 2.6;
+   but the linter reads waypoints, and an author could still question pulling the landing to 0.4 past the edge.
+4. **02-cliff-seam's first double, +3.0 -> +2.8:** the lower tier was raised 0.2 rather than the upper
+   lowered (local change; the cams re-recorded).
+5. **Linter tolerance.** UNREACHABLE and TIGHT compare with 1e-9, so a segment exactly at its budget passes
+   UNREACHABLE and is still flagged TIGHT. It loosens no budget. lint:self pins it both ways.
+6. **The window is the B-20 grid.** "Every timing" ranges over k0-k5, takeoff distances d, six approaches,
+   96 phases x 5 placements; dash rise at 45 deg is excluded (geometry). Double's second press was
+   sampled at two timings only (B-32); wall and climb are unmeasured under the rule (B-31).

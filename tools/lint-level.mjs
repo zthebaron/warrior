@@ -412,7 +412,7 @@ export function lintLevel(level, manifest){
       const pid=cp[i].platform;
       if(!pid||ids.get(pid)!=='platforms') E('BAD_PLATFORM_REF',`seg ${i-1}->${i} via platform needs a valid "platform" id`);
     }
-    if(h>m.maxH*0.9&&h<=m.maxH) W('TIGHT',`seg ${i-1}->${i} via ${via} is at ${((h/m.maxH)*100).toFixed(0)}% of the limit`);
+    if(h>m.maxH*0.9&&h<=m.maxH+1e-9) W('TIGHT',`seg ${i-1}->${i} via ${via} is at ${((h/m.maxH)*100).toFixed(0)}% of the limit`);
   }
 
   // Teaching instances (D-015c, D-016). A move's FIRST critical_path use in the chapter that adds it is its

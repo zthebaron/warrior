@@ -1070,7 +1070,11 @@ implemented_by: 62ce5fc (D-016a in tools/lint-level.mjs; proven both ways in too
 
 ## D-017 — a MOVE budget is clean at EVERY press timing and approach in the window. OQ-063. DECIDED
 
-Ruled by Tim, 2026-11-09, via the chat REVIEWER. **This supersedes OQ-063 item 1** ("double maxH 9.5
+**Ruled by Tim** (2026-11-09, via the chat REVIEWER): the rule below, and that it supersedes OQ-063 item 1.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-066):** every number, level re-shape, linter fix
+and exception in this entry below "The rule". Tim ruled the rule, not the numbers derived from it.
+
+**This supersedes OQ-063 item 1** ("double maxH 9.5
 kept", Tim, 2026-11-09, the same day), and with it the "kept on item 1's logic" holds in OQ-063 items 2, 3
 and 4a. Those texts stay where they are, marked SUPERSEDED, so the history reads.
 
@@ -1091,7 +1095,7 @@ missed it.
 - **Out of the window, with its reason (MEASUREMENTS "B-20 re-measure"):** dash rise at 45 deg oblique, where
   the dash cannot reach the face at any height. That is geometry, not timing.
 
-**What changes (B-20 data; MEASUREMENTS "D-017" has the tables):**
+**What changes (builder-applied; B-20 data; MEASUREMENTS "D-017" has the tables):**
 
 | budget | was | now | basis |
 |---|---|---|---|
@@ -1112,6 +1116,15 @@ missed it.
   - **What that means:** a failure that persists as the height drops, and moves between runs, is not a height limit. Lowering the number cannot satisfy the rule. 2.0 stays in code, PROVISIONAL, until B-30 diagnoses the failing phase.
 - **Unmeasured under the rule (B-31):** wall (4.2 / 4.0) and climb (7.0 / 4.5) still rest on one sample each. `measure:b20` does not cover them. They do not yet meet D-017; they have not been shown to violate it.
 - **double's second press (B-32):** it was sampled at two timings only, release at vy <= 0.5 (the nav press) and vy <= -6. An earlier second press is unmeasured. 8.4 is every-timing over the measured window, and the window is narrower than a player's.
+
+**D-016's band table is amended by these numbers.** By rise, the cheapest move that clears is now: double
+(jump.maxRise, 2.9], wall (2.9, 4.0], climb (4.0, 4.5]. Wall now picks up (2.9, 3.5], and the rest-pose hard
+ceiling 3.36 sits inside wall's band, not double's. D-016's table is left as written; `lint:self` reads
+these bounds from MOVE.
+
+**Measurement conditions, disclosed.** The jump rise run (58 min) shared the machine with a playtest and,
+for its whole length, with the second session's dash run. Physics is fixed-tick, but the jump result
+already differs from B-20's run at 2.0, so contention is not ruled out as a factor (B-30).
 
 **Executable half.** `npm run lint:self` pins each changed limit at its value (reachable) and just above
 (UNREACHABLE), with literal numbers, so a MOVE edit turns it red. Reverting double to 9.5 / 3.5 fails 3 checks.
