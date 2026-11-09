@@ -119,3 +119,8 @@
 {"id":"OQ-052","agent":"kit","ts":"2026-11-09T01:20:38.001Z","released":true}
 {"id":"B-18-BACKLOG-ROW","agent":"builder-d016","ts":"2026-11-09T01:33:44.643Z","ttl_min":90}
 {"id":"B-18-BACKLOG-ROW","agent":"builder-d016","ts":"2026-11-09T01:34:15.431Z","released":true}
+{"id":"OQ-048","agent":"kit","ts":"2026-11-09T01:46:38.541Z","ttl_min":90}
+{"id":"OQ-050","agent":"kit","ts":"2026-11-09T01:46:38.568Z","ttl_min":90}
+{"id":"OQ-052","agent":"kit","ts":"2026-11-09T01:46:38.595Z","ttl_min":90}
+{"id":"ASSIST-CASE","agent":"kit","ts":"2026-11-09T01:46:38.620Z","ttl_min":90}
+{"id":"RB-004-RESTATE","agent":"kit","ts":"2026-11-09T01:46:38.650Z","ttl_min":90}
