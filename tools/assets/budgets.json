@@ -29,8 +29,8 @@
       "triangles": 3888
     },
     "02-cliff-seam": {
-      "draw_calls": 49,
-      "triangles": 5040
+      "draw_calls": 50,
+      "triangles": 5052
     },
     "03-drifting-stones": {
       "draw_calls": 50,

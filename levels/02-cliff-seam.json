@@ -41,13 +41,13 @@
     },
     {
       "asset": "prim_box",
-      "pos": [37, 2.5, -3.75],
-      "scale": [6, 21, 1.5]
+      "pos": [37, -0.125, -4.25],
+      "scale": [6, 15.75, 1.5]
     },
     {
       "asset": "prim_box",
-      "pos": [37, -0.5, 1.75],
-      "scale": [6, 15, 3.5]
+      "pos": [37, 0.125, 0.5],
+      "scale": [6, 16.25, 1]
     },
     {
       "asset": "prim_box",
@@ -131,7 +131,7 @@
     },
     {
       "asset": "kit_rock_mass",
-      "pos": [40.5, 5, -5.7]
+      "pos": [44, 5, -5.7]
     },
     {
       "asset": "kit_rock_mass",
@@ -180,6 +180,11 @@
     {
       "asset": "kit_rock_mass",
       "pos": [142.5, 13.5, -5.7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [37, 1.375, 2.25],
+      "scale": [6, 18.75, 2.5]
     }
   ],
   "hazards": [
@@ -263,12 +268,12 @@
     {
       "pos": [37, 4.5, -2],
       "via": "ground",
-      "note": "into the corridor, 1u off the cliff wall"
+      "note": "into the corridor, 1.5u off the wall"
     },
     {
-      "pos": [37, 7, 1],
+      "pos": [37, 8.25, 0.5],
       "via": "wall",
-      "note": "the first wall jump: off the cliff, +2.5 onto the ledge, over floor"
+      "note": "first wall jump: off a 3.25u wall 1.5u back (under the camera arm), +3.75 onto a 1u shelf, over floor (OQ-062)"
     },
     {
       "pos": [42, 7, 0],

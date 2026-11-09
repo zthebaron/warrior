@@ -196,6 +196,11 @@ draw calls, 500,000 triangles) still apply on top.
 
 03-drifting-stones (CHAPTER-3, local harness run, landing mark on): 21 kit_rock_mass (21 x 216 = 4,536 tris), 5 kit_torii (540), greybox ledges, 2 lintels, the crow perch, 2 moving slabs, 1 patroller, 1 crow, the landing mark. More rocks than chapter 1, because they are spaced 7 u, not 8.5, so the overlap leaves no notch for chaos to wedge in.
 
+02-cliff-seam, raised 49 / 5,040 -> 50 / 5,052 (B-23, OQ-062): one greybox prim_box added, the backstop
+behind the wall teach's 1 u shelf (it stops a wall jump overshooting the shelf and bounds its readable depth).
+Exactly +1 draw call and +12 triangles, measured by the harness `counters` stage on Darwin SwiftShader (peak
+50 / 5,052). Revert the B-23 wall teach and this line reverts with it.
+
 01-lower-stair, raised 43 / 3,852 -> 46 / 3,888 (D-015a + D-015c, PROVISIONAL with them): three
 greybox prim_box added (the 1.25 jump-teach step at x 6-10, the two 1.75 shelves at x 38.5-41.5 and
 91.5-94.5). Exactly +3 draw calls and +3 x 12 = +36 triangles, one unbatched box each, measured by the
@@ -463,12 +468,27 @@ Linter against real rig, camera behind the facing, 2 u standoff (`pitch-assist` 
 | +2.50 onto 3.5 u (below the band) | 1 u | +1.75 at 18 deg, 0.00 deg | 0.00 deg at 18.0 | rejected |
 | +2.50 onto 3.5 u | none | +3.66 at 18 deg, 2.19 deg | 2.17 deg at 18.0 | reads |
 | +4.0 onto 6 u, overhang 3.6 u high behind | overhang | +3.46 at 28 deg, 0.00 deg | 0.00 deg at 28.0 | rejected |
-| shipped chapter 2 `critical_path[5]`, +2.50 | 1 u (`geometry[3]`) | +1.75 at 18 deg, 0.00 deg | 0.00 deg, eye +1.76 | **rejected** |
+| chapter 2 `critical_path[5]` as first shipped, +2.50 | 1 u, cliff wall 8.5 tall | +1.75 at 18 deg, 0.00 deg | 0.00 deg, eye +1.76 | **rejected** |
+| chapter 2 `critical_path[5]` rebuilt (B-23), +3.75 onto a 1 u shelf | 1.5 u, wall 3.25 tall | +7.16 at 54 deg, 3.54 deg | 3.50 deg at 54.0 | reads |
 
-**Wall jumps.** With its wall 1 u behind the stand point, the arm sits at `minDistance` and the eye is
-+1.75 at rest. No pitch the camera will choose shows any top a wall jump is needed for. The sketch over wall
-distance 1-7 u and rise 2.1-4.0 is in OQ-062. So the unteachable region is not wall's band 3.50-4.00. It is
-every `wall` teaching face at READABLE_RISE's pose with this camera. Chapter 2's +2.50 wall is in it (OQ-062).
+**Wall jumps.** A wall jump needs its wall close behind the stand point. Wall to landing is at most
+`MOVE.wall.maxH` 4.2, so the wall is at most about 1.7 u back, and the arm meets it. The two
+constraints, measured:
+- **A tall wall never reads.** With it 1 u behind, the arm sits at `minDistance` and the eye is +1.75 at
+  rest. No pitch the camera chooses shows a top a wall jump is needed for (OQ-062's first table).
+- **A short wall reads, inside wall's band.** The wall must be short enough for the steep arm to pass over
+  it. Rises at or above the probe height (3.16) get assisted pitches that steep. A shallow landing pushes
+  the pitch steeper still (1 u: 53-55 deg).
+
+The tallest wall that still reads is 2.80-2.90 at 1 u back and 3.45-3.60 at 1.5 u back (1 u landing,
++3.50 to +4.00).
+
+The wall must also be tall enough to kick off. The nav bot sailed over walls 2.2 and 2.5 tall, and
+wall-jumped off walls 3.0 and 3.5 tall (both 1 u back, +3.75).
+
+So the teachable window is: rise in wall's band, wall about 1.5 u back and between about 3.0 and 3.5 tall,
+landing about 1 u deep. Chapter 2 is rebuilt to the middle of it: +3.75, wall 3.25 at 1.5 u, 1 u shelf
+(OQ-062).
 
 ## B-15 harness protocol: run-metric and ambient-motion (2026-11-08)
 
