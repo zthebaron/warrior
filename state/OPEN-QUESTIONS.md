@@ -1218,8 +1218,8 @@ raised: 2026-11-09 by oq063-every-timing (D-017, PR #26)
 status: PROVISIONAL (each item is a builder call; Tim ruled the rule, not these)
 
 1. **Numbers.** double maxH 8.4 and maxRise 2.9 (from B-20's tables), and dash maxH 2.6 (new run, 2.8 fails
-   k4/k5). Each is the B-14 ceiling over the measured window. Dash's floor below 2.6 was measured
-   separately; MEASUREMENTS "D-017" has the result.
+   k4/k5). Each is the B-14 ceiling over the measured window. Dash 2.0-2.6 was then run alone on the
+   machine: all clean, and 2.6 clean on a second independent run (MEASUREMENTS "D-017").
 2. **jump maxRise stays 2.0 although it does not meet D-017.** No grid value in 1.4..2.6 is clean at every
    distance: 1.4 and 1.6 fail at d1.6, and 2.0 failed in B-20's run and passed in D-017's. Lowering it
    cannot satisfy the rule, so the builder kept 2.0 and opened B-30. This is an exception to a rule that

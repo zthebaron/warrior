@@ -221,6 +221,18 @@ Above 2.6 the failures are flat at <= 1/96, confined to late presses, and not ri
 the same shape as the jump rise below, and it goes to B-30 with it. The rule is strict, so 2.6 is the number.
 The gym's and 04's dash gaps are 2.0 u edge to edge; their waypoints now span 2.5 (D-017).
 
+The floor below 2.6, run alone on the machine (same protocol, 11 520 trials, 0 console errors, 2196 s, branch
+oq063-every-timing, game code as fc5682f):
+
+    value u        k0     k1     k2     k3     k4     k5
+    2.0             0      0      0      0      0      0
+    2.2             0      0      0      0      0      0
+    2.4             0      0      0      0      0      0
+    2.6             0      0      0      0      0      0
+
+So 2.6 is clean on two independent runs, and every grid value under it is clean. Unlike jump rise, the
+dash number has a real every-timing floor, so it is applied, not a CONFLICT.
+
 **jump maxRise: no every-timing value exists in the grid (CONFLICT, B-30).** Measured below 2.0, same
 protocol (96 phases x 5 placements x 6 distances, 11 520 trials, 0 console errors, Darwin SwiftShader,
 branch oq063-every-timing at 47955d4, 58 min):

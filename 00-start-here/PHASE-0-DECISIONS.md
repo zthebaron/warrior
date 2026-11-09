@@ -1101,7 +1101,7 @@ missed it.
 |---|---|---|---|
 | double maxH | 9.5 | **8.4** | nav press clean k0-k5; 8.8 fails k0. 9.5 was clean only with a late second press |
 | double maxRise | 3.5 | **2.9** | clean from every takeoff distance; 3.2 fails d5 |
-| dash maxH | 4.0 | **2.6** | clean k0-k5; 2.8 fails k4, k5. 4.0 was clean only for a press at k0-k1 |
+| dash maxH | 4.0 | **2.6** | clean k0-k5, and 2.0-2.6 all clean, on two runs; 2.8 fails k4, k5. 4.0 was clean only for a press at k0-k1 |
 | jump maxRise | 2.0 | 2.0, **CONFLICT** (below) | no grid value in 1.4..2.6 is clean at every distance |
 | slope, dash maxRise, dashjump maxH/maxRise | 49, 0.34, 8.0, 2.6 | unchanged | already every-timing values (B-20) |
 
