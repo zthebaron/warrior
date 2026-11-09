@@ -204,3 +204,21 @@ verified: 2026-11-09 by kit, darwin, a scratch worktree (not pushed)
   - Resolved: `lint:self` PASS, `lint:levels` PASS on 00/01/02, typecheck PASS.
   - `npm run playtest`: exit 0, `RESULT: PASS`, 305 checks. ASSIST_CASE 02 `critical_path[5]` reads 3.50° at 54.0°.
 - **Whichever of #13 and #20 merges second** needs that one-line import union. Nothing else conflicts.
+
+---
+
+## PR #22 — B-24 stale-bundle guard, head `504c4a2` (code; `e19fe0b` adds only the backlog PR number)
+verified: 2026-11-09 by kit, darwin, worktree on `b24-stale-bundle` at `504c4a292577ceb16d9bdedd90ac4e70fe586360`
+
+| command | exit | result |
+|---|---|---|
+| `npm run lint:self` | 0 | `LINT-SELF PASS` |
+| `npm run lint:levels` | 0 | `LINT PASS` 00-gym (its known TIGHT warning), 01-lower-stair, 02-cliff-seam |
+| `npm run playtest` (full, fresh build) | 0 | `RESULT: PASS`; new preflight check "bundled levels match levels/ on disk" ✓ in all 3 preflights |
+
+- **The false green, before and after.** One note in `levels/01-lower-stair.json` (line 541) was edited after a fresh build, then `run.mjs --level=01-lower-stair --only=nav --skip-build` was run:
+  - main `b16e291`: exit 0, `RESULT: PASS` (stale bundle played silently);
+  - branch `504c4a2`: exit 2, `BUILD_FAILURE`, "levels/01-lower-stair.json differs from the bundled copy (first difference at line 541; disk 10027 bytes, bundle 10015)";
+  - branch, edit reverted: exit 0, PASS;
+  - branch code against a bundle built from main (no `levelSources()`): exit 2, `BUILD_FAILURE`.
+- **Not covered:** stale `src/` under `--skip-build` (level JSON only); CI-runner behaviour.
