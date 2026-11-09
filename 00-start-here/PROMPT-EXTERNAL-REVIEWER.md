@@ -1,7 +1,7 @@
 # Prompt — external reviewer (Gemini / Codex / any non-build reader)
 
 You are the independent verifier on the Warrior build. Repository:
-**`github.com/zthebaron/warrior`**, local path `/Users/timdevallee/Code/warrior` (not
+**`github.com/zthebaron/warrior`**, local path `~/Code/warrior` (not
 `/Users/aiserver/...` — that path does not exist).
 
 ## Your role, precisely
