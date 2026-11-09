@@ -222,3 +222,31 @@ verified: 2026-11-09 by kit, darwin, worktree on `b24-stale-bundle` at `504c4a29
   - branch, edit reverted: exit 0, PASS;
   - branch code against a bundle built from main (no `levelSources()`): exit 2, `BUILD_FAILURE`.
 - **Not covered:** stale `src/` under `--skip-build` (level JSON only); CI-runner behaviour.
+
+---
+
+## B-21 — playbook marked; `lint:pack` covers pack and playbook — LOCAL PASS
+
+- verified: 2026-11-09 01:48 PST by phase0-spec, branch `b21-playbook-mark` at fd0e15a (B-21 commit),
+  then merged with origin/main (claim lines only) and `lint:pack` re-run clean
+- environment: as the PR #16 entry; machine loaded (B-20 runs alongside)
+- the diff touches no level, engine or harness file: the playbook, `tools/lint-pack.mjs`, state/
+
+| command | exit | last line |
+|---|---|---|
+| `npm run typecheck` | 0 | (no output) |
+| `npm run lint:levels` | 0 | `LINT PASS` 00-gym, 01-lower-stair, 02-cliff-seam |
+| `npm run lint:self` | 0 | `LINT-SELF PASS` |
+| `npm run check:patrol` | 0 | `PATROL PASS` |
+| `npm run check:progression` | 0 | `PROGRESSION PASS  11/11` |
+| `npm run lint:not-list` | 0 | `NOT-LIST PASS  22 rows: 22 enforced, 0 pending, 0 unenforced` |
+| `npm run lint:pack` | 0 | self-test 14/14; pack clean; playbook clean |
+| `npm run lint:decisions` | 0 | `DECISIONS PASS  29 entries, 21 closed` |
+| `npm run lint:accent` | 0 | `ACCENT PASS` |
+| `npm run assets:budget` | 0 | `BUDGET PASS` |
+| `npm run playtest` | 0 | `RESULT: PASS`, 40/40 stages over 00, 01, 02 + run-once stages |
+
+The proof the rule covers the playbook, same `npm run lint:pack`: with main's unmarked playbook in place
+it exits 1 on exactly 5 passages (l.200 chapter_select, l.492 aggro*, l.530
+combo/parry/hitstop/local_storage/chapter_select, l.542 pickup*, l.632 hitstop); with the marked one it
+exits 0 on both files.
