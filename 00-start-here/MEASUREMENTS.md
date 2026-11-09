@@ -432,6 +432,29 @@ in the real rig, at the pitch modelled here.
 - **Today:** gym and chapter 1 have 0 cases. A climb at maxRise 4.50 needs a landing at
 least 2.55 u deep.
 
+## B-15 harness protocol: run-metric and ambient-motion (2026-11-08)
+
+These are test-protocol parameters, not budgets. They are listed so that no number in
+`tools/harness/run-metric.ts` or `tools/harness/ambient-motion.ts` lives only in code.
+
+| parameter | value | why |
+|---|---|---|
+| run-metric: heavy run idle before dying | 900 ticks (15 s) | long enough that a run timer shows a different whole second from the clean run |
+| run-metric: deaths, clean vs heavy | 1 vs 3 | a death counter must differ between the runs |
+| run-metric: idle after the deaths / on results | 300 / 600 ticks | a timer that only ticks on results is also seen |
+| run-metric: sample spacing while idle | 60 ticks | 1 s |
+| ambient-motion: idle per level | 10 samples × 60 ticks (10 s) | the gym's slowest platform and chapter 1's patrollers both move well inside it |
+| ambient-motion: motion threshold | 1e-4 u | float noise in getWorldPosition; any visible motion is >1e-2 |
+
+Measured first run, 2026-11-08: run-metric 15/15 (A: 1 death, B: 3 deaths, play/death/results texts
+identical). ambient-motion: gym 33 renderables, 3 moved (platform, player); 01-lower-stair 45, 6 moved
+(hazard, player); 0 untagged.
+
+Shown to fail before being listed as `harness` rows in SPEC §7:
+  - HUD `fell (${deaths})`: run-metric FAIL 13/15 ("fell (1)" vs "fell (2)" vs "fell (3)")
+  - results `COMPLETE ${t}s`: run-metric FAIL 14/15 ("COMPLETE 19s" vs "COMPLETE 39s")
+  - a checkpoint bobbing 0.3 u: ambient-motion FAIL on both levels ("moved 0.279 u")
+
 ## Open (H4)
 
 - Linux visual goldens for the asset-bearing gym were COPIED from Darwin, not rendered on

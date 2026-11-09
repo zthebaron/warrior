@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual,
-// then once per run: reachable (D-014: the game's own front door, as a player), pitch-assist (B-18: the real rig)
+// then once per run: reachable (D-014: the game's own front door, as a player), pitch-assist (B-18: the real rig), run-metric (B-15: no run metric on screen),
+// ambient-motion (B-15: nothing translates but the player and hazards)
 //
 //   npm run playtest                          every level in levels/
 //   npm run playtest -- --level=00-gym        one level
@@ -31,6 +32,8 @@ import { accent } from './accent.ts';
 import { visual } from './visual.ts';
 import { reachable } from './reachable.ts';
 import { pitchAssist } from './pitch-assist.ts';
+import { runMetric } from './run-metric.ts';
+import { ambientMotion } from './ambient-motion.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = Object.fromEntries(
@@ -204,8 +207,10 @@ for (const L of statics) {
 // --only; skipped for a single --level run.
 //   reachable    (D-014): can a PLAYER (no query string) reach the entry chapter and finish the chain?
 //   pitch-assist (B-18):  does the real follow rig make chapter-2-shaped faces readable, as READABLE_RISE says?
+//   run-metric   (B-15, NOT #20): is the player-visible text the same whatever the run's deaths and time?
+//   ambient-motion (B-15, NOT #18): does anything translate except the player, hazards and platforms?
 const once = (name) => (typeof args.only === 'string' ? args.only.split(',').includes(name) : typeof args.level !== 'string');
-for (const [name, fn] of [['reachable', reachable], ['pitch-assist', pitchAssist]]) {
+for (const [name, fn] of [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion]]) {
   if (!once(name)) continue;
   const browser = await launchBrowser();
   try {

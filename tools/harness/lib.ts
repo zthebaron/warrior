@@ -271,6 +271,7 @@ declare global {
         pixels: { covered: number; nearPalette: number; maxError: number };
       }>;
       teleportPlayer(pos: Vec3): void;
+      translators(): { id: string; name: string; tag: string | null; pos: Vec3 }[];
     };
   }
 }

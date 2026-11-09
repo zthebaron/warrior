@@ -464,6 +464,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (kind === 'none') throw new Error(`[level] platforms[${i}]: a platform needs a collider`);
     const collider = physics.world.createCollider(colliderDesc(kind, size, `platforms[${i}]`), body);
     const mesh = new THREE.Mesh(boxGeo, mat(V.platformColor));
+    mesh.userData['translates'] = 'platform'; // NOT #18: a moving platform is the `platform` move (Q2), not ambience
     mesh.scale.copy(size);
     mesh.position.copy(start);
     root.add(mesh);
@@ -480,6 +481,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (!isPatroller && !def.pos) return;
     const start = isPatroller ? patrollerAt(def.path!, def.speed!, def.phase!, 0, new THREE.Vector3()) : new THREE.Vector3(...def.pos!);
     const mesh = new THREE.Mesh(boxGeo, mat(def.type === 'water' ? V.waterColor : V.hazardColor));
+    mesh.userData['translates'] = 'hazard'; // NOT #18 (Q2a): hazards may translate
     mesh.scale.set(...def.size);
     mesh.position.copy(start);
     root.add(mesh);
@@ -496,6 +498,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     const { airborne } = crowAt(def, 0, start);
     const mesh = new THREE.Mesh(boxGeo, mat(V.crowColor));
     mesh.name = 'crow';
+    mesh.userData['translates'] = 'hazard'; // the patroller's own timing cue (Q2, Q2a), not an ambient crow
     mesh.scale.set(...def.crow.size);
     mesh.position.copy(start);
     root.add(mesh);
