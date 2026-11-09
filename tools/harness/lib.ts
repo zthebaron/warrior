@@ -251,7 +251,7 @@ declare global {
       level(): { id: string } | null;
       setCamera(pos: Vec3, target: Vec3): void;
       rigCamera(pivot: Vec3, dir: Vec3): Vec3;
-      instrument(): { level: string; total_s: number | null; finished: boolean; segments: { segment: number; from: string; to: string; crow: number | null; segment_time_s: number | null; deaths: number; first_clear_attempt: number | null; retry_times_s: number[]; attempts: { player_depart_t: number | null; crow_lift_t: number | null; depart_after_lift_s: number | null; cleared: boolean }[] }[] } | null;
+      instrument(): { level: string; total_s: number | null; finished: boolean; segments: { segment: number; from: string; to: string; crow: number | null; segment_time_s: number | null; deaths: number; first_clear_attempt: number | null; retry_times_s: number[]; attempts: { player_depart_t: number | null; crow_lift_t: number | null; since_last_lift_s: number | null; cleared: boolean }[]; lift_timing: { attempts_n: number; loop_s: number | null; since_last_lift_s: number[]; spread_s: number | null; spread_of_loop: number | null } | null }[] } | null;
       releaseCamera(): void;
       cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: { standoff: number; rise: number; depth: number; targetDeg: number | null } | null };
       castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;

@@ -209,14 +209,17 @@ table, and the browser downloads `instrument-01-lower-stair-<timestamp>.json`. H
 Per segment: `segment_time_s` (entry to first clear, deaths and retries included), `deaths`,
 `first_clear_attempt`, `retry_times_s[]`. Per attempt in a crow segment: `player_depart_t` (the feet
 leave the torii radius), `crow_lift_t` (that crow's latest lift-off at or before departure),
-`depart_after_lift_s`, `cleared`. Every time is on the world clock, so pause is excluded and
+`since_last_lift_s`, `cleared`. Every time is on the world clock, so pause is excluded and
 bot and human numbers compare (OQ-048).
 
-**Reading `depart_after_lift_s`.** One value proves nothing. Any departure falls between 0 and one
-loop after *some* lift-off, and the blind bot scored 0.48 s and 0.97 s by chance. The answer to
-OQ-034 is the spread over many attempts. Values clustered inside 0 to 0.75 s (seg 3) and 0 to 0.95 s
-(seg 4) mean the crow is being read. Values spread across the period mean the player is timing the
-slab, and the crow is decoration.
+**Reading the crow timing (OQ-048 ruling: structural, not a caveat).** One departure proves nothing. Any
+departure falls between 0 and one loop after *some* lift-off, and the blind bot scored 0.48 s and 0.97 s by chance.
+So the instrument never reports a single value. The per-attempt field is `since_last_lift_s`, named so it cannot be
+read as proof. Each crow segment carries `lift_timing`: `attempts_n`, every value, `spread_s` (null under 2
+attempts) and `loop_s`. The console shows "n=1: too few to read" or "n=K, spread X s of a Y s loop". The answer to
+OQ-034 is that spread. A spread much smaller than the loop, with values inside 0 to 0.75 s (seg 3) or 0 to 0.95 s
+(seg 4), means the crow is being read. A spread approaching the loop means the player is timing the slab, and the
+crow is decoration.
 
 **Cross-check.** The bot was run with `--instrument=on`, both reading the crow and leaving blind at
 one arrival phase. The instrument's per-segment deaths (blind: 0 0 1 1) summed to the game's own

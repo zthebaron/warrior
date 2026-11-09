@@ -87,7 +87,34 @@ function landingDepth(boxes,a,c){
   const t0=Math.max(0,s[0]); let t1=s[1];
   for(const bx of boxes){ if(bx===sup||bx.top<=sup.top+step) continue;
     const o=slab(bx,a,u); if(o&&o[0]>t0&&o[0]<t1) t1=o[0]; }
-  return { depth:t1-t0, gi:sup.gi };
+  return { depth:t1-t0, gi:sup.gi, t0, box:sup };
+}
+
+// ASSIST_CASE (OQ-052 item 7, ruling 2026-11-08). The linter certifies an assisted face with an UNOBSTRUCTED
+// arm; an overhang behind the player pulls the arm in, lowers the eye, and can leave the top unreadable in
+// play. So every critical_path waypoint that passes READABLE_RISE ONLY because of the assist (rest band below
+// minBandDeg, assistedPitchDeg not null) is a case the harness MUST run in the real rig (tools/harness/
+// pitch-assist.ts). The cases are DERIVED here, from the same test that certified them, so no waypoint can be
+// missing one; the harness asserts it ran exactly this set, and a case that does not read in the real rig,
+// or cannot be run, fails the playtest. Same scope as READABLE_RISE: chapters >= 1, moves with a face.
+export function assistCases(level){
+  const cp=level.critical_path??[], out=[];
+  if(typeof level.chapter!=='number'||level.chapter<1) return out;
+  const P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level);
+  for(let i=1;i<cp.length;i++){
+    const via=typeof cp[i]==='object'&&!Array.isArray(cp[i])&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
+    const a=P(cp[i-1]), c=P(cp[i]), rise=c[1]-a[1]; if(rise<=0) continue;
+    const L=landingDepth(boxes,a,c); if(!L) continue;
+    if(readableBandDeg(rise,L.depth)>=READABLE_RISE.minBandDeg) continue; // reads at rest: no assist involved
+    const pitch=assistedPitchDeg(rise,L.depth); if(pitch===null) continue;  // READABLE_RISE already rejects it
+    const len=Math.hypot(c[0]-a[0],c[2]-a[2]), u=[(c[0]-a[0])/len,(c[2]-a[2])/len];
+    const face=[a[0]+u[0]*L.t0, a[1], a[2]+u[1]*L.t0];
+    const s=READABLE_RISE.standoffM;
+    out.push({ index:i, via, rise, depth:L.depth, gi:L.gi, pitchDeg:pitch,
+      stand:[face[0]-u[0]*s, a[1], face[2]-u[1]*s], facingDeg:Math.atan2(-u[0],-u[1])*DEG,
+      top:L.box.top, box:{x0:L.box.x0,x1:L.box.x1,z0:L.box.z0,z1:L.box.z1} });
+  }
+  return out;
 }
 
 // A SEGMENT is the run between two consecutive torii: spawn -> checkpoint[0] -> ... ->

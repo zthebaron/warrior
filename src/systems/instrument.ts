@@ -13,12 +13,18 @@
 // An ATTEMPT starts when a segment is entered and again at every respawn; it ends in death or a clear.
 // player_depart_t is the first tick of the attempt at which the feet leave the starting torii's
 // activation radius: the moment the player committed to the segment. For a crow-gated segment,
-// crow_lift_t is that crow's most recent lift-off at or before departure, and depart_after_lift_s the
-// difference. Clustering just after 0 means the crow is being read; clustering on the hazard's own
-// period means the player is timing the slab, and the crow is decoration.
+// crow_lift_t is that crow's most recent lift-off at or before departure, and since_last_lift_s the
+// difference.
+//
+// since_last_lift_s IS NOT EVIDENCE OF READING THE CROW (OQ-048 ruling). Every departure has one, read or
+// not: it always lands somewhere in [0, one crow loop). The blind bot scores 0.48 s and 0.97 s by chance.
+// So the instrument never reports one as a figure. The segment carries `lift_timing` instead: the
+// attempt count, the spread, and the loop it must be read against. Read against the loop, a spread much
+// smaller than the loop, clustered near 0, is the signal; one attempt (spread null) says nothing.
 
 import type { LevelData, Vec3 } from '../loaders/level';
 import { waypointPos } from '../loaders/level';
+import { patrolPeriod } from './patrol';
 
 export interface InstrumentTick {
   t: number;
@@ -35,7 +41,17 @@ export interface Attempt {
   end_t: number | null;
   cleared: boolean;
   crow_lift_t: number | null;
-  depart_after_lift_s: number | null;
+  /** Departure minus the latest lift-off. NOT evidence of reading: see lift_timing and the header. */
+  since_last_lift_s: number | null;
+}
+
+/** OQ-048 ruling: the only crow-timing summary the instrument emits. No single attempt is a figure. */
+export interface LiftTiming {
+  attempts_n: number; // attempts that departed after a lift-off was seen
+  loop_s: number | null; // the crow's loop period: every since_last_lift_s lies in [0, loop_s)
+  since_last_lift_s: number[]; // every attempt's value, in order: the distribution, never one of them
+  spread_s: number | null; // max - min; null under 2 attempts (one attempt says nothing)
+  spread_of_loop: number | null; // spread_s / loop_s: near 1 is what departing blind looks like
 }
 
 export interface SegmentRecord {
@@ -48,6 +64,7 @@ export interface SegmentRecord {
   first_clear_attempt: number | null; // 1-based
   retry_times_s: number[]; // duration of every finished attempt, in order
   attempts: Attempt[];
+  lift_timing: LiftTiming | null; // crow-gated segments only
 }
 
 export interface InstrumentReport {
@@ -71,6 +88,7 @@ export class Instrument {
   private lastState = '';
   private startT: number | null = null;
   private finishedT: number | null = null;
+  private readonly loopOf: (crow: number) => number | null;
 
   constructor(private readonly level: LevelData, private readonly radius: number) {
     const cps = level.checkpoints;
@@ -94,7 +112,12 @@ export class Instrument {
       first_clear_attempt: null,
       retry_times_s: [],
       attempts: [],
+      lift_timing: null,
     }));
+    this.loopOf = (crow) => {
+      const h = level.hazards?.[crow] as { path?: Vec3[]; speed?: number } | undefined;
+      return h?.path && h.speed !== undefined ? patrolPeriod(h.path, h.speed) : null;
+    };
     this.entered = Array.from({ length: n }, () => null);
   }
 
@@ -120,7 +143,7 @@ export class Instrument {
           const lift = this.lastLift.get(seg.crow);
           if (lift !== undefined) {
             att.crow_lift_t = r3(lift);
-            att.depart_after_lift_s = r3(x.t - lift);
+            att.since_last_lift_s = r3(x.t - lift);
           }
         }
       }
@@ -150,7 +173,7 @@ export class Instrument {
   }
 
   private newAttempt(t: number): void {
-    this.segs[this.current]!.attempts.push({ start_t: r3(t), player_depart_t: null, end_t: null, cleared: false, crow_lift_t: null, depart_after_lift_s: null });
+    this.segs[this.current]!.attempts.push({ start_t: r3(t), player_depart_t: null, end_t: null, cleared: false, crow_lift_t: null, since_last_lift_s: null });
   }
 
   private endAttempt(t: number, cleared: boolean): void {
@@ -176,8 +199,16 @@ export class Instrument {
       clock: 'world',
       finished: this.finishedT !== null,
       total_s: this.finishedT !== null && this.startT !== null ? r3(this.finishedT - this.startT) : null,
-      segments: this.segs,
+      segments: this.segs.map((s) => ({ ...s, lift_timing: this.liftTiming(s) })),
     };
+  }
+
+  private liftTiming(s: SegmentRecord): LiftTiming | null {
+    if (s.crow === null) return null;
+    const v = s.attempts.map((a) => a.since_last_lift_s).filter((x): x is number => x !== null);
+    const loop = this.loopOf(s.crow);
+    const spread = v.length >= 2 ? r3(Math.max(...v) - Math.min(...v)) : null;
+    return { attempts_n: v.length, loop_s: loop === null ? null : r3(loop), since_last_lift_s: v, spread_s: spread, spread_of_loop: spread !== null && loop ? r3(spread / loop) : null };
   }
 
   /** The compact console table (dev only; never drawn in game). */
@@ -188,7 +219,13 @@ export class Instrument {
       deaths: s.deaths,
       first_clear_attempt: s.first_clear_attempt,
       retries_s: s.retry_times_s.join(' '),
-      depart_after_lift_s: s.crow === null ? '' : s.attempts.map((a) => (a.depart_after_lift_s === null ? '-' : `${a.depart_after_lift_s}${a.cleared ? '' : 'x'}`)).join(' '),
+      lift_timing: s.crow === null ? '' : liftLine(this.liftTiming(s)!),
     }));
   }
+}
+
+/** One table cell for a crow segment: the count and the spread against the loop, never a lone value. */
+function liftLine(l: LiftTiming): string {
+  if (l.attempts_n < 2) return `n=${l.attempts_n}: too few to read (any departure is 0..${l.loop_s ?? '?'}s after a lift)`;
+  return `n=${l.attempts_n}, spread ${l.spread_s}s of a ${l.loop_s ?? '?'}s loop (${l.spread_of_loop ?? '?'})`;
 }

@@ -103,7 +103,7 @@ export async function nav(ctx: Ctx): Promise<StageResult & { outcome?: NavOutcom
         // B-17: the same instrument a human run records (?instrument=on), read from the bot's run.
         const rep = await g.page.evaluate(() => window.__HARNESS__!.instrument());
         st.data['instrument'] = rep;
-        for (const sg of rep?.segments ?? []) ctx.log(`    [instrument] seg ${sg.segment} ${sg.from} -> ${sg.to}: ${sg.segment_time_s}s, deaths ${sg.deaths}, first clear on attempt ${sg.first_clear_attempt}${sg.crow !== null ? `, depart_after_lift_s ${sg.attempts.map((a) => a.depart_after_lift_s).join(' ')}` : ''}`);
+        for (const sg of rep?.segments ?? []) ctx.log(`    [instrument] seg ${sg.segment} ${sg.from} -> ${sg.to}: ${sg.segment_time_s}s, deaths ${sg.deaths}, first clear on attempt ${sg.first_clear_attempt}${sg.lift_timing ? `, lift timing n=${sg.lift_timing.attempts_n} spread ${sg.lift_timing.spread_s ?? '-'}s of ${sg.lift_timing.loop_s}s loop` : ''}`);
       }
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');
     } finally {
