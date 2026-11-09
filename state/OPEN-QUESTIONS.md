@@ -965,6 +965,56 @@ open: whether chapter 2 (PR #12) should take the same layout. Not changed from h
 branch. A chaos run with a different seed on 02-cliff-seam is the test.
 status: PROVISIONAL
 
+## OQ-061 — B-22: how the CI playtest is split, and why per level rather than per stage
+raised: 2026-11-08 by ci-parallel (B-22)
+took, each PROVISIONAL:
+1. **The premise was half right.** The brief named REACHABLE as the bottleneck. On the 28.0 min run (PR #16, 42561268355, four levels), reachable took 108 s.
+   - **The real cost is phase-sweep:** 234 / 281 / 367 / 304 s per level, which is 70-84% of each level's 289-437 s.
+   - **Where the run's time went:** level stages 1,434 s, once-per-run stages 197 s (reachable 108, run-metric 65, pitch-assist 16, ambient-motion 8), setup about 50 s.
+   - **So the split is per level.** Splitting off reachable alone would have saved about 2 min.
+2. **The jobs:**
+
+   | job | does | count |
+   |---|---|---|
+   | `static` | typecheck, all lints, assets:budget, and `check:merge-reports` | one |
+   | `matrix` | emits the level ids from `levelIds()` in `tools/harness/lib.ts` | one |
+   | `level` | `playtest --level=<id>`, `fail-fast: false` | one per level |
+   | `game` | `playtest --only=reachable,pitch-assist,run-metric,ambient-motion` | one |
+   | `playtest` | merges the reports | one |
+
+   - **Why `levelIds()`:** run.mjs and merge-reports use the same function. A new chapter gets a job with no workflow edit, and a hand-kept list cannot silently skip it.
+   - **Why the merge job is named `playtest`:** watchers that look for the old check name keep working.
+3. **The REACHABLE guarantee is unchanged, not re-derived.** The `game` job builds the whole game and runs the same `reachable` stage the serial job ran: bare URL, then the entry chapter, then every chapter's goal, then the menu, as a player. No chapter is proven only in isolation.
+4. **A split is only as good as its coverage, so the gate is coverage, not "every job that reported passed".** `merge-reports.mjs` fails:
+   - COVERAGE_LEVEL, if a level in `levels/` has no report that ran all nine browser stages. The game job's per-level entries only hold schema, lint and preflight, so they do not count.
+   - COVERAGE_ONCE, if a once-per-run stage was reported other than exactly once.
+   - JOB_RESULT, if any upstream job concluded anything but success. A cancelled matrix entry is not green.
+   - CLASS, if any report is not PASS.
+
+   The exit code is the worst class across reports. A coverage failure with nothing worse is HARNESS_SETUP_FAILURE (4).
+
+   `npm run check:merge-reports` runs 7 cases in CI, one per rule. Each was shown to fail when its rule is removed.
+5. **Timeouts are anchored to measured runs:**
+   - **Level, 20 min:** 02-cliff-seam's stages take 7.3 min. The slowest runner seen ran the same content 1.8x slower (42559866641 took 25.3 min against 13.8 min for 42563854654), which gives about 13 min.
+   - **Game, 20 min:** 3.3 min of stages, about 6 min on a slow runner, and reachable grows with each chapter.
+   - **Static, 10 min.**
+6. **The costs, disclosed:**
+   - **Wall-clock against billed minutes.** Projected wall-clock falls from 28 to about 9 min: the slowest level job plus the matrix job ahead of it and the merge job after it. Billed minutes rise because each job pays its own setup (about 50 s: checkout, npm ci, Chromium) and GitHub rounds each job up to a whole minute.
+   - **Billed minutes, worked out.** About 44 billed minutes per run against 28 before, for four levels. That matters because Actions is refusing jobs for billing as this is written (42567459368).
+   - **Concurrency ceiling.** The free plan runs 20 jobs at once. With static, matrix, game and merge that holds about 17 levels in parallel, after which they queue.
+   - **Builds.** Every browser job builds the game itself (the preflight build, about 10-20 s). Sharing one build artifact would save little and add a failure mode.
+7. **Not done here: sharding phase-sweep within a level.** After this change, wall-clock is the slowest single level, so a longer chapter grows it and more chapters do not. That is B-26 (B-25 was taken by kit for the stale src/ guard).
+8. **Measured on CI** after the outage (repo public, 2026-11-09):
+
+   | | run | wall-clock |
+   |---|---|---|
+   | Split | PR #18, 42628995213 | **4.9 min** (13:50:24-13:55:16Z) |
+   | Serial | PR #21, 42629083300 | **19.3 min** |
+
+   - **Same conditions:** the serial run went over the same four levels in the same minutes.
+   - **Split job times:** static 0.4, matrix 0.2, game 2.9, levels 3.2-4.3 (00-gym 3.9, 01-lower-stair 4.3, 02-cliff-seam 3.3, 03-drifting-stones 3.2), merge 0.2.
+   - **Item 6's projection was pessimistic:** it said about 9 min. The CI runners were faster that hour than on 42561268355.
+
 ## OQ-064 — B-21: marking the playbook. What counts as superseded, and what the rule still cannot see
 raised: 2026-11-09 by phase0-spec (B-21)
 options: A mark only the 5 passages `lint:pack` flags | B mark those plus every retired instruction a manual read finds, in the pack's inline style | C rewrite the retired passages out of the playbook

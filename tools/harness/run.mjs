@@ -14,12 +14,12 @@
 // Exit: 0 pass · 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
 // Writes harness-report.json at the repo root.
 
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
 import { lintLevel, segmentsOf, RESPAWN_RULES } from '../lint-level.mjs';
-import { EXIT_CODE, FAILURE, Stage } from './lib.ts';
+import { BROWSER_STAGES, EXIT_CODE, FAILURE, ONCE_STAGES, Stage, levelIds } from './lib.ts';
 import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
 import { phaseSweep } from './sweep.ts';
@@ -43,10 +43,9 @@ const args = Object.fromEntries(
   }),
 );
 const log = (m) => console.log(m);
-const BROWSER_STAGES = ['nav', 'phase-sweep', 'replay', 'chaos', 'hazards', 'counters', 'assets', 'accent', 'visual'];
 const only = typeof args.only === 'string' ? args.only.split(',') : BROWSER_STAGES;
 
-const allLevels = readdirSync(join(ROOT, 'levels')).filter((f) => f.endsWith('.json') && !f.endsWith('.schema.json')).map((f) => f.replace(/\.json$/, ''));
+const allLevels = levelIds(ROOT);
 const levels = typeof args.level === 'string' ? [args.level] : allLevels;
 
 // ---------- static stages (no browser) ----------
@@ -210,7 +209,11 @@ for (const L of statics) {
 //   run-metric   (B-15, NOT #20): is the player-visible text the same whatever the run's deaths and time?
 //   ambient-motion (B-15, NOT #18): does anything translate except the player, hazards and platforms?
 const once = (name) => (typeof args.only === 'string' ? args.only.split(',').includes(name) : typeof args.level !== 'string');
-for (const [name, fn] of [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion]]) {
+// Registered as ['name', fn] pairs: lint:not-list reads that form to prove NOT #18/#20 stages are wired.
+const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion]];
+// B-22: merge-reports.mjs gates CI on ONCE_STAGES (lib.ts). If this list drifts from it, a stage would run unchecked.
+if (ONCE.map(([n]) => n).join() !== ONCE_STAGES.join()) throw new Error(`run.mjs once-stages ${ONCE.map(([n]) => n)} != lib.ts ONCE_STAGES ${ONCE_STAGES}`);
+for (const [name, fn] of ONCE) {
   if (!once(name)) continue;
   const browser = await launchBrowser();
   try {
