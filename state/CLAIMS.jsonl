@@ -127,3 +127,8 @@
 {"id":"PACK-MARK","agent":"phase0-spec","ts":"2026-11-09T01:49:28.645Z","ttl_min":90}
 {"id":"PACK-LINT","agent":"phase0-spec","ts":"2026-11-09T01:49:28.672Z","ttl_min":90}
 {"id":"CHAPTER-2","agent":"builder-ch2","ts":"2026-11-09T01:49:59.695Z","ttl_min":90}
+{"id":"OQ-048","agent":"kit","ts":"2026-11-09T01:53:22.040Z","released":true}
+{"id":"OQ-050","agent":"kit","ts":"2026-11-09T01:53:22.067Z","released":true}
+{"id":"OQ-052","agent":"kit","ts":"2026-11-09T01:53:22.094Z","released":true}
+{"id":"ASSIST-CASE","agent":"kit","ts":"2026-11-09T01:53:22.120Z","released":true}
+{"id":"RB-004-RESTATE","agent":"kit","ts":"2026-11-09T01:53:22.145Z","released":true}
