@@ -153,3 +153,4 @@
 {"id":"OQ-060","agent":"kit","ts":"2026-11-09T04:05:37.038Z","ttl_min":90}
 {"id":"CHAPTER-3","agent":"kit","ts":"2026-11-09T04:46:11.663Z","released":true}
 {"id":"CHAPTER-4","agent":"unknown","ts":"2026-11-09T04:48:57.663Z","released":true}
+{"id":"B-22","agent":"ci-parallel","ts":"2026-11-09T05:27:48.046Z","ttl_min":90}
