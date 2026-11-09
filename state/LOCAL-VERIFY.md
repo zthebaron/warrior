@@ -257,3 +257,44 @@ verified: 2026-11-09 by kit, darwin, worktree on `b25-stale-src`. Local only; CI
   - branch, break reverted, `--skip-build` against the broken bundle: exit 2;
   - branch, bundles from main (no build-inputs.json): exit 2.
 - **Suite:** `lint:self` exit 0 PASS. `lint:levels` exit 0, LINT PASS on 00/01/02/03. `playtest` exit 0, `RESULT: PASS`, 390 check lines.
+
+---
+
+## CI back (repo public, 2026-11-09): CI results for PR #18 and PR #21. These supersede the local-only entries above for these heads
+
+CI executes again. The entries above stay as the record of what was checked while it was down.
+
+### PR #18 — B-22 parallel CI playtest: **CI GREEN**, run 42628995213 on `f232040`
+- **Rebase:** `f232040` is the PR rebased onto main after #13, #17 and #22.
+- **Backlog union:** B-22 is this PR's row, and B-23 and B-24 come from main. The PR's phase-sweep sharding row is renumbered B-25 -> **B-26**, because kit had already claimed B-25.
+- **Jobs:** all green.
+
+  | job | time |
+  |---|---|
+  | static | 0.4 min, including the `check:merge-reports` self-test, 7/7 |
+  | matrix | 0.2 min; it expanded to the four level jobs |
+  | level (00-gym) | 3.9 min |
+  | level (01-lower-stair) | 4.3 min |
+  | level (02-cliff-seam) | 3.3 min |
+  | level (03-drifting-stones) | 3.2 min |
+  | game (reachable, pitch-assist, run-metric, ambient-motion) | 2.9 min |
+  | playtest (merge) | 0.2 min |
+
+  The merge reported 5 reports, levels expected 00-gym, 01-lower-stair, 02-cliff-seam and 03-drifting-stones, all 4 once-per-run stages, and `RESULT: PASS`.
+- **Wall-clock, measured on CI:**
+  - **Split:** 4.9 min (13:50:24-13:55:16Z).
+  - **Serial:** 19.3 min, on the same four levels in the same hour (PR #21's run 42629083300, 13:51:00-14:10:19Z, still on the one-job workflow).
+  - **Earlier serial runs:** 28.0 min (42561268355).
+- **B-24's stale-bundle check does not trip on the split.** Every job checks out and builds fresh. Locally, all 5 job preflights passed 8/8 with "every levels/*.json byte-identical to dist-harness/". The CI run passed preflight in every job.
+- **The matrix question is answered.** The `level (${{ matrix.level }})` name during the outage was a matrix job that never expanded, not a config error. Once jobs could start, it expanded as written.
+- **Local before the push, on the rebased tree:** actionlint was clean, and all the static gates passed.
+- **Head now:** `c9087bd` adds only these measured numbers to the B-22 row and OQ-061.
+
+### PR #21 — B-21 playbook marking: **CI GREEN**, run 42629083300 on `ce18caf`
+- **Rebase:** onto main (`e86667d`), done in a detached worktree. phase0-spec's own worktree still has the branch checked out at the old head `1f8d154` and should reset to `origin/b21-playbook-mark`.
+- **State conflict:** `state/LOCAL-VERIFY.md` was resolved by union, keeping both the PR #22 section and the B-21 section.
+- **Old merge commit dropped:** `770ecb6` (merge main into the branch) is gone in the linear rebase. B-21's commit is now `60465bc`. The B-21 section above names the old sha `fd0e15a` as what was verified locally then, which is accurate history.
+- **Local, on the rebased tree before the push:**
+  - typecheck, `lint:self`, `lint:levels`, `lint:not-list`, `lint:pack` (clean on both the pack and the playbook), `lint:decisions`, `lint:accent`, `assets:budget`, `check:patrol` and `check:progression` all passed.
+  - `npm run playtest` printed `RESULT: PASS` in 651 s.
+- **CI:** the single playtest job was green in 19.3 min.
