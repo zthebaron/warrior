@@ -222,3 +222,38 @@ verified: 2026-11-09 by kit, darwin, worktree on `b24-stale-bundle` at `504c4a29
   - branch, edit reverted: exit 0, PASS;
   - branch code against a bundle built from main (no `levelSources()`): exit 2, `BUILD_FAILURE`.
 - **Not covered:** stale `src/` under `--skip-build` (level JSON only); CI-runner behaviour.
+
+---
+
+## PR #20 — B-23 rebased onto main after #13, #17 and #22 merged; head `2d8f228` (pushed as `79fe4dc` after rebasing over `e86667d`, a doc-only scrub)
+verified: 2026-11-09 by kit, darwin, worktree on `b23-wall-eye` at `2d8f228f3bd961d45a0afd6ac56bbf20cfac966e`. Local only, recorded while CI was down. CI is back; its run on #20 supersedes this entry.
+
+- **Rebase:** state/ resolved by union.
+  - OQ-055 and OQ-060 (main) and OQ-062 (branch) are all kept.
+  - Where both sides had a B-23 row, a B-24 row or the OQ-056 item 3 correction, main's newer text won. It is the same final text as the branch's.
+  - `budgets.json` has 02 at 50 / 5,052 (B-23's backstop, measured) and 03 at 50 / 5,664 (main).
+  - The lint-self import line is the union of both sides.
+  - The two backlog-only commits (`1af6bfd`, `8240290`) dropped out as empty, because main already had their rows.
+
+| command | exit | result |
+|---|---|---|
+| `npm run lint:self` | 0 | `LINT-SELF PASS`: the B-23 collided-arm block and #13's FACE_RISE block both pass |
+| `npm run lint:levels` | 0 | `LINT PASS` on 00-gym (FACE_RISE and TIGHT warnings, as on main), 01-lower-stair, 02-cliff-seam and 03-drifting-stones |
+| `npm run playtest` (full) | 0 | `RESULT: PASS`, 396 check lines |
+
+- **ASSIST_CASE 02 `critical_path[5]`** (the wall teach): real rig 3.50° at 54.0°, linter modelled 54°.
+- **ASSIST_CASE 03:** no waypoint depends on the assist.
+- **Chapter 3 worst arrival per segment:** 6.63 / 7.67 / 1.03 / 8.32 / 8.25 s, all within 12 s.
+
+---
+
+## PR #23 — B-25 stale-source guard, head `8b4c6b4` (pushed as `a50b6b0` after rebasing over `e86667d`)
+verified: 2026-11-09 by kit, darwin, worktree on `b25-stale-src`. Local only; CI's run on #23 supersedes this entry.
+
+- **The false green, before and after.** `src/loaders/level.ts` was deliberately broken (`loadLevel` throws), then `run.mjs --level=01-lower-stair --only=nav` was run:
+  - main `4459119`, clean build, `--skip-build`: **exit 0, PASS**;
+  - branch, `--skip-build`: **exit 2, BUILD_FAILURE**, "src/loaders/level.ts changed";
+  - branch, fresh build: exit 1, LEVEL_FAILURE (the break is real);
+  - branch, break reverted, `--skip-build` against the broken bundle: exit 2;
+  - branch, bundles from main (no build-inputs.json): exit 2.
+- **Suite:** `lint:self` exit 0 PASS. `lint:levels` exit 0, LINT PASS on 00/01/02/03. `playtest` exit 0, `RESULT: PASS`, 390 check lines.
