@@ -832,6 +832,55 @@ Disclosed weaknesses, so a reviewer can attack them:
   6. src/main.ts gained a harness-only `translators()` API and userData tags on the player and landing
      mark. src/loaders/level.ts gained tags on platform, hazard and crow meshes. Neither file is in
      src/engine/ or src/systems/. Rendering is unchanged.
+
+## OQ-056 — Chapter 2 (`02-cliff-seam`) as built: the design calls the brief left open, and one it got wrong
+raised: 2026-11-08 by builder-ch2 (CHAPTER-2)
+took, each PROVISIONAL:
+1. **Segment order: climb, wall, double, then transfer, then practice.** The level has 5 segments (4 torii), which is D-011's derived minimum: 3 teaching segments, 1 transfer and 1 practice.
+   - **Climb first:** Q5 calls climb "slow and forgiving, ideal for teaching the seam read", so it opens the chapter.
+   - **Double last:** it is the riskiest move (`CHAPTER_RISKIEST[2]`), so it is taught last, directly before its transfer segment.
+   - **Transfer (segment 3):** a crow-cued run, double over a 6 u void, then a +1.5 jump.
+   - **Practice (segment 4):** a second crow-cued run, a +4.0 climb, then double over another 6 u gap.
+   - **Every teaching instance is over floor** (D-015c). A miss leaves the player standing where they started.
+2. **Teaching heights.**
+
+   | move | taught at | how it reads |
+   |---|---|---|
+   | climb | +4.50, the top of its band (= `MOVE.climb.maxRise`) | with the pitch assist |
+   | double | +3.00 rising, inside (2.00, 3.18] | at rest, onto a 26 u landing |
+   | wall | +2.50, **below** its D-016 band (3.50, 4.00] | at rest (item 3) |
+
+   - **Climb at +4.50:** TIGHT does not cover rise, so this zero margin is deliberate. The bot clears it every run.
+   - **Wall at +2.50:** still above `jump.maxRise` 2.0, so a jump cannot do it. A climb could; see item 3.
+3. **Finding: a wall jump's teaching face cannot be assisted, so the wall is taught at a height that reads at rest.**
+   - **First build:** +3.75, inside the band. The linter passed it (assisted, 29°). ASSIST_CASE in the real rig read **0.00°**, with no probe target.
+   - **Why it cannot read:** a wall jump needs the wall beyond the approach, on the far side from the landing (nav.ts). So standing 2 u off the ledge and facing it puts the player 1 u in front of the wall they kick off. The camera arm, about 6 u behind, is pushed into that wall.
+   - **Argued from geometry, measured once:** this should hold for every wall jump within `MOVE.wall.maxH` 4.2, not just this level.
+     - The stand point is at most about 3 u in front of the wall.
+     - At a 29° pitch the arm is about 3.2 u above the feet by then.
+     - A wall tall enough to wall-jump +3.5 to +4.0 off rises higher than that.
+     It is the same failure as kit's overhung-wall proof case.
+   - **So D-016b's "wall unblocks with the assist" holds only where the arm is free behind the player,** and a wall jump's own wall almost always blocks it.
+   - **The fix:** a rise that reads at the rest pose. The ledge is 3.5 u deep, which caps it at 2.60, so the wall is +2.50 and there is no assist case.
+   - **The cost is RB-004 item 3's loophole, taken knowingly.** The chapter's wall is taught below wall's band, and climb could clear the same face. A future chapter that gates on a 3.5-4.0 wall only gets a READABLE_RISE warning, and ASSIST_CASE would fail it anyway unless the arm is clear.
+   - **For the verifier:** RB-004 should now carry "wall's characteristic band is unteachable even with the assist".
+4. **T1's torii stands 18 u past the first climb face** (x 30, face at x 12), outside the probe's 15 u depth range.
+   - **What went wrong at x 22:** the real probe's depth rays hit the torii, reported a shallower landing, and settled at 31° where the linter models 30°. ASSIST_CASE fails on that mismatch.
+   - **Rule of thumb:** keep tall props more than `PITCH_ASSIST.depthMaxM` past an assisted face, or the linter's slab model and the real probe disagree.
+5. **The rising double's approach is 4 u short of the face, not 2.** From 2 u the first jump met the face at +2.3, still rising, so the wall slide and wall jump took over (`--trace-seg=9`).
+6. **The crow runs copy chapter 1's first one exactly:** a torii, then a 15 u ground run, with the patroller lane 9 u out. Patroller: speed 5, phase 0, size 2. Crow: perch on a knob 6 u out, lift 0.11, away 0.45.
+   - **Result:** HAZARD_INERT blind departures fail 4/8 on both runs, and the cued runs clear 8/8.
+   - **No new crow timing is introduced.**
+7. **Gaps are 6 u.** That is past `jump.maxH` 5.0, so only a double clears them. Run 8 u of `double.maxH` 9.5 (84%, under TIGHT).
+8. **The seam:** 18 `kit_rock_mass` along z -5.7, set 2 u below each floor, with the bright void on the open side, as in chapter 1.
+9. **Harness trap, for the next level builder:** `--skip-build` plays the level JSON bundled at the last build (levels are Vite chunks) against the waypoints on disk. After any level edit, rebuild. Two of this build's diagnoses were briefly wrong because of it.
+10. **The CI job timeout is raised from 20 to 40 minutes** (`.github/workflows/ci.yml`).
+    - **The old 20:** set in H3 (`e99d5d1`) when the harness ran one level. It is in no decision and not in MEASUREMENTS, so it is not a budget. A guess the harness outgrew.
+    - **Main with two levels** (runs 42552389070 to 42554509191): 9.5 to 16.0 min.
+    - **This branch with chapter 2:** one pass at 17.6 min (42551964229). Two runs were cut off at the 20-min cap mid-playtest (42549986444, 42553653599), and neither had failed a check.
+    - **Why chapter 2 costs that much:** about 5 min of CI per chapter, from its phase-sweep (8 arrivals x 5 segments, plus blind runs) and REACHABLE now playing it too.
+    - **Why 40:** at roughly 5 min per chapter, chapters 3 and 4 still fit with runner-variance headroom.
+    - **The proper fix** is a faster or parallel playtest (levels are independent until the run-once stages), not more minutes. Not done here.
 status: PROVISIONAL
 
 ## OQ-057 — B-11: what "CLOSED with no implementing commit" means precisely, and the 8 entries I backfilled
