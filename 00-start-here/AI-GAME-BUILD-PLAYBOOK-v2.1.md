@@ -60,6 +60,8 @@ Four layers. Dependencies point **down only**. Nothing ever reaches back up.
    CONTENT     levels, assets, tuning tables          ← agents write here
       │ depends on
    GAMEPLAY    player, enemies, puzzles, progression   ← one lane, gated
+               [SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q3: no enemies, no puzzles;
+               gameplay is the player, hazards, checkpoints and chapter-to-chapter progression]
       │ depends on
    ENGINE      render, physics, loop, audio, state     ← frozen at Gate C
       │ depends on
@@ -164,7 +166,7 @@ to open*. Instrument each with `performance.now()` and show them in the debug ov
 
 | System | Budget (of 16.6 ms) |
 |---|---|
-| Gameplay logic (AI, puzzles, progression) | 2.0 ms |
+| Gameplay logic (AI, puzzles, progression) **[SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q3: no enemy AI, no puzzles; hazards, checkpoints, progression]** | 2.0 ms |
 | Physics step | 2.0 ms |
 | Animation + skinning + IK | 2.0 ms |
 | Render + post-processing | 8.0 ms |
@@ -190,7 +192,8 @@ program ships a performance guarantee it never measured. **Gate E2 cannot be cle
 **Cost:** ~$180–340 API spend for the full case-study build. Agent compute on existing Max accounts.
 
 **Time:** 10–14 working days for the production version (12 levels, 4 enemy types, audio,
-mobile). Capture the first 24 hours separately and publish *that* as the sprint story.
+mobile) **[SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q4: no enemy types; the sprint is 4
+chapters, production grows by adding chapters]**. Capture the first 24 hours separately and publish *that* as the sprint story.
 
 ---
 
@@ -203,9 +206,13 @@ mobile). Capture the first 24 hours separately and publish *that* as the sprint 
 ├─ src/
 │  ├─ engine/       loop · renderer · physics · input(+record/replay) · camera · audio · post/ · debug
 │  ├─ systems/      movement · combat · puzzle · checkpoint · progression
+│  │                [SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q3: no combat, no puzzle]
 │  ├─ entities/     player · enemies/ · interactables
+│  │                [SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q3: no enemies, no interactables]
 │  ├─ loaders/      level.ts (schema-validated)
 │  └─ ui/           menus · HUD · chapter select
+│                   [SUPERSEDED in part — PHASE-0-DECISIONS Q4, Q6 (NOT row 15); OQ-050: no
+│                   chapter select; finishing a chapter loads the next]
 ├─ levels/          level.schema.json · 00-gym.json · 01-*.json …
 ├─ assets/          src/ (.blend + .py) · dist/ (.glb/.ktx2 + manifest.json)
 ├─ tools/
@@ -250,6 +257,12 @@ removing the only proof that levels are completable.
 | `climb` | 1.5 | 2.4 | ledge grab + mantle |
 | `platform` | ∞ | ∞ | requires a valid `"platform"` id |
 
+> **[SUPERSEDED — MEASUREMENTS.md "MOVE table basis" (measured 2026-11-07); OQ-049]** Do not
+> copy these numbers. They are the pre-gym placeholders and most were wrong (dash 7.0 vs a measured
+> 4.0; wall rise 6.2 vs 4.0). The measured budgets live in `00-start-here/MEASUREMENTS.md` and
+> `MOVE` in `tools/lint-level.mjs`. The autostep is 0.34 (B-14, OQ-049), not 0.5, and `wall` is a
+> wall jump, not a wall-run.
+
 Numbers are placeholders until Phase 3 measures them in the gym — then they are written back
 into `SPEC.md` **and** `lint-level.mjs`, which must stay the single source of truth.
 
@@ -282,6 +295,8 @@ depth, unknown entity types, malformed vec3s, out-of-range numbers, short arrays
 DUP_ID              an id reused across any two entity arrays   ← schema cannot express this
 UNKNOWN_ASSET       asset not in the build manifest
 DANGLING_TARGET     an action points at an id that does not exist
+                    [SUPERSEDED — PHASE-0-DECISIONS Q3, Q7: no interactables or actions,
+                    so nothing has a target; the linter no longer has this code]
 OOB                 spawn/goal/waypoint/checkpoint/patrol outside bounds
 NO_VIA              a waypoint with no declared move
 BAD_VIA             an unknown move name
@@ -441,9 +456,10 @@ Blender then handles only: jiggle bones (3 robe hem, 2 sash, 1 hat brim — **bo
 physics, never cloth simulation**, which will not fit the frame budget at this silhouette size),
 foot-IK targets, and export.
 
-Animations: `idle, walk, run, sprint, jump_start, jump_apex, fall, land, land_hard, wall_slide,
-wall_jump, ledge_grab, ledge_climb, dash, strike_1, strike_2, hit_react, death`. Root motion OFF
-— physics drives position.
+[SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q6: drop strike_1, strike_2 and hit_react; there is
+no attack and no damage, so 15 animations, not 18] Animations: `idle, walk, run, sprint,
+jump_start, jump_apex, fall, land, land_hard, wall_slide, wall_jump, ledge_grab, ledge_climb, dash,
+strike_1, strike_2, hit_react, death`. Root motion OFF — physics drives position.
 
 **Tests:** silhouette identifiable at 64 px · every state transition with no T-pose frame, no NaN
 bone, foot slide under 8 cm · character ≤ 3 draw calls.
@@ -490,6 +506,8 @@ Build the **viewer** instead — half the value, a fifth of the cost:
   - load any level, free-fly through it
   - `critical_path` drawn as a coloured polyline, each segment labelled with its `via`
   - checkpoints, hazards, enemy aggro radii and bounds shown as wireframes
+    [SUPERSEDED in part — PHASE-0-DECISIONS Q1: no enemies or aggro radii; draw patroller
+    paths and hazard volumes instead]
   - scrub the nav bot along the path, frame by frame
   - jump straight to any waypoint
 
@@ -527,22 +545,29 @@ is not green. REVIEWER does the art-direction pass against the concepts.
 **🚦 GATE E — CONTENT COMPLETE.**
 
 ### ☐ PHASE 9 — SYSTEMS · *2 days, after the fan-out*
-Four enemy types, one verb each (charger, ranged, blocker, patroller), each with a readable
-telegraph — the telegraph is the whole design. Combat: two-hit combo, 0.15 s parry window,
-dash i-frames, **60 ms hitstop** (does more for game feel than anything else in this phase).
-Progression: chapter select, scroll counts, `localStorage` **wrapped in try/catch** (it throws
-in embedded and private-browsing contexts), versioned saves that reset rather than crash.
+**[SUPERSEDED — PHASE-0-DECISIONS Q1: no enemies; the patroller is a hazard with a crow cue, not an
+enemy (NOT row 1)]** Four enemy types, one verb each (charger, ranged, blocker, patroller), each
+with a readable telegraph — the telegraph is the whole design. **[SUPERSEDED — PHASE-0-DECISIONS
+Q1, Q6: no combat, no i-frames, no damage (NOT rows 2, 14)]** Combat: two-hit combo, 0.15 s parry
+window, dash i-frames, **60 ms hitstop** (does more for game feel than anything else in this
+phase). **[SUPERSEDED — PHASE-0-DECISIONS Q3, Q4, Q6 (NOT rows 7, 15); OQ-050: no chapter select,
+no scrolls, no save; finishing a chapter loads the next]** Progression: chapter select, scroll
+counts, `localStorage` **wrapped in try/catch** (it throws in embedded and private-browsing
+contexts), versioned saves that reset rather than crash.
+
 **Respawn under 1.2 s** — the number-one reason players quit platformers. Difficulty pass:
 ~~bot completion time vs `par_time`~~ **[SUPERSEDED — PHASE-0-DECISIONS Q4]** there is no `par_time`. The bot budget
 (12 s/segment) is already a CI assertion, so the difficulty pass is about humans: first-time
 players should land at 25–35 s per segment (Q3). A segment far outside that range is mistuned.
-*Note: adding enemies will break critical paths authored without them. Expect a re-lint pass.*
+**[SUPERSEDED — PHASE-0-DECISIONS Q1: there are no enemies to add]** *Note: adding enemies will
+break critical paths authored without them. Expect a re-lint pass.*
 
 ### ☐ PHASE 10 — AUDIO · *1 day. Budget it properly.*
 10% of the work, 40% of perceived quality, and where AI-built games are weakest.
-SFX via ElevenLabs — footsteps (3 surfaces × 4 variations, pitch randomised ±8% on playback,
-triggered from animation events not a timer), jump, land, land_hard, dash, strike, hit, bell,
-gate, death, pickup, checkpoint. Three ambience loops crossfaded by level zone. Score via Udio:
+**[SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q3: drop strike, hit, bell, gate and pickup; there
+is no combat, no interactable and no pickup]** SFX via ElevenLabs — footsteps (3 surfaces × 4
+variations, pitch randomised ±8% on playback, triggered from animation events not a timer), jump,
+land, land_hard, dash, strike, hit, bell, gate, death, pickup, checkpoint. Three ambience loops crossfaded by level zone. Score via Udio:
 main theme, tension variant, summit piece. **Author loop points by hand** — generated music
 almost never loops cleanly and a bad loop point is the most noticeable flaw in the build.
 Audio bus with per-channel sliders, mute on tab blur, `AudioContext` created on first gesture
@@ -551,10 +576,13 @@ Audio bus with per-channel sliders, mute on tab blur, `AudioContext` created on 
 ### ☐ PHASE 11 — HARDENING · *1–2 days*
 Browser matrix: Chrome, Firefox, Safari desktop + iOS (Safari will break something WebGL- or
 AudioContext-related — assume it). Mobile: proper touch controls or an honest desktop-only gate;
-half-working touch is worse than none. Progressive loading with an art loading screen. **First
-30 seconds teach movement with zero text** — geometry that forces a walk, a jump, a double-jump,
-a wall-run. WebGL context-loss handler, save-corruption reset, asset retry, styled unsupported
-fallback. Remappable keys, reduced-motion toggle, colourblind check on the single accent colour.
+half-working touch is worse than none. Progressive loading with an art loading screen.
+**[SUPERSEDED in part — PHASE-0-DECISIONS Q5: each chapter teaches its own moves, so chapter 1's
+opening teaches ground and jump only; double and wall (a wall jump, not a wall-run) arrive in
+chapter 2]** **First 30 seconds teach movement with zero text** — geometry that forces a walk, a
+jump, a double-jump, a wall-run. **[SUPERSEDED in part — PHASE-0-DECISIONS Q4, Q6; OQ-050: there
+is no save to corrupt; drop save-corruption reset]** WebGL context-loss handler, save-corruption
+reset, asset retry, styled unsupported fallback. Remappable keys, reduced-motion toggle, colourblind check on the single accent colour.
 Lighthouse + full harness on the production build.
 **🚦 GATE E2 — HARDWARE PERF [V2]** (Tier-2 budgets on real devices) **then 🚦 GATE F — SHIP.**
 
@@ -640,6 +668,7 @@ PRE-FLIGHT
 4  ☐ kit defined ☐ blender scripts ☐ gltf-transform stage ☐ Git LFS
    ☐ npm run assets from clean clone ☐ Level 01 by hand ☐ post stack
 5  ☐ 4-view sheet ☐ Tripo mesh+autorig ☐ jiggle bones ☐ 18 anims
+   [SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q6: 15 anims, no strike or hit_react]
    ☐ silhouette ☐ transitions ☐ ≤3 draw calls
 6  ☐ Level 01 ship quality ☐ HTTP serve ☐ WebGL preflight
    ☐ deterministic mode ☐ nav ☐ replay(tolerance) ☐ chaos
@@ -650,6 +679,8 @@ PRE-FLIGHT
    ☐ N agents ☐ all green ☐ VERIFIER cold re-run ☐ art pass
    ☐ days-per-level measured → schedule                → GATE E / FIRST PLAYABLE
 9  ☐ enemies ☐ combat ☐ hitstop ☐ progression ☐ save
+   [SUPERSEDED in part — PHASE-0-DECISIONS Q1, Q4, Q6; OQ-050: no enemies, combat, hitstop
+   or save; progression is chapter-to-chapter only]
    ☐ re-lint paths ☐ difficulty ☐ respawn <1.2s          → ALPHA (no new systems)
 10 ☐ SFX ☐ ambience ☐ score ☐ loop points ☐ mix ☐ gesture-gated ctx
 11 ☐ browsers ☐ mobile call ☐ loading ☐ first 30s ☐ resilience
