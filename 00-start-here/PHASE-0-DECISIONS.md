@@ -208,7 +208,7 @@ This is 3/2/2/1 rather than a flat spread: chapter 1 carries 3 moves plus 1 sign
 teach rate Q4 deliberately left unmeasured. Measure it in the vertical slice, then set the
 chapter-length rule from the measurement.
 
-implemented_by: cf642c7 (moves_allowed + MOVES_ALLOWED/CHAPTER_MOVE). The four chapter levels themselves are content, not yet authored.
+implemented_by: cf642c7 (moves_allowed + MOVES_ALLOWED/CHAPTER_MOVE). Chapter levels, as content: 01-lower-stair (chapter 1; climb moved out by D-015a), 02-cliff-seam (chapter 2: wall, double, climb; 226c9ef, design calls OQ-056). Chapters 3-4 not yet authored.
 
 ## D-001 — The navigational accent is **authored, not measured.** DECIDED
 
