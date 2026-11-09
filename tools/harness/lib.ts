@@ -1,7 +1,20 @@
 // Shared harness plumbing: pinned Chromium args, failure classes, stage results, game pages.
 // Stages are plain TS run by Node's built-in type stripping (no build step): erasable syntax only.
 
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Browser, Page } from '@playwright/test';
+
+/** Per-level browser stages, in run order (run.mjs). merge-reports.mjs requires every one of them per level. */
+export const BROWSER_STAGES = ['nav', 'phase-sweep', 'replay', 'chaos', 'hazards', 'counters', 'assets', 'accent', 'visual'];
+/** Once-per-run stages over the whole game (run.mjs). merge-reports.mjs requires every one of them once. */
+export const ONCE_STAGES = ['reachable', 'pitch-assist', 'run-metric', 'ambient-motion'];
+/** Every playable level id: levels/*.json minus the schema. One source for run.mjs, the CI matrix and merge-reports. */
+export const levelIds = (root: string): string[] =>
+  readdirSync(join(root, 'levels'))
+    .filter((f) => f.endsWith('.json') && !f.endsWith('.schema.json'))
+    .map((f) => f.replace(/\.json$/, ''))
+    .sort();
 
 /** VERIFIED 2026-11-07. Headless Chromium has WebGL2 only on SwiftShader with these. Do not edit casually. */
 export const CHROMIUM_ARGS = [
