@@ -723,8 +723,6 @@ took, each PROVISIONAL:
 7. **ASSIST_CASE (replaces the "should" this item first said; not approved as written).** The linter models an
    unobstructed arm. An overhang behind the player pulls the arm in and lowers the eye, so a face can pass the
    linter and still be unreadable in play. This is now a check that fails.
-   - **B-23 (OQ-062):** the linter now models the collided arm too, so it rejects such a face itself. The real
-     rig remains the check on that model. `assistCases` now takes the manifest.
    - **The cases.** `assistCases(level)` (tools/lint-level.mjs) derives every critical_path waypoint that passes
      READABLE_RISE only because of the assist (rest band below minBandDeg, an assisted pitch exists). It uses the
      same test that certified the waypoint, so no such waypoint can be missing a case.
