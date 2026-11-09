@@ -28,6 +28,10 @@
       "draw_calls": 46,
       "triangles": 3888
     },
+    "02-cliff-seam": {
+      "draw_calls": 49,
+      "triangles": 5040
+    },
     "04-summit-ridge": {
       "draw_calls": 49,
       "triangles": 5040
