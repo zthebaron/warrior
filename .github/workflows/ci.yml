@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0 # lint:decisions resolves every implemented_by sha against history (D-002)
           lfs: true # visual goldens are *.png, which .gitattributes routes through LFS
 
       - uses: actions/setup-node@v4
@@ -37,6 +38,8 @@ jobs:
       - run: npm run lint:not-list
       # The prompt pack must not instruct a NOT-listed concept unmarked (UNMARKED_RETIRED); self-test proves it bites
       - run: npm run lint:pack
+      # D-002: every CLOSED/DECIDED decision names an implementing commit that is on this history
+      - run: npm run lint:decisions
 
       - run: npm run lint:accent # D-001 ACCENT_CONTRAST, named on its own so a failure says which rule
 

@@ -19,6 +19,7 @@
     "lint:example": "node tools/lint-level.mjs tools/example-level.json tools/manifest.example.json",
     "lint:not-list": "node tools/lint-not-list.mjs",
     "lint:pack": "node tools/lint-pack.mjs --self-test && node tools/lint-pack.mjs",
+    "lint:decisions": "node tools/lint-decisions.mjs --self-test && node tools/lint-decisions.mjs",
     "check:physics": "node tools/rapier-determinism.mjs",
     "check:patrol": "node tools/check-patrol.ts",
     "measure:autostep": "node tools/measure-autostep.ts",
