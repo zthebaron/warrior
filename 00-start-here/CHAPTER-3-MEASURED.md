@@ -40,5 +40,5 @@ waypoints: no face is taller than +1.5.
 ## Not done here
 
 - **Concept images (D-009):** none. The request was greybox only.
-- **REACHABLE:** chapter 3 plays after chapter 1 here, because chapter 2 is not on main yet (progression skips a
-  missing chapter, OQ-050). Once PR #12 lands, the chain is 01 > 02 > 03.
+- **REACHABLE:** PR #12 (chapter 2) landed while this was being built. This branch is rebased on it, so
+  REACHABLE plays the chain 01 > 02 > 03 > menu.
