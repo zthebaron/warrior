@@ -6,11 +6,11 @@
 // Fix for the v1 defect: v1 assumed every segment was a jump and rejected normal running.
 
 export const MOVE = {
-  ground:   { maxH: Infinity, slope: 50, autostep: 0.34, maxDrop: 14.0, measured: true }, // autostep: measured EFFECTIVE ceiling (B-14, MEASUREMENTS "Autostep"), not the Rapier input
+  ground:   { maxH: Infinity, slope: 49, autostep: 0.34, maxDrop: 14.0, measured: true }, // autostep: measured EFFECTIVE ceiling (B-14, MEASUREMENTS "Autostep"), not the Rapier input
   jump:     { maxH:  5.0, maxRise: 2.0, maxDrop: 14.0, measured: true },
   double:   { maxH:  9.5, maxRise: 3.5, maxDrop: 14.0, measured: true },
-  dash:     { maxH:  4.0, maxRise: 0.5, maxDrop: 14.0, measured: true },
-  dashjump: { maxH: 10.0, maxRise: 2.75, maxDrop: 14.0, measured: true },
+  dash:     { maxH:  4.0, maxRise: 0.34, maxDrop: 14.0, measured: true }, // maxRise: B-20 coverage, = autostep (a grounded dash has no lift)
+  dashjump: { maxH:  8.0, maxRise: 2.6, maxDrop: 14.0, measured: true },
   wall:     { maxH:  4.2, maxRise: 4.0, maxDrop:  2.0, measured: true },
   climb:    { maxH:  7.0, maxRise: 4.5, maxDrop:  0.5, measured: true },
   platform: { maxH: Infinity, maxRise: Infinity, maxDrop: Infinity, measured: true }
