@@ -42,7 +42,7 @@ const PACK = path.join(ROOT, '00-start-here/AI-GAME-BUILD-PROMPT-PACK-v2.1.md');
 
 // English words with a live meaning in prose. Skipped in prose only; lint:not-list still checks them in src.
 const PROSE_AMBIGUOUS = new Set(['score', 'rank', 'lives', 'health', 'damage', 'attack', 'strike', 'chase*', 'unlock*']);
-const MARK = /\[SUPERSEDED\b/;
+const MARK = /\[(?:SUPERSEDED|CLOSED)\b/; // CLAUDE.md precedence 6: SUPERSEDED or CLOSED is not live
 const CITE = /PHASE-0-DECISIONS|\bQ[1-7][a-c]?\b|\bD-0\d\d\b|\bOQ-0\d\d\b/;
 
 function readTerms() {
@@ -132,6 +132,7 @@ function selfTest(terms) {
     ['a citation in one bullet does not exempt its sibling', '- knockback on hit\n- no par_time (Q4)\n', 1],
     ['a cite exempts its own sentence, not the paragraph', 'Combat: two-hit combo, parry. Difficulty: no par_time (PHASE-0-DECISIONS Q4).\n', 1],
     ['an item that opens with the mark is wholly marked', '  - [SUPERSEDED — Q3] Save to localStorage. Then a chapter select.\n', 0],
+    ['a CLOSED mark counts as SUPERSEDED does (CLAUDE.md)', '### P0.1 — Interview **[CLOSED — Q6]**\nFailure model: hp, knockback.\n', 0],
     ['a marked blockquote is exempt', '> **[SUPERSEDED — Q3]** a scroll pickup used to sit here\n> and a chapter select\n', 0],
     ['an unmarked blockquote is not', '> a scroll pickup and a chapter select\n', 1],
     ['prose-ambiguous words are skipped (known hole)', '### P10.3 — Score\nEvery magic number lives in TUNING.\n', 0],

@@ -770,7 +770,7 @@ because: measured, both ways.
   - D is precise but it checks bookkeeping, not the class. A section marked LIVE that later goes
     stale passes it.
   Proof: before PACK-MARK the pack exits 1 with 11 UNMARKED_RETIRED. After it, the pack exits 0. Removing
-  one bullet's mark brings back 1 error, and unmarking P9.1's heading brings back 6. Self-test: 11/11 cases.
+  one bullet's mark brings back 1 error, and unmarking P9.1's heading brings back 6. Self-test: 12/12 cases (a CLOSED mark counts, per CLAUDE.md precedence 6).
 Disclosed weaknesses, so a reviewer can attack them:
   1. Recall is partial by design. A stale "player has 3 lives" or "attack input" passes (skipped words),
      and so does paraphrase ("Paper scroll being picked up" names no term; neither do bell, gate or

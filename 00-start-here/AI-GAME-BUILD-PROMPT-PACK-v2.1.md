@@ -724,7 +724,7 @@ One paragraph each, covering:
   - Hazard theme (what kills you here, and is it new or a remix?)
   - The ONE new idea in this level — a mechanic, a hazard, an enemy placement, or a
     traversal shape we have not used before [SUPERSEDED in part — PHASE-0-DECISIONS Q1: not an
-    enemy placement; there are none. Q2: not a new mechanic either, the eight moves are closed]
+    enemy placement; there are none. Q2: not a new move; the moveset is frozen]
   - Mood in three words
 
 Constraints: each level must be buildable from the kit in KIT.md. Flag any brief
@@ -886,8 +886,8 @@ Then tell me the order to launch them in — hardest first or easiest first — 
 
 > **[SUPERSEDED — PHASE-0-DECISIONS Q1, Q6]** Do not paste this prompt. Q1 refused enemies that fight
 > or pursue and every combat verb; Q6 refused health, damage and knockback. The patroller survives
-> as a hazard in `hazards` (SPEC §7 NOT row 1), not as an enemy, and kills on contact rather than
-> damaging. SPEC §7's NOT table is enforced by `npm run lint:not-list`. Kept for the record.
+> as a hazard in `hazards` (SPEC §7 NOT row 1), not as an enemy, and touching it is a death (SPEC §6),
+> not damage. SPEC §7's NOT table is enforced by `npm run lint:not-list`. Kept for the record.
 
 **PASTE INTO CLAUDE CODE (BUILDER)**
 ```
@@ -929,12 +929,12 @@ Implement progression.
   - [SUPERSEDED — PHASE-0-DECISIONS Q4, Q6; OQ-050] Chapter select screen, styled per STYLE-BIBLE. Locked chapters shown but not
     enterable. Completed chapters show scrolls found / total.
   - [SUPERSEDED — PHASE-0-DECISIONS Q3] Collectibles: scrolls per level, counted, persisted.
-  - [SUPERSEDED — OQ-050: no save; finishing a chapter loads the next, derived from each level's
+  - [SUPERSEDED — PHASE-0-DECISIONS Q4, Q6 (NOT row 15); OQ-050: no save; finishing a chapter loads the next, derived from each level's
     chapter field] Save to localStorage. WRAP EVERY READ AND WRITE IN TRY/CATCH — localStorage
     throws in several embedded and private-browsing contexts and an unhandled
     throw here takes down the whole game. Fall back to in-memory silently.
-  - [SUPERSEDED — OQ-050, PHASE-0-DECISIONS Q3: no save, no scrolls] Save shape: { version, chaptersCompleted[], scrollsFound[], settings, totalTime }
-  - [SUPERSEDED — OQ-050: no save to version] Version the save and handle migration from an older version by resetting rather
+  - [SUPERSEDED — PHASE-0-DECISIONS Q3, Q4, Q6; OQ-050: no save, no scrolls] Save shape: { version, chaptersCompleted[], scrollsFound[], settings, totalTime }
+  - [SUPERSEDED — PHASE-0-DECISIONS Q4, Q6; OQ-050: no save to version] Version the save and handle migration from an older version by resetting rather
     than crashing.
   - Death → respawn at last checkpoint in UNDER 1.2 SECONDS including the transition.
     Measure it and tell me the number. Slow respawn is the single biggest reason
@@ -1066,7 +1066,7 @@ player needs to be told anything, the level is wrong, not the player.
 
 RESILIENCE:
   - WebGL context loss → handler that restores or shows a clean message
-  - [SUPERSEDED — OQ-050: there is no save to be malformed] Malformed save → reset silently, never crash
+  - [SUPERSEDED — PHASE-0-DECISIONS Q4, Q6; OQ-050: there is no save to be malformed] Malformed save → reset silently, never crash
   - Asset load failure → retry twice, then a readable error, never a white screen
   - Unsupported browser → a styled fallback page, not a stack trace
 
