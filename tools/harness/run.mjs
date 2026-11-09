@@ -18,7 +18,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
-import { lintLevel, segmentsOf, RESPAWN_RULES } from '../lint-level.mjs';
+import { lintLevel, segmentsOf, withColliders, RESPAWN_RULES } from '../lint-level.mjs';
 import { EXIT_CODE, FAILURE, Stage } from './lib.ts';
 import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
@@ -52,7 +52,8 @@ const levels = typeof args.level === 'string' ? [args.level] : allLevels;
 // ---------- static stages (no browser) ----------
 const Ajv = AjvMod.default ?? AjvMod;
 const validate = new Ajv({ strict: true, allErrors: true }).compile(JSON.parse(readFileSync(join(ROOT, 'levels/level.schema.json'), 'utf8')));
-const manifest = JSON.parse(readFileSync(join(ROOT, 'assets/dist/manifest.json'), 'utf8'));
+// B-23: with the kit meshes' real collision triangles, so READABLE_RISE collides the arm with the real shapes
+const manifest = await withColliders(JSON.parse(readFileSync(join(ROOT, 'assets/dist/manifest.json'), 'utf8')), join(ROOT, 'assets/dist/manifest.json'));
 
 const ABSENT_FIELDS = ['score', 'par_time', 'rank'];
 
