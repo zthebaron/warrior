@@ -199,3 +199,4 @@
 {"id":"OQ-063-dash","agent":"oq063-dash-measure","ts":"2026-11-09T20:43:38.218Z","ttl_min":90}
 {"id":"OQ-063","agent":"oq063-every-timing","ts":"2026-11-09T21:42:37.259Z","released":true}
 {"id":"OQ-063","agent":"oq063-every-timing","ts":"2026-11-09T21:42:37.286Z","ttl_min":90}
+{"id":"OQ-063-dash","agent":"oq063-dash-measure","ts":"2026-11-09T21:49:34.470Z","released":true}
