@@ -4,11 +4,11 @@
 
 import * as THREE from 'three';
 
-import { CAMERA_TUNING, allowedArm } from './camera-tuning';
+import { CAMERA_TUNING } from './camera-tuning';
 import { PITCH_ASSIST, assistPitchDeg, probeHeight, type AssistRig } from './pitch-assist';
 import { RENDER_CONFIG } from './render-config';
 
-export { CAMERA_TUNING, allowedArm };
+export { CAMERA_TUNING };
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
@@ -29,6 +29,11 @@ export interface AssistProbe {
   targetDeg: number | null; // assistPitchDeg's answer; null = no pitch makes it read
 }
 
+/** Arm length the rig allows given a raycast hit along the arm (null = clear). Shared with the harness (D-012). */
+export function allowedArm(hit: number | null): number {
+  const t = CAMERA_TUNING;
+  return hit === null ? t.distance : Math.max(t.minDistance, hit - t.collisionPadding);
+}
 
 export class SpringArmCamera {
   yaw = 0;

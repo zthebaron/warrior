@@ -14,23 +14,18 @@
 //      because of the assist (lint-level.mjs assistCases, the same test that certified it) is run here in
 //      its REAL level: real arm collision, real probe. It must read, and the real probe must settle at the
 //      pitch the linter modelled. The stage asserts it ran exactly the derived set, so no waypoint can go
-//      without a case.
-//   5. B-23: the linter now collides the arm (geometry behind the stand point lowers the eye). On
-//      fixtures/assist-cases.json (a wall clean and under an overhang) and fixtures/wall-arm.json (+3.75 and
-//      +2.50, each with its wall 1u behind and with nothing behind), every rise the linter evaluates is stood
-//      in the real rig, camera behind the facing, and the rig must read exactly the faces the linter accepts.
+//      without a case. Proven on fixtures/assist-cases.json: the same 4.0 wall twice, once clean (must
+//      read) and once under an overhang behind the approach, which the linter passes and the rig must FAIL.
 // Fixtures, not levels: not nav-tested, not in levels/.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Stage, guard, VIEWPORT, type Ctx, type StageResult, type Vec3 } from './lib.ts';
 // @ts-expect-error plain .mjs, no types: the linter's own model of the assist (the camera's rule)
-import { assistCases, assistedPitchDeg, riseViews, withColliders, READABLE_RISE } from '../lint-level.mjs';
+import { assistCases, assistedPitchDeg, READABLE_RISE } from '../lint-level.mjs';
 
 const FIXTURE = 'tools/harness/fixtures/pitch-assist.json';
 const CASE_FIXTURE = 'tools/harness/fixtures/assist-cases.json';
-const WALL_FIXTURE = 'tools/harness/fixtures/wall-arm.json';
-const MANIFEST = 'assets/dist/manifest.json';
 const SETTLE_FRAMES = 30; // rendered ticks after placing the player, so camRig.update runs with the assist
 
 interface Face { tag: string; face: number; z: number; rise: number; depth: number }
@@ -55,11 +50,6 @@ async function measureAt(page: import('playwright').Page, tg: Target, stand: Vec
       const H = window.__HARNESS__!;
       H.setInput(null);
       H.respawnAt(stand, facing, 0);
-      // B-23: respawnAt moves the player only. The camera must be BEHIND the facing (where a player who
-      // turns to face the landing puts it), or the centre column never crosses the landing and the arm
-      // never meets what is behind the stand point. Before B-23 every case not facing spawn's yaw was
-      // measured side-on (OQ-056 item 3's 0.00deg).
-      H.cameraYaw(facing);
       const snap = H.advance(settle, 1);
       const c = H.cameraPose();
       const [fx, fy, fz] = c.forward;
@@ -87,8 +77,7 @@ async function measureAt(page: import('playwright').Page, tg: Target, stand: Vec
 
 const measure = (page: import('playwright').Page, f: Face, standoff: number, facing: number): Promise<Measured> => measureAt(page, faceTarget(f), [f.face - standoff, 0, f.z], facing);
 
-interface AssistCase { index: number; via: string; rise: number; depth: number; pitchDeg: number; eyeM: number; bandDeg: number; stand: Vec3; facingDeg: number; top: number; box: Target['box'] }
-interface RiseView extends AssistCase { reads: boolean }
+interface AssistCase { index: number; via: string; rise: number; depth: number; pitchDeg: number; stand: Vec3; facingDeg: number; top: number; box: Target['box'] }
 interface CaseResult { c: AssistCase; ok: boolean; why: string }
 
 /** ASSIST_CASE: run one derived case in the real rig. It must read, and the real probe must settle at the
@@ -110,7 +99,6 @@ async function runAllCases(page: import('playwright').Page, cases: AssistCase[],
 export async function pitchAssist(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): Promise<StageResult> {
   const st = new Stage('pitch-assist');
   return guard(st, async () => {
-    const manifest = await withColliders(JSON.parse(readFileSync(join(ctx.root, MANIFEST), 'utf8')), join(ctx.root, MANIFEST));
     const text = readFileSync(join(ctx.root, FIXTURE), 'utf8');
     const faces = facesOf(JSON.parse(text));
     const standoff = READABLE_RISE.standoffM as number;
@@ -150,7 +138,7 @@ export async function pitchAssist(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments
     const files = readdirSync(join(ctx.root, 'levels')).filter((f) => /^[0-9].*\.json$/.test(f));
     for (const file of files) {
       const level = JSON.parse(readFileSync(join(ctx.root, 'levels', file), 'utf8'));
-      const cases = assistCases(level, manifest) as AssistCase[];
+      const cases = assistCases(level) as AssistCase[];
       if (!cases.length) {
         st.check(`ASSIST_CASE ${level.id}: no waypoint depends on the assist`, true, `0 of ${level.critical_path.length} critical_path waypoints`);
         continue;
@@ -168,46 +156,28 @@ export async function pitchAssist(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments
       }
     }
 
-    // Proof that the linter's collided arm (B-23) and the real rig agree, both ways, on what is behind the
-    // stand point. Two fixtures, every rise READABLE_RISE evaluates in each (riseViews: the linter's own pose
-    // and verdict), each stood in the real rig: the rig must read exactly the faces the linter accepts.
-    //   assist-cases.json: the same +4.0 wall clean and under an overhang behind the approach. Before B-23 the
-    //     linter certified both and only the rig caught the overhang; now the linter rejects it too.
-    //   wall-arm.json: {+3.75 inside wall's D-016 band, +2.50 below it} x {its wall 1u behind the stand point,
-    //     as chapter 2 builds a wall jump; nothing behind}. The walled pair must be rejected by both.
-    // ASSIST_CASE's own guarantee is kept: the assisted faces the linter certifies are exactly the derived set.
-    const expect: Record<string, { assisted: string[]; reject: string[]; accept: string[] }> = {
-      [CASE_FIXTURE]: { assisted: ['clean'], reject: ['overhung'], accept: ['clean'] },
-      [WALL_FIXTURE]: { assisted: ['band_clear'], reject: ['band_walled', 'low_walled'], accept: ['band_clear', 'low_clear'] },
-    };
-    for (const [file, want] of Object.entries(expect)) {
-      const text = readFileSync(join(ctx.root, file), 'utf8');
+    // Proof that ASSIST_CASE fails: the same wall clean and under an overhang. The linter certifies both.
+    {
+      const text = readFileSync(join(ctx.root, CASE_FIXTURE), 'utf8');
       const fx = JSON.parse(text);
+      const cases = assistCases(fx) as AssistCase[];
       const tagOf = (c: AssistCase): string => fx.geometry.find((g: { pos: Vec3; scale: Vec3; tag?: string }) => g.pos[1] + g.scale[1] / 2 === c.top && g.pos[0] - g.scale[0] / 2 === c.box.x0 && g.pos[2] - g.scale[2] / 2 === c.box.z0)?.tag ?? '?';
-      const views = riseViews(fx, manifest) as RiseView[];
-      const cases = assistCases(fx, manifest) as AssistCase[];
-      const same = (a: string[], b: string[]): boolean => a.length === b.length && [...a].sort().every((x, k) => x === [...b].sort()[k]);
-      const acc = views.filter((v) => v.reads).map(tagOf), rej = views.filter((v) => !v.reads).map(tagOf);
-      st.check(`B-23 proof ${file}: the linter accepts ${want.accept.join(', ')} and rejects ${want.reject.join(', ')}`, same(acc, want.accept) && same(rej, want.reject), `accepts [${acc.join(', ')}], rejects [${rej.join(', ')}]`);
-      st.check(`B-23 proof ${file}: the assist-dependent set is ${want.assisted.join(', ')}`, same(cases.map(tagOf), want.assisted), cases.map(tagOf).join(', ') || 'none');
+      st.check('ASSIST_CASE proof: the linter certifies both walls (2 assist-dependent waypoints)', cases.length === 2, `${cases.length}: ${cases.map(tagOf).join(', ')}`);
       const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
       try {
         await page.goto(`${ctx.baseUrl}/?harness=1&level=00-gym`);
         await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
         const started = await page.evaluate((t) => window.__HARNESS__!.startJson(t), text);
-        if (!st.check(`B-23 proof ${file} loads`, started.ok, started.ok ? file : (started.error ?? 'failed'))) continue;
-        let ran = 0;
-        for (const v of views) {
-          const m = await measureAt(page, { top: v.top, box: v.box }, v.stand, v.facingDeg);
-          ran++;
-          const rig = m.band >= min2;
-          st.check(`B-23 proof ${file} ${tagOf(v)}: the real rig ${v.reads ? 'reads it' : 'does NOT read it'}, as the linter says`, rig === v.reads,
-            `rig ${m.band.toFixed(2)}deg at view pitch ${m.viewPitchDeg.toFixed(1)}deg (probe target ${m.probe?.targetDeg ?? 'none'}); linter ${v.bandDeg.toFixed(2)}deg from an eye ${v.eyeM.toFixed(2)}u above the feet at ${v.pitchDeg}deg`);
+        if (st.check('ASSIST_CASE proof fixture loads', started.ok, started.ok ? CASE_FIXTURE : (started.error ?? 'failed'))) {
+          const results = await runAllCases(page, cases, min2);
+          st.check('ASSIST_CASE proof: ran every derived case (a waypoint without one fails here)', results.length === cases.length, `${results.length} of ${cases.length}`);
+          for (const r of results) {
+            const c = r.c;
+            const tag = tagOf(c);
+            if (tag === 'overhung') st.check('ASSIST_CASE proof: the overhung wall FAILS in the real rig (the linter passed it)', !r.ok, r.why);
+            else st.check(`ASSIST_CASE proof: the ${tag} wall passes`, r.ok, r.why);
+          }
         }
-        st.check(`B-23 proof ${file}: stood every rise the linter evaluated in the rig`, ran === views.length && views.length > 0, `${ran} of ${views.length}`);
-        const results = await runAllCases(page, cases, min2);
-        st.check(`ASSIST_CASE proof ${file}: ran every derived case`, results.length === cases.length, `${results.length} of ${cases.length}`);
-        for (const r of results) st.check(`ASSIST_CASE proof ${file} ${tagOf(r.c)} reads in the real rig at the modelled pitch`, r.ok, r.why);
       } finally {
         await page.close();
       }

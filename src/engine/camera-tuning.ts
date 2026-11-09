@@ -3,7 +3,6 @@
 //
 // !! These values are read by READABLE_RISE in tools/lint-level.mjs (D-015b):
 // !!   pivotHeight, distance, initialPitchDeg  ->  eye height above the feet and eye standoff
-// !!   minDistance, collisionPadding (allowedArm) ->  the eye when geometry behind the player pushes the arm in (B-23)
 // !! Change the rig and that check moves with it. Do not copy these numbers anywhere else.
 
 export const CAMERA_TUNING = {
@@ -21,10 +20,3 @@ export const CAMERA_TUNING = {
   lookAheadMax: 2.0,        // cap on look-ahead offset (m)
   lookAheadDamping: 3,      // look-ahead smoothing (1/s)
 };
-
-/** Arm length the rig allows given a raycast hit along the arm (null = clear). Shared by the camera, the
- *  harness (D-012) and READABLE_RISE (B-23: the linter collides the arm exactly as the camera does). */
-export function allowedArm(hit: number | null): number {
-  const t = CAMERA_TUNING;
-  return hit === null ? t.distance : Math.max(t.minDistance, hit - t.collisionPadding);
-}
