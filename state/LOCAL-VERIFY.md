@@ -260,3 +260,8 @@ nav total 24.17 / 60 s. **03-drifting-stones:** sweep worst 6.63, 7.67, 1.03, 8.
 
 This was checked while CI was down. CI came back (repo public) before push; a green CI run on this head
 supersedes this entry, which stays as the record.
+
+**Superseded by CI:** run 42629132451 on head `35c5ec3` (this entry's commit), `success`, job `playtest`
+20 steps, 0 failed; log shows `PROGRESSION PASS 11/11`, REACHABLE "every chapter is on the progression chain
+01-lower-stair > 02-cliff-seam > 03-drifting-stones > 04-summit-ridge", `RESULT: PASS`. The local entry
+above stays as the record of what was checked while CI was down.
