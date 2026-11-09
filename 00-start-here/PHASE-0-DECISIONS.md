@@ -1097,16 +1097,17 @@ missed it.
 |---|---|---|---|
 | double maxH | 9.5 | **8.4** | nav press clean k0-k5; 8.8 fails k0. 9.5 was clean only with a late second press |
 | double maxRise | 3.5 | **2.9** | clean from every takeoff distance; 3.2 fails d5 |
-| dash maxH | 4.0 | **DASH_PENDING** | DASH_BASIS |
+| dash maxH | 4.0 | **2.6** | clean k0-k5; 2.8 fails k4, k5. 4.0 was clean only for a press at k0-k1 |
 | jump maxRise | 2.0 | 2.0, **CONFLICT** (below) | no grid value in 1.4..2.6 is clean at every distance |
 | slope, dash maxRise, dashjump maxH/maxRise | 49, 0.34, 8.0, 2.6 | unchanged | already every-timing values (B-20) |
 
 **Shipped levels re-shaped to fit, in the same change, so `lint:levels` never goes red on main:**
 - **02-cliff-seam:** the first double goes from +3.0 to +2.8. geometry[5] top moves 7 -> 7.2, with its torii, checkpoint and cp 6-8. It was the only shipped double rise above 2.9; seg 9->10 is flat ground, not a second +3.0 as OQ-063 said.
-- **DASH_LEVELS**
+- **00-gym seg 3->4 and 04-summit-ridge seg 9->10:** the "3.5 u" dash gaps are 2.0 u physical gaps, edge to edge. The 3.5 was waypoint span: 0.5 back from the near edge and 1.0 past the far one. Each pair is pulled in to 0.1 back and 0.4 past, which spans 2.5 u: TIGHT 96%, accepted with its reason on the waypoint (OQ-051's convention). No geometry moves. The nav traces are re-recorded, and so is one golden per level (gym cam1, 04 cam2), because visual cams aim at critical_path waypoints (`tools/harness/visual.ts`): the diff is a uniform re-aim, not a scene change. Linux cams for those two come from CI's `*.actual.png`, since gym and 04 Linux goldens are not byte-identical to Darwin. This is not a budget dodge: 2.0 u edge to edge is well inside the measured 2.6, which `measure:b20` also measures edge to edge.
+- **Linter fix found by the pins:** a segment exactly at its budget errored ("2.6u > 2.6u": 54.6 - 52 is 2.6000000000000014). UNREACHABLE now compares with a 1e-9 tolerance. That loosens no budget; it only stops a float from failing the value itself.
 
 **Not conforming, and recorded rather than forced:**
-- **jump maxRise (B-30):**
+- **jump maxRise (B-30), and the dash tail:** dash shows the same shape above its new budget. 2.8-3.4 each fail at most 1 of 96, confined to k3-k5, and the count does not rise with distance (3.0 is clean at k4 while 2.8 is not). D-017 still sets 2.6 there, because 2.6 is clean. B-30 covers both patterns.
   - **The data:** 1.4 and 1.6 each fail 1 of 96 at d1.6 (5 placements, 2026-11-09). 1.8 is clean, and 2.0 is clean on this run, though B-20's run failed it once each at d0.8 and d1.6.
   - **What that means:** a failure that persists as the height drops, and moves between runs, is not a height limit. Lowering the number cannot satisfy the rule. 2.0 stays in code, PROVISIONAL, until B-30 diagnoses the failing phase.
 - **Unmeasured under the rule (B-31):** wall (4.2 / 4.0) and climb (7.0 / 4.5) still rest on one sample each. `measure:b20` does not cover them. They do not yet meet D-017; they have not been shown to violate it.
@@ -1115,4 +1116,4 @@ missed it.
 **Executable half.** `npm run lint:self` pins each changed limit at its value (reachable) and just above
 (UNREACHABLE), with literal numbers, so a MOVE edit turns it red. Reverting double to 9.5 / 3.5 fails 3 checks.
 
-implemented_by: 47955d4 (double 8.4 / 2.9, 02-cliff-seam re-shape and re-record, lint:self pins)
+implemented_by: 47955d4 (double 8.4 / 2.9, 02-cliff-seam re-shape and re-record, lint:self pins), fc5682f (dash 2.6, gym and 04 dash waypoints, re-aimed cams, UNREACHABLE float tolerance). jump maxRise is NOT implemented: CONFLICT, B-30

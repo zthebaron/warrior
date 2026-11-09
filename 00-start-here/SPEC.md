@@ -175,7 +175,7 @@ Gate C, so a change here is a decision, not a tweak.
 | ground | ∞ | slope 49°, autostep 0.34 |
 | jump | 5.0 | 2.00 |
 | double | 8.4 | 2.90 |
-| dash | 4.0 | 0.34 |
+| dash | 2.6 | 0.34 |
 | dashjump | 8.0 | 2.60 |
 | wall | 4.2 | 4.00 |
 | climb | 7.0 | 4.50 |

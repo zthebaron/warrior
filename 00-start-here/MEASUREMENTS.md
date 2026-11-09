@@ -42,8 +42,8 @@ TIGHT warning at 90%, which flags anything near the edge for human review.
                                           does NOT meet D-017 and no lower grid value does: CONFLICT, see "D-017")
     double    maxH  8.4   maxRise 2.90   (D-017, 2026-11-09: every timing clean. Were 9.5 / 3.5: 9.5 was clean only
                                           with a late second press, 3.5 from most takeoff distances. See B-20)
-    dash      maxH  4.0   maxRise 0.34   (maxRise B-20 = autostep: a grounded dash has no lift. maxH 4.0 is NOT
-                                          clean at every press timing: see B-20)
+    dash      maxH  2.6   maxRise 0.34   (maxRise B-20 = autostep: a grounded dash has no lift. maxH D-017: clean
+                                          k0-k5 to 2.6; 4.0 was clean only at k0-k1. See "D-017")
     dashjump  maxH  8.0   maxRise 2.60   (B-20; were 10.0 / 2.75 on one sample each)
     wall      maxH  4.2   maxRise 4.00
     climb     maxH  7.0   maxRise 4.50
@@ -204,9 +204,22 @@ window, not at some. It supersedes the "kept" values above. Applied from the B-2
 
     double maxH     9.5 -> 8.4    nav press clean k0-k5 to 8.4; 8.8 fails k0
     double maxRise  3.5 -> 2.9    every takeoff distance clean to 2.9; 3.2 fails d5
-    dash maxH       4.0 -> DASH_PENDING
+    dash maxH       4.0 -> 2.6    clean k0-k5 to 2.6; 2.8 fails k4, k5
 
-DASH_TABLE
+dash gap, below B-20's grid. Same protocol (96 phases x 5 placements x k0..k5, 14 400 trials, 0 console
+errors, Darwin SwiftShader, 6dba83d, 3930 s; run by a second session under sub-claim OQ-063-dash, and its raw
+log checked against this table):
+
+    value u        k0     k1     k2     k3     k4     k5
+    2.6             0      0      0      0      0      0
+    2.8             0      0      0      0      1      1
+    3.0             0      0      0      0      0      1
+    3.2             0      0      0      1      0      1
+    3.4             0      0      0      0      1      1      (B-20 had k4 1, k5 3: same timings, smaller count)
+
+Above 2.6 the failures are flat at <= 1/96, confined to late presses, and not rising with distance. That is
+the same shape as the jump rise below, and it goes to B-30 with it. The rule is strict, so 2.6 is the number.
+The gym's and 04's dash gaps are 2.0 u edge to edge; their waypoints now span 2.5 (D-017).
 
 **jump maxRise: no every-timing value exists in the grid (CONFLICT, B-30).** Measured below 2.0, same
 protocol (96 phases x 5 placements x 6 distances, 11 520 trials, 0 console errors, Darwin SwiftShader,
