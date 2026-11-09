@@ -222,3 +222,41 @@ verified: 2026-11-09 by kit, darwin, worktree on `b24-stale-bundle` at `504c4a29
   - branch, edit reverted: exit 0, PASS;
   - branch code against a bundle built from main (no `levelSources()`): exit 2, `BUILD_FAILURE`.
 - **Not covered:** stale `src/` under `--skip-build` (level JSON only); CI-runner behaviour.
+
+## PR #16 again — chapter 4 on top of chapter 3, head `b5bbe9b` (merge of origin/main `655a452`: #13, #17, #22) — LOCAL PASS
+
+Main moved under PR #16: #13 (B-19 FACE_RISE), #17 (chapter 3) and #22 (B-24) merged. origin/main was MERGED
+into `chapter-4`, not rebased onto it: a rebase needs a force-push, which this repo's sessions are denied.
+Two conflicts, both "each side added a row", resolved by UNION: the `00-start-here/MEASUREMENTS.md` scene
+budget table and `tools/assets/budgets.json` `scenes` now carry both `03-drifting-stones` (50 / 5,664) and
+`04-summit-ridge` (49 / 5,040). No level file conflicted; `04-summit-ridge.json` is unchanged.
+
+Progression is derived from `chapter` numbers (src/systems/progression.ts), so chapter 3 slots in with no
+edit: the chain is now **01-lower-stair > 02-cliff-seam > 03-drifting-stones > 04-summit-ridge**, and
+REACHABLE follows all four.
+
+| step | exit | result |
+|---|---|---|
+| `npm run typecheck` | 0 | clean |
+| `npm run lint:levels` | 0 | LINT PASS 00, 01, 02, 03, 04 (gym's known TIGHT + FACE_RISE warnings only) |
+| `npm run lint:self` | 0 | LINT-SELF PASS |
+| `npm run check:patrol` | 0 | PATROL PASS |
+| `npm run check:progression` | 0 | PROGRESSION PASS 11/11; `levels/ chain: 01-lower-stair > 02-cliff-seam > 03-drifting-stones > 04-summit-ridge` |
+| `npm run lint:not-list` | 0 | 22 rows: 22 enforced |
+| `npm run lint:pack` | 0 | clean |
+| `npm run lint:decisions` | 0 | 29 entries, 21 closed |
+| `npm run lint:accent` | 0 | ACCENT PASS |
+| `npm run assets:budget` | 0 | BUDGET PASS |
+| `npm run playtest` | 0 | `RESULT: PASS`, levels 00-04, every stage PASS (0 FAIL); preflight includes B-24's "bundled levels match levels/ on disk" |
+
+**REACHABLE 13/13:** entry chapter 01; bare URL loads 01; "every chapter is on the progression chain
+01 > 02 > 03 > 04"; the bot plays each chapter to results and Enter loads the next: 01 (15.35 s) -> 02,
+02 (27.30 s) -> 03, 03 (29.32 s) -> 04, 04 (24.17 s) -> menu; zero console errors.
+
+**04-summit-ridge per segment against 12 s:** identical to the first PR #16 entry above (deterministic,
+level unchanged): nav 5.07, 2.26, 4.84, 7.15, 4.85 s; phase-sweep worst 4.93, 2.00, 7.43, 6.60, 4.75 s;
+nav total 24.17 / 60 s. **03-drifting-stones:** sweep worst 6.63, 7.67, 1.03, 8.32, 8.25 s; nav total
+29.32 / 60 s, as in the PR #17 entry.
+
+This was checked while CI was down. CI came back (repo public) before push; a green CI run on this head
+supersedes this entry, which stays as the record.
