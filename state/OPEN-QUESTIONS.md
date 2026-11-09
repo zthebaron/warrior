@@ -864,4 +864,39 @@ Disclosed weaknesses:
   5. It depends on PRs landing as merge commits, as they do here. A squash or rebase merge rewrites the
      branch shas a decision cites, and this rule would then report them UNKNOWN_COMMIT, correctly. The
      fix there is to cite the merged sha.
+
+## OQ-055 — B-19 (FACE_RISE) as built: the shipped stairs were above the bound, so which gives?
+raised: 2026-11-08 by kit (B-19)
+finding: the per-face rule caught the levels, not just the fixture. Chapter 1's only staircase (seg 7->8) and
+the gym's (seg 18->19) use **0.40 risers**. MOVE.ground.autostep is 0.34, the measured clean ceiling.
+MEASUREMENTS "Autostep" shows 0.40 stalling on oblique approaches (up to 17 of 48 phases at 45 deg) while
+head-on is clean. CI passed them only because the nav bot walks head-on (OQ-049 weakness 4).
+options: A bound faces at a head-on number (~0.42) so the shipped stairs pass | B bound at MOVE.ground.autostep
+and fix chapter 1's stair; the gym warns until B-20 | C bound at autostep and error on the gym too
+took: B
+because:
+- A weakens a measured budget to make geometry fit (CLAUDE.md). MEASUREMENTS already argues that the linter cannot
+  see the approach angle, so the worst approach sets the budget. That is why 0.34 and not 0.42.
+- Chapter 1's stair is rebuilt as six risers of 0.333: the same five boxes and the same 0.6 treads, only their
+  heights changed, so the stair still climbs 2.0 to the same landing. Every face is now inside the clean band
+  (0.30-0.34, 0 stalls in 2,880 trials). Its goldens were re-recorded on Darwin and copied to linux (byte-identical
+  before), following D-015a's precedent. cam0-2 changed, the nav trace was re-recorded, and the scene budget is
+  unchanged.
+- The gym is chapter 0, a test rig. It already has an owner for exactly this (B-20 (a): re-measure and rebuild its
+  0.40 risers, with goldens and trace). So FACE_RISE is a WARNING there, the same exemption shape READABLE_RISE
+  uses. C would block every PR on B-20.
+how: `groundFaces()` in tools/lint-level.mjs walks a->c exactly, between box entry and exit points, with no
+sampling step. The support is the highest axis-aligned prim_box top whose box reaches down to the feet (a
+ceiling overhead is not a face). Every upward change is a face.
+proof: `tools/fixtures/lint/ch1-long-run-one-face.json` is chapter 1 with one +0.50 face 3.6 u from the end of a
+6.6 u ground run, where slope x run allows 7.9 u. The pre-B-19 linter PASSES it; the new one fails it with
+FACE_RISE and nothing else (lint:self). lint:self also pins +0.34 (walkable), +0.35 (too tall), a ceiling
+(not a face) and the 0.333 stair. The gym warns; chapter 1 and chapter 2 (PR #12's 02-cliff-seam) lint clean.
+known limits, for a reviewer:
+1. Rotated boxes and kit meshes are not measured, so a face inside one is missed. The gym's two rotated prim
+   boxes are ramps.
+2. The check follows the straight line a->c. A face beside that line, which a player cutting a corner meets,
+   is not checked.
+3. 0.333 sits 0.007 under the bound. MEASUREMENTS warns that the clean ceiling has fallen as coverage widened, so
+   a wider protocol could put this stair back over it.
 status: PROVISIONAL

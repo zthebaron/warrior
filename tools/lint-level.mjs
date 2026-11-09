@@ -5,7 +5,7 @@
 // Linter v2 — critical_path waypoints are now MOVE-ANNOTATED.
 // Fix for the v1 defect: v1 assumed every segment was a jump and rejected normal running.
 
-const MOVE = {
+export const MOVE = {
   ground:   { maxH: Infinity, slope: 50, autostep: 0.34, maxDrop: 14.0, measured: true }, // autostep: measured EFFECTIVE ceiling (B-14, MEASUREMENTS "Autostep"), not the Rapier input
   jump:     { maxH:  5.0, maxRise: 2.0, maxDrop: 14.0, measured: true },
   double:   { maxH:  9.5, maxRise: 3.5, maxDrop: 14.0, measured: true },
@@ -61,7 +61,7 @@ function boxesOf(level){
   return (level.geometry??[]).map((g,gi)=>{
     if(g.asset!=='prim_box'||!Array.isArray(g.pos)||!Array.isArray(g.scale)) return null;
     if(Array.isArray(g.rot)&&g.rot.some(v=>v!==0)) return null;
-    return { gi, x0:g.pos[0]-g.scale[0]/2, x1:g.pos[0]+g.scale[0]/2, z0:g.pos[2]-g.scale[2]/2, z1:g.pos[2]+g.scale[2]/2, top:g.pos[1]+g.scale[1]/2 };
+    return { gi, x0:g.pos[0]-g.scale[0]/2, x1:g.pos[0]+g.scale[0]/2, z0:g.pos[2]-g.scale[2]/2, z1:g.pos[2]+g.scale[2]/2, top:g.pos[1]+g.scale[1]/2, bot:g.pos[1]-g.scale[1]/2 };
   }).filter(Boolean);
 }
 const under=(bx,x,z)=>x>=bx.x0&&x<=bx.x1&&z>=bx.z0&&z<=bx.z1;
@@ -74,6 +74,32 @@ function slab(bx,a,u){
   }
   return t0<=t1?[t0,t1]:null;
 }
+// FACE_RISE (B-19). A `ground` segment's slope x run bound says nothing about a single face: one 0.50 riser at
+// the end of a 2 u run passes it (limit 2.38) and stalls 17-24 of 24 trials head-on (B-14). So the floor is
+// walked FACE BY FACE: along a->c, the support under the player is the highest axis-aligned prim_box top whose
+// box reaches down to the feet (bottom <= current height + autostep; a ceiling overhead is not a face). It is
+// evaluated between consecutive box entry/exit points, which is exact, with no sampling step. Every upward change
+// is a face the player must walk up, and none may exceed MOVE.ground.autostep (the measured clean ceiling, not
+// the Rapier input). Drops are free (FALL_DAMAGE bounds them). Rotated boxes and kit meshes are not measured,
+// so a face inside one is missed. That limit is recorded in OQ-055.
+export function groundFaces(boxes,a,c){
+  const L=Math.hypot(c[0]-a[0],c[2]-a[2]); if(L<1e-9) return [];
+  const u=[(c[0]-a[0])/L,(c[2]-a[2])/L], step=MOVE.ground.autostep;
+  const ts=new Set([0,L]);
+  for(const bx of boxes){ const s=slab(bx,a,u); if(!s) continue; for(const t of s) if(t>0&&t<L) ts.add(t); }
+  const cuts=[...ts].sort((p,q)=>p-q), out=[];
+  let h=a[1];
+  for(let k=0;k+1<cuts.length;k++){
+    const tm=(cuts[k]+cuts[k+1])/2, x=a[0]+u[0]*tm, z=a[2]+u[1]*tm;
+    let sup=null;
+    for(const bx of boxes) if(under(bx,x,z)&&bx.bot<=h+step&&(!sup||bx.top>sup.top)) sup=bx;
+    if(!sup) continue; // a gap: the slope and drop rules own it
+    if(sup.top>h+1e-9) out.push({ rise:sup.top-h, at:[a[0]+u[0]*cuts[k], a[2]+u[1]*cuts[k]], gi:sup.gi });
+    h=sup.top;
+  }
+  return out;
+}
+
 // The landing's readable depth: from where the approach ray enters the box the landing waypoint stands on
 // (its top within MOVE.ground.autostep of the waypoint) to where it leaves it, or to where a box taller
 // than the landing (the next riser) begins, whichever is first. Adjacent boxes at the same top are NOT
@@ -220,6 +246,7 @@ export function lintLevel(level, manifest){
   }
 
   // move-aware reachability
+  const faceBoxes=boxesOf(level); // FACE_RISE (B-19)
   for(let i=1;i<cp.length;i++){
     const a=P(cp[i-1]), c=P(cp[i]);
     const via=(typeof cp[i]==='object'&&cp[i].via)||null;
@@ -235,6 +262,14 @@ export function lintLevel(level, manifest){
     if(h>m.maxH)      E('UNREACHABLE',`seg ${i-1}->${i} via ${via}: ${h.toFixed(1)}u > ${m.maxH}u`);
     if(rise>riseLimit)E('UNREACHABLE',`seg ${i-1}->${i} via ${via}: +${rise.toFixed(1)}u rise > ${riseLimit.toFixed(1)}u limit${m.slope?` (${m.slope}deg slope over ${h.toFixed(1)}u run)`:''}`);
     if(-rise>m.maxDrop)W('FALL_DAMAGE',`seg ${i-1}->${i}: ${(-rise).toFixed(1)}u drop`);
+    if(via==='ground'){
+      // B-19: an ERROR on a chapter. A WARNING on the gym (chapter 0, a test rig), whose 0.40 stair risers are
+      // B-20's to re-measure and rebuild: a geometry change there means re-recorded goldens and nav trace.
+      const FR=(typeof level.chapter==='number'&&level.chapter>=1)?E:W;
+      const tall=groundFaces(faceBoxes,a,c).filter(f=>f.rise>m.autostep+1e-9);
+      if(tall.length){ const f=tall.reduce((p,q)=>q.rise>p.rise?q:p);
+        FR('FACE_RISE',`seg ${i-1}->${i} via ground: ${tall.length} face${tall.length>1?'s':''} taller than MOVE.ground.autostep ${m.autostep}u, the largest the player walks up without a jump (B-14); the tallest is +${f.rise.toFixed(2)}u at x=${f.at[0].toFixed(2)} z=${f.at[1].toFixed(2)} (onto geometry[${f.gi}]). A ground segment is bounded per face, not by slope x run (B-19): split it into risers <= ${m.autostep}u, or make it a jump${FR===W?'. Gym only: a warning, its risers are B-20\'s':''}`); }
+    }
     if(via==='platform'){
       const pid=cp[i].platform;
       if(!pid||ids.get(pid)!=='platforms') E('BAD_PLATFORM_REF',`seg ${i-1}->${i} via platform needs a valid "platform" id`);

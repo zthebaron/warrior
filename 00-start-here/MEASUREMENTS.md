@@ -125,6 +125,12 @@ went 24 -> 48 -> 96 and placements 1 -> 5), so it is a statement about THIS cove
 0.30-0.34 may still stall at some untested phase, but not at any of 14,400 tested. A stall is not a
 death: the player is pinned and can jump. Re-run when physics, TUNING or the capsule changes.
 
+**FACE_RISE (B-19).** The linter bounds every face along a `ground` segment by this value, not by slope x run.
+The first lint caught the levels themselves:
+- **Chapter 1:** its stair was 0.40 risers (above the bound). It is rebuilt as 6 x 0.333.
+- **The gym:** its stair is 0.40 risers too. It warns until B-20 rebuilds it.
+OQ-055 records the decision.
+
 ## H4 asset budgets (2026-11-08)
 
 Measured from the SHIPPED .glb (`tools/assets/measure.mjs`, Draco-decoded in Node) and again
