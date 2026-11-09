@@ -43,12 +43,14 @@ export function probeHeight(rig: AssistRig): number {
  * Vertical angle (deg) the landing's top surface subtends from the eye of a rig at `pitchDeg` (elevation
  * of the arm above the pivot), with the player `standoff` off the face, for a landing `rise` above the
  * feet and `depth` deep along the approach. Clipped to the vertical frustum. A top at or above the eye
- * faces away from it: 0 (OQ-046). Unobstructed arm (the harness checks the real, collided one).
+ * faces away from it: 0 (OQ-046). `arm` is the arm length at that pitch: rig.distance when nothing is
+ * behind the player; READABLE_RISE passes the collided length (B-23) so the eye is the one play gets.
+ * The camera looks at the pivot whatever the arm length, so the view direction is -pitchDeg either way.
  */
-export function topBandDeg(rig: AssistRig, pitchDeg: number, rise: number, depth: number, standoff: number): number {
+export function topBandDeg(rig: AssistRig, pitchDeg: number, rise: number, depth: number, standoff: number, arm: number = rig.distance): number {
   const p = pitchDeg / DEG;
-  const eye = rig.pivotHeight + rig.distance * Math.sin(p);
-  const behind = rig.distance * Math.cos(p);
+  const eye = rig.pivotHeight + arm * Math.sin(p);
+  const behind = arm * Math.cos(p);
   const h = rise - eye;
   if (h >= 0 || !(depth > 0)) return 0;
   const lo = -pitchDeg - rig.fovDeg / 2;

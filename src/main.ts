@@ -104,6 +104,9 @@ interface HarnessApi {
   cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: AssistProbe | null };
   /** B-18: one physics ray against the level (the player excluded), as the camera's own probe casts them. */
   castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
+  /** B-23: put the follow camera behind a facing (degrees, as respawnAt takes it), as a player who turns to
+   *  face something mouses it there. respawnAt moves the player only; the yaw stays wherever it was. */
+  cameraYaw(facingDeg: number): void;
   /**
    * PHASE_SWEEP (B-7): respawn at `pos` with the world clock set to `tick`. This is what a real
    * respawn does (teleport, reset the player, world keeps its clock), except that the arrival phase
@@ -670,6 +673,10 @@ async function boot(): Promise<void> {
       },
       releaseCamera: () => {
         cameraOverride = null;
+      },
+      cameraYaw: (facingDeg) => {
+        camRig.setYaw(facingDeg * DEG2RAD);
+        if (player) camRig.snap(player.feet(tmpFeet), player.facing);
       },
       cameraPose: () => {
         const c = renderer.camera;
