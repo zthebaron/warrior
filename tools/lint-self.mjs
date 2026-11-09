@@ -152,6 +152,7 @@ const pin = (via, what, at, above) => {
 };
 pin('double', 'maxH', 8.4, 8.5);     // nav press clean k0-k5 to 8.4; 8.8 fails k0 (9.5 was a late-press-only value)
 pin('double', 'maxRise', 2.9, 3.0);  // clean from every takeoff distance to 2.9; 3.2 fails d5 (3.5 was most-distances)
+pin('dash', 'maxH', 2.6, 2.7);       // clean k0-k5 to 2.6; 2.8 fails k4, k5 (4.0 was k0-k1 only)
 
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');
 process.exit(fails ? 1 : 0);

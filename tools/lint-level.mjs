@@ -9,7 +9,7 @@ export const MOVE = {
   ground:   { maxH: Infinity, slope: 49, autostep: 0.34, maxDrop: 14.0, measured: true }, // autostep: measured EFFECTIVE ceiling (B-14, MEASUREMENTS "Autostep"), not the Rapier input
   jump:     { maxH:  5.0, maxRise: 2.0, maxDrop: 14.0, measured: true },
   double:   { maxH:  8.4, maxRise: 2.9, maxDrop: 14.0, measured: true }, // D-017 every timing clean (B-20): 8.4 = nav press k0-k5; 2.9 = every takeoff distance
-  dash:     { maxH:  4.0, maxRise: 0.34, maxDrop: 14.0, measured: true }, // maxRise: B-20 coverage, = autostep (a grounded dash has no lift)
+  dash:     { maxH:  2.6, maxRise: 0.34, maxDrop: 14.0, measured: true }, // maxH: D-017 every timing clean (k0-k5 to 2.6; 2.8 fails k4,k5). maxRise: B-20, = autostep
   dashjump: { maxH:  8.0, maxRise: 2.6, maxDrop: 14.0, measured: true },
   wall:     { maxH:  4.2, maxRise: 4.0, maxDrop:  2.0, measured: true },
   climb:    { maxH:  7.0, maxRise: 4.5, maxDrop:  0.5, measured: true },
@@ -396,8 +396,9 @@ export function lintLevel(level, manifest){
     const riseLimit = (m.slope!==undefined)
       ? Math.max(m.autostep, h*Math.tan(m.slope*Math.PI/180))
       : m.maxRise;
-    if(h>m.maxH)      E('UNREACHABLE',`seg ${i-1}->${i} via ${via}: ${h.toFixed(1)}u > ${m.maxH}u`);
-    if(rise>riseLimit)E('UNREACHABLE',`seg ${i-1}->${i} via ${via}: +${rise.toFixed(1)}u rise > ${riseLimit.toFixed(1)}u limit${m.slope?` (${m.slope}deg slope over ${h.toFixed(1)}u run)`:''}`);
+    // 1e-9: a segment AT the budget passes; 54.6-52 is 2.6000000000000014 in floating point (D-017 lint:self pin)
+    if(h>m.maxH+1e-9) E('UNREACHABLE',`seg ${i-1}->${i} via ${via}: ${h.toFixed(1)}u > ${m.maxH}u`);
+    if(rise>riseLimit+1e-9)E('UNREACHABLE',`seg ${i-1}->${i} via ${via}: +${rise.toFixed(1)}u rise > ${riseLimit.toFixed(1)}u limit${m.slope?` (${m.slope}deg slope over ${h.toFixed(1)}u run)`:''}`);
     if(-rise>m.maxDrop)W('FALL_DAMAGE',`seg ${i-1}->${i}: ${(-rise).toFixed(1)}u drop`);
     if(via==='ground'){
       // B-19: an ERROR on a chapter. A WARNING on the gym (chapter 0, a test rig), whose 0.40 stair risers are
