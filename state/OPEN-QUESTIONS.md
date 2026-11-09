@@ -833,3 +833,35 @@ Disclosed weaknesses, so a reviewer can attack them:
      mark. src/loaders/level.ts gained tags on platform, hazard and crow meshes. Neither file is in
      src/engine/ or src/systems/. Rendering is unchanged.
 status: PROVISIONAL
+
+## OQ-056 — B-11: what "CLOSED with no implementing commit" means precisely, and the 8 entries I backfilled
+raised: 2026-11-08 by phase0-spec (B-11)
+took:
+  - Closed means the heading's LAST status word is CLOSED or DECIDED. DECIDED entries (D-001..D-012)
+    are decisions made, so the code is owed; D-002's own wording says "any CLOSED decision". FINDING,
+    CONDITIONAL and entries with no status word are not owed. D-005, D-007, D-015 and D-016 carry no
+    status word in their heading, so they are not checked; all four record commits anyway.
+  - A commit is a 7-40 hex token containing a digit that `git merge-base --is-ancestor` finds on HEAD's
+    history. Prose ("see PR 3") is empty. A sha from a branch that never merged is UNKNOWN_COMMIT. That
+    is why CI now checks out with fetch-depth 0, and a shallow clone exits 2 instead of passing blind.
+  - `n/a` on a CLOSED/DECIDED entry is an error (NA_ON_CLOSED). If a closed decision has nothing to
+    build, it is a FINDING, and the heading should say so.
+because: D-002's failure is a document running ahead of the code. A rule that accepted prose or a
+  dangling sha would recreate that failure in the field meant to catch it.
+Backfilled. These are my attributions, traced through git history; the approver may correct any of them:
+  Q1 1191a34, 19234ab · Q2 1191a34, 19234ab, f24a9ac · Q2a 18a3713 · Q3 19234ab, 1191a34 ·
+  Q6 b5a1939, 6dcc157, 7fa2b70, 3c076da, 4c167ef, 18a3713 (it had an empty field) · D-002 af219b2
+  (this rule) · OQ-034 f24a9ac, e973c6c · OQ-042 c03fe4a (OQ-043's field already named it for OQ-042)
+Disclosed weaknesses:
+  1. The rule proves that a commit is NAMED and exists, not that it implements the decision. A wrong but
+     real sha passes. The parentheses after each sha say what it did, so a reviewer can check.
+  2. Q2a cites 18a3713, which rests on OQ-054's PROVISIONAL platform reading. If Tim rules platforms
+     must be hazards, Q2a's implementation changes and so does that citation.
+  3. D-002 also asks for "state/DECISIONS.md gets the same field and the same check" in PROMPT 00's
+     control plane. This repo has no state/DECISIONS.md. Its decisions live in PHASE-0-DECISIONS.md,
+     which this rule reads. I did not create a second file.
+  4. CI's fetch-depth 0 costs a full-history clone on every run (LFS goldens are fetched as before).
+  5. It depends on PRs landing as merge commits, as they do here. A squash or rebase merge rewrites the
+     branch shas a decision cites, and this rule would then report them UNKNOWN_COMMIT, correctly. The
+     fix there is to cite the merged sha.
+status: PROVISIONAL
