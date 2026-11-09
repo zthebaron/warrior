@@ -1,0 +1,357 @@
+{
+  "id": "02-cliff-seam",
+  "title": "The Cliff Seam",
+  "chapter": 2,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "wall",
+    "double",
+    "climb"
+  ],
+  "palette": "greybox",
+  "spawn": {
+    "pos": [0, 0, 0],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [145, 15.5, 0],
+    "radius": 1.5
+  },
+  "bounds": {
+    "min": [-10, -15, -15],
+    "max": [160, 45, 15]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [3, -4, 0],
+      "scale": [18, 8, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [23, -1.75, 0],
+      "scale": [22, 12.5, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [37, -1.75, -1.75],
+      "scale": [6, 12.5, 3.5]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [37, 2.5, -3.75],
+      "scale": [6, 21, 1.5]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [37, -0.5, 1.75],
+      "scale": [6, 15, 3.5]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [48, -0.5, 0],
+      "scale": [16, 15, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [69, 1, 0],
+      "scale": [26, 18, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [90.75, 1, 0],
+      "scale": [5.5, 18, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [105.25, 1.75, 0],
+      "scale": [23.5, 19.5, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [124, 3.75, 0],
+      "scale": [14, 23.5, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [143.5, 3.75, 0],
+      "scale": [13, 23.5, 7]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [70, 10.2, 3.2],
+      "scale": [0.6, 0.4, 0.6]
+    },
+    {
+      "asset": "prim_box",
+      "pos": [106, 11.7, 3.2],
+      "scale": [0.6, 0.4, 0.6]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [30, 4.5, 0]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [44, 7, 0]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [62, 10, 0]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [98, 11.5, 0]
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [143, 15.5, 0]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [-2, -2, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [6.5, -2, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [15, 2.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [23.5, 2.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [32, 2.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [40.5, 5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [49, 5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [57.5, 8, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [66, 8, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [74.5, 8, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [83, 8, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [91.5, 8, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [100, 9.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [108.5, 9.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [117, 13.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [125.5, 13.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [134, 13.5, -5.7]
+    },
+    {
+      "asset": "kit_rock_mass",
+      "pos": [142.5, 13.5, -5.7]
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [73, 11, -5],
+        [73, 11, 5]
+      ],
+      "size": [2, 2, 2],
+      "speed": 5,
+      "phase": 0,
+      "crow": {
+        "perch": [70, 10.6, 3.2],
+        "to": [67, 15, 9.5],
+        "size": [0.35, 0.35, 0.6],
+        "lift": 0.11,
+        "away": 0.45
+      }
+    },
+    {
+      "type": "patroller",
+      "path": [
+        [109, 12.5, -5],
+        [109, 12.5, 5]
+      ],
+      "size": [2, 2, 2],
+      "speed": 5,
+      "phase": 0,
+      "crow": {
+        "perch": [106, 12.1, 3.2],
+        "to": [103, 16.5, 9.5],
+        "size": [0.35, 0.35, 0.6],
+        "lift": 0.11,
+        "away": 0.45
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [32, 4.5, 0],
+      "facing": -90
+    },
+    {
+      "pos": [46, 7, 0],
+      "facing": -90
+    },
+    {
+      "pos": [64, 10, 0],
+      "facing": -90
+    },
+    {
+      "pos": [100, 11.5, 0],
+      "facing": -90
+    }
+  ],
+  "lighting": {
+    "preset": "greybox"
+  },
+  "critical_path": [
+    [0, 0, 0],
+    {
+      "pos": [10, 0, 0],
+      "via": "ground",
+      "note": "2u short of the first face"
+    },
+    {
+      "pos": [13, 4.5, 0],
+      "via": "climb",
+      "note": "the first climb: +4.5 over floor. A miss drops you where you stood"
+    },
+    {
+      "pos": [32, 4.5, 0],
+      "via": "ground",
+      "note": "T1"
+    },
+    {
+      "pos": [37, 4.5, -2],
+      "via": "ground",
+      "note": "into the corridor, 1u off the cliff wall"
+    },
+    {
+      "pos": [37, 7, 1],
+      "via": "wall",
+      "note": "the first wall jump: off the cliff, +2.5 onto the ledge, over floor"
+    },
+    {
+      "pos": [42, 7, 0],
+      "via": "ground",
+      "note": "off the ledge"
+    },
+    {
+      "pos": [46, 7, 0],
+      "via": "ground",
+      "note": "T2"
+    },
+    {
+      "pos": [52, 7, 0],
+      "via": "ground",
+      "note": "4u short of the face: a double needs its first apex before the face"
+    },
+    {
+      "pos": [58, 10, 0],
+      "via": "double",
+      "note": "the first double: +3, a jump short. Over floor"
+    },
+    {
+      "pos": [64, 10, 0],
+      "via": "ground",
+      "note": "T3"
+    },
+    {
+      "pos": [79, 10, 0],
+      "via": "ground",
+      "note": "wait for the crow, then cross the sweep",
+      "cue": 1
+    },
+    {
+      "pos": [81.5, 10, 0],
+      "via": "ground",
+      "note": "edge of the gap"
+    },
+    {
+      "pos": [89.5, 10, 0],
+      "via": "double",
+      "note": "gap 6, past a jump: the double over the void"
+    },
+    {
+      "pos": [92, 10, 0],
+      "via": "ground",
+      "note": "1.5u short of the step"
+    },
+    {
+      "pos": [95, 11.5, 0],
+      "via": "jump",
+      "note": "+1.5 up off the double's landing"
+    },
+    {
+      "pos": [100, 11.5, 0],
+      "via": "ground",
+      "note": "T4"
+    },
+    {
+      "pos": [115, 11.5, 0],
+      "via": "ground",
+      "note": "wait for the crow, cross the sweep, 2u short of the face",
+      "cue": 2
+    },
+    {
+      "pos": [118, 15.5, 0],
+      "via": "climb",
+      "note": "+4 climb straight off the crow run"
+    },
+    {
+      "pos": [130.5, 15.5, 0],
+      "via": "ground",
+      "note": "edge of the gap"
+    },
+    {
+      "pos": [138.5, 15.5, 0],
+      "via": "double",
+      "note": "gap 6 again"
+    },
+    {
+      "pos": [145, 15.5, 0],
+      "via": "ground",
+      "note": "goal"
+    }
+  ],
+  "difficulty": 2
+}
