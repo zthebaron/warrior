@@ -9,7 +9,8 @@
 //     --update-goldens  (re)write tools/harness/golden/<level>/camN.png
 //     --seed=<n>        chaos seed (default fixed; always logged)
 //     --only=nav,chaos  run a subset of the browser stages (preflight always runs)
-//     --skip-build      reuse dist-harness/ and dist/ (local iteration only)
+//     --skip-build      reuse dist-harness/ and dist/ (local iteration only; preflight fails it if any file
+//                       either was built from has changed on disk: B-24 levels, B-25 everything else)
 //
 // Exit: 0 pass · 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
 // Writes harness-report.json at the repo root.

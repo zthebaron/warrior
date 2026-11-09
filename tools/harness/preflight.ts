@@ -6,13 +6,15 @@
 //   5. a WebGL2 context exists on about:blank (BEFORE the game loads, so a boot crash can never
 //      masquerade as an environment problem) — unmasked renderer string goes in every report
 //   6. the game page exposes window.__HARNESS__
+//   2b. B-25: every file each bundle was built from (its build-inputs.json) still hashes the same on disk
 //   7. B-24: the level files the bundle carries are byte-identical to levels/*.json on disk
 // Any of 3-6 failing is HARNESS_ENVIRONMENT_FAILURE: a distinct class, never a level failure.
 // 7 failing is BUILD_FAILURE: the bundle is stale (typically --skip-build after a level edit), so
 // every result after it would judge the on-disk waypoints against the old geometry.
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { chromium, type Browser } from '@playwright/test';
 import { CHROMIUM_ARGS, FAILURE, Stage, VIEWPORT, type StageResult } from './lib.ts';
@@ -35,6 +37,25 @@ export function levelBundleDiff(disk: Record<string, string>, bundled: Record<st
     out.push(`levels/${id}.json differs from the bundled copy (first difference at line ${line}; disk ${d.length} bytes, bundle ${b.length})`);
   }
   for (const id of Object.keys(bundled).sort()) if (!(id in disk)) out.push(`levels/${id}.json is in the bundle but not on disk`);
+  return out;
+}
+
+/**
+ * B-25: every way `dir`'s bundle is older than the repo, one line each; empty when every file the build
+ * read (vite.config.ts's build-inputs.json: src/, levels/, assets/dist/, the config) is byte-identical on
+ * disk. A file the build never read cannot change what it plays, so a new, unimported file is not stale;
+ * the import that would pull it in is an edit to a file that IS listed.
+ */
+export function buildInputsDiff(root: string, dir: string): string[] {
+  const manifest = join(root, dir, 'build-inputs.json');
+  if (!existsSync(manifest)) return [`${dir}/ has no build-inputs.json (built before B-25)`];
+  const inputs = JSON.parse(readFileSync(manifest, 'utf8')) as Record<string, string>;
+  const out: string[] = [];
+  for (const [rel, sha] of Object.entries(inputs)) {
+    const file = join(root, rel);
+    if (!existsSync(file)) { out.push(`${rel} is gone from disk`); continue; }
+    if (createHash('sha256').update(readFileSync(file)).digest('hex') !== sha) out.push(`${rel} changed`);
+  }
   return out;
 }
 
@@ -138,6 +159,16 @@ export async function preflight(root: string, opts: { skipBuild: boolean }): Pro
     }
     const p = vite(root, ['build', '--emptyOutDir', '--logLevel', 'error']);
     if (!st.check('build production bundle', p.ok, p.ok ? 'dist/' : p.out.slice(-2000))) {
+      st.failureClass = FAILURE.BUILD;
+      return finish();
+    }
+  }
+  // 2b. B-25: both bundles must be built from the source on disk, or every check after this judges old code.
+  for (const dir of ['dist-harness', 'dist']) {
+    const diff = buildInputsDiff(root, dir);
+    if (!st.check(`${dir}/ built from the source on disk`, diff.length === 0, diff.length === 0
+      ? `every file the build read is byte-identical on disk`
+      : `STALE BUNDLE — ${dir}/ was built from different source${opts.skipBuild ? ' (--skip-build reused it)' : ''}: ${diff.join('; ')}. Rebuild: run without --skip-build`)) {
       st.failureClass = FAILURE.BUILD;
       return finish();
     }
