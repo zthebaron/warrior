@@ -3,7 +3,7 @@
 // reject and inputs it MUST accept; if a rule passes everything, this fails.
 // Usage: node tools/lint-self.mjs   (npm run lint:self; runs in CI after lint:levels)
 import fs from 'fs';
-import { lintLevel, readableBandDeg, READABLE_RISE, REST_EYE } from './lint-level.mjs';
+import { assistedPitchDeg, lintLevel, readableBandDeg, READABLE_RISE, REST_EYE } from './lint-level.mjs';
 
 const manifest = JSON.parse(fs.readFileSync('assets/dist/manifest.json', 'utf8'));
 const load = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -27,6 +27,24 @@ for (const [rise, depth] of [[2.28, 2.5], [2.92, 6], [3.18, 15]]) { accept(rise,
 // The hard ceiling: no landing, however deep, makes a rise above eye - (standoff+behind)*tan(minBand) readable.
 const ceiling = REST_EYE.aboveFeet - (READABLE_RISE.standoffM + REST_EYE.behind) * Math.tan(READABLE_RISE.minBandDeg / 57.29577951308232);
 reject(ceiling + 0.01, 1e6);
+
+// ---- D-016b: READABLE_RISE models the ASSISTED pitch (D-015d, B-18) --------------------------------------
+// assistedPitchDeg is the camera's own rule (src/engine/pitch-assist.ts), fed the depth the probe measures.
+console.log('pitch assist (D-015d): the pitch the camera settles at, from rest, 2u off the face');
+const aAccept = (rise, depth) => { const p = assistedPitchDeg(rise, depth); check(`assisted: reads +${rise.toFixed(2)} onto ${depth}u`, p !== null, p === null ? 'no pitch reads' : `${p}deg`); };
+const aReject = (rise, depth) => { const p = assistedPitchDeg(rise, depth); check(`assisted: still cannot read +${rise.toFixed(2)} onto ${depth}u`, p === null, p === null ? 'no pitch reads' : `reads at ${p}deg`); };
+// The exit criterion for the chapter 2 blocker: wall (3.50-4.00) and climb (4.00-4.50) at their
+// characteristic rise, which the rest pose rejects for ANY depth (the ceiling above), now read.
+for (const depth of [2.5, 6, 15]) { aAccept(3.5, depth); aAccept(4.0, depth); }
+for (const depth of [6, 15]) aAccept(4.5, depth);
+// ...and the assisted check still fails: too shallow for any pitch, too tall for any pitch, too low for the
+// probe (it runs at pivot height, so a face that low gets no assist and keeps its rest-pose verdict).
+aReject(4.5, 2.5);
+aReject(3.5, 0.5);
+aReject(5.0, 1e6);
+aReject(1.25, 1.0);
+// Assisted ceilings, per landing depth (0.01 u): pinned so a rig change turns this red rather than stale.
+for (const [rise, depth] of [[4.48, 2.5], [4.62, 6], [4.67, 15]]) { aAccept(rise, depth); aReject(rise + 0.01, depth); }
 check(`hard ceiling ${ceiling.toFixed(2)}u is below wall (4.00) and climb (4.50) maxRise, inside double (2.00..3.50)`, ceiling < 3.5 && ceiling > 2.0, `${ceiling.toFixed(3)}u`);
 
 // ---- READABLE_RISE and CHAPTER_TEACH on whole levels ---------------------------------------------
@@ -36,14 +54,18 @@ const preLevel = load('tools/fixtures/lint/01-lower-stair.pre-d015.json');
 const pre = lintLevel(preLevel, manifest), preRR = rr(pre);
 // Under Q5's current table climb is not a chapter-1 move (CHAPTER_MOVE fails the file), so neither 3.5 face
 // is a teaching instance: both are flagged, as WARNINGS (D-016).
-check('pre-D-015 chapter 1 flags both 3.5 faces (as practice warnings: climb is not a chapter-1 move)', preRR.err.length === 0 && preRR.warn.length === 2 && /critical_path\[9\]/.test(preRR.warn[0] ?? '') && /critical_path\[16\]/.test(preRR.warn[1] ?? ''), `${preRR.err.length} errors, ${preRR.warn.length} warnings`);
+// D-016b: with the assist modelled both 3.5 faces now read (at rest they do not: the vectors above).
+check('pre-D-015 chapter 1: both 3.5 faces read with the pitch assist (no READABLE_RISE)', preRR.err.length === 0 && preRR.warn.length === 0, `${preRR.err.length} errors, ${preRR.warn.length} warnings`);
 check('pre-D-015 chapter 1 FAILS CHAPTER_TEACH on jump (first jump over the void)', pre.errors.some((e) => e.startsWith('[CHAPTER_TEACH]') && e.includes('"jump"')));
 
 // ---- D-016: READABLE_RISE is an ERROR on a teaching instance and a WARNING on practice -------------------
 // Both directions, on real faces: the same two 3.5 climbs relabelled into chapter 2, where climb is new.
 // The first is climb's teaching instance and MUST error; the second is practice and MUST only warn.
 console.log('D-016 teach/practice split');
-const asCh2 = { ...preLevel, chapter: 2, moves_allowed: ['ground', 'jump', 'wall', 'double', 'climb'] };
+// With the assist a 3.5 face reads onto any landing >= 0.55 u deep, so both landings are cut to 0.5 u (the
+// waypoint stays on them), which no pitch reads.
+const asCh2 = { ...structuredClone(preLevel), chapter: 2, moves_allowed: ['ground', 'jump', 'wall', 'double', 'climb'] };
+for (const [gi, wp] of [[10, 9], [15, 16]]) { const x = asCh2.critical_path[wp].pos[0]; asCh2.geometry[gi].pos[0] = x; asCh2.geometry[gi].scale[0] = 0.5; }
 const c2 = rr(lintLevel(asCh2, manifest));
 check('ch2: climb teaching instance at +3.50 is an ERROR', c2.err.length === 1 && /critical_path\[9\]/.test(c2.err[0]) && /teaching instance of "climb"/.test(c2.err[0]), `${c2.err.length} errors`);
 check('ch2: second climb at +3.50 is a WARNING, not an error', c2.warn.length === 1 && /critical_path\[16\]/.test(c2.warn[0]) && !c2.err.some((e) => /critical_path\[16\]/.test(e)), `${c2.warn.length} warnings`);
@@ -52,8 +74,8 @@ const shipped = load('levels/01-lower-stair.json');
 const narrow = (gi, sx) => { const l = structuredClone(shipped); l.geometry[gi].scale[0] = sx; return l; };
 const t = rr(lintLevel(narrow(31, 1.0), manifest)); // the teach step (jump's first use, cp[2]) cut to 1 u
 check('ch1: jump teaching instance onto a 1 u step is an ERROR', t.err.length === 1 && /critical_path\[2\]/.test(t.err[0]), `${t.err.length} errors, ${t.warn.length} warnings`);
-const p = rr(lintLevel(narrow(32, 1.5), manifest)); // shelf 1 (cp[11], a later jump) cut to 1.5 u
-check('ch1: later jump onto a 1.5 u shelf is a WARNING, not an error', p.err.length === 0 && p.warn.length === 1 && /critical_path\[11\]/.test(p.warn[0]), `${p.err.length} errors, ${p.warn.length} warnings`);
+const p = rr(lintLevel(narrow(32, 0.5), manifest)); // shelf 1 (cp[11], a later jump) cut to 0.5 u: no pitch reads it
+check('ch1: later jump onto a 0.5 u shelf is a WARNING, not an error', p.err.length === 0 && p.warn.length === 1 && /critical_path\[11\]/.test(p.warn[0]), `${p.err.length} errors, ${p.warn.length} warnings`);
 
 const post = lintLevel(load('levels/01-lower-stair.json'), manifest);
 check('shipped chapter 1 passes (READABLE_RISE and CHAPTER_TEACH can pass)', post.ok, post.errors.join(' ') || 'clean');

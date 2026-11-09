@@ -1,0 +1,162 @@
+{
+  "id": "fixture-pitch-assist",
+  "title": "Fixture: chapter-2-shaped faces for the pitch assist (B-18)",
+  "chapter": 0,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "double",
+    "dash",
+    "dashjump",
+    "wall",
+    "climb",
+    "platform"
+  ],
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      -20,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      -25,
+      0,
+      0
+    ],
+    "radius": 1
+  },
+  "bounds": {
+    "min": [
+      -35,
+      -15,
+      -10
+    ],
+    "max": [
+      35,
+      20,
+      55
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        0,
+        -0.5,
+        20
+      ],
+      "scale": [
+        60,
+        1,
+        60
+      ],
+      "tag": "spawn"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        13,
+        1.75,
+        0
+      ],
+      "scale": [
+        6,
+        3.5,
+        7
+      ],
+      "tag": "a35_d6"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        13,
+        2,
+        10
+      ],
+      "scale": [
+        6,
+        4,
+        7
+      ],
+      "tag": "w40_d6"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        13,
+        2.25,
+        20
+      ],
+      "scale": [
+        6,
+        4.5,
+        7
+      ],
+      "tag": "c45_d6"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        17.5,
+        2.25,
+        30
+      ],
+      "scale": [
+        15,
+        4.5,
+        7
+      ],
+      "tag": "c45_d15"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        11.25,
+        2.25,
+        40
+      ],
+      "scale": [
+        2.5,
+        4.5,
+        7
+      ],
+      "tag": "c45_d25"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    }
+  ],
+  "critical_path": [
+    [
+      -20,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        -25,
+        0,
+        0
+      ],
+      "via": "ground"
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        -20,
+        0,
+        0
+      ]
+    }
+  ],
+  "difficulty": 1
+}

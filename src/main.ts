@@ -7,7 +7,7 @@ import { GameLoop, LOOP_CONFIG } from './engine/loop';
 import { InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
-import { SpringArmCamera, CAMERA_TUNING, allowedArm } from './engine/camera';
+import { SpringArmCamera, CAMERA_TUNING, allowedArm, type AssistProbe } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
 import { Player, TUNING } from './entities/player';
@@ -31,6 +31,7 @@ export const GAME_RULES = {
 };
 
 const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
 const ZERO = new THREE.Vector3();
 
 interface DevHook {
@@ -99,6 +100,10 @@ interface HarnessApi {
    *  same raycast + clamp as SpringArmCamera (D-012: only frames normal camera control can reach). */
   rigCamera(pivot: Vec3, dir: Vec3): Vec3;
   releaseCamera(): void;
+  /** B-18: the follow rig's real pose (after the assist and arm collision), and what the assist's probe saw. */
+  cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: AssistProbe | null };
+  /** B-18: one physics ray against the level (the player excluded), as the camera's own probe casts them. */
+  castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
   /**
    * PHASE_SWEEP (B-7): respawn at `pos` with the world clock set to `tick`. This is what a real
    * respawn does (teleport, reset the player, world keeps its clock), except that the arrival phase
@@ -233,6 +238,8 @@ async function boot(): Promise<void> {
   const landingMark = new LandingMark(physics);
   renderer.scene.add(landingMark.mesh);
   const camRig = new SpringArmCamera(renderer.camera, (o, d, max) => physics.castRay(o, d, max, player?.collider)?.distance ?? null);
+  // D-015d pitch assist ships ON (B-18); ?pitchassist=off is the comparison, as ?landingmark=off is.
+  camRig.assistEnabled = new URLSearchParams(location.search).get('pitchassist') !== 'off';
 
   const showError = (err: unknown): void => {
     const msg = err instanceof Error ? err.message : String(err);
@@ -264,7 +271,7 @@ async function boot(): Promise<void> {
     player.teleport({ x, y, z }, facing);
     respawn = { pos: data.spawn.pos, facing: data.spawn.facing };
     camRig.setYaw(facing);
-    camRig.snap(player.feet(tmpFeet));
+    camRig.snap(player.feet(tmpFeet), player.facing);
     input.resetRecording();
     tools.probe.reset();
     worldTick = 0;
@@ -367,7 +374,7 @@ async function boot(): Promise<void> {
       if (--deathTicksLeft <= 0) {
         const [x, y, z] = respawn.pos;
         player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
-        camRig.snap(player.feet(tmpFeet));
+        camRig.snap(player.feet(tmpFeet), player.facing);
         state.transition('play');
       }
       instrumentTick();
@@ -421,7 +428,7 @@ async function boot(): Promise<void> {
     } else if (player && !tools.freeCamActive) {
       tmpFeet.copy(player.mesh.position);
       tmpFeet.y -= player.feetOffset();
-      camRig.update(frameDt, tmpFeet, state.simulating() ? player.vel : ZERO);
+      camRig.update(frameDt, tmpFeet, state.simulating() ? player.vel : ZERO, player.facing);
     }
     tools.update(frameDt);
     if (level) level.debugRoot.visible = overlay.visible;
@@ -617,7 +624,7 @@ async function boot(): Promise<void> {
         level.snapTo(worldTime(), loop.dt);
         player.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facing * DEG2RAD);
         respawn = { pos, facing };
-        camRig.snap(player.feet(tmpFeet));
+        camRig.snap(player.feet(tmpFeet), player.facing);
         checkpointLog = [];
         input.setOverride(null);
         return snapshot();
@@ -653,6 +660,23 @@ async function boot(): Promise<void> {
       },
       releaseCamera: () => {
         cameraOverride = null;
+      },
+      cameraPose: () => {
+        const c = renderer.camera;
+        const f = c.getWorldDirection(new THREE.Vector3());
+        return {
+          pos: [c.position.x, c.position.y, c.position.z],
+          forward: [f.x, f.y, f.z],
+          fovDeg: c.fov,
+          viewPitchDeg: camRig.viewPitch() * RAD2DEG,
+          assistOffsetDeg: camRig.assistOffset * RAD2DEG,
+          assistEnabled: camRig.assistEnabled,
+          probe: camRig.lastProbe,
+        };
+      },
+      castRay: (origin, dir, max) => {
+        const h = physics.castRay({ x: origin[0], y: origin[1], z: origin[2] }, { x: dir[0], y: dir[1], z: dir[2] }, max, player?.collider);
+        return h ? { distance: h.distance, point: [h.point.x, h.point.y, h.point.z], normal: [h.normal.x, h.normal.y, h.normal.z] } : null;
       },
       setPlacementVisible: (name, pos, visible) => {
         let n = 0;

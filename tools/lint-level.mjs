@@ -24,6 +24,15 @@ import { RENDER_CONFIG } from '../src/engine/render-config.ts';
 
 // standoffM and minBandDeg: D-015b's ruling, recorded in MEASUREMENTS.md "D-015 readable rise".
 export const READABLE_RISE = { standoffM: 2.0, minBandDeg: 2.0 };
+// D-016b: READABLE_RISE models the ASSISTED pitch (D-015d, B-18), by calling the camera's own rule.
+import { PITCH_ASSIST, assistPitchDeg, probedDepth } from '../src/engine/pitch-assist.ts';
+export const ASSIST_RIG = { pivotHeight: CAMERA_TUNING.pivotHeight, distance: CAMERA_TUNING.distance, pitchMaxDeg: CAMERA_TUNING.pitchMaxDeg, fovDeg: RENDER_CONFIG.fovDeg };
+if (PITCH_ASSIST.minBandDeg !== READABLE_RISE.minBandDeg || READABLE_RISE.standoffM > PITCH_ASSIST.probeM)
+  throw new Error(`pitch assist and READABLE_RISE disagree: assist reads ${PITCH_ASSIST.minBandDeg}deg within ${PITCH_ASSIST.probeM}u, the linter asks ${READABLE_RISE.minBandDeg}deg at ${READABLE_RISE.standoffM}u (MEASUREMENTS "D-015d pitch assist")`);
+/** The pitch (deg) the camera's assist settles at for this rise, from rest, at standoffM; null = none reads. */
+export function assistedPitchDeg(rise, depth){
+  return assistPitchDeg(ASSIST_RIG, CAMERA_TUNING.initialPitchDeg, rise, probedDepth(depth), READABLE_RISE.standoffM);
+}
 const DEG = 180 / Math.PI;
 // The rest-pose eye relative to the player's feet (D-015 "The camera measurement").
 export const REST_EYE = (() => {
@@ -232,7 +241,8 @@ export function lintLevel(level, manifest){
     const L=landingDepth(boxes,a,c);
     if(!L){ R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
     const band=readableBandDeg(rise,L.depth);
-    if(band<READABLE_RISE.minBandDeg) R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto geometry[${L.gi}] (${L.depth.toFixed(2)}u readable depth): its top surface subtends ${band.toFixed(2)}deg from the rest-pose eye (${REST_EYE.aboveFeet.toFixed(2)}u above the feet) at a ${READABLE_RISE.standoffM}u standoff, needs >= ${READABLE_RISE.minBandDeg}deg.${rise>=REST_EYE.aboveFeet?' The top is at or above the eye, so the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
+    // D-016b: a top that does not read at rest passes if the pitch assist (D-015d) makes it read.
+    if(band<READABLE_RISE.minBandDeg&&assistedPitchDeg(rise,L.depth)===null) R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto geometry[${L.gi}] (${L.depth.toFixed(2)}u readable depth): its top surface subtends ${band.toFixed(2)}deg from the rest-pose eye (${REST_EYE.aboveFeet.toFixed(2)}u above the feet) at a ${READABLE_RISE.standoffM}u standoff, needs >= ${READABLE_RISE.minBandDeg}deg, and the pitch assist (D-015d) finds no pitch up to ${CAMERA_TUNING.pitchMaxDeg}deg that makes it read${rise<=CAMERA_TUNING.pivotHeight?` (its probe runs at ${CAMERA_TUNING.pivotHeight}u, above this face)`:''}.${rise>=REST_EYE.aboveFeet?' The top is at or above the rest eye, so at rest the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
   }
 
   if(d(P(cp[0]),level.spawn.pos)>3) E('PATH_START','critical_path[0] not at spawn');

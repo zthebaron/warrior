@@ -678,3 +678,29 @@ Disclosed weaknesses, so a reviewer can attack them:
      (approach, height) and a fresh page per placement; stall counts were identical before and after
      (placement (17.37,0,4.61): 6/12 at 30/45 deg whether run first or third).
 status: PROVISIONAL
+
+## OQ-052 — B-18 (D-015d) as built: where it departs from D-015d's text
+raised: 2026-11-08 by kit (B-18)
+took, each PROVISIONAL:
+1. **Trigger.** D-015d says the assist engages on "a face whose top is within 0.5 m of eye level". The build
+   engages instead when the top does not read at the current pitch, which is READABLE_RISE's own predicate.
+   Read literally, "within 0.5 m" covers tops from 3.16 to 4.16 u above the feet, but climb's characteristic
+   rise is 4.00 to 4.50, so a 4.5 climb (0.84 above the eye) would get no help and chapter 2 would stay
+   blocked. It would also miss a 3.0 rise onto a 2.5 u shelf, which is outside the band yet does not read.
+   The predicate covers every case the band was a proxy for, and it adds no number.
+2. **Direction.** The probe runs along the player's `facing`, not the camera yaw. That is what "released when
+   the player turns away" requires. Pitch never feeds movement (`input.sample` reads only `camRig.yaw`), so
+   replay and chaos are untouched.
+3. **Probe height.** The probe casts at pivot height (1.5 u, an existing rig constant). A face no taller than
+   that gets no assist and keeps its rest-pose verdict. The linter models this, so a +1.25 step onto a 1 u
+   landing still errors.
+4. **Blend.** The blend rate is `followDamping`, so no new number. `snap()` jumps straight to the target.
+5. **Default.** The assist ships ON. `?pitchassist=off` is the comparison, as `?landingmark=off` is. Leaving it
+   off by default would leave chapter 2 blocked, which defeats D-016b.
+6. **For RB-004.** The board entry's premise ("no move can be taught above 3.18") now holds only at the rest
+   pose. Under the assist the ceilings are 4.48, 4.62 and 4.67 (MEASUREMENTS "D-015d pitch assist"). That is
+   recorded here, not answered there: RB-004 is the reviewer's to close.
+7. **Known limit.** The linter models an unobstructed arm. An arm pushed in by an overhang behind the player
+   lowers the eye, and only the harness rig sees that. Every chapter face the assist touches should get a
+   harness case: today that means the fixture only, because chapter 1 has none.
+status: PROVISIONAL
