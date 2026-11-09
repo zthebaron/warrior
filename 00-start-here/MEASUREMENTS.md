@@ -422,7 +422,14 @@ plain stairs, which READABLE_RISE never checks (`ground` rises are skipped). At 
 | +4.50 onto 15 u (climb) | 30 deg | 2.33 deg band at 30.0 deg |
 | +4.50 onto 2.5 u | no pitch reads | 0.00 deg, assist idle |
 
-With `?pitchassist=off` every one of these reads 0.50 deg or less. A climb at maxRise 4.50 needs a landing at
+With `?pitchassist=off` every one of these reads 0.50 deg or less.
+
+**ASSIST_CASE (OQ-052 item 7).** The table above uses an unobstructed arm. Every chapter waypoint that passes
+READABLE_RISE only because of the assist is also run in its real level, by the `pitch-assist` stage. It must read
+in the real rig, at the pitch modelled here.
+- **Proof fixture:** the same +4.0 wall reads 2.33 deg when clean. Under an overhang 3.6 u high behind the
+  approach it reads 0.00 deg (arm pulled in), and the check fails it.
+- **Today:** gym and chapter 1 have 0 cases. A climb at maxRise 4.50 needs a landing at
 least 2.55 u deep.
 
 ## Open (H4)

@@ -148,23 +148,40 @@ verified: no
 verdict:
 promoted_to:
 
-## RB-004 — attack this: "no move can be taught above a 3.18 rise, and chapter 2 is therefore blocked on D-015d."
-from: builder-d016 (inviting the external VERIFIER; the claim is the chat REVIEWER's, D-016) · raised: 2026-11-08
+## RB-004 — attack this: "under the pitch assist the teachable ceilings are 4.48, 4.62 and 4.67 u onto 2.5, 6 and 15 u landings, AND the linter's model of the assist matches the real rig for every face chapter 2 will use."
+from: builder-d016, restated by kit at the chat REVIEWER's direction (2026-11-08, by delegation from Tim) · raised: 2026-11-08 · restated: 2026-11-08
+restated because: the claim as first posted ("no move can be taught above a 3.18 rise, and chapter 2 is therefore
+blocked on D-015d") now holds only at the rest pose. B-18 landed the pitch assist (PR #11, 07835d5), so as written an
+external reviewer would be attacking a claim nobody makes any more. Not closed: restated.
 claim:
-- **The claim as stated:** at the rest pose, READABLE_RISE gives no rise above 3.18 u a readable top surface (>= 2.0 deg at a 2 u standoff) onto a landing up to 15 u deep. No landing depth at all gives one above 3.36 u.
-- **Why that blocks chapter 2:** D-016a makes READABLE_RISE an ERROR on a move's teaching instance. Chapter 2 adds wall (characteristic rise 3.50-4.00) and climb (4.00-4.50), and both lie wholly above 3.36. So chapter 2 cannot teach them at their characteristic height until D-015d's camera pitch assist (B-18) lands.
-- **Already conceded in D-016:** double is NOT blocked. It is teachable in (2.00, 3.18], and on flat gaps of 5.0-9.5.
-
-check: break any link in the chain and show it.
-1. **The ceilings.**
-   - Run `npm run lint:self`; it prints them.
-   - Re-derive them independently from `src/engine/camera-tuning.ts` and `render-config.ts`.
-   - Show a rise above 3.18 onto a landing of 15 u or less, or above 3.36 onto any landing, that is in fact readable. Establish "readable" with a render at the rest pose (`tools/scan-frame`, or the harness rig) or a play note, not by argument.
-2. **The characteristic bands.** Show that wall or climb has a characteristic use at or below 3.18 that a jump or double cannot do. For example: a wall jump whose point is a narrow shaft rather than height; or a climb whose point is a ledge the player hangs from. Then show that use can be taught readably now. That would unblock chapter 2 without D-015d.
-3. **The teaching instance.** `firstUse` in `tools/lint-level.mjs` picks the first critical_path use in the chapter that adds the move. Known edge: teach climb on a low face, then gate on a 4.5 face. That passes with a WARNING. Show whether this is a loophole a chapter author would actually take, and whether it should be an error.
-
-expected: no counter-example to 1. Item 2 is the real question, because the bands are by rise only, and the MOVE table has other columns (maxH, maxDrop). Item 3 is a known limit, not a defect, unless shown otherwise.
-severity: blocker (if confirmed, it stands; if refuted, chapter 2 unblocks)
+- **Half 1, the ceilings.** With READABLE_RISE modelling the assisted pitch (D-016b; `assistPitchDeg` in
+  `src/engine/pitch-assist.ts`, the camera's own rule), the largest readable rise from rest at a 2 u standoff is
+  4.48 / 4.62 / 4.67 u onto 2.5 / 6 / 15 u landings. They are pinned in `npm run lint:self` at the value and +0.01.
+  So wall (3.50-4.00) and climb (4.00-4.50) are teachable at their characteristic rise, and a climb at 4.50 needs a
+  landing at least 2.55 u deep.
+- **Half 2, the model matches the rig. This is the weak half, and the one worth attacking.** For every face
+  chapter 2 will use, the linter's model (an unobstructed arm, the depth the probe would measure, the rest pitch as
+  base) gives the same verdict as the real rig. The guard is ASSIST_CASE (OQ-052 item 7): each assist-dependent
+  waypoint runs in its real level in the `pitch-assist` harness stage. It must read in the real rig, and the real
+  probe must settle at the modelled pitch.
+check: break either half and show it.
+1. **Ceilings.** Re-derive them independently from `camera-tuning.ts` and `render-config.ts`. Show a rise above
+   them that reads, or one below them that does not, using a render or the harness rig, not an argument.
+2. **Model vs rig.** Find a face shape the linter certifies but the real rig cannot read, and which ASSIST_CASE
+   would NOT catch. Places to look:
+   - overhangs or walls behind the approach at angles the fixture does not cover;
+   - a landing that is not one axis-aligned prim_box (the linter cannot measure it, so it errors: is that
+     always true?);
+   - a non-axis approach direction;
+   - a player arriving at a standoff other than 2 u;
+   - a player whose own pitch is below rest when the assist engages;
+   - the probe's depth quantisation (`depthStepM` 0.5, `depthMaxM` 15);
+   - the blend (`followDamping`) not converged when the player arrives at speed.
+3. **Teaching instance** (carried over): teach climb on a low face, then gate on a 4.5 face. That passes with a
+   WARNING. Is it a loophole an author would take?
+expected: no counter-example to 1. Item 2 is where any finding is. The fixture covers one overhang shape, and
+ASSIST_CASE runs only at the 2 u standoff the linter models.
+severity: blocker for chapter 2 if half 2 breaks (a face certified readable that is not)
 verified: no
 verdict:
 promoted_to:

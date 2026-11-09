@@ -597,6 +597,16 @@ read. `crow_lift_t` is the most recent lift-off at or before departure, so ANY d
 and one loop period after it; the blind bot shows 0.48 s and 0.97 s by chance. Only the spread across
 many attempts separates reading (clustered just after 0, inside the 0.75 s / 0.95 s slack of OQ-034)
 from timing the slab (spread across the period, or clustered on the patroller's other safe window).
+status: CONFIRMED (chat REVIEWER, by delegation from Tim, 2026-11-08): A, the world clock. crow_lift_t and
+player_depart_t are only comparable on the clock the hazards run on, and determinism is what makes a bot run and a
+human run comparable at all.
+ruling, implemented: the known limit above is the finding, so it is now structural rather than prose. A single
+value that looks like it measures crow-reading and does not would repeat D-013. The per-attempt field is renamed
+`depart_after_lift_s` -> `since_last_lift_s`, and its type says it is not evidence. No per-run figure is emitted.
+Each crow segment carries `lift_timing` instead: `attempts_n`, every value, `spread_s` (null under 2 attempts),
+`loop_s`, and `spread_of_loop`. The console table shows "n=1: too few to read" or "n=K, spread X s of a Y s loop",
+never a lone value. Code: `src/systems/instrument.ts` (`LiftTiming`).
+
 ## OQ-033 — b12-harvest conflicts with main and with PR 3. Resolve now, or after PR 3 lands?
 raised: 2026-11-08 by kit (PR 4)
 options: A merge main in now, so PR 4 gets CI | B leave it conflicting until PR 3 is on main, then merge once | C stack PR 4 on h4-asset-kit
@@ -631,7 +641,15 @@ Sub-choices taken, each the smallest that keeps a player moving:
   unreachable. REACHABLE fails on it ("every chapter is on the progression chain"), and so does
   check:progression on levels/, instead of a schema rule.
 Cost: REACHABLE now plays EVERY chapter end to end, about 20 s each on CI.
-status: PROVISIONAL
+status: CONFIRMED (chat REVIEWER, by delegation from Tim, 2026-11-08): A, derive "next" from each level's `chapter`.
+A hand-kept list is how chapter 1 shipped unreachable, which is sufficient. Every sub-choice is approved as taken,
+including no save.
+SUPERSEDES the prompt pack's persistence spec. `AI-GAME-BUILD-PROMPT-PACK-v2.1.md` lines 915-925 specify a save shape
+`{ version, chaptersCompleted[], scrollsFound[], settings, totalTime }`, collectibles counted and persisted, and a
+chapter select showing scrolls found / total. Line 959 adds a scroll pickup sound. Q3 CLOSED that system (A: progress
+only, no pickups), and OQ-050 settles progression. Whoever builds persistence later builds it from Q3 and OQ-050,
+never from the pack: no scrolls, no collectibles, no scroll count. Nothing reads or writes storage today (no
+localStorage anywhere in src/), so this is latent, not broken. A separate session is marking the pack itself.
 
 ## OQ-051 — The standing TIGHT warning (gym seg 14->15, jump at 100% of maxH): accept, with the reason written down
 raised: 2026-11-08 by builder-d016 (D-016)
@@ -702,13 +720,29 @@ took, each PROVISIONAL:
 6. **For RB-004.** The board entry's premise ("no move can be taught above 3.18") now holds only at the rest
    pose. Under the assist the ceilings are 4.48, 4.62 and 4.67 (MEASUREMENTS "D-015d pitch assist"). That is
    recorded here, not answered there: RB-004 is the reviewer's to close.
-7. **Known limit.** The linter models an unobstructed arm. An arm pushed in by an overhang behind the player
-   lowers the eye, and only the harness rig sees that. Every chapter face the assist touches should get a
-   harness case. Today that is the fixture only: measured over a full nav run, chapter 1 engages the assist
-   on 0 ticks.
+7. **ASSIST_CASE (replaces the "should" this item first said; not approved as written).** The linter models an
+   unobstructed arm. An overhang behind the player pulls the arm in and lowers the eye, so a face can pass the
+   linter and still be unreadable in play. This is now a check that fails.
+   - **The cases.** `assistCases(level)` (tools/lint-level.mjs) derives every critical_path waypoint that passes
+     READABLE_RISE only because of the assist (rest band below minBandDeg, an assisted pitch exists). It uses the
+     same test that certified the waypoint, so no such waypoint can be missing a case.
+   - **The harness.** The `pitch-assist` stage runs each case in its real level. A case fails unless it reads
+     (>= 2.0 deg in the real rig) and the real probe settles at the pitch the linter modelled.
+   - **The count.** The stage asserts it ran exactly the derived set. A waypoint without a case is a failure,
+     not a warning.
+   - **Proven** on `tools/harness/fixtures/assist-cases.json`, the same +4.0 wall twice. Clean, it reads 2.33 deg
+     at 28 deg. Under an overhang behind the approach, the linter passes it and the real rig reads 0.00 deg, so
+     the check FAILS it. With the harness made to skip one case, the stage fails "ran every derived case: 1 of 2".
+   - **Today:** the gym and chapter 1 have 0 assist-dependent waypoints.
 8. **Feel, for H2.5.** While the assist holds, pulling the mouse down has no visible effect, because the
    offset absorbs it. On release, the view blends from the assisted pitch to wherever the player's own pitch
    ended up, which can be a large swing if they fought it. This is untested by any player.
 9. **Spawn and respawn.** `snap()` now raycasts the arm, which it did not before, so a spawn against a wall
    starts with the arm already pulled in.
-status: PROVISIONAL
+status: CONFIRMED items 1-6 (chat REVIEWER, by delegation from Tim, 2026-11-08). Item 7 was not approved as a
+"should"; it is replaced by the ASSIST_CASE check above. Items 8 (feel) and 9 (snap raycast) were not ruled on and
+stay PROVISIONAL.
+Item 1 corrects a spec error; it is not a liberty taken. D-015d's two-sided 0.5 m band was wrong: it excludes climb's
+4.00-4.50 tops, so the trigger as written would have left chapter 2 blocked, which is the thing the item existed to
+lift. The substitution is right for the better reason that it reuses READABLE_RISE's own predicate: one definition
+instead of two that can drift.

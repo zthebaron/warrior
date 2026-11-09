@@ -1,0 +1,157 @@
+{
+  "id": "fixture-assist-cases",
+  "title": "Fixture: ASSIST_CASE proof (OQ-052 item 7)",
+  "chapter": 2,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "wall",
+    "double",
+    "climb"
+  ],
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      -20,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      12,
+      4,
+      12
+    ],
+    "radius": 1
+  },
+  "bounds": {
+    "min": [
+      -35,
+      -15,
+      -10
+    ],
+    "max": [
+      35,
+      20,
+      25
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        0,
+        -0.5,
+        6
+      ],
+      "scale": [
+        60,
+        1,
+        30
+      ],
+      "tag": "spawn"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        13,
+        2,
+        0
+      ],
+      "scale": [
+        6,
+        4,
+        7
+      ],
+      "tag": "clean"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        13,
+        2,
+        12
+      ],
+      "scale": [
+        6,
+        4,
+        7
+      ],
+      "tag": "overhung"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        3.5,
+        3.8,
+        12
+      ],
+      "scale": [
+        7,
+        0.4,
+        7
+      ],
+      "tag": "overhang"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        -20,
+        0,
+        0
+      ]
+    }
+  ],
+  "critical_path": [
+    [
+      -20,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        8,
+        0,
+        0
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        12,
+        4,
+        0
+      ],
+      "via": "wall",
+      "note": "clean: reads with the assist"
+    },
+    {
+      "pos": [
+        8,
+        0,
+        12
+      ],
+      "via": "ground"
+    },
+    {
+      "pos": [
+        12,
+        4,
+        12
+      ],
+      "via": "wall",
+      "note": "same face, overhang behind the approach: the linter passes it, the real rig must not"
+    }
+  ],
+  "difficulty": 2
+}
