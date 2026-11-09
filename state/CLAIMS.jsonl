@@ -189,3 +189,5 @@
 {"id":"B-27","agent":"state-format","ts":"2026-11-09T14:25:36.811Z","released":true}
 {"id":"CI-GATE-AUDIT","agent":"ci-gate-audit","ts":"2026-11-09T14:32:00.347Z","released":true}
 {"id":"B-23","agent":"kit","ts":"2026-11-09T14:39:23.637Z","released":true}
+{"id":"B-20","agent":"phase0-spec","ts":"2026-11-09T15:03:18.514Z","ttl_min":90}
+{"id":"OQ-063","agent":"phase0-spec","ts":"2026-11-09T15:03:18.545Z","ttl_min":90}
