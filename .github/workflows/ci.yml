@@ -5,59 +5,151 @@ on:
   push:
     branches: [main]
 
+# B-22 (OQ-061): the playtest is split into parallel jobs. Before, one serial job ran every level and then
+# the once-per-run stages: 28 min on PR #16 (42561268355, four levels), growing about 5-7 min per chapter,
+# almost all of it phase-sweep (234-367 s per level), not reachable (108 s).
+# Now: one job per level (the matrix is read from levels/, never hand-kept), one job for the once-per-run
+# stages over the whole game, one for the static checks, and a final job named `playtest` that merges the
+# reports and fails unless they cover every level and every once-per-run stage (merge-reports.mjs).
+# REACHABLE is unchanged: the game job builds the whole game and plays the chain from the bare URL through
+# every chapter, exactly as the serial job did.
+#
+# Harness exit codes: 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
+
 jobs:
-  playtest:
+  static:
     runs-on: ubuntu-latest
-    timeout-minutes: 40 # was 20 (H3, never measured); see OQ-056 item 10
+    timeout-minutes: 10 # measured ~1 min of steps after setup (42561268355: typecheck..assets:budget in 3 s, setup ~40 s)
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # lint:decisions resolves every implemented_by sha against history (D-002)
-          lfs: true # visual goldens are *.png, which .gitattributes routes through LFS
-
+          lfs: true # assets:budget re-measures every shipped .glb, which .gitattributes routes through LFS
       - uses: actions/setup-node@v4
         with:
           node-version: 22.22.3 # harness stages are .ts run by Node's built-in type stripping (>= 22.18)
           cache: npm
-
       - run: npm ci
-
-      - name: Install Chromium (+ headless shell, + system deps)
-        run: npx playwright install --with-deps chromium
-
       - run: npm run typecheck
-
       - run: npm run lint:levels
       - run: npm run lint:self # D-015: READABLE_RISE and CHAPTER_TEACH must be seen to FAIL, not just pass
-
       # B-12: the patroller runtime (src/systems/patrol.ts) is a pure function of phase + t*speed
       - run: npm run check:patrol
       - run: npm run check:progression
-
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
       # The prompt pack must not instruct a NOT-listed concept unmarked (UNMARKED_RETIRED); self-test proves it bites
       - run: npm run lint:pack
       # D-002: every CLOSED/DECIDED decision names an implementing commit that is on this history
       - run: npm run lint:decisions
-
       - run: npm run lint:accent # D-001 ACCENT_CONTRAST, named on its own so a failure says which rule
-
-      # Tier-1 asset budgets on the COMMITTED assets/dist (CI has no Blender and never rebuilds):
-      # manifest against assets/manifest.schema.json, manifest against a re-measure of every
-      # shipped .glb, every measurement against tools/assets/budgets.json.
+      # Tier-1 asset budgets on the COMMITTED assets/dist (CI has no Blender and never rebuilds)
       - run: npm run assets:budget
+      # B-22: the merge that gates the split playtest must be seen to FAIL on a missing level / stage / job
+      - run: npm run check:merge-reports
 
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      levels: ${{ steps.ids.outputs.levels }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3 # lib.ts is .ts: needs Node's type stripping, not the runner's default node
+      # the same levelIds() run.mjs and merge-reports.mjs use: a new chapter gets its own job with no edit here
+      - id: ids
+        run: echo "levels=$(node -e "import('./tools/harness/lib.ts').then(m=>console.log(JSON.stringify(m.levelIds('.'))))")" >> "$GITHUB_OUTPUT"
+      - run: echo "$LEVELS"
+        env:
+          LEVELS: ${{ steps.ids.outputs.levels }}
+
+  level:
+    needs: matrix
+    runs-on: ubuntu-latest
+    # 02-cliff-seam's stages sum to 7.3 min on 42561268355; the slowest runner seen ran the same content 1.8x
+    # slower (42559866641, 25.3 min vs 42563854654, 13.8 min): ~13 min. 20 leaves room for a longer sweep.
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false # every level reports, so one failure does not hide another
+      matrix:
+        level: ${{ fromJSON(needs.matrix.outputs.levels) }}
+    name: level (${{ matrix.level }})
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true # visual goldens are *.png, which .gitattributes routes through LFS
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium (+ headless shell, + system deps)
+        run: npx playwright install --with-deps chromium
       # schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual
-      # exit 1 LEVEL_FAILURE · 2 BUILD_FAILURE · 3 HARNESS_ENVIRONMENT_FAILURE · 4 HARNESS_SETUP_FAILURE
-      - run: npm run playtest
-
+      - run: npm run playtest -- --level="$LEVEL"
+        env:
+          LEVEL: ${{ matrix.level }} # via env, never interpolated into the script: a level id is a filename a PR controls
       - name: Upload harness report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: harness-report
+          name: harness-report-${{ matrix.level }}
           path: |
             harness-report.json
             tools/harness/golden/**/*.actual.png
+          if-no-files-found: warn
+
+  game:
+    runs-on: ubuntu-latest
+    # reachable 108 s + run-metric 65 s + pitch-assist 16 s + ambient-motion 8 s on 42561268355 (3.3 min);
+    # x1.8 slow runner ~6 min. reachable grows with each chapter it plays, so 20 as for a level.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium (+ headless shell, + system deps)
+        run: npx playwright install --with-deps chromium
+      # D-014 reachable: bare URL -> entry chapter -> every chapter's goal -> menu, as a player, on the whole build
+      - run: npm run playtest -- --only=reachable,pitch-assist,run-metric,ambient-motion
+      - name: Upload harness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report-game
+          path: harness-report.json
+          if-no-files-found: warn
+
+  playtest:
+    needs: [static, matrix, level, game]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: harness-report-*
+          path: reports
+      # fails unless the reports cover every level in levels/ and every once-per-run stage, all PASS,
+      # and every job above concluded success (a cancelled or skipped job is not a green one)
+      - run: node tools/harness/merge-reports.mjs reports --needs="$NEEDS"
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+      - name: Upload merged harness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report
+          path: harness-report.json
           if-no-files-found: warn
