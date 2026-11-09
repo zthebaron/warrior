@@ -1045,6 +1045,37 @@ took, each PROVISIONAL:
    - **Same conditions:** the serial run went over the same four levels in the same minutes.
    - **Split job times:** static 0.4, matrix 0.2, game 2.9, levels 3.2-4.3 (00-gym 3.9, 01-lower-stair 4.3, 02-cliff-seam 3.3, 03-drifting-stones 3.2), merge 0.2.
    - **Item 6's projection was pessimistic:** it said about 9 min. The CI runners were faster that hour than on 42561268355.
+
+## OQ-064 — B-21: marking the playbook. What counts as superseded, and what the rule still cannot see
+raised: 2026-11-09 by phase0-spec (B-21)
+options: A mark only the 5 passages `lint:pack` flags | B mark those plus every retired instruction a manual read finds, in the pack's inline style | C rewrite the retired passages out of the playbook
+took: B — 19 marks at 15 places
+because: the rule is a tripwire for the obvious names (OQ-053), so A would leave live-looking
+instructions for enemies, puzzles, interactables, strike/hit animations and SFX, a save-corruption
+reset and the pre-gym move table, none of which name a NOT-table term the rule scans. C is what
+CLAUDE.md precedence 6 says not to do: the playbook is historical, and marks keep the history
+readable while making it not live. Each mark names the decision in place, as PACK-MARK did.
+Calls a reviewer should check:
+  1. The §6 move table is marked superseded by MEASUREMENTS.md "MOVE table basis" and OQ-049, not by
+     a PHASE-0-DECISIONS entry. No decision retired those numbers; measurement did, and MEASUREMENTS
+     is precedence 2. If marks must cite precedence 1 only, this one becomes a FINDING-style note.
+  2. Phase 11's "first 30 seconds teach a walk, a jump, a double-jump, a wall-run" is marked in part
+     against Q5 (each chapter teaches its own moves; chapter 1 is ground + jump after D-015a). The
+     zero-text principle itself stays live.
+  3. `DANGLING_TARGET` in §7's linter list is marked superseded (Q3, Q7): the linter has no such code.
+     The list's other codes are history ("verified to catch 14/14") and were left as they are.
+  4. Phase 9's paragraph was split so the live "Respawn under 1.2 s" and difficulty-pass sentences sit
+     in their own paragraph. Otherwise the leading mark would exempt them too: the rule treats a
+     paragraph whose first sentence is marked as wholly marked.
+  5. Marks go BEFORE the sentence they qualify. The rule exempts the sentence that carries the mark,
+     so one placed after a full stop covers the next sentence. Found when the Phase 10 SFX mark,
+     placed after its sentence, left `pickup` flagged.
+Disclosed weaknesses:
+  1. A mark inside a fenced block (repo layout, master checklist, linter list) exempts the whole
+     block, because a block is one passage and rarely has sentence breaks. Each retired line there has
+     its own mark anyway, but a new stale line added to those blocks would pass.
+  2. PROSE_AMBIGUOUS words (score, lives, health, damage, attack, strike) are still skipped, so a new
+     "player has 3 lives" in the playbook passes, as it would in the pack (OQ-053).
 status: PROVISIONAL
 
 ## OQ-065 — Audit of the #18 split CI: does the per-level coverage gate hold?

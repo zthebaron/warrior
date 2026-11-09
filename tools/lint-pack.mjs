@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// tools/lint-pack.mjs — UNMARKED_RETIRED: the prompt pack still instructs a concept a CLOSED decision
-// retired, and nothing on the page says so.
+// tools/lint-pack.mjs — UNMARKED_RETIRED: the prompt pack or the playbook still instructs a concept a
+// CLOSED decision retired, and nothing on the page says so.
 //
 // The class: PROMPT-00's DANGLING_INPUT, STALE_OPEN and UNCLOSED_OUTPUT all assume prompts with
 // front-matter. The pack (00-start-here/AI-GAME-BUILD-PROMPT-PACK-v2.1.md) has none. It is one
@@ -8,6 +8,8 @@
 // or CLOSED are not live. So an unmarked section that still specifies scrolls, a localStorage save
 // shape or a parry window is a live instruction to rebuild something Q1/Q3/Q6 refused. P9.2's save
 // shape was exactly that (OQ-050 ruling, 2026-11-08). Nothing is wired up today, so it is latent.
+// The playbook (AI-GAME-BUILD-PLAYBOOK-v2.1.md) is the same precedence-6 plan in prose, and it had the
+// same class: 5 unmarked passages before B-21 marked it. Both files are checked by default.
 //
 // The terms come from SPEC.md's NOT table (its `src` rows), the same single source lint:not-list
 // reads. They are not duplicated here.
@@ -28,7 +30,7 @@
 //   "player has 3 lives" passes. Paraphrase also passes: "paper scroll being picked up" names no
 //   term. This is a tripwire for the obvious names, like lint:not-list's src checks (Q7's limit).
 //
-// Usage: node tools/lint-pack.mjs [file.md]     default: the pack
+// Usage: node tools/lint-pack.mjs [file.md ...] default: the pack AND the playbook
 //        node tools/lint-pack.mjs --self-test   proves the rule fails and exempts what it should
 // Exit 0 clean · 1 UNMARKED_RETIRED · 2 unreadable
 
@@ -39,6 +41,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC = path.join(ROOT, '00-start-here/SPEC.md');
 const PACK = path.join(ROOT, '00-start-here/AI-GAME-BUILD-PROMPT-PACK-v2.1.md');
+const PLAYBOOK = path.join(ROOT, '00-start-here/AI-GAME-BUILD-PLAYBOOK-v2.1.md');
+const DEFAULTS = [PACK, PLAYBOOK]; // B-21: both plan documents. The self-test fails if either drops out
 
 // English words with a live meaning in prose. Skipped in prose only; lint:not-list still checks them in src.
 // The API names (NOT #19) split into English words that collide in prose: "zero text — geometry that
@@ -148,20 +152,27 @@ function selfTest(terms) {
     if (!ok) bad++;
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}: ${got} error(s), want ${want}`);
   }
-  console.log(bad ? `\nself-test FAILED: ${bad}/${cases.length}` : `\nself-test passed: ${cases.length}/${cases.length}`);
+  const both = [PACK, PLAYBOOK].every((f) => DEFAULTS.includes(f) && fs.existsSync(f));
+  if (!both) bad++;
+  console.log(`${both ? 'ok  ' : 'FAIL'} default targets are the pack and the playbook, both present (B-21)`);
+  console.log(bad ? `\nself-test FAILED: ${bad}/${cases.length + 1}` : `\nself-test passed: ${cases.length + 1}/${cases.length + 1}`);
   return bad ? 1 : 0;
 }
 
 let terms;
 try { terms = readTerms(); } catch (e) { console.error(`UNREADABLE ${e.message}`); process.exit(2); }
 if (process.argv.includes('--self-test')) process.exit(selfTest(terms));
-const file = process.argv[2] ? path.resolve(process.argv[2]) : PACK;
-let md;
-try { md = fs.readFileSync(file, 'utf8'); } catch (e) { console.error(`UNREADABLE ${e.message}`); process.exit(2); }
-const errs = lint(md, terms);
-const rel = path.relative(ROOT, file);
-for (const e of errs) console.log(`UNMARKED_RETIRED ${rel}:${e.line} ${e.terms.join(', ')} — "${e.text}"`);
-console.log(errs.length
-  ? `\n${errs.length} passage(s) instruct a retired concept with no [SUPERSEDED — <decision>] mark and no decision cited. Mark the section, or cite the decision that reconciles it.`
-  : `lint:pack clean — ${rel}: no unmarked retired concepts (${terms.length} NOT-table terms; ${PROSE_AMBIGUOUS.size} prose-ambiguous terms skipped)`);
-process.exit(errs.length ? 1 : 0);
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const files = args.length ? args.map((a) => path.resolve(a)) : DEFAULTS;
+let total = 0;
+for (const file of files) {
+  let md;
+  try { md = fs.readFileSync(file, 'utf8'); } catch (e) { console.error(`UNREADABLE ${e.message}`); process.exit(2); }
+  const errs = lint(md, terms);
+  const rel = path.relative(ROOT, file);
+  for (const e of errs) console.log(`UNMARKED_RETIRED ${rel}:${e.line} ${e.terms.join(', ')} — "${e.text}"`);
+  if (!errs.length) console.log(`lint:pack clean — ${rel}: no unmarked retired concepts (${terms.length} NOT-table terms; ${PROSE_AMBIGUOUS.size} prose-ambiguous terms skipped)`);
+  total += errs.length;
+}
+if (total) console.log(`\n${total} passage(s) instruct a retired concept with no [SUPERSEDED — <decision>] mark and no decision cited. Mark the section, or cite the decision that reconciles it.`);
+process.exit(total ? 1 : 0);
