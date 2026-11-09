@@ -124,3 +124,5 @@
 {"id":"OQ-052","agent":"kit","ts":"2026-11-09T01:46:38.595Z","ttl_min":90}
 {"id":"ASSIST-CASE","agent":"kit","ts":"2026-11-09T01:46:38.620Z","ttl_min":90}
 {"id":"RB-004-RESTATE","agent":"kit","ts":"2026-11-09T01:46:38.650Z","ttl_min":90}
+{"id":"PACK-MARK","agent":"phase0-spec","ts":"2026-11-09T01:49:28.645Z","ttl_min":90}
+{"id":"PACK-LINT","agent":"phase0-spec","ts":"2026-11-09T01:49:28.672Z","ttl_min":90}
