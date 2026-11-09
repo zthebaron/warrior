@@ -126,3 +126,4 @@
 {"id":"RB-004-RESTATE","agent":"kit","ts":"2026-11-09T01:46:38.650Z","ttl_min":90}
 {"id":"PACK-MARK","agent":"phase0-spec","ts":"2026-11-09T01:49:28.645Z","ttl_min":90}
 {"id":"PACK-LINT","agent":"phase0-spec","ts":"2026-11-09T01:49:28.672Z","ttl_min":90}
+{"id":"CHAPTER-2","agent":"builder-ch2","ts":"2026-11-09T01:49:59.695Z","ttl_min":90}
