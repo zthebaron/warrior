@@ -1004,4 +1004,14 @@ took, each PROVISIONAL:
    - **Concurrency ceiling.** The free plan runs 20 jobs at once. With static, matrix, game and merge that holds about 17 levels in parallel, after which they queue.
    - **Builds.** Every browser job builds the game itself (the preflight build, about 10-20 s). Sharing one build artifact would save little and add a failure mode.
 7. **Not done here: sharding phase-sweep within a level.** After this change, wall-clock is the slowest single level, so a longer chapter grows it and more chapters do not. That is B-26 (B-25 was taken by kit for the stale src/ guard).
+8. **Measured on CI** after the outage (repo public, 2026-11-09):
+
+   | | run | wall-clock |
+   |---|---|---|
+   | Split | PR #18, 42628995213 | **4.9 min** (13:50:24-13:55:16Z) |
+   | Serial | PR #21, 42629083300 | **19.3 min** |
+
+   - **Same conditions:** the serial run went over the same four levels in the same minutes.
+   - **Split job times:** static 0.4, matrix 0.2, game 2.9, levels 3.2-4.3 (00-gym 3.9, 01-lower-stair 4.3, 02-cliff-seam 3.3, 03-drifting-stones 3.2), merge 0.2.
+   - **Item 6's projection was pessimistic:** it said about 9 min. The CI runners were faster that hour than on 42561268355.
 status: PROVISIONAL
