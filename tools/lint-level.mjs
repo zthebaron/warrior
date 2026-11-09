@@ -19,13 +19,13 @@ export const MOVE = {
 // READABLE_RISE (D-015b). The rig is IMPORTED, never retyped: src/engine/camera-tuning.ts and
 // src/engine/render-config.ts are import-free modules split out of camera.ts / renderer.ts so Node can
 // load them, and both carry the reverse cross-reference. Change the rig and this check moves with it.
-import { CAMERA_TUNING } from '../src/engine/camera-tuning.ts';
+import { CAMERA_TUNING, allowedArm } from '../src/engine/camera-tuning.ts';
 import { RENDER_CONFIG } from '../src/engine/render-config.ts';
 
 // standoffM and minBandDeg: D-015b's ruling, recorded in MEASUREMENTS.md "D-015 readable rise".
 export const READABLE_RISE = { standoffM: 2.0, minBandDeg: 2.0 };
 // D-016b: READABLE_RISE models the ASSISTED pitch (D-015d, B-18), by calling the camera's own rule.
-import { PITCH_ASSIST, assistPitchDeg, probeHeight, probedDepth } from '../src/engine/pitch-assist.ts';
+import { PITCH_ASSIST, assistPitchDeg, probeHeight, probedDepth, topBandDeg } from '../src/engine/pitch-assist.ts';
 export const ASSIST_RIG = { pivotHeight: CAMERA_TUNING.pivotHeight, distance: CAMERA_TUNING.distance, initialPitchDeg: CAMERA_TUNING.initialPitchDeg, pitchMaxDeg: CAMERA_TUNING.pitchMaxDeg, fovDeg: RENDER_CONFIG.fovDeg };
 if (PITCH_ASSIST.minBandDeg !== READABLE_RISE.minBandDeg || READABLE_RISE.standoffM > PITCH_ASSIST.probeM)
   throw new Error(`pitch assist and READABLE_RISE disagree: assist reads ${PITCH_ASSIST.minBandDeg}deg within ${PITCH_ASSIST.probeM}u, the linter asks ${READABLE_RISE.minBandDeg}deg at ${READABLE_RISE.standoffM}u (MEASUREMENTS "D-015d pitch assist")`);
@@ -116,29 +116,166 @@ function landingDepth(boxes,a,c){
   return { depth:t1-t0, gi:sup.gi, t0, box:sup };
 }
 
-// ASSIST_CASE (OQ-052 item 7, ruling 2026-11-08). The linter certifies an assisted face with an UNOBSTRUCTED
+// B-23: THE ARM AS THE CAMERA COLLIDES IT. READABLE_RISE used to put the eye where an UNOBSTRUCTED arm would
+// (OQ-052 item 7's assumption). In play the arm is a ray from the pivot (feet + pivotHeight) back along the
+// view, and allowedArm (camera-tuning.ts, the camera's own function) shortens it to the first hit - padding,
+// never below minDistance. Anything behind the stand point - a wall jump's own wall, an overhang - pulls the
+// eye in and DOWN. So the linter casts the same ray, against every static collider of the level.
+// A prim box is its exact box. A kit mesh is its REAL collision soup: the same triangles the loader hands
+// Rapier (src/loaders/assets.ts: every mesh node, node transform baked in), read from assets/dist by
+// withColliders() below, then the placement's scale, rotation and position. A torii is a gate, and the arm
+// passes through it; its bounding box would not let it. If a mesh's soup was not loaded (a caller that did
+// not await withColliders), its placement falls back to its axis-aligned bbox ENVELOPE, which is larger than
+// the mesh: that only ever shortens the arm, so a false fail, never a false pass. Moving platforms are not
+// static and are not modelled (none is authored behind a stand point today; OQ-062).
+function rotXYZ(deg){ // three.js Euler 'XYZ' (the loader's order): R = Rx * Ry * Rz
+  const [a,b,c]=deg.map(v=>v/DEG), [ca,sa,cb,sb,cc,sc]=[Math.cos(a),Math.sin(a),Math.cos(b),Math.sin(b),Math.cos(c),Math.sin(c)];
+  return [[cb*cc,-cb*sc,sb],[ca*sc+sa*sb*cc,ca*cc-sa*sb*sc,-sa*cb],[sa*sc-ca*sb*cc,sa*cc+ca*sb*sc,ca*cb]];
+}
+export function obstaclesOf(level, manifest){
+  const byName=new Map((manifest?.assets??[]).map(a=>[a.name,a])), out=[];
+  (level.geometry??[]).forEach((g,gi)=>{
+    const a=byName.get(g.asset); if(!a||!Array.isArray(g.pos)) return;
+    if((g.collider??a.collider)==='none') return;
+    const sc=typeof g.scale==='number'?[g.scale,g.scale,g.scale]:Array.isArray(g.scale)?g.scale:[1,1,1];
+    let lo,hi;
+    if(a.kind==='primitive'&&Array.isArray(a.size)){ hi=a.size.map((v,k)=>v*sc[k]/2); lo=hi.map(v=>-v); }
+    else if(a.bbox){ lo=a.bbox.min.map((v,k)=>v*sc[k]); hi=a.bbox.max.map((v,k)=>v*sc[k]); }
+    else return; // UNKNOWN_ASSET reports it
+    const R=Array.isArray(g.rot)&&g.rot.some(v=>v!==0)?rotXYZ(g.rot):null;
+    const mn=[Infinity,Infinity,Infinity], mx=[-Infinity,-Infinity,-Infinity];
+    for(let m=0;m<8;m++){
+      const p=[m&1?hi[0]:lo[0], m&2?hi[1]:lo[1], m&4?hi[2]:lo[2]];
+      const q=R?R.map(r=>r[0]*p[0]+r[1]*p[1]+r[2]*p[2]):p;
+      for(let k=0;k<3;k++){ mn[k]=Math.min(mn[k],q[k]+g.pos[k]); mx[k]=Math.max(mx[k],q[k]+g.pos[k]); }
+    }
+    let tris=null;
+    if(a.kind!=='primitive'&&a.collision){ // the real soup, placed: v' = R (scale * v) + pos
+      const {positions:v,indices:ix}=a.collision, W=new Float64Array(v.length);
+      for(let k=0;k<v.length;k+=3){
+        const q=[v[k]*sc[0],v[k+1]*sc[1],v[k+2]*sc[2]], r=R?R.map(m=>m[0]*q[0]+m[1]*q[1]+m[2]*q[2]):q;
+        W[k]=r[0]+g.pos[0]; W[k+1]=r[1]+g.pos[1]; W[k+2]=r[2]+g.pos[2];
+      }
+      tris={W,ix};
+    }
+    out.push({ gi, mn, mx, tris });
+  });
+  return out;
+}
+/** Attach each mesh asset's collision soup (exactly what src/loaders/assets.ts builds) to a copy of the
+ *  manifest, so obstaclesOf collides the arm with the real shape. Reads <dir of manifest>/<asset.file>. */
+export async function withColliders(manifest, manifestPath){
+  const [{ NodeIO }, { ALL_EXTENSIONS }, { default: draco3d }, path] = await Promise.all([import('@gltf-transform/core'), import('@gltf-transform/extensions'), import('draco3dgltf'), import('node:path')]);
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'draco3d.decoder': await draco3d.createDecoderModule() });
+  const out = structuredClone(manifest), dir = path.dirname(manifestPath);
+  for (const a of out.assets ?? []) {
+    if (a.kind !== 'mesh' || !a.file) continue;
+    const file = path.join(dir, a.file); if (!fs.existsSync(file)) continue; // envelope fallback
+    const doc = await io.readBinary(new Uint8Array(fs.readFileSync(file)));
+    const pos=[], idx=[], e=[0,0,0];
+    for (const scene of doc.getRoot().listScenes()) scene.traverse((node) => {
+      const mesh=node.getMesh(); if(!mesh) return;
+      const M=node.getWorldMatrix(); // column-major 4x4
+      for (const prim of mesh.listPrimitives()) {
+        const P=prim.getAttribute('POSITION'), I=prim.getIndices(), base=pos.length/3;
+        for (let i=0;i<P.getCount();i++){ P.getElement(i,e);
+          pos.push(M[0]*e[0]+M[4]*e[1]+M[8]*e[2]+M[12], M[1]*e[0]+M[5]*e[1]+M[9]*e[2]+M[13], M[2]*e[0]+M[6]*e[1]+M[10]*e[2]+M[14]); }
+        if (I) for (let i=0;i<I.getCount();i++) idx.push(base+I.getScalar(i)); else for (let i=0;i<P.getCount();i++) idx.push(base+i);
+      }
+    });
+    a.collision = { positions: pos, indices: idx };
+  }
+  return out;
+}
+// First hit of a ray (unit dir) on an envelope within max, or null. An origin inside one hits at 0.
+function rayHit(obst,o,dir,max){
+  let best=null;
+  for(const b of obst){
+    let t0=-Infinity,t1=Infinity,ok=true;
+    for(let k=0;k<3;k++){
+      if(Math.abs(dir[k])<1e-12){ if(o[k]<b.mn[k]||o[k]>b.mx[k]){ ok=false; break; } continue; }
+      let p=(b.mn[k]-o[k])/dir[k], q=(b.mx[k]-o[k])/dir[k]; if(p>q) [p,q]=[q,p];
+      t0=Math.max(t0,p); t1=Math.min(t1,q); if(t0>t1){ ok=false; break; }
+    }
+    if(!ok||t1<0) continue;
+    if(b.tris){ // broadphase passed: the nearest triangle, either side (a trimesh has no inside)
+      const {W,ix}=b.tris;
+      for(let k=0;k<ix.length;k+=3){
+        const t=rayTri(o,dir,W,ix[k]*3,ix[k+1]*3,ix[k+2]*3);
+        if(t!==null&&t<=max&&(best===null||t<best.t)) best={t,gi:b.gi};
+      }
+      continue;
+    }
+    const t=Math.max(0,t0); if(t<=max&&(best===null||t<best.t)) best={t,gi:b.gi};
+  }
+  return best;
+}
+// Moller-Trumbore, two-sided: distance along dir to the triangle (a,b,c offsets into W), or null.
+function rayTri(o,d,W,a,b,c){
+  const e1=[W[b]-W[a],W[b+1]-W[a+1],W[b+2]-W[a+2]], e2=[W[c]-W[a],W[c+1]-W[a+1],W[c+2]-W[a+2]];
+  const p=[d[1]*e2[2]-d[2]*e2[1], d[2]*e2[0]-d[0]*e2[2], d[0]*e2[1]-d[1]*e2[0]];
+  const det=e1[0]*p[0]+e1[1]*p[1]+e1[2]*p[2]; if(Math.abs(det)<1e-12) return null;
+  const inv=1/det, s=[o[0]-W[a],o[1]-W[a+1],o[2]-W[a+2]];
+  const u=(s[0]*p[0]+s[1]*p[1]+s[2]*p[2])*inv; if(u<0||u>1) return null;
+  const q=[s[1]*e1[2]-s[2]*e1[1], s[2]*e1[0]-s[0]*e1[2], s[0]*e1[1]-s[1]*e1[0]];
+  const v=(d[0]*q[0]+d[1]*q[1]+d[2]*q[2])*inv; if(v<0||u+v>1) return null;
+  const t=(e2[0]*q[0]+e2[1]*q[1]+e2[2]*q[2])*inv; return t>=0?t:null;
+}
+/** The arm the camera gets at `pitchDeg` with the player at `feet` facing unit xz `u` (camera behind them). */
+export function armAt(obst, feet, u, pitchDeg){
+  const p=pitchDeg/DEG, o=[feet[0], feet[1]+CAMERA_TUNING.pivotHeight, feet[2]];
+  const h=rayHit(obst,o,[-u[0]*Math.cos(p), Math.sin(p), -u[1]*Math.cos(p)],CAMERA_TUNING.distance);
+  return { arm:allowedArm(h?h.t:null), by:h?h.gi:null, eye:CAMERA_TUNING.pivotHeight+allowedArm(h?h.t:null)*Math.sin(p) };
+}
+// What the player at the READABLE_RISE stand point (standoffM off the face, facing it, camera behind) is
+// shown, predicted the way the camera produces it, in its two steps:
+//   1. the camera's assist picks its target with the UNOBSTRUCTED rig (camera.ts assistWant ->
+//      assistPitchDeg): `pitch` = base 18 when the free-arm top reads, the assisted pitch, or null (no assist);
+//   2. the arm then collides (camera.ts update): the eye is pivot + allowedArm(hit) at that pitch.
+// The band is the top surface seen from THAT eye. It reads iff it is >= minBandDeg. Nothing else.
+function riseView(boxes,obst,a,c){
+  const L=landingDepth(boxes,a,c); if(!L) return null;
+  const rise=c[1]-a[1], len=Math.hypot(c[0]-a[0],c[2]-a[2]), u=[(c[0]-a[0])/len,(c[2]-a[2])/len], s=READABLE_RISE.standoffM;
+  const face=[a[0]+u[0]*L.t0, a[1], a[2]+u[1]*L.t0], stand=[face[0]-u[0]*s, a[1], face[2]-u[1]*s];
+  const base=CAMERA_TUNING.initialPitchDeg, target=assistedPitchDeg(rise,L.depth), pitch=target??base;
+  const rest=armAt(obst,stand,u,base), at=pitch===base?rest:armAt(obst,stand,u,pitch);
+  const restBand=topBandDeg(ASSIST_RIG,base,rise,L.depth,s,rest.arm), band=topBandDeg(ASSIST_RIG,pitch,rise,L.depth,s,at.arm);
+  return { L, rise, u, stand, facingDeg:Math.atan2(-u[0],-u[1])*DEG, base, target, pitch, rest, at, restBand, band,
+    freeRestBand:readableBandDeg(rise,L.depth), reads:band>=READABLE_RISE.minBandDeg };
+}
+
+// ASSIST_CASE (OQ-052 item 7, ruling 2026-11-08). The linter certified an assisted face with an UNOBSTRUCTED
 // arm; an overhang behind the player pulls the arm in, lowers the eye, and can leave the top unreadable in
-// play. So every critical_path waypoint that passes READABLE_RISE ONLY because of the assist (rest band below
+// play. B-23 now models that arm (riseView), and the real rig still checks the model. So every critical_path waypoint that passes READABLE_RISE ONLY because of the assist (rest band below
 // minBandDeg, assistedPitchDeg not null) is a case the harness MUST run in the real rig (tools/harness/
 // pitch-assist.ts). The cases are DERIVED here, from the same test that certified them, so no waypoint can be
 // missing one; the harness asserts it ran exactly this set, and a case that does not read in the real rig,
 // or cannot be run, fails the playtest. Same scope as READABLE_RISE: chapters >= 1, moves with a face.
-export function assistCases(level){
-  const cp=level.critical_path??[], out=[];
-  if(typeof level.chapter!=='number'||level.chapter<1) return out;
-  const P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level);
+/** B-23: every critical_path rise READABLE_RISE evaluates, with the linter's verdict and the pose it judged,
+ *  so the harness can stand the real rig in exactly that pose and check the verdict both ways. */
+export function riseViews(level, manifest){
+  const cp=level.critical_path??[], out=[], P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
   for(let i=1;i<cp.length;i++){
     const via=typeof cp[i]==='object'&&!Array.isArray(cp[i])&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
-    const a=P(cp[i-1]), c=P(cp[i]), rise=c[1]-a[1]; if(rise<=0) continue;
-    const L=landingDepth(boxes,a,c); if(!L) continue;
-    if(readableBandDeg(rise,L.depth)>=READABLE_RISE.minBandDeg) continue; // reads at rest: no assist involved
-    const pitch=assistedPitchDeg(rise,L.depth); if(pitch===null) continue;  // READABLE_RISE already rejects it
-    const len=Math.hypot(c[0]-a[0],c[2]-a[2]), u=[(c[0]-a[0])/len,(c[2]-a[2])/len];
-    const face=[a[0]+u[0]*L.t0, a[1], a[2]+u[1]*L.t0];
-    const s=READABLE_RISE.standoffM;
-    out.push({ index:i, via, rise, depth:L.depth, gi:L.gi, pitchDeg:pitch,
-      stand:[face[0]-u[0]*s, a[1], face[2]-u[1]*s], facingDeg:Math.atan2(-u[0],-u[1])*DEG,
-      top:L.box.top, box:{x0:L.box.x0,x1:L.box.x1,z0:L.box.z0,z1:L.box.z1} });
+    const a=P(cp[i-1]), c=P(cp[i]); if(c[1]-a[1]<=0) continue;
+    const v=riseView(boxes,obst,a,c); if(!v) continue;
+    out.push({ index:i, via, rise:v.rise, depth:v.L.depth, pitchDeg:v.pitch, eyeM:v.at.eye, bandDeg:v.band, reads:v.reads,
+      stand:v.stand, facingDeg:v.facingDeg, top:v.L.box.top, box:{x0:v.L.box.x0,x1:v.L.box.x1,z0:v.L.box.z0,z1:v.L.box.z1} });
+  }
+  return out;
+}
+export function assistCases(level, manifest){
+  const cp=level.critical_path??[], out=[];
+  if(typeof level.chapter!=='number'||level.chapter<1) return out;
+  const P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
+  for(let i=1;i<cp.length;i++){
+    const via=typeof cp[i]==='object'&&!Array.isArray(cp[i])&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
+    const a=P(cp[i-1]), c=P(cp[i]); if(c[1]-a[1]<=0) continue;
+    const v=riseView(boxes,obst,a,c); if(!v) continue;
+    if(v.pitch===v.base) continue; // no assist involved (it reads at rest, or READABLE_RISE rejects it)
+    if(!v.reads) continue;          // READABLE_RISE rejects it: the collided eye at the target pitch sees no top
+    out.push({ index:i, via, rise:v.rise, depth:v.L.depth, gi:v.L.gi, pitchDeg:v.pitch, eyeM:v.at.eye, bandDeg:v.band,
+      stand:v.stand, facingDeg:v.facingDeg, top:v.L.box.top, box:{x0:v.L.box.x0,x1:v.L.box.x1,z0:v.L.box.z0,z1:v.L.box.z1} });
   }
   return out;
 }
@@ -292,7 +429,7 @@ export function lintLevel(level, manifest){
   // stairs/slopes read face by face; that is ASSUMED (this linter bounds a ground rise only by its slope),
   // so a tall face authored as `ground` is caught by nav, not here (OQ-046, RB-003). A `platform` ride
   // has no face.
-  const boxes=boxesOf(level);
+  const boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
   if(typeof level.chapter==='number'&&level.chapter>=1) for(let i=1;i<cp.length;i++){
     const via=typeof cp[i]==='object'&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
     const a=P(cp[i-1]), c=P(cp[i]), rise=c[1]-a[1]; if(rise<=0) continue;
@@ -300,11 +437,16 @@ export function lintLevel(level, manifest){
     const role=teach?`the teaching instance of "${via}" (ERROR per D-016)`
       :(CHAPTER_MOVES_ADDED[level.chapter]??[]).includes(via)?`practice, "${via}" is taught at critical_path[${firstUse(via)}] (WARNING per D-016)`
       :`practice, "${via}" is not new in chapter ${level.chapter} (WARNING per D-016)`;
-    const L=landingDepth(boxes,a,c);
-    if(!L){ R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
-    const band=readableBandDeg(rise,L.depth);
-    // D-016b: a top that does not read at rest passes if the pitch assist (D-015d) makes it read.
-    if(band<READABLE_RISE.minBandDeg&&assistedPitchDeg(rise,L.depth)===null) R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto geometry[${L.gi}] (${L.depth.toFixed(2)}u readable depth): its top surface subtends ${band.toFixed(2)}deg from the rest-pose eye (${REST_EYE.aboveFeet.toFixed(2)}u above the feet) at a ${READABLE_RISE.standoffM}u standoff, needs >= ${READABLE_RISE.minBandDeg}deg, and the pitch assist (D-015d) finds no pitch up to ${CAMERA_TUNING.pitchMaxDeg}deg that makes it read${rise<probeHeight(ASSIST_RIG)?` (it only assists tops at or above ${probeHeight(ASSIST_RIG).toFixed(2)}u, 0.5 below the rest eye: this one is lower)`:''}.${rise>=REST_EYE.aboveFeet?' The top is at or above the rest eye, so at rest the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
+    const v=riseView(boxes,obst,a,c);
+    if(!v){ R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
+    if(v.reads) continue;
+    // B-23: say which eye was evaluated and what put it there, so the author knows what to move.
+    const eyeAt=(x,p)=>`${x.eye.toFixed(2)}u above the feet at ${p}deg (arm ${x.arm.toFixed(2)}u${x.by===null?', clear':`, pushed in by geometry[${x.by}] behind the stand point`})`;
+    const assist=v.target===null
+      ?`the pitch assist (D-015d) finds no pitch up to ${CAMERA_TUNING.pitchMaxDeg}deg that makes it read${rise<probeHeight(ASSIST_RIG)?` (it only assists tops at or above ${probeHeight(ASSIST_RIG).toFixed(2)}u, 0.5 below the rest eye: this one is lower)`:''}`
+      :v.target===v.base?`the camera does not assist (with a free arm the top would read at rest, ${v.freeRestBand.toFixed(2)}deg)`
+      :`the pitch assist (D-015d) pitches to ${v.target}deg, where the eye is ${eyeAt(v.at,v.target)} and the top subtends ${v.band.toFixed(2)}deg`;
+    R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto geometry[${v.L.gi}] (${v.L.depth.toFixed(2)}u readable depth): from the eye the camera actually gets at a ${READABLE_RISE.standoffM}u standoff, ${eyeAt(v.rest,v.base)}, its top surface subtends ${v.restBand.toFixed(2)}deg, needs >= ${READABLE_RISE.minBandDeg}deg; ${assist}.${rise>=v.rest.eye?' The top is at or above that eye, so the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
   }
 
   if(d(P(cp[0]),level.spawn.pos)>3) E('PATH_START','critical_path[0] not at spawn');
@@ -447,7 +589,7 @@ if (process.argv[1] && process.argv[1].endsWith('lint-level.mjs')) {
     console.error('usage: node tools/lint-level.mjs <level.json> <manifest.json>'); process.exit(2);
   }
   const level = JSON.parse(fs.readFileSync(levelPath,'utf8'));
-  const manifest = JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+  const manifest = await withColliders(JSON.parse(fs.readFileSync(manifestPath,'utf8')), manifestPath);
   const r = lintLevel(level, manifest);
   for (const w of r.warnings) console.warn('  warn ', w);
   for (const e of r.errors)   console.error('  ERROR', e);

@@ -3,9 +3,11 @@
 // reject and inputs it MUST accept; if a rule passes everything, this fails.
 // Usage: node tools/lint-self.mjs   (npm run lint:self; runs in CI after lint:levels)
 import fs from 'fs';
-import { assistedPitchDeg, groundFaces, lintLevel, MOVE, readableBandDeg, READABLE_RISE, REST_EYE } from './lint-level.mjs';
+import { armAt, assistedPitchDeg, groundFaces, lintLevel, MOVE, obstaclesOf, readableBandDeg, riseViews, withColliders, READABLE_RISE, REST_EYE } from './lint-level.mjs';
+import { CAMERA_TUNING } from '../src/engine/camera-tuning.ts';
 
-const manifest = JSON.parse(fs.readFileSync('assets/dist/manifest.json', 'utf8'));
+const rawManifest = JSON.parse(fs.readFileSync('assets/dist/manifest.json', 'utf8'));
+const manifest = await withColliders(rawManifest, 'assets/dist/manifest.json');
 const load = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 const codes = (r) => r.errors.map((e) => e.match(/^\[([A-Z_]+)\]/)?.[1]);
 let fails = 0;
@@ -83,6 +85,35 @@ check('shipped chapter 1 passes (READABLE_RISE and CHAPTER_TEACH can pass)', pos
 const neg = lintLevel(load('tools/fixtures/lint/ch1-unrecoverable-first-jump.json'), manifest);
 const c = codes(neg);
 check('fixture: first jump over the void FAILS CHAPTER_TEACH, and nothing else', c.length === 1 && c[0] === 'CHAPTER_TEACH', c.join(', ') || 'no errors: CHAPTER_TEACH is a tautology again');
+
+// ---- B-23: READABLE_RISE evaluates the eye the camera actually gets (the arm collides) -------------------
+// The pre-B-23 model put the eye where an unobstructed arm would. A wall jump's own wall sits 1 u behind the
+// stand point (chapter 2's shape) and pushes the arm in to minDistance: the eye drops from +3.66 to +1.75,
+// below the top of anything worth a wall jump. Measured in the real rig (tools/harness/pitch-assist.ts B-23
+// proof, camera behind the facing): +1.76.
+console.log('B-23: the collided arm');
+{
+  const fx = load('tools/harness/fixtures/wall-arm.json');
+  const ob = obstaclesOf(fx, manifest);
+  const a = armAt(ob, [8, 0, 0], [1, 0], CAMERA_TUNING.initialPitchDeg), free = armAt(ob, [8, 0, 10], [1, 0], CAMERA_TUNING.initialPitchDeg);
+  check('a wall 1u behind the stand point pins the arm at minDistance', a.arm === CAMERA_TUNING.minDistance && a.by === 2, `arm ${a.arm.toFixed(2)}u, eye +${a.eye.toFixed(2)}, by geometry[${a.by}]`);
+  check('nothing behind: the full arm, the rest eye', free.arm === CAMERA_TUNING.distance && Math.abs(free.eye - REST_EYE.aboveFeet) < 1e-9, `arm ${free.arm.toFixed(2)}u, eye +${free.eye.toFixed(2)}`);
+  // The rule, both ways, on wall faces inside wall's D-016 band (+3.75) and below it (+2.50), each with its
+  // wall behind and with nothing behind. Pre-B-23 the linter passed all four; the rig reads only the clear two.
+  const r = lintLevel(fx, manifest), flagged = (i) => [...r.errors, ...r.warnings].filter((e) => e.startsWith(`[READABLE_RISE] critical_path[${i}] `));
+  check('B-23 rejects +3.75 (in wall\'s band) with its wall 1u behind: an ERROR, the teaching instance', flagged(2).length === 1 && r.errors.some((e) => e.startsWith('[READABLE_RISE] critical_path[2] ')), flagged(2)[0]?.slice(0, 140));
+  check('B-23 accepts +3.75 (in wall\'s band) with nothing behind: the assist reads it at 29deg', flagged(4).length === 0, flagged(4)[0]?.slice(0, 140) ?? 'not flagged');
+  check('B-23 rejects +2.50 (below the band) with its wall 1u behind', flagged(6).length === 1, flagged(6)[0]?.slice(0, 140));
+  check('B-23 accepts +2.50 (below the band) with nothing behind: it reads at rest', flagged(8).length === 0, flagged(8)[0]?.slice(0, 140) ?? 'not flagged');
+  const v = Object.fromEntries(riseViews(fx, manifest).map((x) => [x.index, x]));
+  check('B-23: the walled +3.75 is judged at the camera\'s own target (29deg) with the arm collided there', v[2]?.pitchDeg === 29 && v[2].eyeM < 3.75, `pitch ${v[2]?.pitchDeg}deg, eye +${v[2]?.eyeM.toFixed(2)}`);
+  // The kit meshes collide as their real triangles, not their bbox: pre-D-015 chapter 1's first 3.5 climb
+  // has a torii 5u behind its stand point, and the arm passes through the gate. With only the bbox envelope
+  // (a manifest withColliders did not load) the same face is flagged: the soup is load-bearing, and the
+  // fallback errs toward failing.
+  const env = lintLevel(load('tools/fixtures/lint/01-lower-stair.pre-d015.json'), rawManifest).warnings.filter((e) => e.startsWith('[READABLE_RISE]'));
+  check('envelope fallback (no collision soup): the torii\'s bbox blocks the arm, the face is flagged', env.length === 1 && /pushed in by geometry\[9\]/.test(env[0]), env[0]?.slice(0, 160) ?? 'not flagged');
+}
 
 const gym = lintLevel(load('levels/00-gym.json'), manifest);
 check('gym (chapter 0) is exempt from READABLE_RISE', !codes(gym).includes('READABLE_RISE'));

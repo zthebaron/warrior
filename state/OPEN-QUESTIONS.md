@@ -723,6 +723,8 @@ took, each PROVISIONAL:
 7. **ASSIST_CASE (replaces the "should" this item first said; not approved as written).** The linter models an
    unobstructed arm. An overhang behind the player pulls the arm in and lowers the eye, so a face can pass the
    linter and still be unreadable in play. This is now a check that fails.
+   - **B-23 (OQ-062):** the linter now models the collided arm too, so it rejects such a face itself. The real
+     rig remains the check on that model. `assistCases` now takes the manifest.
    - **The cases.** `assistCases(level)` (tools/lint-level.mjs) derives every critical_path waypoint that passes
      READABLE_RISE only because of the assist (rest band below minBandDeg, an assisted pitch exists). It uses the
      same test that certified the waypoint, so no such waypoint can be missing a case.
@@ -1054,3 +1056,92 @@ took, each PROVISIONAL:
 4. **Verdict: the coverage gate holds.** No change to the workflow or to `merge-reports.mjs` is needed.
 5. **The gap is outside the gate: `main` has no branch protection and no rulesets.** `gh api repos/zthebaron/warrior/branches/main/protection` returns 404, and the rulesets list is `[]`. A red `playtest` marks the PR but does not block a merge, and pushes to `main` (`git push origin HEAD:main`, which the rules prescribe) bypass PR CI entirely. To make the gate binding, Tim would add a ruleset requiring the `playtest` check on PRs to `main`. That conflicts with the direct-push workflow for `state/` and claim commits, so the ruleset would need a bypass for those or a different flow. **This is Tim's call. Nothing was changed.**
 status: PROVISIONAL
+
+## OQ-062 — B-23: a wall jump's teaching face reads only off a SHORT wall; shipped chapter 2 failed and is rebuilt to one
+raised: 2026-11-08 by kit (B-23)
+
+**What changed.** READABLE_RISE used to put the eye where an unobstructed arm would (OQ-052 item 7's
+assumption). It now predicts the eye the camera produces, in the camera's own two steps:
+1. The assist picks its target with the free-arm rig.
+2. The arm collides: a ray from the pivot back along the view, shortened by `allowedArm`, the camera's
+   own function, moved into `camera-tuning.ts` so the linter imports it.
+
+The ray is cast against every static collider. Prim boxes are exact. Kit meshes are their real collision
+triangles, read from `assets/dist`. A torii's bbox would block an arm that really passes through the gate:
+pre-D-015 chapter 1 is flagged with the bbox and is clean with the triangles. It is pinned in lint-self.
+MEASUREMENTS "B-23: the collided arm" has the linter-against-rig table. The two agree to within 0.03° on all
+six fixture rises.
+
+**Harness bug found on the way.** `respawnAt` never turned the camera, so every real-rig check measured from
+spawn yaw. For a case facing any other way the camera was side-on: OQ-056 item 3's 0.00° was that. The fix is
+a new harness call, `cameraYaw(facing)`, made in `measureAt` before the rig settles. Every existing fixture
+faces spawn's yaw and reads as before, and both chapter 2 climb cases pass again at 30° and 26°.
+
+**The finding.** On a 3.5 u ledge (chapter 2's), at READABLE_RISE's pose (2 u off the face, facing it, camera
+behind), each cell is the band from the eye the camera actually gets, at the pitch it chooses. The wall behind
+is tall (8.5):
+
+| wall behind | +2.10 | +2.50 | +3.00 | +3.50 | +3.75 | +4.00 |
+|---|---|---|---|---|---|---|
+| 1 u | no 0.00° @18° | no 0.00° @18° | no 0.00° @18° | no 0.00° @27° | no 0.00° @29° | no 0.00° @31° |
+| 2 u | no 0.00° @18° | no 0.00° @18° | no 0.00° @18° | no 0.00° @27° | no 0.00° @29° | no 0.00° @31° |
+| 3 u | no 1.46° @18° | no 0.00° @18° | no 0.00° @18° | no 0.00° @27° | no 0.00° @29° | no 0.00° @31° |
+| 5 u | **reads** 2.69° @18° | no 1.55° @18° | no 0.09° @18° | no 1.19° @27° | no 1.09° @29° | no 1.01° @31° |
+| 7 u | **reads** 2.91° @18° | **reads** 2.19° @18° | no 1.26° @18° | **reads** 2.41° @27° | **reads** 2.39° @29° | **reads** 2.38° @31° |
+
+- **Tall walls never read.** A tall wall reads only once it is about 7 u back, where the arm (7 cos 18° =
+  6.66 u) is free.
+- **Why 7 u back is never a wall jump:** you kick off the wall and land on the ledge, so wall to landing would
+  be about 9 u, past `MOVE.wall.maxH` 4.2.
+- **Shipped chapter 2's +2.50 failed.** Its wall was 1 u behind (`geometry[3]`, 8.5 tall). The eye was +1.75
+  against +1.76 in the rig, and the band was 0.00°.
+
+**Correction to my first report.** I first wrote that no wall-jump teaching face reads at any height. That
+swept only tall walls. A wall short enough for the arm to pass over does read:
+- **Why it works:** a rise at or above the probe height (3.16), so inside wall's band, gets an assisted pitch
+  steep enough for the arm to clear a short wall. A shallow landing makes that pitch steeper still: 53-55° on
+  a 1 u shelf.
+- **How tall a wall still reads** (+3.50 to +4.00, 1 u landing): 2.80-2.90 at 1 u back, 3.45-3.60 at 1.5 u back.
+- **How tall it must be to kick off:** the nav bot sailed over walls 2.2 and 2.5 tall (fell into the void),
+  and wall-jumped off 3.0 and 3.5.
+- **The window:** rise in wall's band, wall about 1.5 u back and 3.0-3.5 tall, landing about 1 u deep.
+
+**Tim's ruling (2026-11-08):** fix `levels/02-cliff-seam.json` so the wall teach reads under the corrected
+model, in the same PR as B-23, without widening the check. Rebuilt to the middle of the window:
+
+| | first shipped | rebuilt |
+|---|---|---|
+| rise (`critical_path[5]`) | +2.50, below wall's band | **+3.75, in wall's D-016 band (3.50, 4.00]** |
+| wall kicked off (`geometry[3]`) | 1 u behind, 8.5 tall | 1.5 u behind, 3.25 tall |
+| landing (`geometry[4]`) | 3.5 u ledge | 1 u shelf |
+| how it reads | 0.00° at rest (linter and rig) | 3.54° at 54° linter, **3.50° at 54.0° real rig** (ASSIST_CASE) |
+
+Other changes:
+- **Backstop** (new `geometry[36]`, 2.5 u deep, 2.5 above the shelf): it stops a wall jump overshooting the
+  shelf, and it bounds the shelf's readable depth at 1 u for both the linter and the camera's probe.
+- **Scene budget** 49 / 5,040 -> 50 / 5,052 (MEASUREMENTS).
+- **Seam rock `geometry[23]`** moved from x 40.5 to x 44. At 40.5 it stood behind the wall and blocked the
+  arm. The seam gap there is now 11.5 u, where the others are 8.5.
+- **Segment times** (phase-sweep worst arrival, budget 12 s): 4.87 / 2.70 / 2.35 / 8.85 / 10.73.
+- **Results:** nav, phase-sweep, replay (re-recorded), chaos and visual (cam0-2 re-recorded, copied to linux)
+  all pass. CHAPTER_TEACH and CHAPTER_TRANSFER are unchanged and pass.
+
+Design costs, each PROVISIONAL:
+1. **RB-004 item 3's loophole closes for jump.**
+   - The teach is now inside wall's band, so a jump (+2.0) cannot do it, nor can a jump onto the wall
+     (3.25 > 2.0).
+   - Climb still can, straight up the face (+3.75 <= `climb.maxRise` 4.5), as OQ-056 item 3 accepted at +2.50.
+   - The wall is above the ledge-grab window (1.4-2.3), so it cannot be climbed itself.
+   - Double (not taught yet at this point) could reach the wall top (3.25 <= 3.5) and then hop to the shelf.
+2. **The margins are narrow on both sides.** The wall is 3.25 against a kick-off floor between 2.5 and 3.0, and
+   a read ceiling of 3.55. A change to the wall jump's physics or to the camera rig can close this window.
+   Lint, ASSIST_CASE and nav each fail loudly if it does.
+3. **A 1 u shelf is a small target.** The bot lands it every run (nav, and phase-sweep 8/8), but it has no
+   human data.
+The first report offered three alternatives to a level fix, each amending a CLOSED decision. All are still
+available if the narrow window above proves too fragile:
+- judge `wall` from its approach rather than 2 u off the face (D-015b);
+- let the camera account for the collided arm (D-015d);
+- exempt `wall` from a readable top (D-016).
+status: PROVISIONAL (the rebuild; Tim may prefer one of the earlier three resolutions instead)
+
