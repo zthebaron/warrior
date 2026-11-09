@@ -143,5 +143,6 @@
 {"id":"B-11","agent":"phase0-spec","ts":"2026-11-09T02:44:44.291Z","ttl_min":90}
 {"id":"OQ-056","agent":"builder-ch2","ts":"2026-11-09T02:55:54.725Z","ttl_min":90}
 {"id":"OQ-057","agent":"phase0-spec","ts":"2026-11-09T03:06:15.172Z","ttl_min":90}
-{"id":"CHAPTER-2","agent":"builder-ch2","ts":"2026-11-09T02:15:45.645Z","released":true}
-{"id":"OQ-056","agent":"builder-ch2","ts":"2026-11-09T02:56:17.390Z","released":true}
+{"id":"CHAPTER-3","agent":"kit","ts":"2026-11-09T03:20:39.349Z","ttl_min":90}
+{"id":"B-11","agent":"unknown","ts":"2026-11-09T03:21:27.461Z","released":true}
+{"id":"OQ-057","agent":"unknown","ts":"2026-11-09T03:21:27.492Z","released":true}

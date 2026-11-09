@@ -9,6 +9,8 @@ enemy pursues the player with pathfinding, the nav bot's route stops being repro
 replay harness is the thing the whole build rests on. Traversal keeps every level's test a
 deterministic path.
 
+implemented_by: 1191a34 (NOT rows 1-3: no fighting or pursuing enemies, no combat verbs, no pursuit AI, enforced by lint:not-list), 19234ab (schema: `enemies` cut, the patroller lives in `hazards`)
+
 ## Q2 — No 9th move. **A.** CLOSED
 
 Ruled out: glide, or any addition to the moveset. Every budget in the MOVE table was *measured*
@@ -23,6 +25,8 @@ Signal channels, locked:
 - `HAZARD_ON_PATH` stays a static check. Moving-hazard collisions are the nav bot's job, and the
   spec says so, so nobody expects the linter to catch them.
 
+implemented_by: 1191a34 (NOT rows 4-5: no ninth move, schema and src), 19234ab (B-1: patroller `speed`/`phase` mandatory), f24a9ac (crow cue: a lift-off keyed to its hazard's timer, crow motion means WHEN)
+
 ## Q2a — Ambient crows: **confirmed, with a sharper rule.** CLOSED
 
 Yes: if lift-off always means a timing cue, ambient crows can never lift off. A moving ambient
@@ -35,6 +39,8 @@ Write the rule as translation, not animation — it is lintable that way:
 
 A perched crow's idle head-turn is rotation in place and is allowed. Distant flocks in the far
 band (80u+) are painted in place. Mist and pines do not animate.
+
+implemented_by: 18a3713 (B-15: harness stage `ambient-motion`, NOT row 18. Moving platforms are allowed as the `platform` move, a PROVISIONAL reading in OQ-054)
 
 ## Q2b — Landing readability: **do not amend the Style Bible yet.** CONDITIONAL
 
@@ -98,6 +104,8 @@ Make it a budget rather than a feeling, since the nav bot already times segments
 
 That reconciles the 30-90s core loop with a checkpoint interval short enough to stay fair, and it
 is CI-checkable on the bot side.
+
+implemented_by: 19234ab (schema: `collectibles` and `interactables` cut), 1191a34 (NOT rows 6-8 and 12: no pickups, no ordered-state puzzles, no second route)
 
 ## Q4 — Win condition and session length: **A, with three amendments.** CLOSED
 
@@ -297,7 +305,7 @@ same mechanism as Q2b and D-001.
 trying the game from the case-study page who refreshes loses everything. Post-gold showcase item,
 not a design change. Noted so it is a known trade rather than a surprise.
 
-implemented_by:
+implemented_by: b5a1939 (respawn at the furthest torii reached, the furthest-index gate), 6dcc157 (touching a hazard is death; the world clock runs during death, D-004), 7fa2b70 (ADDITION: PHASE_SWEEP harness stage), 3c076da (CHANGE: respawn delay live for the feel test, CI ceiling 1.2 s), 4c167ef (hidden per-segment deaths recorded by the instrument, nothing rendered), 18a3713 (no visible death counter or run metric: harness stage `run-metric`, NOT row 20)
 
 ## D-002 — Decisions must name their implementing commit. DECIDED
 
@@ -312,6 +320,8 @@ faster than implementation, which is fine, but it has to be visible.
 Every decision entry gains an `implemented_by:` field, empty until the commit lands. Add a lint
 rule reporting any CLOSED decision with no implementing commit. Fold this into PROMPT 00's control
 plane: `state/DECISIONS.md` gets the same field and the same check.
+
+implemented_by: af219b2 (B-11: lint:decisions, in CI)
 
 ## D-003 — The 1% accent budget is withdrawn. My error. DECIDED
 
@@ -726,6 +736,8 @@ against the bot's 0.75 s / 0.95 s. If human slack is comfortably inside the bot'
 sound and `lift` can be derived. If it is not, the problem is the cue's legibility, not its timing,
 and a bigger lead will not fix it.
 
+implemented_by: f24a9ac (authored `lift` per crow: schema, runtime, lint, bot departs on the lift-off edge, sweep), e973c6c (cue-window measurement: effective lead and slack reported)
+
 ## D-011 — Chapter length is derived, not ranged. OQ-037 **OVERRIDDEN.** DECIDED
 
 The session took A: leave `CHAPTER_SEGMENTS` at 4-6 and record C as a description of what chapter 1
@@ -854,6 +866,8 @@ So keep the classification exactly as taken — `ground` alone is exempt — and
 what it is: a move earns a teaching segment when **misunderstanding it is unrecoverable within the
 segment**. Carry that wording into the lint code's message so the next author reads the reason
 rather than a claim that is sometimes false.
+
+implemented_by: c03fe4a (RECOVERABLE_MOVES = [ground]; 'unrecoverable within the segment' carried into every D-011 lint message)
 
 ## OQ-043 — **CONFIRMED as taken.** The riskiest new thing per chapter. CLOSED
 
