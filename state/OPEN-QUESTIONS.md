@@ -874,7 +874,7 @@ took, each PROVISIONAL:
    - **No new crow timing is introduced.**
 7. **Gaps are 6 u.** That is past `jump.maxH` 5.0, so only a double clears them. Run 8 u of `double.maxH` 9.5 (84%, under TIGHT).
 8. **The seam:** 18 `kit_rock_mass` along z -5.7, set 2 u below each floor, with the bright void on the open side, as in chapter 1.
-9. **Harness trap, for the next level builder:** `--skip-build` plays the level JSON bundled at the last build (levels are Vite chunks) against the waypoints on disk. After any level edit, rebuild. Two of this build's diagnoses were briefly wrong because of it.
+9. **Harness trap, for the next level builder:** `--skip-build` plays the level JSON bundled at the last build (levels are Vite chunks) against the waypoints on disk. After any level edit, rebuild. Two of this build's diagnoses were briefly wrong because of it. *B-24 (branch `b24-stale-bundle`): preflight now fails a run whose bundled levels differ from disk, so this trap is a BUILD_FAILURE, not a habit.*
 10. **The CI job timeout is raised from 20 to 40 minutes** (`.github/workflows/ci.yml`).
     - **The old 20:** set in H3 (`e99d5d1`) when the harness ran one level. It is in no decision and not in MEASUREMENTS, so it is not a budget. A guess the harness outgrew.
     - **Main with two levels** (runs 42552389070 to 42554509191): 9.5 to 16.0 min.
