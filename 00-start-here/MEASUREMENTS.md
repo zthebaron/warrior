@@ -815,74 +815,93 @@ Frames: `docs/build-log/d018/`.
 
 ## D-019 post constants (2026-11-10)
 
-`src/engine/ink-post.ts`, `INK_POST`: the ink edge and the near value push. `edgeLaplacian`, `nearEdgePx` and
-`midEdgePx` (D-018) are gone with the crease test they served.
+`src/engine/ink-post.ts`, `INK_POST`: the ink edge and the near value push. D-018's `edgeLaplacian`,
+`nearEdgePx` and `midEdgePx` (rows in "D-018 post constants" above) are SUPERSEDED: the crease test they served
+is gone.
 
 | Constant | Value | Kind | Basis |
 |---|---|---|---|
-| silhouetteRatio | 1.2 | measured | a neighbour this many times farther is a true silhouette. A crease has no depth jump at all; a plane at 5 deg grazing changes depth ~3.3% per px and ~13% over the 4px the widest stroke searches, so 1.2 never fires on a face. The gate's own silhouette test is 1.25 (4-neighbour), a subset |
-| strokeBasePx | 3 px within 8 u, 2 px to 16 u, 1 px to 25 u, none beyond | authored, STYLE §3 as amended | weight falls with distance; distant forms carry no line (Tim, D-019). At 360p; scaled by `uPx` at higher resolutions |
+| silhouetteGap | 0.02 (relative, in 1/z) | derived | a silhouette is two surfaces that do not meet. Each side of a pixel boundary is continued from its own two depth samples (1/z is linear across a plane in screen space); a line needs BOTH continuations to stay this far apart. One plane at any grazing angle: exactly 0. A crease: opposite signs. A step-down between parallel tops: the gap itself (the gym's 0.4 u treads at 5-20 u are 2-8%). 2% keeps a 0.02 u stroke proud of its face unlined beyond 1 u. The first cut, "a neighbour 1.2x farther", inked flat ground below ~4.4 deg grazing and missed gaps under 1.2x (independent review, verified) |
+| diagonal step, uPx | whole pixels; integer | measured | a 0.7071 px diagonal step on the NEAREST-sampled depth texture lands on unevenly spaced texels and manufactures a gap on a receding plane: 25.2% of flat-ground px inked in the grazing camera, 0.1% with whole-pixel steps |
+| strokeBasePx | 3 px within 8 u, 2 px to 16 u, 1 px to 25 u, none beyond | authored, STYLE §3 as amended | weight falls with distance; distant forms carry no line (Tim, D-019). At 360p |
 | strokeMaxPx | 4 | authored | the seed's heaviest contour blobs against a 360p frame |
-| strokeFreq | 0.6 /u | authored | the stroke's weight changes over ~1.5-2 u of the form: at 10 u that is ~1/10 of the frame, the seed's rhythm (hero_7s path edge) |
-| strokeGap, strokeGain | 0.36, 2.2 | measured | noise below the gap lifts the brush. Measured result: 59-72% of high-contrast silhouette px inked (the rest are breaks), 1px hairline share 42-59% |
-| lowContrast | 0.1 (25.5 levels) | derived | the largest gap between ADJACENT ramp steps is 25 levels (ink-deep to ink-black). Forms shown at the same or an adjacent step are not separated by value, so the stroke may not break there: 97.3-99.4% inked |
-| pushSteps | +3 inside 10 u, +2 to 17 u, +1 to 23 u, 0 beyond; paper never | measured | first cut 7/13/19 u left dark mass at 0.9% of chapter 1's near field: the forms in frame sit 10-25 u out. At 10/17/23: 9.2%. The last 2 u before the 25 u band edge are unpushed, so near meets mid without a jump |
-| washFreq, washJitter | 0.12 /u, +-30% | authored | the push boundaries are displaced by world-anchored noise so they read as the ragged edge of a wash (seed: hero_7s cliff faces), not as rings centred on the camera |
-| LEVEL_VISUAL.topColor / defaultColor | paper-cream / wash-light | derived | an undressed box: top paper, faces two steps below (41 levels). With crease lines gone a one-value box has no visible top, and READABLE_RISE is about seeing the ground up there. Vertex colours on one unlit material: draw calls unchanged (every scene ratchet holds) |
+| strokeFreq | 0.6 /u | authored | the stroke's weight changes over ~1.5-2 u of the form (seed hero_7s path edge) |
+| strokeGap, strokeGain | 0.36, 2.2 | measured | noise below the gap lifts the brush: 58-71% of high-contrast silhouette px inked, 1 px hairline share 34-48% |
+| lowContrast | 0.04 (10 levels) | derived | under half the smallest gap between adjacent ramp steps (19 levels): only forms shown at the SAME step. There the stroke never breaks |
+| pushSteps | +3 inside 12 u at most, +2 to 20 u, +1 to 24.9 u; steps 0 and 1 (paper, mist) never | measured | dark mass (ink-grey or darker) 23-46% of the near field; 1.0% with the push removed. Paper and mist are exempt so that no walkable top and no cloud is ever pushed |
+| washFreq, washJitter | 0.12 /u (x1, x3.7, x11 octaves), 0.35 | authored | each boundary is pulled INWARD by up to 35%, never outward, so the push ends inside 24.9 u by construction. The first cut (+-30%, one octave) left a hard cut at exactly 25 u and arcs centred on the camera (review). Still per pixel by camera distance: OQ-068 item 4, B-43 |
+| LEVEL_VISUAL topColor / defaultColor | mist-pale / stone-mid | derived | an undressed box: top one step off the paper sky at any distance, faces two steps below the top (43 levels) |
+| LEVEL_VISUAL tagColors, platformTopColor | paper-cream | derived | what marks ground (goal pad, spawn pad, a moving platform) is paper on the mist ground: the only other value the push exempts |
+
+Gate constants, `tools/harness/post.ts` `POST_GATE` (D-019):
+
+| Constant | Value | Basis |
+|---|---|---|
+| jump, smooth | 1.25, 1.1 | a 4-neighbour this many times farther = a strong silhouette; every neighbour within 1.1 = no depth jump here |
+| creaseLap | 0.004 | relative Laplacian of 1/z below -this with no jump = a convex crease; the depth readback's noise at 25 u is ~3e-4 |
+| stepGap | 0.02 | = silhouetteGap, re-derived from the readback: a small step-down is a silhouette, not a crease |
+| sameValue, clearValue | 14, 40 levels | across a silhouette: within 14 = the same step (grain 3 each side + rounding); 40 = two steps |
+| inward walks | 3, 5, 7 px; width cap 6 px; "clearly lighter" 12 levels | 3 px clears a 2 px line; 5 px reads the form behind a 4 px stroke; 7 px for stroke width; 12 levels is over half the smallest ramp step |
+| minClass | crease 500, mid 300, flat 50, weight 200, plane 2000 px | a check on an empty class proves nothing; shipped classes are 4-80x these, except same-value edges (151-778; the gym has 333) |
+| graze, grazeSlope, planeLap | 1.5 u past spawn, 14 u ahead, eye 0.35 u; 1%/row; 0.0005 | a camera almost in the ground plane; a pixel deep inside a plane within ~100 rows of its vanishing line, planar 6 px every way |
+| thresholds | edgeHit 35-92%, minFlatEdgeHit 95%, minWeightShare 10%, maxCreaseInk 45%, maxMidLine 35%, minNearDark 10%, minNearBlack 0.2%, maxPlaneInk 1% | each between the measured wrong value and the shipped value: table below |
 
 ## D-019 ink edge and value range (2026-11-10)
 
-Harness stage `post`, every level, the six visual cameras. Before = PR #27's shader and loader (D-018) run
-under this branch's gate; after = this branch. Darwin SwiftShader.
+Harness stage `post`, every level, the six visual cameras plus the grazing camera. Darwin SwiftShader. Where a
+cell reads "a -> b", a is PR #27's shader (D-018) and b is this branch. The D-018 crease and mid figures were
+measured under the first version of those two checks (before real step-downs were excluded from the crease class).
 
-| Level | Silhouette px inked where value separates the forms (gate 35-92%) | ... where it does not (>= 95%) | 1px hairline share of measurable strokes (>= 10%) | Interior creases that are an ink line (<= 45%) | Mid silhouettes carrying a drawn line (<= 35%) | Near field that is dark mass (>= 3%) |
-|---|---|---|---|---|---|---|
-| 00-gym | 100.0% -> 72.4% | 100.0% -> 97.4% | 0.0% -> 48.7% | 56.1% -> 5.0% | 71.3% -> 3.7% | 1.1% -> 32.9% |
-| 01-lower-stair | 100.0% -> 69.4% | 100.0% -> 98.6% | 0.0% -> 41.5% | 64.4% -> 30.7% | 69.3% -> 3.0% | 1.2% -> 9.2% |
-| 02-cliff-seam | 100.0% -> 69.6% | 100.0% -> 99.4% | 0.0% -> 59.0% | 69.8% -> 7.4% | 81.6% -> 2.9% | 1.1% -> 9.9% |
-| 03-drifting-stones | 100.0% -> 70.2% | 100.0% -> 97.3% | 0.0% -> 58.5% | 66.2% -> 5.5% | 76.5% -> 1.8% | 1.1% -> 4.4% |
-| 04-summit-ridge | 100.0% -> 59.4% | 100.0% -> 99.1% | 0.0% -> 53.5% | 66.8% -> 8.8% | 78.4% -> 3.4% | 1.1% -> 10.1% |
+| Level | Silhouette px inked where value separates the forms (35-92%) | ... where the forms are the same value (>= 95%) | 1px hairline share (>= 10%) | Interior creases that are an ink line (<= 45%) | Flat ground inked, grazing camera (<= 1%, dressed) | Mid silhouettes with a drawn line (<= 35%) | Near field: dark mass, ink-grey or darker (>= 10%) | ... ink-black mass (>= 0.2%, dressed) |
+|---|---|---|---|---|---|---|---|---|
+| 00-gym | 100.0% -> 70.6% | 100.0% -> 100.0% (333 px) | 0.0% -> 33.9% | 56.1% -> 5.2% | 0.0% | 71.3% -> 3.7% | 43.3% | 0.9% |
+| 01-lower-stair | 100.0% -> 65.9% | 100.0% -> 98.0% (539 px) | 0.0% -> 37.0% | 64.4% -> 35.0% | 0.1% | 69.3% -> 3.0% | 23.3% | 0.8% |
+| 02-cliff-seam | 100.0% -> 69.6% | 100.0% -> 100.0% (151 px) | 0.0% -> 46.9% | 69.8% -> 8.9% | 1.6% | 81.6% -> 2.9% | 43.9% | 1.0% |
+| 03-drifting-stones | 100.0% -> 69.1% | 100.0% -> 96.4% (778 px) | 0.0% -> 48.1% | 66.2% -> 5.7% | 0.4% | 76.5% -> 1.8% | 32.3% | 0.8% |
+| 04-summit-ridge | 100.0% -> 58.4% | 100.0% -> 98.7% (232 px) | 0.0% -> 47.2% | 66.8% -> 10.1% | 0.1% | 78.4% -> 3.4% | 38.3% | 1.0% |
 
-Chapter 1's 30.7% crease lines are the kit's own material: kit_ledge's lip and kit_stair_tread's nosing sit
-exactly on creases. They are B-38's, not the post pass's.
+Chapter 1's crease lines are the kit's own lip and nosing bands (B-38), not the post pass. 02's 1.6% of inked
+flat ground is dark material lying on that ground, which is why the check is judged on dressed levels only.
 
-Proof that each check bites. Each mutation was made in the shader SOURCE, the stage run on chapter 1, the
-source restored (byte-compared):
+Proof that each check bites: the shader SOURCE mutated, the stage run on chapter 1, the source restored
+(byte-compared).
 
 | Mutation | Stage | What caught it |
 |---|---|---|
-| none (shipped) | PASS 15/15 | |
-| stroke weight constant 2px, never lifts | FAIL 13/15 | 5,538 of 5,538 silhouette px inked (100.0%, allowed 35-92%); 1px share 0.0% |
-| every convex crease outlined again (the D-018 Laplacian test) | FAIL 13/15 | 77.3% of interior creases are an ink line (allowed 45%; run at 50%) |
-| line drawn on mid-band forms | FAIL 13/15 | 71.7% of mid silhouettes carry a line (allowed 35%); 0.722% of mid px darker than ink-grey |
-| near push removed | FAIL 14/15 | dark mass 0.8% of the near field |
-| the stroke allowed to break on same-value edges | FAIL 14/15 | 69.5% of same-value silhouette px inked (need 95%) |
-| value_compression removed | FAIL 12/15 | pass list; 5.477% off-band; dark mass 0.8% |
-| ink_edge removed | FAIL 11/15 | pass list; 17.4% and 4.9% inked; 12 measurable stroke px |
-| paper_grain removed | FAIL 13/15 | pass list; sky sd 0.00 |
+| none (shipped) | PASS 17/17 | |
+| stroke weight constant 2 px, never lifts | FAIL 15/17 | 100.0% of silhouette px inked; no 1 px hairline |
+| every convex crease outlined (the D-018 Laplacian test) | FAIL 15/17 | 76.3% of interior creases are an ink line |
+| line drawn on mid-band forms | FAIL 15/17 | 61.4% of mid silhouettes carry a line; 1.43% of mid px darker than ink-grey |
+| near push removed | FAIL 16/17 | dark mass 1.0% of the near field |
+| push capped at ink-deep | FAIL 16/17 | ink-black mass 0.0% |
+| the stroke allowed to break on same-value edges | FAIL 16/17 | 70.4% of same-value silhouette px inked |
+| diagonal steps of 0.7071 px | FAIL 16/17 | 25.2% of flat-ground px inked in the grazing camera |
+| value_compression removed | FAIL 13/17 | pass list; 5.477% off-band; dark mass 1.0% |
+| ink_edge removed | FAIL 13/17 | pass list; 15.4% and 4.3% inked |
+| paper_grain removed | FAIL 15/17 | pass list; sky sd 0.00 |
+| the first D-019 test, "a neighbour 1.2x farther" | **PASS 17/17: NOT CAUGHT** | at this grazing pose that test inks only within ~6 px of real edges, which the flat-ground class excludes. A gate limit, recorded with OQ-068's two |
 
-Value structure against the seed, same frame as D-018's sheet (share of non-accent pixels nearest each §2
+Value structure against the seed, the same frame as D-018's sheet (share of non-accent pixels nearest each §2
 step; `docs/build-log/d019/sheet-ch1-cam2.png` is [seed hero_7s | D-018 | D-019]):
 
 | Step | Seed hero_7s | ch1 cam2, D-018 | ch1 cam2, D-019 |
 |---|---|---|---|
-| paper-cream | 37.2% | 26.1% | 28.4% |
-| mist-pale | 9.5% | 16.9% | 11.7% |
-| wash-light | 16.1% | 19.4% | 10.6% |
-| stone-mid | 5.8% | 14.5% | 6.4% |
-| wash-mid | 8.4% | 10.4% | 19.0% |
-| ink-grey | 9.6% | 1.8% | 13.6% |
+| paper-cream | 37.2% | 26.1% | 28.3% |
+| mist-pale | 9.5% | 16.9% | 18.0% |
+| wash-light | 16.1% | 19.4% | 7.0% |
+| stone-mid | 5.8% | 14.5% | 5.9% |
+| wash-mid | 8.4% | 10.4% | 17.3% |
+| ink-grey | 9.6% | 1.8% | 12.9% |
 | ink-deep | 8.0% | 0.0% | 6.2% |
-| ink-black | 5.4% | 10.9% (all of it line) | 4.1% |
-| value at p5 (levels) | 42 | 28 (line) | 53 |
+| ink-black | 5.4% | 10.9% | 4.4% |
 
-Still off the seed, and recorded rather than tuned away: wash-mid is 19.0% against 8.4% (the kit's slab faces,
-B-37/B-38), and paper is 28.4% against 37.2% (B-42, not started by instruction).
+D-018's ink-black was all line; its dark MASS was 1.2% of the near field. Still off the seed, recorded rather
+than tuned away: the slab faces of the kit (B-37, B-38) and the paper share (B-42, not started by instruction).
 
-ACCENT_AREA, chapter 1 (the hue untouched; fewer outline pixels now cover each gate): 0.222 / 0.302 / 0.421 /
-0.484% of the frame (D-018: 0.103 / 0.168 / 0.241 / 0.243%; floor 0.0204%).
+ACCENT_AREA, chapter 1 (the hue untouched): 0.2222 / 0.3021 / 0.4214 / 0.4835% of the frame (D-018: 0.103 / 0.168 / 0.241 /
+0.243%; floor 0.0204%).
 
-Collision and simulation: this change touches no level file, no asset and no linter (`git diff
-origin/ch1-assets -- levels assets tools/lint-level.mjs` is empty), so every geometry fingerprint is PR #27's.
-The full playtest passed with replay against the committed, un-re-recorded traces on all five levels, and
-every scene ratchet held exactly (33/1,102, 75/6,502, 49/5,050, 49/5,662, 48/5,038).
+Collision and simulation: no level, asset or linter file is touched (`git diff origin/ch1-assets -- levels assets
+tools/lint-level.mjs` is empty), so every geometry fingerprint is PR #27's. The full playtest passed with replay
+against the committed, un-re-recorded traces on all five levels, and every scene ratchet held exactly
+(33/1102, 75/6502, 49/5050, 49/5662, 48/5038).
