@@ -115,3 +115,11 @@ separately checks pitch on assist-dependent standing cases. Exact poses are
 snapped at support height before settling; settled feet normally sit roughly
 0.01 above the authored floor. The refined sample protocol and its limitations
 are recorded in MEASUREMENTS.md. No threshold was relaxed.
+
+Validation at correction commit 9ef428a: all 11 static CI checks PASS; camera
+115/115, reachable 13/13, run-metric 15/15, ambient-motion 11/11. All four
+chapters completed through normal progression again with the same simulated
+traversal times above. Every per-level stage passed for the gym and chapters
+1–4, including unchanged visual goldens. The combined coverage check reports
+PASS with no missing stages. Fresh evidence: `review-game-report.json`,
+`review-levels-report.json`, and `review-coverage.json` in the validation folder.
