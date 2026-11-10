@@ -225,3 +225,5 @@
 {"id":"ART-GEN","agent":"art-gen","ts":"2026-11-10T18:25:28.535Z","ttl_min":480}
 {"id":"INK-HIRES","agent":"ink-hires","ts":"2026-11-10T18:51:12.665Z","released":true}
 {"id":"ART-GEN","agent":"art-gen","ts":"2026-11-10T19:40:49.524Z","released":true}
+{"id":"ART-PASS-1","agent":"art-pass-1","ts":"2026-11-10T20:43:32.568Z","released":true}
+{"id":"ART-PASS-2","agent":"art-pass-2","ts":"2026-11-10T20:43:32.598Z","ttl_min":480}
