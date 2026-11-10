@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // The ONE door to fal.ai. Every paid call goes through here, and this script — not the caller's
-// intention — is what holds the $10.00 cap (00-start-here/PROMPT-ART-GEN.md, "Rules for the money").
+// intention — is what holds the $20.00 cap (00-start-here/PROMPT-ART-GEN.md, "Rules for the money",
+// as raised by 00-start-here/PROMPT-ART-GEN-2.md). The cap is cumulative across both rounds: one ledger.
 //
 //   node tools/gen/fal-call.mjs init                      create state/FAL-LEDGER.md (once)
 //   node tools/gen/fal-call.mjs total                     print committed total and headroom
@@ -15,7 +16,7 @@
 //     row that does not parse, or its running-total column disagrees with the re-sum, the call is
 //     refused: an unreadable ledger is treated as a full one.
 //   * committed + price > CAP          -> refused.
-//   * committed >= STOP (the $9.50 line) -> refused, whatever the price.
+//   * committed >= STOP (the $19.50 line) -> refused, whatever the price.
 //   * The ledger row is appended as `pending` BEFORE the submit request leaves, under a lock, so a
 //     crash at any later point still shows the charge. The request id is filled in after submit.
 //   * A row is only ever zero-rated if fal answered the submit with a non-2xx status (it never
@@ -34,8 +35,11 @@ import { homedir } from 'node:os';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TICKS = 10000;                 // ticks per dollar
-const CAP = 10 * TICKS;              // $10.00, absolute (Tim, PROMPT-ART-GEN.md)
-const STOP = 9.5 * TICKS;            // $9.50: no new call starts at or past this line
+// $20.00 TOTAL, absolute and cumulative over rounds 1 and 2. Raised from $10.00 by Tim at 11:29 am PST
+// on 2026-11-10, after he looked at the round 1 contact sheet (00-start-here/PROMPT-ART-GEN-2.md,
+// "Money rules"). It is not a second $10: the round 1 rows stay in the same ledger and still count.
+const CAP = 20 * TICKS;
+const STOP = 19.5 * TICKS;           // $19.50: no new call starts at or past this line (same brief)
 const EXIT_REFUSED = 3;
 const EXIT_REMOTE = 4;
 
@@ -95,6 +99,38 @@ const PRICES = {
     only(p, ['model_url', 'height_meters', 'enable_animation', 'animation_action_id']);
     return 8000 + (p.enable_animation === true ? 1200 : 0);
   },
+  // Rig once, then one library clip per id against that same rig. Read 2026-11-10:
+  //   model page:   "$0.20 per request. +$0.12 per animation clip" (10 clips = $1.40)
+  //   pricing API:  0.08 per "generations" for this endpoint, unit not defined
+  // Neither is trusted on its own: the sibling rigging endpoint's page said $0.20 where the pricing
+  // API said $0.80. So the rig step is charged at that $0.80 and every clip at the page's $0.12,
+  // which is above both sources under any reading of them (10 clips = $2.00). This is padding
+  // held against the cap, not a quoted price. fal de-duplicates ids, so duplicates are refused
+  // here to keep the count that is priced equal to the count that is sent.
+  'fal-ai/meshy/rigging/multi-animation': (p) => {
+    only(p, ['model_url', 'height_meters', 'animation_action_ids']);
+    const ids = p.animation_action_ids;
+    if (!Array.isArray(ids) || ids.length < 1 || ids.length > 10) throw new Error('animation_action_ids must be an array of 1 to 10 ids');
+    if (!ids.every((x) => Number.isInteger(x) && x >= 0 && x <= 696)) throw new Error('every animation_action_id must be an integer in 0..696');
+    if (new Set(ids).size !== ids.length) throw new Error('animation_action_ids must be distinct');
+    return 8000 + 1200 * ids.length;
+  },
+  // Page and pricing API agree: $0.08 per image at 1K; "2K ... charged at 1.5 times ... the standard
+  // rate". 4K, web search and high thinking are add-ons and are refused rather than priced.
+  'fal-ai/nano-banana-2': (p) => {
+    only(p, ['prompt', 'num_images', 'output_format', 'aspect_ratio', 'seed', 'resolution']);
+    if ((p.num_images ?? 1) !== 1) throw new Error('num_images must be 1');
+    const r = p.resolution ?? '1K';
+    if (r !== '1K' && r !== '2K') throw new Error('resolution must be 1K or 2K');
+    return r === '2K' ? 1200 : 800;
+  },
+  'fal-ai/nano-banana-2/edit': (p) => {
+    only(p, ['prompt', 'image_urls', 'num_images', 'output_format', 'aspect_ratio', 'seed', 'resolution']);
+    if ((p.num_images ?? 1) !== 1) throw new Error('num_images must be 1');
+    const r = p.resolution ?? '1K';
+    if (r !== '1K' && r !== '2K') throw new Error('resolution must be 1K or 2K');
+    return r === '2K' ? 1200 : 800;
+  },
 };
 
 // ---- small helpers -----------------------------------------------------------------------------
@@ -133,7 +169,8 @@ const net = async (url, init = {}, withKey = false) => {
 // ---- ledger ------------------------------------------------------------------------------------
 const HEADER = `# fal.ai ledger
 
-Cap **$10.00**, absolute. No new call starts at or past **$9.50**. Written by \`tools/gen/fal-call.mjs\`
+Cap **$20.00** in total, absolute, across rounds 1 and 2 (raised from $10.00 by Tim at 11:29 am PST on
+2026-11-10). No new call starts at or past **$19.50**. Written by \`tools/gen/fal-call.mjs\`
 only: the row is appended as \`pending\` before the request is sent, so a crash cannot hide a charge.
 
 Every row counts toward the total at its listed price, with one exception: \`rejected\` means fal

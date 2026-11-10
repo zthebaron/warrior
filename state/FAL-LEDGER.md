@@ -1,6 +1,7 @@
 # fal.ai ledger
 
-Cap **$10.00**, absolute. No new call starts at or past **$9.50**. Written by `tools/gen/fal-call.mjs`
+Cap **$20.00** in total, absolute, across rounds 1 and 2 (raised from $10.00 by Tim at 11:29 am PST on
+2026-11-10). No new call starts at or past **$19.50**. Written by `tools/gen/fal-call.mjs`
 only: the row is appended as `pending` before the request is sent, so a crash cannot hide a charge.
 
 Every row counts toward the total at its listed price, with one exception: `rejected` means fal
