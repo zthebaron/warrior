@@ -17,6 +17,7 @@ import { nextLevel } from './systems/progression';
 import { buildLevel, bundledLevelSources, fetchLevelFresh, levelIndex, loadLevel, parseLevel, prepareLevel, MANIFEST, type LevelData, type LevelInstance, type PreparedLevel, type Vec3 } from './loaders/level';
 import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
+import { ramp } from './engine/palette';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -95,6 +96,12 @@ interface HarnessApi {
   /** Rule constants the harness must agree with (checkpoint activation radius, height slack). */
   rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
+  /** D-018: the STYLE §6 passes the running post stack was compiled with, in order. */
+  postPasses(): string[];
+  /** D-018: per-pixel distance (u) from the camera of the last rendered frame, top row first (harness post stage). */
+  postProbe(): { width: number; height: number; dist: number[] };
+  /** D-018 (STYLE §1): every light in the scene, and every material that is not unlit. Both must be empty. */
+  sceneAudit(): { lights: string[]; litMaterials: string[] };
   setCamera(pos: Vec3, target: Vec3): void;
   /** Where the follow rig would put the camera for this pivot and arm direction: the arm pulled in by the
    *  same raycast + clamp as SpringArmCamera (D-012: only frames normal camera control can reach). */
@@ -272,8 +279,9 @@ async function boot(): Promise<void> {
     document.body.dataset['level'] = data.id; // D-014: which level a PLAYER reached (read by REACHABLE; never rendered)
     renderer.scene.add(level.root, level.debugRoot);
     renderer.scene.fog = data.fog
-      ? new THREE.Fog(data.fog.color ?? RENDER_CONFIG.clearColor, data.fog.near ?? GAME_RULES.fogDefaults.near, data.fog.far ?? GAME_RULES.fogDefaults.far)
+      ? new THREE.Fog(data.fog.color ?? ramp('paper-cream'), data.fog.near ?? GAME_RULES.fogDefaults.near, data.fog.far ?? GAME_RULES.fogDefaults.far)
       : null;
+    renderer.scene.background = new THREE.Color(level.background ?? ramp('paper-cream')); // D-018: paper, every level
     const [x, y, z] = data.spawn.pos;
     const facing = data.spawn.facing * DEG2RAD;
     if (!player) {
@@ -659,6 +667,22 @@ async function boot(): Promise<void> {
         goalRadiusDefault: GAME_RULES.goalRadiusDefault,
         get respawnDelaySec() { return GAME_RULES.respawnDelaySec; },
         fixedDt: loop.dt,
+      },
+      postPasses: () => [...renderer.post.passes],
+      sceneAudit: () => {
+        // Unlit: shading ignores every light. Anything else (Standard, Lambert, Phong, Toon, Physical...) is lit.
+        const UNLIT = new Set(['MeshBasicMaterial', 'LineBasicMaterial', 'LineDashedMaterial', 'PointsMaterial', 'SpriteMaterial', 'ShaderMaterial', 'RawShaderMaterial']);
+        const lights: string[] = [], lit = new Set<string>();
+        renderer.scene.traverse((o) => {
+          if ((o as THREE.Light).isLight) lights.push(`${o.type}${o.name ? ` "${o.name}"` : ''}`);
+          const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+          for (const x of m ? (Array.isArray(m) ? m : [m]) : []) if (!UNLIT.has(x.type)) lit.add(`${x.type} on ${o.name || o.type}`);
+        });
+        return { lights, litMaterials: [...lit] };
+      },
+      postProbe: () => {
+        const r = renderer.post.readDistance(renderer.camera);
+        return { width: r.width, height: r.height, dist: Array.from(r.dist, (v) => Math.round(v * 1000) / 1000) };
       },
       rendererInfo: () => {
         const info = renderer.renderer.info;

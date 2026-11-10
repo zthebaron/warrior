@@ -31,6 +31,7 @@ import { hazards } from './hazards.ts';
 import { assets } from './assets.ts';
 import { accent } from './accent.ts';
 import { visual } from './visual.ts';
+import { post } from './post.ts';
 import { reachable } from './reachable.ts';
 import { pitchAssist } from './pitch-assist.ts';
 import { runMetric } from './run-metric.ts';
@@ -195,6 +196,7 @@ for (const L of statics) {
     else if (name === 'counters') r = await counters(ctx);
     else if (name === 'assets') r = await assets(ctx);
     else if (name === 'accent') r = await accent(ctx);
+    else if (name === 'post') r = await post(ctx);
     else r = await visual(ctx);
     stages.push(r);
     if (r.failureClass === FAILURE.ENVIRONMENT) break;

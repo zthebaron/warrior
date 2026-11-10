@@ -382,6 +382,14 @@ export function lintLevel(level, manifest){
   const known=new Set(manifest.assets.map(a=>a.name));
   for (const p of [...(level.geometry??[]),...(level.platforms??[])])
     if(!known.has(p.asset)) E('UNKNOWN_ASSET',`"${p.asset}" not in manifest`);
+  // CH1-ASSETS: an asset built collider none is DRESSING. Every verdict here (FACE_RISE, READABLE_RISE,
+  // ASSIST_CASE, the MOVE table, the goldens) is computed against the geometry it dresses; a placement
+  // that turns it into a collider would change all of them while this linter, which measures only
+  // prim_box floors, still passed. So the override is refused, not measured.
+  const byAsset=new Map(manifest.assets.map(a=>[a.name,a]));
+  (level.geometry??[]).forEach((g,gi)=>{ const a=byAsset.get(g.asset);
+    if(a?.kind==='mesh'&&a.collider==='none'&&g.collider&&g.collider!=='none')
+      E('DRESS_COLLIDES',`geometry[${gi}] "${g.asset}"${g.tag?` (${g.tag})`:''} is dressing (built collider none) but is placed with collider "${g.collider}": art must not become collision. Collide with a prim_box and dress it (CH1-ASSETS)`); });
 
 
   const b=level.bounds, cp=level.critical_path;

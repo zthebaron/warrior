@@ -18,14 +18,17 @@ HALF_W, HALF_D = 5.0, 2.5  # base footprint half extents (x, z)
 SIDES = 7  # footprint vertices per stratum: few, so the faces read as planes, not a drum
 JITTER = 0.3  # radial jitter of the footprint (fraction of radius)
 SHIFT = 0.45  # max x/z offset of each stratum (world units): the mass leans and steps unevenly
+# Colours matched to reference/seed/hero (D-018): the wall is a light wash cut by black fracture strokes,
+# not dark slabs; its mass comes from the ink. COLOURS ONLY were changed: every position, face and stroke
+# is as before (this asset is collision; tools/geometry-fingerprint.mjs proves the soup is identical).
 STRATA = [  # (height, side colour, inset fraction from the base footprint)
-    (3.2, "ink_deep", 0.00),
-    (2.6, "ink_grey", 0.05),
-    (2.4, "ink_deep", 0.09),
-    (2.0, "wash_mid", 0.14),
-    (1.8, "ink_grey", 0.20),
+    (3.2, "wash_mid", 0.00),
+    (2.6, "stone_mid", 0.05),
+    (2.4, "wash_mid", 0.09),
+    (2.0, "wash_light", 0.14),
+    (1.8, "stone_mid", 0.20),
 ]
-LEDGE = "stone_mid"  # stratum tops: lighter than the face beside them, like a path
+LEDGE = "mist_pale"  # stratum tops: lighter than the face beside them, like a path
 FRACTURE = dict(per_unit=0.7, width=0.09, color="ink_black")
 
 

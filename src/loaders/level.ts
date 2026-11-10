@@ -9,6 +9,8 @@ import type { RigidBody, Collider } from '@dimforge/rapier3d-compat';
 import schema from '../../levels/level.schema.json';
 import manifestJson from '../../assets/dist/manifest.json';
 import manifestSchema from '../../assets/manifest.schema.json';
+import paletteJson from '../../reference/palette.json';
+import { ramp } from '../engine/palette';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
 import { getLoadedAsset, preloadAssets } from './assets';
 import { patrolFraction, patrolPosition } from '../systems/patrol';
@@ -112,29 +114,49 @@ export interface MeshAsset {
 
 export type ManifestAsset = PrimitiveAsset | MeshAsset;
 
+/**
+ * D-018 (STYLE §1): the shipped look has NO lit material and NO light. Every surface is a flat unlit fill
+ * of one §2 ramp step, named here, never a hex literal. Form comes from the §6 ink edge (src/engine/
+ * ink-post.ts), not from shading. The greybox's own hues (blue platforms, green goal pad, blue checkpoint
+ * pads, a red fall plane) were off the ramp and are gone; the fall plane is drawn only in the debug overlay.
+ */
 export const LEVEL_VISUAL = {
-  defaultColor: 0xb8b2a6,
-  platformColor: 0x8fa3b8,
-  hazardColor: 0x2a2622,
-  crowColor: 0x20201e,     // palette.json ink-black: a crow is never coloured (Q2), it signals by motion
-  waterColor: 0xafa79c,    // palette.json mist-pale: water is a flat wash (Q2c)   // greybox: patrollers and hazard volumes read as dark ink masses
-  tagColors: { goal_pad: 0x3fd08f, spawn: 0xd9c27a, test: 0xa89a8a } as Record<string, number>,
-  checkpointColor: 0x6fb3ff,
+  defaultColor: ramp('mist-pale'),  // an undressed prim_box: one step below paper; the ink edge carries the form
+  platformColor: ramp('stone-mid'),
+  hazardColor: ramp('ink-deep'),    // patrollers and hazard volumes read as dark ink masses
+  crowColor: ramp('ink-black'),     // a crow is never coloured (Q2), it signals by motion
+  waterColor: ramp('mist-pale'),    // water is a flat wash (Q2c)
+  tagColors: { goal_pad: ramp('wash-light'), spawn: ramp('wash-light'), test: ramp('stone-mid') } as Record<string, number>,
+  checkpointColor: ramp('ink-grey'),
   checkpointSize: [1.2, 0.06, 1.2] as const,
-  fallPlaneColor: 0xff3030,
+  fallPlaneColor: ramp('ink-grey'), // debug overlay only
   fallPlaneOpacity: 0.15,
-  pathLineColor: 0xffee00,
+  pathLineColor: 0xffee00,          // debug overlay only (debugRoot, hidden unless the dev overlay is open)
   pathLiftY: 0.15, // draw the critical path slightly above the surface
-  hemiSky: 0xdfe8f0,
-  hemiGround: 0x5a5248,
-  hemiIntensity: 0.9,
-  sunColor: 0xffffff,
-  // Greybox light only: an engine constant, never level data (STYLE §1 forbids a locatable light;
-  // the ink shader replaces this). [50,135] is what 00-gym carried, so the goldens do not move.
-  greyboxSunAngleDeg: [50, 135] as const, // [elevation, azimuth]
-  greyboxSunIntensity: 1.6,
-  sunDistance: 100,
   stepLegs: 0.5, // easing 'step' switches halfway
+};
+
+/**
+ * CH1-ASSETS: `palette: "ink"` is a level whose art is the kit, not the greybox. RENDER ONLY — not
+ * one collider changes: every prim_box keeps its trimesh collider exactly as under greybox and is
+ * simply not drawn (its kit dressing, a collider-none placement over it, is). The directional sun
+ * is not added (STYLE §1: no locatable light; kit materials are unlit anyway). Patroller and crow
+ * draw their kit meshes in place of the cube, at the same pose and `size`, so the kill volume (an
+ * AABB from `size`, never a mesh) is untouched. Checkpoint pads and the fall plane are greybox
+ * debug colours, off the §2 ramp: the torii marks a checkpoint and the cloud sea is the boundary.
+ * The background is paper-cream, read from palette.json, never retyped.
+ */
+export const INK = {
+  palette: 'ink',
+  patroller: 'kit_slide_stone',
+  crow: 'kit_crow',
+  background: 'paper-cream',
+} as const;
+const isInk = (data: Pick<LevelData, 'palette'>): boolean => data.palette === INK.palette;
+const inkBackground = (): number => {
+  const c = paletteJson.colors.find((x) => x.name === INK.background);
+  if (!c) throw new Error(`[level] palette.json has no "${INK.background}"`);
+  return parseInt(c.hex.slice(1), 16);
 };
 
 const DEG2RAD = Math.PI / 180;
@@ -194,6 +216,10 @@ export type PreparedLevel = LevelData & { readonly [PREPARED]: true };
 /** Decode every mesh asset the level places, then hand back a level that buildLevel accepts. */
 export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
   const names = new Set(data.geometry.map((p) => p.asset));
+  if (isInk(data) && (data.hazards ?? []).some((h) => h.type === 'patroller')) {
+    names.add(INK.patroller);
+    if ((data.hazards ?? []).some((h) => h.type === 'patroller' && h.crow)) names.add(INK.crow);
+  }
   const meshes = [...names].map((n) => MANIFEST.get(n)).filter((a): a is MeshAsset => a?.kind === 'mesh');
   await preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file })));
   return data as PreparedLevel;
@@ -270,6 +296,8 @@ export interface LevelInstance {
    * any water plane (D-008), so no authored plane is silently ignored. null = no plane.
    */
   killPlaneY: number | null;
+  /** Scene background for this level (INK: paper-cream), or null for the renderer's default. */
+  background: number | null;
   /**
    * Pose every moving thing (platforms, patrollers) at world time `t`. Pure in t: nothing moving
    * keeps state of its own, so a level's motion is fully determined by the clock (B-12, Q6 part 4).
@@ -389,20 +417,26 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const debugRoot = new THREE.Group();
   const pickables: THREE.Object3D[] = [];
   const V = LEVEL_VISUAL;
-  const matCache = new Map<number, THREE.MeshStandardMaterial>();
-  const mat = (c: number): THREE.MeshStandardMaterial => {
+  const matCache = new Map<number, THREE.MeshBasicMaterial>();
+  const mat = (c: number): THREE.MeshBasicMaterial => { // D-018: unlit, flat, one ramp step
     let m = matCache.get(c);
-    if (!m) matCache.set(c, (m = new THREE.MeshStandardMaterial({ color: c })));
+    if (!m) matCache.set(c, (m = new THREE.MeshBasicMaterial({ color: c })));
     return m;
   };
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 
-  // lighting
-  const sun = V.greyboxSunAngleDeg;
-  const [elev, azim] = [sun[0] * DEG2RAD, sun[1] * DEG2RAD];
-  const dir = new THREE.DirectionalLight(V.sunColor, V.greyboxSunIntensity);
-  dir.position.set(Math.cos(elev) * Math.sin(azim), Math.sin(elev), Math.cos(elev) * Math.cos(azim)).multiplyScalar(V.sunDistance);
-  root.add(new THREE.HemisphereLight(V.hemiSky, V.hemiGround, V.hemiIntensity), dir);
+  const ink = isInk(data);
+  // a kit mesh drawn in place of a hazard cube (INK): same pose and scale, so `size` stays the volume
+  const inkMesh = (name: string): THREE.Mesh => {
+    const part = getLoadedAsset(name)?.parts[0];
+    if (!part) throw new Error(`[level] "${name}" not decoded — buildLevel needs await prepareLevel(data) first`);
+    const m = new THREE.Mesh(part.geometry, part.material);
+    m.userData['sharedAsset'] = true;
+    return m;
+  };
+
+  // no lights (D-018, STYLE §1): every material is unlit, so there is nothing for a light to do
+
 
   // static geometry: one fixed body, one collider per placement
   const fixed = physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
@@ -447,12 +481,14 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       return;
     }
     const size = sizeOf(a, p.scale);
-    const mesh = new THREE.Mesh(boxGeo, mat((p.tag && V.tagColors[p.tag]) || V.defaultColor));
-    mesh.position.set(...p.pos);
-    mesh.quaternion.copy(q);
-    mesh.scale.copy(size);
-    root.add(mesh);
-    pickables.push(mesh);
+    if (!ink) { // INK: the box is collision only; its collider-none kit dressing is what is drawn
+      const mesh = new THREE.Mesh(boxGeo, mat((p.tag && V.tagColors[p.tag]) || V.defaultColor));
+      mesh.position.set(...p.pos);
+      mesh.quaternion.copy(q);
+      mesh.scale.copy(size);
+      root.add(mesh);
+      pickables.push(mesh);
+    }
 
     const kind = p.collider ?? a.collider;
     if (kind === 'none') return;
@@ -488,7 +524,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     const isPatroller = def.type === 'patroller';
     if (!isPatroller && !def.pos) return;
     const start = isPatroller ? patrollerAt(def.path!, def.speed!, def.phase!, 0, new THREE.Vector3()) : new THREE.Vector3(...def.pos!);
-    const mesh = new THREE.Mesh(boxGeo, mat(def.type === 'water' ? V.waterColor : V.hazardColor));
+    const mesh = ink && isPatroller ? inkMesh(INK.patroller) : new THREE.Mesh(boxGeo, mat(def.type === 'water' ? V.waterColor : V.hazardColor));
     mesh.userData['translates'] = 'hazard'; // NOT #18 (Q2a): hazards may translate
     mesh.scale.set(...def.size);
     mesh.position.copy(start);
@@ -504,7 +540,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (def.type !== 'patroller' || !def.crow) return;
     const start = new THREE.Vector3();
     const { airborne } = crowAt(def, 0, start);
-    const mesh = new THREE.Mesh(boxGeo, mat(V.crowColor));
+    const mesh = ink ? inkMesh(INK.crow) : new THREE.Mesh(boxGeo, mat(V.crowColor));
     mesh.name = 'crow';
     mesh.userData['translates'] = 'hazard'; // the patroller's own timing cue (Q2, Q2a), not an ambient crow
     mesh.scale.set(...def.crow.size);
@@ -513,8 +549,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     crows.push({ index, def, prev: start.clone(), curr: start.clone(), airborne, mesh });
   });
 
-  // checkpoints (visual only)
-  for (const c of data.checkpoints) {
+  // checkpoints (visual only; INK: the torii is the marker, the greybox pad colour is off-ramp)
+  if (!ink) for (const c of data.checkpoints) {
     const m = new THREE.Mesh(boxGeo, mat(V.checkpointColor));
     m.scale.set(...V.checkpointSize);
     m.position.set(c.pos[0], c.pos[1] + V.checkpointSize[1] / 2, c.pos[2]);
@@ -536,7 +572,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   }
   const planes = [...(fallY !== null ? [fallY] : []), ...waterYs];
   const killPlaneY = planes.length ? Math.max(...planes) : null;
-  if (fallY !== null) {
+  if (fallY !== null && !ink) { // INK: the cloud sea (kit_cloud_band) is the boundary; the plane is unchanged
     const { min, max } = data.bounds;
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(max[0] - min[0], max[2] - min[2]),
@@ -544,7 +580,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     );
     plane.rotation.x = -Math.PI / 2;
     plane.position.set((min[0] + max[0]) / 2, fallY, (min[2] + max[2]) / 2);
-    root.add(plane);
+    debugRoot.add(plane); // D-018: debug overlay only, never the shipped look
   }
 
   // critical path (debug)
@@ -562,6 +598,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     debugRoot,
     pickables,
     killPlaneY,
+    background: ink ? inkBackground() : null,
     fixedUpdate(t, dt) {
       for (const p of platforms) {
         pointOnPath(p.def.path, ease(p.def.easing, platformParam(p.def, t - dt)), p.prev);

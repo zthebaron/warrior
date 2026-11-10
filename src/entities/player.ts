@@ -4,6 +4,7 @@
 // Every gameplay number lives in TUNING. Positions in/out of this class are FEET positions.
 
 import * as THREE from 'three';
+import { ROBE, ramp } from '../engine/palette';
 import type { InputFrame } from '../engine/input';
 import { NEUTRAL_FRAME } from '../engine/input';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
@@ -92,11 +93,11 @@ const VISUAL = {
   noseSize: [0.18, 0.18, 0.3] as const,
   noseForwardFactor: 1.0, // nose sits at capsuleRadius * this in front of the centre
   noseHeightFactor: 0.5,  // nose height = capsuleHalfHeight * this
-  noseColor: 0x222222,
-  stateColors: {
-    idle: 0xe8e2d0, run: 0xd9c27a, sprint: 0xf0a030, jump: 0x6fb3ff, double_jump: 0x3a6fff, fall: 0x9aa7c4,
-    wall_slide: 0x9a6cff, wall_jump: 0xc04dff, ledge_grab: 0x3fd08f, ledge_climb: 0x23a36b, dash: 0xff4d6a, land: 0xffffff,
-  } satisfies Record<PlayerState, number>,
+  // D-018 (STYLE §1, §2, §9 item 3): unlit flat fills. The robe is the Bible's desaturated blue-grey; the
+  // facing nose is brush black. The greybox per-state colours (saturated, off the ramp) are no longer drawn:
+  // a state you can only read by hue is §9 item 3. B-33 replaces the capsule with the §7 figure.
+  robeColor: ROBE,
+  noseColor: ramp('ink-black'),
 };
 
 const DOWN = { x: 0, y: -1, z: 0 };
@@ -122,7 +123,7 @@ export class Player {
   groundMotion: GroundMotion = () => null;
 
   private readonly ctrl: KinematicCharacterController;
-  private readonly material: THREE.MeshStandardMaterial;
+  private readonly material: THREE.MeshBasicMaterial;
   private readonly prevCenter = new THREE.Vector3();
   private prevInput: InputFrame = { ...NEUTRAL_FRAME };
   private coyoteTimer = 0;
@@ -150,12 +151,12 @@ export class Player {
     this.collider = collider;
     this.ctrl = physics.createCharacterController();
 
-    this.material = new THREE.MeshStandardMaterial({ color: VISUAL.stateColors.idle });
+    this.material = new THREE.MeshBasicMaterial({ color: VISUAL.robeColor });
     const capsule = new THREE.Mesh(
       new THREE.CapsuleGeometry(t.capsuleRadius, t.capsuleHalfHeight * 2, VISUAL.capSegments, VISUAL.radialSegments),
       this.material,
     );
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(...VISUAL.noseSize), new THREE.MeshStandardMaterial({ color: VISUAL.noseColor }));
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(...VISUAL.noseSize), new THREE.MeshBasicMaterial({ color: VISUAL.noseColor }));
     nose.position.set(0, t.capsuleHalfHeight * VISUAL.noseHeightFactor, -t.capsuleRadius * VISUAL.noseForwardFactor);
     this.mesh.add(capsule, nose);
     this.teleport(feet, facing);
@@ -466,7 +467,6 @@ export class Player {
   render(alpha: number): void {
     this.mesh.position.lerpVectors(this.prevCenter, this.center, alpha);
     this.mesh.rotation.y = this.facing;
-    this.material.color.setHex(VISUAL.stateColors[this.state]);
   }
 }
 

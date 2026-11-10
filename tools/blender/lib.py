@@ -253,3 +253,30 @@ def fracture_lines(kit, footprint, y0, y1, r, per_unit, width, color, inset=0.02
             kit.face([(p0[0], y0, p0[1]), (p1[0], y0, p1[1]), (p1[0], top, p1[1]), (p0[0], top, p0[1])], color)
             strokes += 1
     return strokes
+
+
+def banded_prism(kit, footprint, y0, y1, bands, top=None, bottom=None):
+    """Vertical extrusion like prism(), but each side face is cut into horizontal value bands:
+    STYLE-BIBLE section 4's "horizontal strata as value steps between flat masses", and the dark
+    lip where a path meets the void. bands = [(depth_from_top, colour), ...] with depth a
+    FRACTION of (y1 - y0), ascending, the last one 1.0. No inner caps: one face per band per side.
+    top=None leaves the cap off (a backdrop seen only from the side)."""
+    if not bands or abs(bands[-1][0] - 1.0) > 1e-9:
+        raise ValueError("banded_prism: the last band must reach depth 1.0")
+    n = len(footprint)
+    h = y1 - y0
+    prev = 0.0
+    for depth, color in bands:
+        hi, lo = y1 - prev * h, y1 - depth * h
+        for i in range(n):
+            (ax, az), (bx, bz) = footprint[i], footprint[(i + 1) % n]
+            kit.face([(ax, lo, az), (bx, lo, bz), (bx, hi, bz), (ax, hi, az)], color)
+        prev = depth
+    if top:
+        kit.face([(x, y1, z) for x, z in footprint], top)
+    if bottom:
+        kit.face([(x, y0, z) for x, z in reversed(footprint)], bottom)
+
+
+# A unit cube's footprint, CCW seen from +y (the convention of jittered_footprint / prism).
+UNIT_SQUARE = [(0.5, -0.5), (-0.5, -0.5), (-0.5, 0.5), (0.5, 0.5)]
