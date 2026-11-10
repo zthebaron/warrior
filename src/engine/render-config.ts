@@ -11,5 +11,4 @@ export const RENDER_CONFIG = {
   fovDeg: 60,
   near: 0.1,
   far: 600,
-  clearColor: 0x9fb4c7,
 };

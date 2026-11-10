@@ -28,7 +28,7 @@
       "kind": "mesh",
       "file": "kit_cloud_band.glb",
       "source": "assets/src/kit_cloud_band.py",
-      "sha256": "0f18d5e8390bbb3a60f055a690934a26a862e6b1761081b56f94fbaf82d40860",
+      "sha256": "7e973320ff743b39303a1eae1c39065738a7374d80bdcd1c78d50731dc1b9106",
       "collider": "none",
       "triangles": 22,
       "bytes": 2124,
@@ -102,11 +102,11 @@
       "kind": "mesh",
       "file": "kit_far_peak.glb",
       "source": "assets/src/kit_far_peak.py",
-      "sha256": "5af99deb2af70ff63de1cb0608fa29e36923b97e900f0a46ed107c7add78c267",
+      "sha256": "3c9fc92b64995a2c9914145c58ef4e6ed622bb9b42436ccdcdcfdcad3add6793",
       "collider": "none",
-      "triangles": 48,
-      "bytes": 2228,
-      "bytes_export": 4968,
+      "triangles": 44,
+      "bytes": 2176,
+      "bytes_export": 4524,
       "bbox": {
         "min": [
           -30,
@@ -115,7 +115,7 @@
         ],
         "max": [
           30,
-          45.9989,
+          13.00128,
           0.99963
         ]
       },
@@ -139,11 +139,11 @@
       "kind": "mesh",
       "file": "kit_ledge.glb",
       "source": "assets/src/kit_ledge.py",
-      "sha256": "850028aaef9a372192d4769871c081563828f1045119828fe75dfa7256094f25",
+      "sha256": "98a8e10e3b11fea6c18acaba39aa02c668a6680226b96ee5c4c4cedcb24a8747",
       "collider": "none",
-      "triangles": 74,
-      "bytes": 2428,
-      "bytes_export": 6980,
+      "triangles": 66,
+      "bytes": 2400,
+      "bytes_export": 6420,
       "bbox": {
         "min": [
           -0.503,
@@ -176,10 +176,10 @@
       "kind": "mesh",
       "file": "kit_mid_cliff.glb",
       "source": "assets/src/kit_mid_cliff.py",
-      "sha256": "4fdaf496cc567a7070be0cd83bb79c367f452c2db384d54799408731632b399c",
+      "sha256": "a496240f2cdce24844fdbceb6ab0dc1b2d26fc5bd84dd2b5b137264cbaf0eaf6",
       "collider": "none",
       "triangles": 64,
-      "bytes": 2380,
+      "bytes": 2368,
       "bytes_export": 6028,
       "bbox": {
         "min": [
@@ -213,10 +213,10 @@
       "kind": "mesh",
       "file": "kit_rock_mass.glb",
       "source": "assets/src/kit_rock_mass.py",
-      "sha256": "c1b264ba34c351d7469400d9619c21f257647cd29ed6c403b69b5e3cf1e3dc38",
+      "sha256": "959c0a5b96e7987b1dd08067df8093c50e1530323ac69ac4b2b8d94624b3f9a2",
       "collider": "trimesh",
       "triangles": 216,
-      "bytes": 3460,
+      "bytes": 3472,
       "bytes_export": 16032,
       "bbox": {
         "min": [
@@ -287,7 +287,7 @@
       "kind": "mesh",
       "file": "kit_stair_tread.glb",
       "source": "assets/src/kit_stair_tread.py",
-      "sha256": "cbad70977b57c4da11ad543cfcb58d654a5d65ca6c79ddb8c8a1794e0cfb9146",
+      "sha256": "d12073971b4bde5933affdabf34832ad84c1ce5f6528cf74a2b0bba8defe6f29",
       "collider": "none",
       "triangles": 50,
       "bytes": 2092,

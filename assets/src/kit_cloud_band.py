@@ -14,7 +14,7 @@ SEED = 41
 HALF_X = 60.0
 HALF_Z = 40.0
 LIFT = 0.04  # the bands sit this far above the sheet
-SHEET, BAND = "mist_pale", "paper_cream"
+SHEET, BAND = "paper_cream", "mist_pale"  # D-018: the seed's cloud sea is paper with grey wash streaks
 
 
 def build(lib):

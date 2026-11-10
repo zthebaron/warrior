@@ -298,11 +298,17 @@ re-recording the Linux goldens from the CI artifact if needed. No Blender step r
 ## CH1-ASSETS — chapter 1's asset set through this pipeline (follow-up, 2026-11-09)
 
 Tim chose pipeline-first over concept-art-first. Seven new kit assets, all Python, all built and
-budgeted unattended by `npm run assets:build`: kit_ledge (74 tris), kit_stair_tread (50),
-kit_slide_stone (the patroller, 36), kit_crow (60), kit_mid_cliff (64), kit_far_peak (48) and
-kit_cloud_band (14). Each is one mesh, one material, one 32px palette texture and one draw call.
-Budget lines are set at the measured values (MEASUREMENTS "H4 asset budgets"). kit_torii and
-kit_rock_mass are byte-identical.
+budgeted unattended by `npm run assets:build`: kit_ledge (66 tris), kit_stair_tread (50),
+kit_slide_stone (the patroller, 36), kit_crow (60), kit_mid_cliff (64), kit_far_peak (44) and
+kit_cloud_band (22). (Final figures after the D-018 re-valuing against reference/seed; history in
+MEASUREMENTS "H4 asset budgets".) Each is one mesh, one material, one 32px palette texture and one draw call.
+Budget lines are set at the measured values (MEASUREMENTS "H4 asset budgets"). kit_torii is
+byte-identical; kit_rock_mass was re-COLOURED under D-018 (positions untouched; fingerprint identical
+on all five levels).
+
+D-018 then removed every light and lit material from the shipped look and added the STYLE §6 post pass
+(`src/engine/ink-post.ts`): value compression by depth band, ink edge, static paper grain, gated by the
+harness `post` stage, which goes red when any pass is removed.
 
 **Architecture before art.** Every new asset is `collider: "none"`. The art DRESSES the prim_boxes:
 `tools/levelgen/dress-01.mjs` derives a placement from each box (same pos and scale) and appends it.

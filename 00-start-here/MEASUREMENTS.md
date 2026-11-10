@@ -263,14 +263,14 @@ is raised here with the new measurement and the reason.
 | Asset | Triangles | Compressed bytes | Export bytes | Textures | Max tex px | Materials | Draw calls (once) |
 |---|---|---|---|---|---|---|---|
 | kit_torii | 108 / 108 | 2436 / 2436 | 9120 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
-| kit_rock_mass | 216 / 216 | 3460 / 3460 | 16032 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_rock_mass | 216 / 216 | 3472 / 3472 | 16032 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 
-| kit_ledge (CH1-ASSETS) | 74 / 74 | 2428 / 2428 | 6980 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_ledge (CH1-ASSETS) | 66 / 66 | 2400 / 2400 | 6420 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 | kit_stair_tread (CH1-ASSETS) | 50 / 50 | 2092 / 2092 | 5256 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 | kit_slide_stone (CH1-ASSETS) | 36 / 36 | 2068 / 2068 | 4268 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 | kit_crow (CH1-ASSETS) | 60 / 60 | 2328 / 2328 | 6372 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
-| kit_mid_cliff (CH1-ASSETS) | 64 / 64 | 2380 / 2380 | 6028 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
-| kit_far_peak (CH1-ASSETS) | 48 / 48 | 2228 / 2228 | 4968 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_mid_cliff (CH1-ASSETS) | 64 / 64 | 2368 / 2368 | 6028 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_far_peak (CH1-ASSETS) | 44 / 44 | 2176 / 2176 | 4524 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 | kit_cloud_band (CH1-ASSETS) | 22 / 22 | 2124 / 2124 | 3296 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 
 Cells are measured / limit. Renderer cross-check (SwiftShader): torii 1 call / 108 tris,
@@ -284,7 +284,13 @@ palette cell.
   - kit_cloud_band RAISED 14 / 2064 -> 22 / 2124 (same day, before merge): its strips ran along x, the view
     direction, so they converged into floorboards (a surface: STYLE §4, §9 item 12). Re-authored ACROSS the
     view (strips at fixed x spanning z), which stack into horizontal screen bands. The strip count rose with
-    the narrower axis it now walks. Measured by `assets:build`. Placed in 00-gym the scene went 30 -> 33 peak draw calls and
+    the narrower axis it now walks. Measured by `assets:build`.
+  - D-018 (2026-11-09), the kit re-valued against `reference/seed/hero`: kit_ledge LOWERED 74 / 2428 -> 66 / 2400
+    (four bands, not five), kit_far_peak LOWERED 48 / 2228 -> 44 / 2176 (a low horizon ridge, not tall peaks),
+    kit_mid_cliff 2380 -> 2368 B. kit_rock_mass RAISED 3460 -> 3472 B (+12): COLOURS ONLY, its strata re-valued
+    lighter; the UVs compress 12 B worse. Its positions, faces and strokes are untouched: it is collision, and
+    `tools/geometry-fingerprint.mjs` is IDENTICAL to main d173785 on all five levels (gym 3f8ace62, ch1 3c766f28,
+    02 0ef30360, 03 282b2f50, 04 845342c6). Placed in 00-gym the scene went 30 -> 33 peak draw calls and
 640 -> 1,072 peak triangles (+2 x 108 +216, exactly).
 
 Budget history:
@@ -323,11 +329,17 @@ draw calls, 500,000 triangles) still apply on top.
 
 | Level | Peak draw calls | Peak triangles |
 |---|---|---|
-| 00-gym | 34 / 34 | 1,104 / 1,104 |
-| 01-lower-stair | 74 / 74 | 6,704 / 6,704 |
-| 02-cliff-seam | 49 / 49 | 5,040 / 5,040 |
-| 03-drifting-stones | 50 / 50 | 5,664 / 5,664 |
-| 04-summit-ridge | 49 / 49 | 5,040 / 5,040 |
+| 00-gym | 33 / 33 | 1,102 / 1,102 |
+| 01-lower-stair | 75 / 75 | 6,502 / 6,502 |
+| 02-cliff-seam | 49 / 49 | 5,050 / 5,050 |
+| 03-drifting-stones | 49 / 49 | 5,662 / 5,662 |
+| 04-summit-ridge | 48 / 48 | 5,038 / 5,038 |
+
+D-018 (2026-11-09), every line re-set AT the measured peak (harness `counters`, Darwin SwiftShader). `renderer.info`
+now counts the WHOLE frame: the scene draw into the post target plus the §6 full-screen pass (1 call, 2 tris),
+reset once per frame in `Renderer.render`. The red fall plane (1 call, 2 tris) moved to the debug overlay, so the
+four greybox levels net -1 call / -2 tris and are LOWERED; chapter 1 had no fall plane (ink) and nets +1 call,
+and its kit re-valuing (kit_ledge -8 tris x 23, kit_far_peak -4 x 5) takes it 6,704 -> 6,502 tris.
 
 01-lower-stair (CHAPTER-1, CI run 42505174534, landing mark on): 13 kit_rock_mass (13 x 216 = 2,808 tris), 4 kit_torii (432), greybox ledges/stair/knobs, 2 patrollers, 2 crows, the landing mark.
 
@@ -368,6 +380,7 @@ AUTHORED (an art choice, recorded so it is never a bare number in code).
 |---|---|---|---|
 | TREAD_MAX_X | 0.6 u | derived | the stair treads and perch stones are 0.6 u along x; the narrowest ledge is 3 u, so the rule cannot misfile one |
 | OVERLAP_EPS | 0.08 u total (0.04 u per side), x and z only, never y | derived | a box sitting on a larger one (the 1.25 step, both 1.75 shelves) has its sides coplanar with the box below, and two patterns on one plane z-fight. It must clear kit_ledge's fracture strokes, which float 0.003 x the face width off the face: 0.021 u on a 7 u face. A first cut at 0.01 per side let them show through. To that it adds the depth resolution, z^2 / (near * 2^24): ~0.0015 u at 50 u and ~0.01 u at 130 u. 0.021 + 0.01 < 0.04. Never y, so a walkable top is never offset. The cost: the drawn riser of a step or shelf sits 0.04 u proud of its collider |
+| TILE_OVERLAP | 0.01 u per side, interior seams only | derived | abutting coplanar tops leave a raster crack; the neighbour's black lip showed through it and the §6 ink edge outlined it as a dotted line (D-018 cam2). Overlapped tops are the same paper fill, so nothing visible z-fights; box ends stay exact |
 | TILE_X | 4.5 u | authored | kit_ledge's stroke is 0.014 of the box; at 4.5 u that is 0.06 u, a brush line. The 41 u sweep slab untiled would draw 0.6 u bars |
 | kit_cloud_band LIFT | 0.04 u | authored | the paper_cream bands above the mist_pale sheet; the band height is 9.5 u below the lowest walkable top |
 | cloud sea y | -9.5 | authored | 0.5 u above the fall plane (-10), 9.5 u below the lowest top (0): a gap reads as a drop into cloud, never as floor (STYLE §9 item 12) |
@@ -756,3 +769,46 @@ at the 60-degree FOV. Each observed visible interval contributes one row of
 endpoint uncertainty; if that interval of uncertainty overlaps 2 degrees after
 refinement, READABLE_CASE fails as ambiguous. This is sampling precision, not a
 relaxed readability budget, and cannot bound features missed between all rays.
+## D-018 post constants (2026-11-09)
+
+`src/engine/ink-post.ts`, `INK_POST`. The §6 pass every level now renders through.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| nearBandM, midBandM | 25 u, 80 u | STYLE §3 | the Bible's band table, distance from the camera (per pixel, along the view ray) |
+| value_compression map | near i; mid i<=2 ? i : 2+floor(3(i-2)/5); far i==0 ? 0 : 1 | derived | i = nearest §2 step, 0 paper ... 7 ink-black. Mid never exceeds ink-grey (§3's dark bound); far is ONE mist-pale silhouette with paper kept (§3 "silhouette only"). It only ever LIGHTENS: §3's literal mid floor (wash-light) turned the paper cloud sea and paper path tops grey between 25 and 80 u, a visible dark ring (first render, D-018), which the seed never shows (hero_3s/7s/11s: path and cloud are paper at every distance). Recorded as a §3 conflict in OQ-067 |
+| edgeLaplacian | 0.002 | measured | relative screen-space Laplacian of 1/z. 1/z is linear across a plane, so a face reads 0; 24-bit-float depth noise at 70 u is ~4e-5 relative, 50x under it; a kit fracture stroke 0.02 u proud of its face crosses it only inside ~10 u, where it is ink anyway. Gate: 100% of near and 99.9% of mid silhouettes inked in ch1 |
+| nearEdgePx / midEdgePx | 2 / 1, ink-black / ink-grey, far none | STYLE §3 | "Outlines: black, full weight / grey, thin / none" |
+| grainAmp | 3/255 | derived | must stay under ACCENT_AREA's 6/255 exact-match tolerance or grain would hide a gate. Measured sky sd 1.50 levels, max |dev| 3 |
+| grainSeed | 20261109 | authored | constant: static grain, deterministic goldens |
+| accentChroma | 0.2 (51 levels) | derived | the ramp's largest chroma is paper-cream's 30 levels; every accent.json candidate is above 140 |
+| ROBE | #7d8590 | STYLE §2 | "near #7d8590" (src/engine/palette.ts) |
+
+## D-018 post gate (2026-11-09)
+
+Harness stage `post` (tools/harness/post.ts), every level, the six visual cameras, from the pixels plus a per-pixel
+distance readback of the same frame. It fails when a pass is ABSENT, not when a golden moves. Proof, chapter 1,
+each mutation made in the CODE (`SECTION6_PASSES`, or a light added to the loader), the stage run, the code
+restored:
+
+| Mutation | Stage | What caught it |
+|---|---|---|
+| none (shipped) | PASS 11/11 | 3 of 456,152 mid/far px off-band (0.001%, band-edge rounding); 7,797/7,797 near silhouettes inked; sky sd 1.50; 0 hue px |
+| value_compression removed | FAIL 9/11 | pass list; 20,057 of 456,152 mid/far px darker than their band (4.397%, allowed 0.2%) |
+| ink_edge removed | FAIL 8/11 | pass list; 496 of 6,226 near silhouettes inked (8.0%, need 95%); mid 0 of 2,482 |
+| paper_grain removed | FAIL 9/11 | pass list; sky sd 0.00 levels (need >= 0.5) |
+| a DirectionalLight added | FAIL 10/11 | §1: `DirectionalLight` in the scene |
+
+## D-018 before / after: is the frame a painting (2026-11-09)
+
+Share of non-accent, non-robe pixels OFF the §2 ramp (farther than 4 levels from every step: grain 3 + rounding),
+and the number of distinct colours. Lit shading cannot stay on an 8-step ramp; flat fills can. Before = main
+d173785's darwin goldens; after = this branch's.
+
+| Frame | Before: off-ramp | Before: colours | After: off-ramp | After: colours |
+|---|---|---|---|---|
+| 01-lower-stair cam2 | 65.5% | 200 | 0.0% | 14 |
+| 00-gym cam3 | 97.6% | 178 | 0.0% | 12 |
+| 02-cliff-seam cam2 | 67.9% | 185 | 0.0% | 14 |
+
+Frames: `docs/build-log/d018/`.

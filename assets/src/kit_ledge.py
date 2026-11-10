@@ -17,13 +17,14 @@ No bottom: never seen, the cloud sea is above it.
 ASSET = {"collider": "none"}
 
 SEED = 23
-TOP = "wash_light"
+# Matched to reference/seed/hero (D-018): the path top is PAPER, separated from the sky only by ink; the face
+# under it is a light wash with a darker band in the lip's shadow, fading lighter down into the cloud sea.
+TOP = "paper_cream"
 BANDS = [  # (depth from the top as a fraction of the box height, colour)
     (0.012, "ink_black"),  # the lip: a path's dark edge against the void
-    (0.09, "stone_mid"),
-    (0.30, "wash_mid"),
-    (0.58, "ink_grey"),
-    (1.00, "ink_deep"),
+    (0.10, "stone_mid"),   # the shadowed band under the lip
+    (0.45, "wash_light"),
+    (1.00, "mist_pale"),   # fades into the cloud
 ]
 FRACTURE = dict(per_unit=4.5, width=0.014, color="ink_black", inset=0.003, margin=0.08)
 

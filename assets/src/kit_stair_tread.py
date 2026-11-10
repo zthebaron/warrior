@@ -12,14 +12,15 @@ dressed stone below, separated by thin ink_deep joints. No fracture strokes: it 
 
 ASSET = {"collider": "none"}
 
-TOP = "wash_light"
+# Matched to reference/seed/hero (D-018): paper treads, a black nosing line, light courses below.
+TOP = "paper_cream"
 BANDS = [
     (0.010, "ink_black"),  # nosing: the tread line
     (0.050, "stone_mid"),  # the visible riser face of one ~0.33u step on a ~9u column
-    (0.056, "ink_deep"),   # joint
-    (0.30, "wash_mid"),
-    (0.306, "ink_deep"),   # joint
-    (1.00, "ink_grey"),
+    (0.056, "ink_grey"),   # joint
+    (0.30, "wash_light"),
+    (0.306, "ink_grey"),   # joint
+    (1.00, "mist_pale"),
 ]
 
 

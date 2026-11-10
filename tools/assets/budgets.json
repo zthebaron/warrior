@@ -18,16 +18,16 @@
       "draw_calls": 1
     },
     "kit_far_peak": {
-      "triangles": 48,
-      "bytes": 2228,
+      "triangles": 44,
+      "bytes": 2176,
       "textures": 1,
       "texture_px": 32,
       "materials": 1,
       "draw_calls": 1
     },
     "kit_ledge": {
-      "triangles": 74,
-      "bytes": 2428,
+      "triangles": 66,
+      "bytes": 2400,
       "textures": 1,
       "texture_px": 32,
       "materials": 1,
@@ -35,7 +35,7 @@
     },
     "kit_mid_cliff": {
       "triangles": 64,
-      "bytes": 2380,
+      "bytes": 2368,
       "textures": 1,
       "texture_px": 32,
       "materials": 1,
@@ -43,7 +43,7 @@
     },
     "kit_rock_mass": {
       "triangles": 216,
-      "bytes": 3460,
+      "bytes": 3472,
       "textures": 1,
       "texture_px": 32,
       "materials": 1,
@@ -77,24 +77,24 @@
   "scenes_basis": "Per-level scene ratchet (OQ-040): peak renderer.info over the harness counters trace, set AT the measured value. Asserted by the harness `counters` stage. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'Scene budgets'. The Tier-1 ceilings (300 calls, 500k triangles) still apply on top.",
   "scenes": {
     "00-gym": {
-      "draw_calls": 34,
-      "triangles": 1104
+      "draw_calls": 33,
+      "triangles": 1102
     },
     "01-lower-stair": {
-      "draw_calls": 74,
-      "triangles": 6704
+      "draw_calls": 75,
+      "triangles": 6502
     },
     "02-cliff-seam": {
-      "draw_calls": 50,
-      "triangles": 5052
+      "draw_calls": 49,
+      "triangles": 5050
     },
     "03-drifting-stones": {
-      "draw_calls": 50,
-      "triangles": 5664
+      "draw_calls": 49,
+      "triangles": 5662
     },
     "04-summit-ridge": {
-      "draw_calls": 49,
-      "triangles": 5040
+      "draw_calls": 48,
+      "triangles": 5038
     }
   }
 }

@@ -6,14 +6,15 @@ Far band (80u+): paper_cream to mist_pale ONLY, no outline, silhouette only. One
 ridge extruded thin in z, standing against the paper_cream sky. A jagged line of straight
 segments: faceted, never rounded (section 9 item 4).
 
-60u along x, 46u tall at the highest peak, 2u deep. Origin: centre of the base.
+60u along x, 13u tall at the highest point, 2u deep. Origin: centre of the base. D-018: the seed's far
+forms are LOW ridges on the horizon over the cloud sea (hero_3s, hero_7s, hero_11s), not tall peaks.
 """
 
 ASSET = {"collider": "none"}
 
 DEPTH = 2.0
 # ridge silhouette in (x, y), left to right over the top; the base closes it at y = 0
-RIDGE = [(-30, 0), (-30, 9), (-22, 18), (-17, 15), (-9, 34), (-5, 30), (2, 46), (8, 38), (12, 41), (19, 24), (24, 27), (30, 12), (30, 0)]
+RIDGE = [(-30, 0), (-30, 1), (-20, 4), (-12, 7), (-6, 11), (0, 13), (5, 12), (11, 9), (18, 6), (24, 3), (30, 1), (30, 0)]
 COLOR = "mist_pale"
 
 

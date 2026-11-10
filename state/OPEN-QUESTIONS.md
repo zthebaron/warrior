@@ -1098,6 +1098,15 @@ took, each PROVISIONAL:
    |z| >= 125 or past the goal). §3's "grey, thin" mid outlines and §6's distance-scaled ink edge are absent,
    and no asset fakes them. The fix is the §6 post pass. Until it exists, §10 test 4 ("three distinguishable
    depth bands") is met by placement, not by rule.
+   **UPDATE (D-018, same day): the post pass exists** (`src/engine/ink-post.ts`, B-34) and bands are now held per
+   pixel by distance on every level, gated by the harness `post` stage. One §3 clause still cannot be built as
+   written, and is stated here rather than departed from quietly: §3 gives the mid band a LIGHT bound of
+   wash-light, so a paper path top or the paper cloud sea between 25 and 80 u must render grey. Built literally,
+   that drew a dark ring of cloud around the camera (first D-018 render, cam0/cam5). The seed contradicts it:
+   in hero_3s, hero_7s and hero_11s the path and the cloud are paper at every distance. Built: compression only
+   ever LIGHTENS (mid keeps paper..wash-light as they are, compresses the darks into <= ink-grey; far = paper or
+   one mist-pale silhouette). §3's dark bounds hold exactly; its mid light bound does not. Tim to rule whether
+   §3 should be amended on this evidence (it is a Style Bible amendment, so it needs his call, Q2b).
 3. **Scope as found, not as briefed.** The brief says torii x3 and a "5 x 0.4 stair". The level has 4 kit_torii
    (x = 34, 55, 77, 99) and a 6 x 0.333 stair (5 treads of 0.6 plus the landing: B-19). The level was dressed
    as it is; nothing in it was changed to match the brief.
@@ -1108,7 +1117,9 @@ took, each PROVISIONAL:
    Under "ink", prim_box, the sun, the checkpoint pads and the fall plane are not DRAWN (their colliders and the
    kill plane are untouched), the patroller and crow draw their kits, and the background is paper-cream. 00-gym
    and 02-04 stay greybox, with goldens unchanged.
-6. **Out of this scope, and still off the ramp in chapter 1's frames: the player.** It is a greybox capsule
+6. **UPDATE (D-018): the player is now an unlit flat robe #7d8590 with an ink-black nose and the §6 outline**,
+   not #000000; the per-state colours are gone from the shipped look (§9 item 3). Still a capsule, so B-33 stands.
+   Original note: **Out of this scope, and still off the ramp in chapter 1's frames: the player.** It is a greybox capsule
    with a LIT material (`MeshStandardMaterial`, `VISUAL.stateColors`). Under "ink" no light is added, so in
    chapter 1 it renders as a flat silhouette of pure `#000000` (sampled from the cam0 golden), not ink-black
    `#20201e`, and its state colours do not show there. They still do in the gym. The greybox state colours

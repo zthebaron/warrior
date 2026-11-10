@@ -31,6 +31,10 @@ const TREAD_MAX_X = 0.6;   // the stair treads and the perch stones are 0.6u alo
 const OVERLAP_EPS = 0.08;  // u, total (0.04 per side). DERIVED: > kit_ledge's stroke float (0.003 x a 7u face = 0.021u)
                            // + depth resolution at 130u (~0.01u, 24-bit, near 0.1), so the box below's strokes stay inside
 const TILE_X = 4.5;        // u: kit_ledge's 0.014 stroke is 0.06u wide at this length
+const TILE_OVERLAP = 0.01; // u, each side of an INTERIOR seam (D-018): abutting tops leave a raster crack through
+                           // which the neighbour's ink lip shows and the §6 ink edge outlines it as a dotted
+                           // line. Overlapped coplanar tops are the same paper fill, so nothing z-fights.
+                           // The box's own ends stay exact.
 
 // STYLE-BIBLE section 3, placed for a camera that walks z ~ 0 from x 0 to 108, looking +x (+z is
 // screen right: the void; -z is screen left: the dark wall, section 5).
@@ -85,7 +89,8 @@ for (const { g, gi } of boxes) {
   if (under) { out.push({ asset: 'kit_stair_tread', pos: g.pos, scale: [r6(g.scale[0] + OVERLAP_EPS), g.scale[1], r6(g.scale[2] + OVERLAP_EPS)], collider: 'none', tag }); continue; }
   const n = Math.max(1, Math.round(g.scale[0] / TILE_X)), w = g.scale[0] / n;
   for (let k = 0; k < n; k++) {
-    out.push({ asset: 'kit_ledge', pos: [r6(e.x0 + w * (k + 0.5)), g.pos[1], g.pos[2]], ...(k % 2 ? { rot: [0, 180, 0] } : {}), scale: [r6(w), g.scale[1], g.scale[2]], collider: 'none', tag: n > 1 ? `${tag}.${k}` : tag });
+    const lo = e.x0 + w * k - (k > 0 ? TILE_OVERLAP : 0), hi = e.x0 + w * (k + 1) + (k < n - 1 ? TILE_OVERLAP : 0);
+    out.push({ asset: 'kit_ledge', pos: [r6((lo + hi) / 2), g.pos[1], g.pos[2]], ...(k % 2 ? { rot: [0, 180, 0] } : {}), scale: [r6(hi - lo), g.scale[1], g.scale[2]], collider: 'none', tag: n > 1 ? `${tag}.${k}` : tag });
   }
 }
 BACKDROP.forEach((b, k) => out.push({ ...b, collider: 'none', tag: `dress:backdrop.${k}` }));

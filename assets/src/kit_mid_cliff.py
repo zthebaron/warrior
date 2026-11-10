@@ -17,13 +17,13 @@ HALF_W, HALF_D = 12.0, 5.0
 SIDES = 6
 JITTER = 0.25
 SHIFT = 1.2
-STRATA = [  # (height, side colour, inset)
-    (10.0, "ink_grey", 0.00),
-    (8.0, "wash_mid", 0.12),
-    (7.0, "ink_grey", 0.26),
-    (5.0, "wash_mid", 0.42),
+STRATA = [  # (height, side colour, inset)  -- D-018: lighter, toward the seed's distant walls
+    (10.0, "stone_mid", 0.00),
+    (8.0, "wash_light", 0.12),
+    (7.0, "stone_mid", 0.26),
+    (5.0, "wash_light", 0.42),
 ]
-TOP = "wash_light"
+TOP = "mist_pale"
 
 
 def build(lib):
