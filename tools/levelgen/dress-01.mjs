@@ -36,16 +36,10 @@ const TILE_OVERLAP = 0.01; // u, each side of an INTERIOR seam (D-018): abutting
                            // line. Overlapped coplanar tops are the same paper fill, so nothing z-fights.
                            // The box's own ends stay exact.
 
-// STYLE-BIBLE section 3, placed for a camera that walks z ~ 0 from x 0 to 108, looking +x (+z is
-// screen right: the void; -z is screen left: the dark wall, section 5).
-const BACKDROP = [
-  // MID band (25-80u): behind the rock masses, on the wall side
-  ...[[-10, -40, 0], [25, -44, 160], [60, -38, 25], [95, -46, 200], [130, -40, 70]].map(([x, z, r]) => ({ asset: 'kit_mid_cliff', pos: [x, -10, z], rot: [0, r, 0] })),
-  // FAR band (80u+): silhouettes beyond the mid cliffs, and ahead past the goal
-  ...[[0, -130, 1.0], [70, -140, 1.3], [140, -125, 1.1], [215, -150, 1.4], [240, -40, 1.2]].map(([x, z, s]) => ({ asset: 'kit_far_peak', pos: [x, -10, z], rot: [0, x === 240 ? 90 : 0, 0], scale: s })),
-  // the cloud sea, just above the fall plane: under the gaps and out across the void
-  ...[-20, 100, 220].flatMap((x) => [0, 80, 160].map((z) => ({ asset: 'kit_cloud_band', pos: [x, -9.5, z] }))),
-];
+// D-020: the far field is PAINTED (src/loaders/backdrop.ts: paper sky, far ridges, bare-paper mist), not kit
+// geometry. The kit_mid_cliff, kit_far_peak and kit_cloud_band placements that stood here are gone; nothing in
+// this file places a backdrop any more.
+const BACKDROP = [];
 
 const args = process.argv.slice(2);
 const check = args.includes('--check');

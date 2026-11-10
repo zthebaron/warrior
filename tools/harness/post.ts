@@ -78,6 +78,15 @@ export const POST_GATE = {
   vignetteMax: 2,
 };
 
+// D-020, the paint layer (src/engine/paint-layer.ts). Every check above this line in the stage judges the INK
+// PASS ALONE, with the paint layer switched off: POST_GATE is untouched by D-020. These judge the frame the
+// player sees. MEASUREMENTS "D-020 paint gate" has each number's wrong value and shipped value.
+export const PAINT_GATE = {
+  changed: 8,            // levels (2 x tol): a pixel this far from the ink-only frame is one the paint layer drew
+  minPaintedShare: 0,    // SET BELOW FROM MEASUREMENT
+  minPaperShare: 0,      // SET BELOW FROM MEASUREMENT
+};
+
 export async function post(ctx: Ctx): Promise<StageResult> {
   const st = new Stage('post');
   return guard(st, async () => {
@@ -91,6 +100,10 @@ export async function post(ctx: Ctx): Promise<StageResult> {
     const dressed = (ctx.level as { palette?: string }).palette === 'ink';
     const g = await openGame(ctx);
     try {
+      // D-020: from here to the paint-layer checks, the frame judged is the ink pass alone
+      const paintStatus = await g.page.evaluate(() => window.__HARNESS__!.paintLayer(false));
+      let compN = 0, compPaper = 0, compChanged = 0, compHue = 0, compStill = 0, compMoved = 0, accentLost = 0;
+      const compHueAt: string[] = [];
       const passes = await g.page.evaluate(() => window.__HARNESS__!.postPasses());
       const extra = passes.filter((p) => !G.passes.includes(p)), missing = G.passes.filter((p) => !passes.includes(p));
       st.check('§6 passes: exactly value_compression, ink_edge, paper_grain', !extra.length && !missing.length && passes.join() === G.passes.join(),
@@ -125,6 +138,30 @@ export async function post(ctx: Ctx): Promise<StageResult> {
         const again = PNG.sync.read(await g.page.locator('canvas').screenshot());
         const D2 = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist; // a crow may fly into the sky
         const { width: W, height: H } = shot, D = probe.dist, far = D.reduce((m, v) => (v > m ? v : m), 0);
+        if (paintStatus.painted > 0 && !grazing) { // the same pose with the paint layer on: the player's frame
+          // drawn at the SAME world tick as `again`, so the two frames differ only where the paint layer drew
+          await g.page.evaluate(() => { window.__HARNESS__!.paintLayer(true); window.__HARNESS__!.redraw(); });
+          const comp = PNG.sync.read(await g.page.locator('canvas').screenshot());
+          if (process.env['POST_DEBUG_DIR']) writeFileSync(join(process.env['POST_DEBUG_DIR'], `${ctx.levelId}-${cam.name}-painted.png`), PNG.sync.write(comp));
+          await g.page.evaluate(() => window.__HARNESS__!.advance(1));
+          const comp2 = PNG.sync.read(await g.page.locator('canvas').screenshot());
+          await g.page.evaluate(() => window.__HARNESS__!.paintLayer(false));
+          for (let i = 0; i < shot.width * shot.height; i++) {
+            const o = i * 4, r = comp.data[o]!, gg = comp.data[o + 1]!, b = comp.data[o + 2]!, v = (r + gg + b) / 3;
+            const chroma = Math.max(r, gg, b) - Math.min(r, gg, b), accent = chroma > G.accentChroma;
+            const robe = Math.abs(r - G.robe[0]) <= G.tol * 2 && Math.abs(gg - G.robe[1]) <= G.tol * 2 && Math.abs(b - G.robe[2]) <= G.tol * 2;
+            const ir = again.data[o]!, ig = again.data[o + 1]!, ib = again.data[o + 2]!, inkChroma = Math.max(ir, ig, ib) - Math.min(ir, ig, ib);
+            compN++;
+            if (Math.abs(v - vPaper) <= G.tol && !accent) compPaper++;
+            if (!accent && !robe && chroma > chromaMax + 1) { compHue++; if (compHueAt.length < 3) compHueAt.push(`${cam.name} (${i % shot.width},${Math.floor(i / shot.width)}) rgb(${r},${gg},${b})`); }
+            if (inkChroma > G.accentChroma && !accent) accentLost++;
+            if (Math.abs(v - (ir + ig + ib) / 3) > PAINT_GATE.changed) {
+              compChanged++;
+              // judged where nothing in the ink pass can have moved: paint over the sky, one tick later
+              if (D2[i]! >= far * 0.999) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
+            }
+          }
+        }
         const tx = ty * (W / H);
         // 1/viewZ per pixel: linear across any plane in screen space, so its Laplacian is 0 on a face
         const IZ = new Float64Array(W * H);
@@ -255,6 +292,19 @@ export async function post(ctx: Ctx): Promise<StageResult> {
       const avg = (a: number[]): number => a.reduce((x, y) => x + y, 0) / a.length;
       st.check('§6: no vignette (corner sky = centre sky, within 2 levels)', !corner.length || !centre.length || Math.abs(avg(corner) - avg(centre)) <= G.vignetteMax,
         corner.length && centre.length ? `corner ${avg(corner).toFixed(2)} vs centre ${avg(centre).toFixed(2)}` : 'no sky in both regions: not judged');
+      // ---- D-020: the paint layer, judged on the frame the player sees
+      const P = PAINT_GATE;
+      st.check('D-020 paint layer: drawn on a dressed level, absent from an undressed one',
+        dressed ? paintStatus.painted > 0 && compN > 0 && compChanged / compN >= P.minPaintedShare : paintStatus.painted === 0,
+        dressed ? `${paintStatus.painted} painted meshes; ${pc(compChanged, compN)} of the frame differs from the ink pass alone (need >= ${P.minPaintedShare * 100}%)` : `${paintStatus.painted} painted meshes (undressed: none allowed)`);
+      if (paintStatus.painted > 0) {
+        st.check('D-020 mist: the void is bare paper, not grey shapes', compN > 0 && compPaper / compN >= P.minPaperShare,
+          `paper is ${pc(compPaper, compN)} of the painted frame (need >= ${P.minPaperShare * 100}%)`);
+        st.check('D-020 paint layer: no hue (the painted frame stays on the ramp\'s chroma)', compHue === 0,
+          `${compHue} of ${compN} px above the ramp's chroma ${chromaMax}${compHueAt.length ? `: ${compHueAt.join('; ')}` : ''}`);
+        st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', compStill > 0 && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed`);
+        st.check('D-020 paint layer: hides no accent pixel', accentLost === 0, `${accentLost} px that are accent in the ink pass are not in the painted frame`);
+      }
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');
     } finally {
       await g.close();

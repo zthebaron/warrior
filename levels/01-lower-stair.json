@@ -439,26 +439,7 @@
     {"asset": "kit_stair_tread", "pos": [81, 5.7, 3.2], "scale": [0.6, 0.4, 0.6], "collider": "none", "tag": "dress:g16"},
     {"asset": "kit_stair_tread", "pos": [8, -3.375, 0], "scale": [4.08, 9.25, 7.08], "collider": "none", "tag": "dress:g31"},
     {"asset": "kit_stair_tread", "pos": [40, -0.25, 0], "scale": [3.08, 8, 7.08], "collider": "none", "tag": "dress:g32"},
-    {"asset": "kit_stair_tread", "pos": [93, 3.25, 0], "scale": [3.08, 8, 7.08], "collider": "none", "tag": "dress:g33"},
-    {"asset": "kit_mid_cliff", "pos": [-10, -10, -40], "rot": [0, 0, 0], "collider": "none", "tag": "dress:backdrop.0"},
-    {"asset": "kit_mid_cliff", "pos": [25, -10, -44], "rot": [0, 160, 0], "collider": "none", "tag": "dress:backdrop.1"},
-    {"asset": "kit_mid_cliff", "pos": [60, -10, -38], "rot": [0, 25, 0], "collider": "none", "tag": "dress:backdrop.2"},
-    {"asset": "kit_mid_cliff", "pos": [95, -10, -46], "rot": [0, 200, 0], "collider": "none", "tag": "dress:backdrop.3"},
-    {"asset": "kit_mid_cliff", "pos": [130, -10, -40], "rot": [0, 70, 0], "collider": "none", "tag": "dress:backdrop.4"},
-    {"asset": "kit_far_peak", "pos": [0, -10, -130], "rot": [0, 0, 0], "scale": 1, "collider": "none", "tag": "dress:backdrop.5"},
-    {"asset": "kit_far_peak", "pos": [70, -10, -140], "rot": [0, 0, 0], "scale": 1.3, "collider": "none", "tag": "dress:backdrop.6"},
-    {"asset": "kit_far_peak", "pos": [140, -10, -125], "rot": [0, 0, 0], "scale": 1.1, "collider": "none", "tag": "dress:backdrop.7"},
-    {"asset": "kit_far_peak", "pos": [215, -10, -150], "rot": [0, 0, 0], "scale": 1.4, "collider": "none", "tag": "dress:backdrop.8"},
-    {"asset": "kit_far_peak", "pos": [240, -10, -40], "rot": [0, 90, 0], "scale": 1.2, "collider": "none", "tag": "dress:backdrop.9"},
-    {"asset": "kit_cloud_band", "pos": [-20, -9.5, 0], "collider": "none", "tag": "dress:backdrop.10"},
-    {"asset": "kit_cloud_band", "pos": [-20, -9.5, 80], "collider": "none", "tag": "dress:backdrop.11"},
-    {"asset": "kit_cloud_band", "pos": [-20, -9.5, 160], "collider": "none", "tag": "dress:backdrop.12"},
-    {"asset": "kit_cloud_band", "pos": [100, -9.5, 0], "collider": "none", "tag": "dress:backdrop.13"},
-    {"asset": "kit_cloud_band", "pos": [100, -9.5, 80], "collider": "none", "tag": "dress:backdrop.14"},
-    {"asset": "kit_cloud_band", "pos": [100, -9.5, 160], "collider": "none", "tag": "dress:backdrop.15"},
-    {"asset": "kit_cloud_band", "pos": [220, -9.5, 0], "collider": "none", "tag": "dress:backdrop.16"},
-    {"asset": "kit_cloud_band", "pos": [220, -9.5, 80], "collider": "none", "tag": "dress:backdrop.17"},
-    {"asset": "kit_cloud_band", "pos": [220, -9.5, 160], "collider": "none", "tag": "dress:backdrop.18"}
+    {"asset": "kit_stair_tread", "pos": [93, 3.25, 0], "scale": [3.08, 8, 7.08], "collider": "none", "tag": "dress:g33"}
   ],
   "hazards": [
     {

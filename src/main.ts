@@ -7,6 +7,7 @@ import { GameLoop, LOOP_CONFIG } from './engine/loop';
 import { InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
+import { PaintLayer } from './engine/paint-layer';
 import { SpringArmCamera, CAMERA_TUNING, allowedArm, type AssistProbe } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
@@ -98,6 +99,10 @@ interface HarnessApi {
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   /** D-018: the STYLE §6 passes the running post stack was compiled with, in order. */
   postPasses(): string[];
+  /** D-020: the paint layer's state; pass false to draw the ink pass alone (the frame the D-018/D-019 gate judges). */
+  paintLayer(on?: boolean): { painted: number; drawn: boolean };
+  /** Draw the CURRENT tick again: no simulation step, so two frames can differ only in what was drawn. */
+  redraw(): void;
   /** D-018: per-pixel distance (u) from the camera of the last rendered frame, top row first (harness post stage). */
   postProbe(): { width: number; height: number; dist: number[] };
   /** D-018 (STYLE §1): every light in the scene, and every material that is not unlit. Both must be empty. */
@@ -215,6 +220,7 @@ async function boot(): Promise<void> {
 
   const state = new StateMachine();
   const renderer = new Renderer(el('app'));
+  const paintLayer = new PaintLayer(renderer.renderer, renderer.scene, renderer.camera); // D-020: drawn after the ink pass
   configureAssetLoaders(renderer.renderer);
   // D-001 feel-test switch: ?accent=<candidate> (assets/src/accent.json). Default = accent.json `default`.
   const accentParam = new URLSearchParams(location.search).get('accent');
@@ -289,6 +295,7 @@ async function boot(): Promise<void> {
       player.mesh.userData['translates'] = 'player';
       renderer.scene.add(player.mesh);
     }
+    paintLayer.refresh();
     const lvl = level;
     player.groundMotion = (c) => lvl.platformDelta(c);
     player.teleport({ x, y, z }, facing);
@@ -457,7 +464,10 @@ async function boot(): Promise<void> {
     if (level) level.debugRoot.visible = overlay.visible;
 
     profiler.begin('render');
-    if (!skipRender) renderer.render();
+    if (!skipRender) {
+      renderer.render();
+      paintLayer.render();
+    }
     profiler.end('render');
     overlay.update(frameDt);
     profiler.endFrame();
@@ -673,6 +683,11 @@ async function boot(): Promise<void> {
         fixedDt: loop.dt,
       },
       postPasses: () => [...renderer.post.passes],
+      paintLayer: (on) => {
+        if (on !== undefined) paintLayer.enabled = on;
+        return paintLayer.status();
+      },
+      redraw: () => onRender(0, loop.dt),
       sceneAudit: () => {
         // Unlit: shading ignores every light. Anything else (Standard, Lambert, Phong, Toon, Physical...) is lit.
         const UNLIT = new Set(['MeshBasicMaterial', 'LineBasicMaterial', 'LineDashedMaterial', 'PointsMaterial', 'SpriteMaterial', 'ShaderMaterial', 'RawShaderMaterial']);
