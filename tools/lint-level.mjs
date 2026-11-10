@@ -133,11 +133,11 @@ function rotXYZ(deg){ // three.js Euler 'XYZ' (the loader's order): R = Rx * Ry 
   const [a,b,c]=deg.map(v=>v/DEG), [ca,sa,cb,sb,cc,sc]=[Math.cos(a),Math.sin(a),Math.cos(b),Math.sin(b),Math.cos(c),Math.sin(c)];
   return [[cb*cc,-cb*sc,sb],[ca*sc+sa*sb*cc,ca*cc-sa*sb*sc,-sa*cb],[sa*sc-ca*sb*cc,sa*cc+ca*sb*sc,ca*cb]];
 }
-export function obstaclesOf(level, manifest){
+export function obstaclesOf(level, manifest, includeRenderOnly=false){
   const byName=new Map((manifest?.assets??[]).map(a=>[a.name,a])), out=[];
   (level.geometry??[]).forEach((g,gi)=>{
     const a=byName.get(g.asset); if(!a||!Array.isArray(g.pos)) return;
-    if((g.collider??a.collider)==='none') return;
+    if(!includeRenderOnly&&(g.collider??a.collider)==='none') return;
     const sc=typeof g.scale==='number'?[g.scale,g.scale,g.scale]:Array.isArray(g.scale)?g.scale:[1,1,1];
     let lo,hi;
     if(a.kind==='primitive'&&Array.isArray(a.size)){ hi=a.size.map((v,k)=>v*sc[k]/2); lo=hi.map(v=>-v); }
@@ -243,7 +243,7 @@ export function armAt(obst, feet, u, pitchDeg){
 //      assistPitchDeg): `pitch` = base 18 when the free-arm top reads, the assisted pitch, or null (no assist);
 //   2. the arm then collides (camera.ts update): the eye is pivot + allowedArm(hit) at that pitch.
 // The band is the unoccluded top surface seen from THAT eye (RB-003 verification).
-function riseView(boxes,obst,a,c){
+function riseView(boxes,obst,a,c,visual){
   const L=landingDepth(boxes,a,c); if(!L) return null;
   const len=Math.hypot(c[0]-a[0],c[2]-a[2]), u=[(c[0]-a[0])/len,(c[2]-a[2])/len], s=READABLE_RISE.standoffM;
   const face=[a[0]+u[0]*L.t0, a[1], a[2]+u[1]*L.t0], stand=[face[0]-u[0]*s, a[1], face[2]-u[1]*s];
@@ -254,13 +254,14 @@ function riseView(boxes,obst,a,c){
   const rise=L.box.top-stand[1];
   const base=CAMERA_TUNING.initialPitchDeg, target=assistedPitchDeg(rise,L.depth), pitch=target??base;
   const rest=armAt(obst,stand,u,base), at=pitch===base?rest:armAt(obst,stand,u,pitch);
+  const occluders=new Set();
   const visible=(pose,p)=>{
     const back=pose.arm*Math.cos(p/DEG), eye=[stand[0]-u[0]*back,stand[1]+pose.eye,stand[2]-u[1]*back];
-    return visibleTopBand(obst,eye,u,L.box.top,s+back,s+back+L.depth,p,RENDER_CONFIG.fovDeg,L.gi);
+    return visibleTopBand(visual,eye,u,L.box.top,s+back,s+back+L.depth,p,RENDER_CONFIG.fovDeg,L.gi,occluders);
   };
   const restBand=visible(rest,base), band=visible(at,pitch);
   return { L, rise, u, stand, facingDeg:Math.atan2(-u[0],-u[1])*DEG, base, target, pitch, rest, at, restBand, band,
-    freeRestBand:readableBandDeg(rise,L.depth), reads:band>=READABLE_RISE.minBandDeg };
+    occluders:[...occluders], freeRestBand:readableBandDeg(rise,L.depth), reads:band>=READABLE_RISE.minBandDeg };
 }
 
 // ASSIST_CASE (OQ-052 item 7, ruling 2026-11-08). The linter certified an assisted face with an UNOBSTRUCTED
@@ -273,11 +274,11 @@ function riseView(boxes,obst,a,c){
 /** B-23: every critical_path rise READABLE_RISE evaluates, with the linter's verdict and the pose it judged,
  *  so the harness can stand the real rig in exactly that pose and check the verdict both ways. */
 export function riseViews(level, manifest){
-  const cp=level.critical_path??[], out=[], P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
+  const cp=level.critical_path??[], out=[], P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level), obst=obstaclesOf(level,manifest), visual=obstaclesOf(level,manifest,true);
   for(let i=1;i<cp.length;i++){
     const via=typeof cp[i]==='object'&&!Array.isArray(cp[i])&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
     const a=P(cp[i-1]), c=P(cp[i]); if(c[1]-a[1]<=0) continue;
-    const v=riseView(boxes,obst,a,c); if(!v) continue;
+    const v=riseView(boxes,obst,a,c,visual); if(!v) continue;
     out.push({ index:i, via, rise:v.rise, depth:v.L.depth, pitchDeg:v.pitch, eyeM:v.at.eye, bandDeg:v.band, reads:v.reads,
       stand:v.stand, facingDeg:v.facingDeg, top:v.L.box.top, box:{x0:v.L.box.x0,x1:v.L.box.x1,z0:v.L.box.z0,z1:v.L.box.z1} });
   }
@@ -286,11 +287,11 @@ export function riseViews(level, manifest){
 export function assistCases(level, manifest){
   const cp=level.critical_path??[], out=[];
   if(typeof level.chapter!=='number'||level.chapter<1) return out;
-  const P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
+  const P=w=>Array.isArray(w)?w:w.pos, boxes=boxesOf(level), obst=obstaclesOf(level,manifest), visual=obstaclesOf(level,manifest,true);
   for(let i=1;i<cp.length;i++){
     const via=typeof cp[i]==='object'&&!Array.isArray(cp[i])&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
     const a=P(cp[i-1]), c=P(cp[i]); if(c[1]-a[1]<=0) continue;
-    const v=riseView(boxes,obst,a,c); if(!v) continue;
+    const v=riseView(boxes,obst,a,c,visual); if(!v) continue;
     if(v.pitch===v.base) continue; // no assist involved (it reads at rest, or READABLE_RISE rejects it)
     if(!v.reads) continue;          // READABLE_RISE rejects it: the collided eye at the target pitch sees no top
     out.push({ index:i, via, rise:v.rise, depth:v.L.depth, gi:v.L.gi, pitchDeg:v.pitch, eyeM:v.at.eye, bandDeg:v.band,
@@ -449,7 +450,7 @@ export function lintLevel(level, manifest){
   // stairs/slopes read face by face;
   // FACE_RISE now bounds individual ground risers (B-19). A `platform` ride
   // has no face.
-  const boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
+  const boxes=boxesOf(level), obst=obstaclesOf(level,manifest), visual=obstaclesOf(level,manifest,true);
   if(typeof level.chapter==='number'&&level.chapter>=1) for(let i=1;i<cp.length;i++){
     const via=typeof cp[i]==='object'&&cp[i].via; if(!via||via==='ground'||via==='platform'||!MOVE[via]) continue;
     const a=P(cp[i-1]), c=P(cp[i]), rise=c[1]-a[1]; if(rise<=0) continue;
@@ -457,16 +458,16 @@ export function lintLevel(level, manifest){
     const role=teach?`the teaching instance of "${via}" (ERROR per D-016)`
       :(CHAPTER_MOVES_ADDED[level.chapter]??[]).includes(via)?`practice, "${via}" is taught at critical_path[${firstUse(via)}] (WARNING per D-016)`
       :`practice, "${via}" is not new in chapter ${level.chapter} (WARNING per D-016)`;
-    const v=riseView(boxes,obst,a,c);
+    const v=riseView(boxes,obst,a,c,visual);
     if(!v){ R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto a landing that is not an axis-aligned prim_box under the waypoint, so its readability cannot be measured (D-015b)`); continue; }
     if(v.reads) continue;
     // B-23: say which eye was evaluated and what put it there, so the author knows what to move.
     const eyeAt=(x,p)=>`${x.eye.toFixed(2)}u above the feet at ${p}deg (arm ${x.arm.toFixed(2)}u${x.by===null?', clear':`, pushed in by geometry[${x.by}] behind the stand point`})`;
     const assist=v.target===null
-      ?`the pitch assist (D-015d) finds no pitch up to ${CAMERA_TUNING.pitchMaxDeg}deg that makes it read${rise<probeHeight(ASSIST_RIG)?` (it only assists tops at or above ${probeHeight(ASSIST_RIG).toFixed(2)}u, 0.5 below the rest eye: this one is lower)`:''}`
+      ?`the pitch assist (D-015d) finds no pitch up to ${CAMERA_TUNING.pitchMaxDeg}deg that makes it read${v.rise<probeHeight(ASSIST_RIG)?` (it only assists tops at or above ${probeHeight(ASSIST_RIG).toFixed(2)}u, 0.5 below the rest eye: this one is lower)`:''}`
       :v.target===v.base?`the camera does not assist (with a free arm the top would read at rest, ${v.freeRestBand.toFixed(2)}deg)`
       :`the pitch assist (D-015d) pitches to ${v.target}deg, where the eye is ${eyeAt(v.at,v.target)} and the top subtends ${v.band.toFixed(2)}deg`;
-    R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${rise.toFixed(2)}u rise onto geometry[${v.L.gi}] (${v.L.depth.toFixed(2)}u readable depth): from the eye the camera actually gets at a ${READABLE_RISE.standoffM}u standoff, ${eyeAt(v.rest,v.base)}, its top surface subtends ${v.restBand.toFixed(2)}deg, needs >= ${READABLE_RISE.minBandDeg}deg; ${assist}.${rise>=v.rest.eye?' The top is at or above that eye, so the player sees only the face.':''} The player cannot see there is ground up there (D-015)`);
+    R('READABLE_RISE',`critical_path[${i}] via ${via}, ${role}: +${v.rise.toFixed(2)}u rise onto geometry[${v.L.gi}] (${v.L.depth.toFixed(2)}u readable depth): from the eye the camera actually gets at a ${READABLE_RISE.standoffM}u standoff, ${eyeAt(v.rest,v.base)}, its top surface subtends ${v.restBand.toFixed(2)}deg, needs >= ${READABLE_RISE.minBandDeg}deg; ${assist}.${v.rise>=v.rest.eye?' The top is at or above that eye, so the player sees only the face.':''} ${v.occluders.length?`Sightline occluders: ${v.occluders.map(i=>`geometry[${i}]`).join(', ')}. `:''}The player cannot see there is ground up there (D-015)`);
   }
 
   if(d(P(cp[0]),level.spawn.pos)>3) E('PATH_START','critical_path[0] not at spawn');

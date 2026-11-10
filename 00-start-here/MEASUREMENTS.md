@@ -674,3 +674,15 @@ Tim authorized the confirmed fixes and four-chapter playthrough on 2026-11-09.
   protocol (VIEWPORT.height * 2), and the real snapped camera at the exact prescribed stand point.
   One warm-up physics tick builds Rapier queries before the snapshot; no settling/falling is used
   for this pose check. Existing 30-tick ASSIST_CASE checks remain for assisted standing faces.
+
+### RB review follow-up: render visibility (2026-11-09)
+
+Claude independently measured the render-only rear beam at [49.5,10.6,0], scale
+[1,0.4,7], as hiding chapter 2 cp[9] while the physics band stayed 4.5 degrees.
+The corrected 720-ray rendered-mesh check rejects it and accepts the control
+lifted to y=13.6. Camera arm physics is unchanged. For threshold-adjacent results,
+the protocol refines 720 samples to 7200 (10x), yielding 0.008333 degrees per ray
+at the 60-degree FOV. Each observed visible interval contributes one row of
+endpoint uncertainty; if that interval of uncertainty overlaps 2 degrees after
+refinement, READABLE_CASE fails as ambiguous. This is sampling precision, not a
+relaxed readability budget, and cannot bound features missed between all rays.

@@ -1245,3 +1245,10 @@ the feet/floor distinction is documentation only. Tim explicitly authorized fixi
 and a four-chapter playthrough on 2026-11-09. Promoted to backlog item RB003-RB004-FIX below the
 numbered backlog (stable task ID avoids collisions with concurrent content work). No thresholds,
 move budgets, shipped geometry, or goldens are authorized to weaken to accommodate these fixes.
+
+RB003-RB004-FIX follow-up (2026-11-09): Claude's independent review of fab01f0 found
+that collider:none placements escape both visibility gates. Verified in code:
+obstaclesOf filters them and the harness uses physics.castRay. This is within Tim's
+authorization to fix confirmed issues. Promote to the existing backlog item: separate
+visual geometry from arm collision and test render-only rear-beam rejection. Publication
+remains conditional on an independently clean review.

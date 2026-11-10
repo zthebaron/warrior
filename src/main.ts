@@ -104,6 +104,8 @@ interface HarnessApi {
   cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: AssistProbe | null };
   /** B-18: one physics ray against the level (the player excluded), as the camera's own probe casts them. */
   castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
+  /** Visible level meshes, including collider:none; excludes the player and debug overlays. */
+  castRenderRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
   /** B-23: put the follow camera behind a facing (degrees, as respawnAt takes it), as a player who turns to
    *  face something mouses it there. respawnAt moves the player only; the yaw stays wherever it was. */
   cameraYaw(facingDeg: number): void;
@@ -694,6 +696,21 @@ async function boot(): Promise<void> {
       castRay: (origin, dir, max) => {
         const h = physics.castRay({ x: origin[0], y: origin[1], z: origin[2] }, { x: dir[0], y: dir[1], z: dir[2] }, max, player?.collider);
         return h ? { distance: h.distance, point: [h.point.x, h.point.y, h.point.z], normal: [h.normal.x, h.normal.y, h.normal.z] } : null;
+      },
+      castRenderRay: (origin, dir, max) => {
+        if (!level) return null;
+        level.root.updateMatrixWorld(true);
+        const meshes: THREE.Object3D[] = [];
+        level.root.traverseVisible(o => { if (o instanceof THREE.Mesh) meshes.push(o); });
+        const ray = new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir), 0, max);
+        const h = ray.intersectObjects(meshes, false).find(h => {
+          const mesh = h.object as THREE.Mesh;
+          const material = Array.isArray(mesh.material) ? mesh.material[h.face?.materialIndex ?? 0] : mesh.material;
+          return material?.visible && material.opacity > 0;
+        });
+        if (!h?.face) return null;
+        const n = h.face.normal.clone().applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(h.object.matrixWorld));
+        return { distance: h.distance, point: [h.point.x, h.point.y, h.point.z], normal: [n.x, n.y, n.z] };
       },
       setPlacementVisible: (name, pos, visible) => {
         let n = 0;

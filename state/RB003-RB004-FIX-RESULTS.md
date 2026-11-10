@@ -94,3 +94,24 @@ The camera predicate is geometric, scoped to its existing centreline/pose conven
 prove subjective colour contrast or first-time-player comprehension. Gap-pose snapshots prove
 visibility at the prescribed pose; actual traversal is separately covered by nav and progression.
 No remote CI run, push, merge, deployment, or re-baselining is claimed.
+
+## Independent review follow-up
+
+Claude reviewed fab01f0 and returned CHANGES REQUIRED: visible collider:none
+placements escaped the physics-only occlusion checks. The review is preserved
+in `state/CLAUDE-REVIEW-fab01f0.md`. Publication was held.
+
+The correction separates visibility geometry (all authored placements) from
+physics arm obstacles. The harness now raycasts actual visible level meshes,
+including render-only decoration, instead of physics colliders. Two additional
+fixtures pin the render-only rear beam and its raised control (17 total).
+Diagnostics report the measured geometry rise and contributing occluder indices.
+Coverage compares evaluated indices against independently enumerated authored
+rises, so a missing model result cannot silently disappear from the guard.
+
+READABLE_CASE checks the verdict, not pitch equality. For example, legacy cp[16]
+can read at real pitch 24 degrees while the model predicts 21. ASSIST_CASE
+separately checks pitch on assist-dependent standing cases. Exact poses are
+snapped at support height before settling; settled feet normally sit roughly
+0.01 above the authored floor. The refined sample protocol and its limitations
+are recorded in MEASUREMENTS.md. No threshold was relaxed.

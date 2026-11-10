@@ -25,7 +25,7 @@ function clip(poly, f) {
   return out;
 }
 
-export function visibleTopBand(obstacles, eye, u, top, near, far, pitch, fov, landingIndex) {
+export function visibleTopBand(obstacles, eye, u, top, near, far, pitch, fov, landingIndex, occluders = new Set()) {
   if(top>=eye[1] || far<=near) return 0;
   const deg=180/Math.PI, h=top-eye[1];
   const low=Math.max(-pitch-fov/2,Math.atan2(h,near)*deg);
@@ -48,7 +48,7 @@ export function visibleTopBand(obstacles, eye, u, top, near, far, pitch, fov, la
       if(!points.length || !points.some(p=>p[1]>top+EPS)) continue;
       const angles=points.map(p=>Math.atan2(p[1]-eye[1],p[0])*deg);
       const lo=Math.max(low,Math.min(...angles)), hi=Math.min(high,Math.max(...angles));
-      if(hi>lo) intervals.push([lo,hi]);
+      if(hi>lo) { intervals.push([lo,hi]); occluders.add(b.gi); }
     }
   }
   intervals.sort((a,b)=>a[0]-b[0]);
