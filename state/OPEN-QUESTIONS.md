@@ -1440,3 +1440,46 @@ took, each PROVISIONAL:
     cam0-2, 02 cam0 and cam4, 03 cam0, 04 cam0) are still D-019's: they pass at 0.13-0.35% from the darwin frame,
     under the 0.5% limit, and CI writes no actual for a camera that passes.
 status: PROVISIONAL
+
+## OQ-071 — D-021 (art pass 2): the builder's calls, and what the change still cannot do
+raised: 2026-11-10 by art-pass-2 (claims ART-PASS-2, B-45, B-46, B-49). Tim ruled the four jobs; everything
+below is the builder's.
+took, each PROVISIONAL:
+1. **The rock is hidden by asset, in ink levels** (`INK.collideOnly: ['kit_rock_mass']`), not by a per-placement
+   flag: the schema is closed and was not opened. A greybox level still draws its rock.
+2. **All cards lie parallel to the path.** The rock is a straight wall at the path's edge. A card turned toward
+   the camera either crosses the path or leaves rock a player can touch standing in front of bare paper. So the
+   wall is flat cards at three depths, and from the player's camera it is still seen along its length: the
+   critiques' first finding, reduced by smaller and uneven cards, not removed.
+3. **Nothing painted hides the player.** The rock's stepped ledges can be climbed (they always could; found by
+   driving the player into the wall). The figure is drawn after every card, so a player on the rock is seen
+   against the cliff face, standing on a ledge the painting does not show. Making the wall unclimbable is a
+   collider change and was not this pass's to make.
+4. **The gate's ink-only frame shows the undrawn rock.** The 17 D-018/D-019 checks test the ink pass, and
+   without the rock two of them went red on a frame nobody sees. `POST_GATE` is untouched. The player's frame
+   has three new checks, each with a measured wrong value. If Tim would sooner have the ink-only checks judge
+   the frame without the rock, two thresholds need new mutations of `ink-post.ts`, which this pass did not touch.
+5. **"The void is bare paper" is judged with the rock drawn in place of the painted wall,** the frame its 41%
+   floor was measured on. The frame the player sees is 41.3% paper; the seed's is 33 to 41%.
+6. **Three thin mist bands, against D-020's "the mist must be bare paper".** Tim named mist_a and mist_b for
+   the backdrop. They are grey washes, so they stand only at the horizon on the void side, 210 to 280 u out, at
+   ink 0.3 to 0.4, and nothing was put on the mist sea. One critic wanted them several times stronger, as the
+   seed has; that is Tim's ruling to change, not the builder's.
+7. **Held frames.** jump and wall jump: the run at 0.106 s; double jump: the run at 0.422 s; fall: the first
+   frame of land; wall slide and ledge grab: the first frame of climb. A soft landing still has no pose of its
+   own (the player enters `land` only on a hard one).
+8. **The cliffs ship at 2048 px, 6.5 MB of the 8.3 MB of cards.** Judged at 5120x1440 on the real GPU. PNG is
+   the wrong container for this (B-47).
+9. **The cards are cleaned, not as delivered:** nothing lighter than paper, nothing over the ramp's chroma,
+   colour bled under the cut, cliff feet faded over the lowest tenth.
+10. **The dry-brush is generated, not painted** (two noises, in `tools/art`, not in `src`). A wash lifted from
+    cliff_b read as blotches.
+11. **STYLE-BIBLE strains, recorded and not amended:** §3's bands are camera-relative and a card is fixed, so a
+    front card 30 u down the path is as dark as one beside the player; §4 "no individual needles" against
+    pine_c's needle fans; §4 strata, which the three cliff paintings barely have; §3's far band against the peak
+    cards' ridge strokes.
+12. **The boulders are gone and `boulder` is still built** and budgeted; nothing places it.
+13. **PR 31's seven stale Linux goldens** (OQ-070 item 15) are unchanged by this pass on four levels.
+14. **KNOWN LIMIT: the two 3D cliff stacks in the void** (D-020, Tim's "sparingly") now stand out against
+    painted cliffs. Not touched: they were not in the four jobs.
+status: PROVISIONAL
