@@ -97,6 +97,16 @@
       "triangles": 5038
     }
   },
+  "classes_basis": "D-020 (Tim): a hero asset is an externally authored or generated model with its own painted texture. These are CEILINGS for the class, ruled, not measured: about 30k triangles and a 1024 px texture per asset. One texture, one material, one draw call are the kit's own rule, kept (PROVISIONAL, OQ-070). Every hero asset still has its own line in assets, set AT its measured value, and that line may not pass these. There is no bytes ceiling: none has been measured yet.",
+  "classes": {
+    "hero": {
+      "triangles": 30000,
+      "texture_px": 1024,
+      "textures": 1,
+      "materials": 1,
+      "draw_calls": 1
+    }
+  },
   "backdrop_basis": "D-020 painted backdrop textures (assets/backdrop/*.png, made from the seed by tools/art/backdrop-textures.mjs), each set AT its measured longest side and file size. Checked by tools/assets/paint-budget.mjs inside npm run assets:budget, which also requires each PNG to be exactly what the script gives. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'D-020 painted backdrop'.",
   "backdrop": {
     "far_ridge": {

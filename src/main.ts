@@ -7,7 +7,7 @@ import { GameLoop, LOOP_CONFIG } from './engine/loop';
 import { InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
-import { PaintLayer } from './engine/paint-layer';
+import { PAINT_LAYER, PaintLayer } from './engine/paint-layer';
 import { SpringArmCamera, CAMERA_TUNING, allowedArm, type AssistProbe } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
@@ -744,8 +744,11 @@ async function boot(): Promise<void> {
         if (!level) return null;
         level.root.updateMatrixWorld(true);
         const meshes: THREE.Object3D[] = [];
-        level.root.traverseVisible(o => { if (o instanceof THREE.Mesh) meshes.push(o); });
+        // The backdrop is far field and mist, below and beyond every landing by construction (backdrop.ts):
+        // it is not a sightline occluder. A painted hero mesh IS one, so the ray sees the paint layer too.
+        level.root.traverseVisible(o => { if (o instanceof THREE.Mesh && !o.name.startsWith('backdrop:')) meshes.push(o); });
         const ray = new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir), 0, max);
+        ray.layers.enable(PAINT_LAYER);
         const h = ray.intersectObjects(meshes, false).find(h => {
           const mesh = h.object as THREE.Mesh;
           const material = Array.isArray(mesh.material) ? mesh.material[h.face?.materialIndex ?? 0] : mesh.material;

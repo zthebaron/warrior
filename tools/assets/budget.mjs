@@ -64,6 +64,7 @@ export async function checkBudgets(dist = join(ROOT, 'assets/dist'), root = ROOT
   if (errors.length) return { ok: false, rows, errors };
 
   const budgets = loadBudgets(root);
+  const classes = JSON.parse(readFileSync(join(root, 'tools/assets/budgets.json'), 'utf8')).classes ?? {};
   const meshes = manifest.assets.filter((a) => a.kind === 'mesh');
   for (const name of Object.keys(budgets)) if (!meshes.some((a) => a.name === name)) errors.push(`budgets.json has "${name}" but the manifest has no such mesh — stale budget line`);
   for (const a of meshes) {
@@ -92,6 +93,13 @@ export async function checkBudgets(dist = join(ROOT, 'assets/dist'), root = ROOT
       if (typeof limit === 'number' && !ok) errors.push(`${a.name}: ${label} ${value} > budget ${limit}`);
       return { key, label, value, limit, ok };
     });
+    // D-020: a hero asset has its own measured line like any other, AND that line may not pass the class ceiling
+    if (a.class) {
+      const ceiling = classes[a.class];
+      if (!ceiling) errors.push(`${a.name}: class "${a.class}" has no ceiling in budgets.json classes`);
+      else for (const [key, max] of Object.entries(ceiling)) if (typeof b[key] === 'number' && b[key] > max) errors.push(`${a.name}: its ${key} line ${b[key]} is above the ${a.class} class ceiling ${max}`);
+      if (a.collider !== 'none') errors.push(`${a.name}: a ${a.class} asset must be collider none (art never becomes collision), manifest says ${a.collider}`);
+    }
     rows.push({ name: a.name, m, checks });
   }
   return { ok: errors.length === 0, rows, errors };

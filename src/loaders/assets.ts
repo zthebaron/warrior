@@ -5,6 +5,7 @@
 // Decoders come from the pinned three (vite.config.ts serves/emits them under /vendor/).
 
 import * as THREE from 'three';
+import { paintMaterial } from '../engine/paint-layer';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
@@ -22,6 +23,8 @@ export interface LoadedAsset {
   parts: { geometry: THREE.BufferGeometry; material: THREE.Material }[];
   /** Collision triangles in asset-local space (the visual mesh: kit assets are their own collider). */
   collision: { positions: Float32Array; indices: Uint32Array };
+  /** D-020: a hero asset. It carries its own painted texture and is drawn on the paint layer, never collided with. */
+  painted: boolean;
 }
 
 /** What KTX2Loader.detectSupport found on this renderer — the transcode target depends on it. */
@@ -74,7 +77,7 @@ export function getAccent(): string {
 export function switchAccent(name: string): string {
   if (!(name in ACCENT_HEX)) throw new Error(`[assets] accent "${name}": not in assets/src/accent.json (${Object.keys(ACCENT_HEX).join(', ')})`);
   if (name === accentChoice) return name;
-  for (const asset of cache.values()) for (const part of asset.parts) remapCells(part.geometry, accentChoice, name);
+  for (const asset of cache.values()) if (!asset.painted) for (const part of asset.parts) remapCells(part.geometry, accentChoice, name);
   accentChoice = name;
   return name;
 }
@@ -128,22 +131,22 @@ export function getLoadedAsset(name: string): LoadedAsset | undefined {
   return cache.get(name);
 }
 
-export async function preloadAssets(assets: { name: string; file: string }[]): Promise<void> {
-  await Promise.all(assets.map((a) => load(a.name, a.file)));
+export async function preloadAssets(assets: { name: string; file: string; painted?: boolean }[]): Promise<void> {
+  await Promise.all(assets.map((a) => load(a.name, a.file, !!a.painted)));
 }
 
-function load(name: string, file: string): Promise<LoadedAsset> {
+function load(name: string, file: string, painted: boolean): Promise<LoadedAsset> {
   const hit = cache.get(name);
   if (hit) return Promise.resolve(hit);
   let p = pending.get(name);
   if (!p) {
-    p = decode(name, file).finally(() => pending.delete(name));
+    p = decode(name, file, painted).finally(() => pending.delete(name));
     pending.set(name, p);
   }
   return p;
 }
 
-async function decode(name: string, file: string): Promise<LoadedAsset> {
+async function decode(name: string, file: string, painted: boolean): Promise<LoadedAsset> {
   if (!loader) throw new Error('[assets] configureAssetLoaders(renderer) was not called at boot');
   const urlOf = URLS[`../../assets/dist/${file}`];
   if (!urlOf) throw new Error(`[assets] ${name}: assets/dist/${file} is not in the bundle — run npm run assets:build`);
@@ -158,13 +161,15 @@ async function decode(name: string, file: string): Promise<LoadedAsset> {
     if (!(o instanceof THREE.Mesh)) return;
     // bake the node transform into the geometry so a placement only adds its own transform
     const geometry = (o.geometry as THREE.BufferGeometry).clone().applyMatrix4(o.matrixWorld);
-    remapAccent(geometry);
+    if (!painted) remapAccent(geometry); // the accent lives in the kit's palette texture; a painted texture has no cells
     const materials = Array.isArray(o.material) ? o.material : [o.material];
     if (materials.length !== 1) throw new Error(`[assets] ${name}: multi-material meshes are not supported`);
     // Palette texels ARE display colours (STYLE-BIBLE section 2): exempt from the renderer's ACES
     // tone mapping, which would pull every ramp value off the ramp.
     materials[0]!.toneMapped = false;
-    parts.push({ geometry, material: materials[0]! });
+    // D-020: a hero asset keeps its texture and gets the paint layer's material (unlit, the paper's own grain)
+    const material = painted ? paintMaterial({ map: (materials[0] as THREE.MeshBasicMaterial).map ?? undefined }) : materials[0]!;
+    parts.push({ geometry, material });
     const p = geometry.getAttribute('position');
     const base = pos.length / 3;
     for (let i = 0; i < p.count; i++) {
@@ -176,7 +181,7 @@ async function decode(name: string, file: string): Promise<LoadedAsset> {
     else for (let i = 0; i < p.count; i++) idx.push(base + i);
   });
   if (parts.length === 0) throw new Error(`[assets] ${name}: no renderable meshes`);
-  const asset: LoadedAsset = { name, parts, collision: { positions: new Float32Array(pos), indices: new Uint32Array(idx) } };
+  const asset: LoadedAsset = { name, parts, collision: { positions: new Float32Array(pos), indices: new Uint32Array(idx) }, painted };
   cache.set(name, asset);
   return asset;
 }
