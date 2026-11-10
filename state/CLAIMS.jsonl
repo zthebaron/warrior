@@ -210,3 +210,4 @@
 {"id":"CH1-ASSETS","agent":"ch1-assets","ts":"2026-11-10T00:47:54.739Z","ttl_min":90}
 {"id":"CH1-ASSETS","agent":"ch1-assets","ts":"2026-11-10T01:51:00.838Z","released":true}
 {"id":"CH1-ASSETS","agent":"ch1-assets","ts":"2026-11-10T01:56:56.085Z","ttl_min":90}
+{"id":"PLAY-E2E","agent":"play-e2e","ts":"2026-11-10T01:57:16.301Z","ttl_min":90}
