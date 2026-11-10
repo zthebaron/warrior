@@ -1,3 +1,15 @@
+# HANDOFF-ART: READ THIS SECTION FIRST (art pass 2, written 2026-11-10 ~22:25Z by session art-pass-2)
+
+Everything below the line was written before PR 31 merged and is history. Current state:
+- **PR 31 (art pass 1) is MERGED.** Its CI story is OQ-070 item 15 and MEASUREMENTS "D-020 production load".
+- **Art pass 2 is PR 34**, branch `art-pass-2` off main: D-021 in PHASE-0-DECISIONS, OQ-071, MEASUREMENTS "D-021 ..." sections, backlog B-51 to B-53. Evidence in `docs/build-log/d021/` (the 5120x1440 player-view frame is `ch1-player-5120x1440.png`).
+- **What it built:** ink levels do not draw kit_rock_mass (`src/loaders/level.ts` `INK.collideOnly`); `src/loaders/cliff-wall.ts` stands painted cards there, derived from the rock placements; `src/loaders/backdrop.ts` uses ART-GEN's peaks, cliffs and mist; `src/loaders/path-wash.ts` brushes the path; the player is `warrior_anim` (`src/entities/character-model.ts`); cards are made by `tools/art/backdrop-cards.mjs` from `assets/backdrop/gen` and held by `assets:budget`.
+- **Tools added:** `node tools/harness/motion.ts <dir>` (the figure in motion, as strips; `--clips` for every clip frame by frame); harness hooks `showMeshes(prefix, visible)`, `showFigure(clip, time)`, `figureClips()`.
+- **Gotchas:** cards are blended and write no depth, so draw order is explicit (the wall after the mist, the figure last: `paintLast`). The post stage shows the undrawn rock for its ink-only frame and hides it again; a new harness stage that toggles meshes must restore them. CI writes Linux actuals only for cameras over 0.5%, so take goldens from the run and compare the rest to darwin.
+- **Open for Tim:** OQ-071 (all PROVISIONAL), above all items 2, 3, 6 and 14.
+
+---
+
 # HANDOFF-ART (written 2026-11-10 ~20:20Z by session art-pass-1, for a fresh session with zero memory)
 
 ## 1. Branch, PR, CI

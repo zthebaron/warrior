@@ -14,7 +14,8 @@
 //           (chapter 1's sliding stones turn inside it) goes behind the painting, as it went behind the slab.
 //   bay     one per join between two masses, behind the deepest point of the pocket there, rising over the
 //           front row. Where the masses stand further apart than a bay card is wide there is no rock at the
-//           path's height (chapter 1 has one such gap): no bay card stands there.
+//           path's height (chapter 1 has one such gap): no bay card stands there, and no front card reaches
+//           into it, so the gap is an open cleft and not a painted cliff a player can walk through.
 //   back    one per second mass, the tallest, furthest out: the skyline. Beyond the camera's reach behind the wall.
 //   pine    on every second mass, rooted on a ledge of its tallest front card, a few u above the path.
 //
@@ -152,14 +153,21 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
     const end = Math.min(i, sorted.length - 1 - i); // how far this mass is from the nearer end of the wall
     const tall = <T extends { height: number }>(s: T, row: keyof typeof W.taper, from = end): T => ({ ...s, height: s.height * (W.taper[row][from] ?? 1) });
 
+    // Where no rock stands beside this mass (the wall's end, or a gap wider than a bay card: chapter 1 has one,
+    // x 36 to 40.5, with nothing to collide with at the path's height), no front card may reach past the rock's
+    // own extent: a painted cliff there would be one a player walks through and falls.
+    const p = sorted[i - 1], n = sorted[i + 1];
+    const openLeft = !p || m.x - p.x > W.bayMaxGap, openRight = !n || n.x - m.x > W.bayMaxGap;
     let host: { x: number; s: CardStyle } | null = null;
     for (const dx of W.frontAt) {
       const f = tall(W.front[fi++ % W.front.length]!, 'front');
-      plane('front', f, m.x + dx, m.baseY - W.frontFoot, frontZ, 0.5, 0);
-      if (!host || f.height > host.s.height) host = { x: m.x + dx, s: f };
+      let x = m.x + dx;
+      if (openLeft) x = Math.max(x, m.minX + f.width / 2);
+      if (openRight) x = Math.min(x, m.maxX - f.width / 2);
+      plane('front', f, x, m.baseY - W.frontFoot, frontZ, 0.5, 0);
+      if (!host || f.height > host.s.height) host = { x, s: f };
     }
 
-    const n = sorted[i + 1];
     if (n && n.x - m.x <= W.bayMaxGap) {
       // a bay card belongs to a join, and there is one join fewer than masses: its own distance from the nearer end
       const b = tall(W.bay[i % W.bay.length]!, 'bay', Math.min(i, sorted.length - 2 - i));
@@ -170,15 +178,15 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
       plane('back', b, m.x + b.dx, m.baseY - W.backFoot, frontZ - b.dz, 0.5, 0);
     }
     if (i >= W.pineFrom && (i - W.pineFrom) % W.pineEvery === 0 && host) {
-      const p = W.pines[((i - W.pineFrom) / W.pineEvery) % W.pines.length]!;
-      const height = p.width / cardAspect(p.card);
+      const pine = W.pines[((i - W.pineFrom) / W.pineEvery) % W.pines.length]!;
+      const height = pine.width / cardAspect(pine.card);
       // the host painting's ledge, in the world (mirrored with the card); the pine's own root goes there
       const ledge = W.ledge[host.s.card];
       if (!ledge) throw new Error(`[cliff-wall] no ledge recorded for "${host.s.card}": a pine cannot root on it`);
       const [lu, lv] = ledge;
       const hx = host.x + ((host.s.mirror ? 1 - lu : lu) - 0.5) * host.s.width, hy = m.baseY - W.frontFoot + lv * host.s.height;
-      const rx = p.mirror ? 1 - p.root[0] : p.root[0];
-      plane('pine', { card: p.card, width: p.width, height, mirror: p.mirror }, hx, hy, frontZ, rx, p.root[1]);
+      const rx = pine.mirror ? 1 - pine.root[0] : pine.root[0];
+      plane('pine', { card: pine.card, width: pine.width, height, mirror: pine.mirror }, hx, hy, frontZ, rx, pine.root[1]);
     }
   });
 

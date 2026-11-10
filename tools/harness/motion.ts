@@ -44,6 +44,8 @@ const SCENES: Scene[] = [
   { name: 'drop', level: '01-lower-stair', at: [48, 12, 0], yaw: -90, cam: [0.9, 1.1, 2.6], every: 3, settle: 0, script: [[72, {}]] },
   { name: 'dash', level: '01-lower-stair', at: [44, 5.5, 0], yaw: -90, cam: [0.9, 1.1, 2.5], every: 2, settle: 30, script: [[10, { x: 1 }], [4, { x: 1, dash: true }], [34, { x: 1 }]] },
   { name: 'wall', level: '01-lower-stair', at: [54, 5.5, -2.4], yaw: -90, cam: [2.4, 1.2, 1.4], every: 3, settle: 30, script: [[26, { y: -1, jump: true }], [30, { y: -1 }], [3, { y: -1, jump: true }], [36, {}]] },
+  // the gap in chapter 1's rock (x 36 to 40.5): walk off the path into it. The fall must be seen, in an open cleft
+  { name: 'cleft', level: '01-lower-stair', at: [38.4, 2, -2.6], yaw: 0, cam: [4, 2.4, 5.5], every: 6, settle: 20, script: [[48, { y: -1 }]] },
   { name: 'ledge', level: '00-gym', at: [-5, 0, 3.6], yaw: 180, cam: [2.5, 1.3, -1.0], every: 3, settle: 30, script: [[30, { y: 1, jump: true }], [24, { y: 1 }], [3, { jump: true }], [45, {}]] },
 ];
 

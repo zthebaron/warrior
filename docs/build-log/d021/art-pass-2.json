@@ -1,7 +1,7 @@
 {
   "label": "art-pass-2",
   "level": "01-lower-stair",
-  "when": "2026-11-10T21:55:47.452Z",
+  "when": "2026-11-10T22:21:05.146Z",
   "frames": 360,
   "gl": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)",
   "sizes": [
@@ -13,27 +13,27 @@
         {
           "view": "rig",
           "p50_ms": 6.9,
-          "p95_ms": 7.3,
-          "max_ms": 7.7,
+          "p95_ms": 8,
+          "max_ms": 8.7,
           "fps_p50": 144.93,
           "over_10ms": 0,
-          "cost_p50_ms": 2.55,
+          "cost_p50_ms": 2.53,
           "cost_p95_ms": 2.63
         },
         {
           "view": "cam2",
           "p50_ms": 6.9,
-          "p95_ms": 7.3,
-          "max_ms": 7.8,
+          "p95_ms": 8,
+          "max_ms": 8.7,
           "fps_p50": 144.93,
           "over_10ms": 0,
-          "cost_p50_ms": 2.6,
+          "cost_p50_ms": 2.61,
           "cost_p95_ms": 2.66
         }
       ],
       "worst_view_p50_ms": 6.9,
-      "worst_view_p95_ms": 7.3,
-      "worst_view_cost_p50_ms": 2.6,
+      "worst_view_p95_ms": 8,
+      "worst_view_cost_p50_ms": 2.61,
       "worst_view_cost_p95_ms": 2.66,
       "errors": [
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
@@ -47,28 +47,28 @@
         {
           "view": "rig",
           "p50_ms": 6.9,
-          "p95_ms": 7.3,
-          "max_ms": 7.8,
+          "p95_ms": 8,
+          "max_ms": 8.7,
           "fps_p50": 144.93,
           "over_10ms": 0,
-          "cost_p50_ms": 2.8,
-          "cost_p95_ms": 2.85
+          "cost_p50_ms": 2.81,
+          "cost_p95_ms": 2.84
         },
         {
           "view": "cam2",
           "p50_ms": 6.9,
-          "p95_ms": 7.3,
-          "max_ms": 7.9,
+          "p95_ms": 8,
+          "max_ms": 8.7,
           "fps_p50": 144.93,
           "over_10ms": 0,
-          "cost_p50_ms": 2.95,
-          "cost_p95_ms": 3
+          "cost_p50_ms": 2.93,
+          "cost_p95_ms": 2.96
         }
       ],
       "worst_view_p50_ms": 6.9,
-      "worst_view_p95_ms": 7.3,
-      "worst_view_cost_p50_ms": 2.95,
-      "worst_view_cost_p95_ms": 3,
+      "worst_view_p95_ms": 8,
+      "worst_view_cost_p50_ms": 2.93,
+      "worst_view_cost_p95_ms": 2.96,
       "errors": [
         "Failed to load resource: the server responded with a status of 404 (Not Found)"
       ]

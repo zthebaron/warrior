@@ -1358,7 +1358,8 @@ that was size and unevenness, not angle: small front cards, rows 5 and 11 to 14 
    keeps a hidden mesh, shown only by the harness.
 2. **The painted wall** (`src/loaders/cliff-wall.ts`), derived from the rock placements: three small front cards
    a mass just behind the collision front, a bay card at each join, a tall back card every second mass, pines
-   rooted on ledges of the front cards. All parallel to the path, front faces only, 12 draw calls. The three
+   rooted on ledges of the front cards. Where the rock has a gap at the path's height (x 36 to 40.5) no front
+   or bay card stands, so it is an open cleft, not a painted cliff a player can walk through. All parallel to the path, front faces only, 12 draw calls. The three
    boulders that sat on the slab tops are gone (`tools/levelgen/dress-01.mjs`).
 3. **Nothing painted hides the player** (`src/engine/paint-layer.ts` `paintLast`): the rock's ledges can be
    climbed, as they always could, and a card has no surface; the figure is drawn after every card.
@@ -1386,10 +1387,10 @@ nearest each ramp step:
 |---|---|---|---|---|---|---|---|---|
 | seed hero_7s | 37.2% | 9.5% | 16.1% | 5.8% | 8.4% | 9.6% | 8.0% | 5.4% |
 | D-020 | 40.4% | 7.1% | 6.0% | 6.4% | 17.5% | 12.8% | 6.3% | 3.6% |
-| D-021 | 33.7% | 6.4% | 12.1% | 14.3% | 13.9% | 8.5% | 5.1% | 6.2% |
+| D-021 | 33.9% | 6.8% | 12.4% | 14.3% | 13.4% | 8.0% | 5.1% | 6.2% |
 
 The player's own camera at spawn, real GPU: `docs/build-log/d021/ch1-player-5120x1440.png`. On an Apple M4 Max
-chapter 1 holds 144.9 fps at 2560x1440 and 5120x1440; a frame costs 2.80 ms at 5120x1440 (4.39 ms on D-020).
+chapter 1 holds 144.9 fps at 2560x1440 and 5120x1440; a frame costs 2.81 ms at 5120x1440 (4.39 ms on D-020).
 The scene peak fell from 140 draw calls and 381,066 triangles to 127 and 287,036. The download grew by 8.3 MB
 of cards and 0.15 MB of character, less 0.5 MB of seed mid cliffs.
 

@@ -1454,13 +1454,16 @@ took, each PROVISIONAL:
 3. **Nothing painted hides the player.** The rock's stepped ledges can be climbed (they always could; found by
    driving the player into the wall). The figure is drawn after every card, so a player on the rock is seen
    against the cliff face, standing on a ledge the painting does not show. Making the wall unclimbable is a
-   collider change and was not this pass's to make.
+   collider change and was not this pass's to make. The same holds at the joins between masses (x about 10, 48,
+   66, 74), where the rock stands back up to 2 u from the path's edge behind the front cards: a player who steps
+   off the edge there goes through the painting and falls, seen all the way down. The slabs showed those
+   pockets as notches. The one real gap (x 36 to 40.5) is left open.
 4. **The gate's ink-only frame shows the undrawn rock.** The 17 D-018/D-019 checks test the ink pass, and
    without the rock two of them went red on a frame nobody sees. `POST_GATE` is untouched. The player's frame
    has three new checks, each with a measured wrong value. If Tim would sooner have the ink-only checks judge
    the frame without the rock, two thresholds need new mutations of `ink-post.ts`, which this pass did not touch.
 5. **"The void is bare paper" is judged with the rock drawn in place of the painted wall,** the frame its 41%
-   floor was measured on. The frame the player sees is 41.3% paper; the seed's is 33 to 41%.
+   floor was measured on. The frame the player sees is 41.5% paper; the seed's is 33 to 41%.
 6. **Three thin mist bands, against D-020's "the mist must be bare paper".** Tim named mist_a and mist_b for
    the backdrop. They are grey washes, so they stand only at the horizon on the void side, 210 to 280 u out, at
    ink 0.3 to 0.4, and nothing was put on the mist sea. One critic wanted them several times stronger, as the
