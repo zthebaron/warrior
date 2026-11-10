@@ -1067,3 +1067,66 @@ In chapter 2's set, a rise needs more than `jump` once it exceeds `MOVE.jump.max
 - **The standing TIGHT warning:** it is on the gym, not chapter 1. It is accepted, with the reason on the waypoint (OQ-051). Chapter 1 lints with zero warnings.
 
 implemented_by: 62ce5fc (D-016a in tools/lint-level.mjs; proven both ways in tools/lint-self.mjs; gym TIGHT note, OQ-051). D-016b is documentation: B-18 promoted to BLOCKER, RB-004 posted. D-015d: 440c982 + 4697475 (READABLE_RISE models the assisted pitch: wall +4.0 and climb +4.5 read onto landings >= 2.55 u; the chapter 2 blocker is lifted, pending APPROVER on OQ-052).
+
+## D-017 — a MOVE budget is clean at EVERY press timing and approach in the window. OQ-063. DECIDED
+
+**Ruled by Tim** (2026-11-09, via the chat REVIEWER): the rule below, and that it supersedes OQ-063 item 1.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-066):** every number, level re-shape, linter fix
+and exception in this entry below "The rule". Tim ruled the rule, not the numbers derived from it.
+
+**This supersedes OQ-063 item 1** ("double maxH 9.5
+kept", Tim, 2026-11-09, the same day), and with it the "kept on item 1's logic" holds in OQ-063 items 2, 3
+and 4a. Those texts stay where they are, marked SUPERSEDED, so the history reads.
+
+**The rule.** A MOVE budget means that every press timing and every approach in the window clears it. It
+does not mean that some timing does. "Some timing is clean" is not a budget.
+
+**Why.** A budget that only a perfectly-timed press clears tells a level author that a gap is passable when
+it is not. That is D-015 over again: a check passes and the player cannot do the thing. Under the old
+reading, a double gap between 8.4 and 9.5 linted clean, and a player pressing at the nav bot's timing
+missed it.
+
+**The window, per measurement (B-20's grid, `npm run measure:b20`).** These are what "every" ranges over:
+
+- **Gaps:** press timings k = 0..5 ticks after walk-off, all inside coyote time.
+- **Rises:** takeoff distances d across a running takeoff.
+- **Ground** (slope, stair, dash rise): the six approaches.
+- **Every case:** 96 phases x 5 placements.
+- **Out of the window, with its reason (MEASUREMENTS "B-20 re-measure"):** dash rise at 45 deg oblique, where
+  the dash cannot reach the face at any height. That is geometry, not timing.
+
+**What changes (builder-applied; B-20 data; MEASUREMENTS "D-017" has the tables):**
+
+| budget | was | now | basis |
+|---|---|---|---|
+| double maxH | 9.5 | **8.4** | nav press clean k0-k5; 8.8 fails k0. 9.5 was clean only with a late second press |
+| double maxRise | 3.5 | **2.9** | clean from every takeoff distance; 3.2 fails d5 |
+| dash maxH | 4.0 | **2.6** | clean k0-k5, and 2.0-2.6 all clean, on two runs; 2.8 fails k4, k5. 4.0 was clean only for a press at k0-k1 |
+| jump maxRise | 2.0 | 2.0, **CONFLICT** (below) | no grid value in 1.4..2.6 is clean at every distance |
+| slope, dash maxRise, dashjump maxH/maxRise | 49, 0.34, 8.0, 2.6 | unchanged | already every-timing values (B-20) |
+
+**Shipped levels re-shaped to fit, in the same change, so `lint:levels` never goes red on main:**
+- **02-cliff-seam:** the first double goes from +3.0 to +2.8. geometry[5] top moves 7 -> 7.2, with its torii, checkpoint and cp 6-8. It was the only shipped double rise above 2.9; seg 9->10 is flat ground, not a second +3.0 as OQ-063 said.
+- **00-gym seg 3->4 and 04-summit-ridge seg 9->10:** the "3.5 u" dash gaps are 2.0 u physical gaps, edge to edge. The 3.5 was waypoint span: 0.5 back from the near edge and 1.0 past the far one. Each pair is pulled in to 0.1 back and 0.4 past, which spans 2.5 u: TIGHT 96%, accepted with its reason on the waypoint (OQ-051's convention). No geometry moves. The nav traces are re-recorded, and so is one golden per level (gym cam1, 04 cam2), because visual cams aim at critical_path waypoints (`tools/harness/visual.ts`): the diff is a uniform re-aim, not a scene change. Linux cams for those two come from CI's `*.actual.png`, since gym and 04 Linux goldens are not byte-identical to Darwin. This is not a budget dodge: 2.0 u edge to edge is well inside the measured 2.6, which `measure:b20` also measures edge to edge.
+- **Linter fix found by the pins:** a segment exactly at its budget errored ("2.6u > 2.6u": 54.6 - 52 is 2.6000000000000014). UNREACHABLE now compares with a 1e-9 tolerance. That loosens no budget; it only stops a float from failing the value itself.
+
+**Not conforming, and recorded rather than forced:**
+- **jump maxRise (B-30), and the dash tail:** dash shows the same shape above its new budget. 2.8-3.4 each fail at most 1 of 96, confined to k3-k5, and the count does not rise with distance (3.0 is clean at k4 while 2.8 is not). D-017 still sets 2.6 there, because 2.6 is clean. B-30 covers both patterns.
+  - **The data:** 1.4 and 1.6 each fail 1 of 96 at d1.6 (5 placements, 2026-11-09). 1.8 is clean, and 2.0 is clean on this run, though B-20's run failed it once each at d0.8 and d1.6.
+  - **What that means:** a failure that persists as the height drops, and moves between runs, is not a height limit. Lowering the number cannot satisfy the rule. 2.0 stays in code, PROVISIONAL, until B-30 diagnoses the failing phase.
+- **Unmeasured under the rule (B-31):** wall (4.2 / 4.0) and climb (7.0 / 4.5) still rest on one sample each. `measure:b20` does not cover them. They do not yet meet D-017; they have not been shown to violate it.
+- **double's second press (B-32):** it was sampled at two timings only, release at vy <= 0.5 (the nav press) and vy <= -6. An earlier second press is unmeasured. 8.4 is every-timing over the measured window, and the window is narrower than a player's.
+
+**D-016's band table is amended by these numbers.** By rise, the cheapest move that clears is now: double
+(jump.maxRise, 2.9], wall (2.9, 4.0], climb (4.0, 4.5]. Wall now picks up (2.9, 3.5], and the rest-pose hard
+ceiling 3.36 sits inside wall's band, not double's. D-016's table is left as written; `lint:self` reads
+these bounds from MOVE.
+
+**Measurement conditions, disclosed.** The jump rise run (58 min) shared the machine with a playtest and,
+for its whole length, with the second session's dash run. Physics is fixed-tick, but the jump result
+already differs from B-20's run at 2.0, so contention is not ruled out as a factor (B-30).
+
+**Executable half.** `npm run lint:self` pins each changed limit at its value (reachable) and just above
+(UNREACHABLE), with literal numbers, so a MOVE edit turns it red. Reverting double to 9.5 / 3.5 fails 3 checks.
+
+implemented_by: 47955d4 (double 8.4 / 2.9, 02-cliff-seam re-shape and re-record, lint:self pins), fc5682f (dash 2.6, gym and 04 dash waypoints, re-aimed cams, UNREACHABLE float tolerance). jump maxRise is NOT implemented: CONFLICT, B-30

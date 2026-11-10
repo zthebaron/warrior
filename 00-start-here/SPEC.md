@@ -168,14 +168,14 @@ Gate C, so a change here is a decision, not a tweak.
 | respawn delay | **0.8 s today → target ≤ 0.5 s, ceiling 1.2 s** (Q6) | `GAME_RULES.respawnDelaySec` |
 | checkpoint radius | 2.0 u horizontal | `GAME_RULES.checkpointRadius` |
 
-**Linter move budgets** (running approach, from MEASUREMENTS.md; the `TIGHT` warning fires at 90%):
+**Linter move budgets** (running approach, from MEASUREMENTS.md; every press timing and approach clean, D-017; the `TIGHT` warning fires at 90%):
 
 | via | max horizontal | max rise |
 |---|---|---|
 | ground | ∞ | slope 49°, autostep 0.34 |
 | jump | 5.0 | 2.00 |
-| double | 9.5 | 3.50 |
-| dash | 4.0 | 0.34 |
+| double | 8.4 | 2.90 |
+| dash | 2.6 | 0.34 |
 | dashjump | 8.0 | 2.60 |
 | wall | 4.2 | 4.00 |
 | climb | 7.0 | 4.50 |

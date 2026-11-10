@@ -38,13 +38,12 @@ TIGHT warning at 90%, which flags anything near the edge for human review.
 
     ground    slope 49deg, autostep 0.34    (slope measured B-20, see "B-20 re-measure" below; Rapier's
                                             maxSlopeClimbAngle is 50. autostep measured B-14: Rapier is configured 0.5)
-    jump      maxH  5.0   maxRise 2.00   (B-20: maxH clean to 5.6, the top of the grid; not raised. maxRise
-                                          2.0 has 2 single failures in 576 trials: see B-20)
-    double    maxH  9.5   maxRise 3.50   (running approach, not standing-adjacent 4.0. B-20: 9.5 clean with a late
-                                          second press, 8.4 with the nav bot's; kept at 9.5 by Tim, 2026-11-09.
-                                          maxRise 3.5 is NOT clean at every takeoff distance: see B-20)
-    dash      maxH  4.0   maxRise 0.34   (maxRise B-20 = autostep: a grounded dash has no lift. maxH 4.0 is NOT
-                                          clean at every press timing: see B-20)
+    jump      maxH  5.0   maxRise 2.00   (B-20: maxH clean to 5.6, the top of the grid; not raised. maxRise 2.0
+                                          does NOT meet D-017 and no lower grid value does: CONFLICT, see "D-017")
+    double    maxH  8.4   maxRise 2.90   (D-017, 2026-11-09: every timing clean. Were 9.5 / 3.5: 9.5 was clean only
+                                          with a late second press, 3.5 from most takeoff distances. See B-20)
+    dash      maxH  2.6   maxRise 0.34   (maxRise B-20 = autostep: a grounded dash has no lift. maxH D-017: clean
+                                          k0-k5 to 2.6; 4.0 was clean only at k0-k1. See "D-017")
     dashjump  maxH  8.0   maxRise 2.60   (B-20; were 10.0 / 2.75 on one sample each)
     wall      maxH  4.2   maxRise 4.00
     climb     maxH  7.0   maxRise 4.50
@@ -155,7 +154,7 @@ face for double, 3..5.5 for dashjump (the far end of a running takeoff). Fixture
     dashjump    rise 2.4-2.6 clean · 2.75: 96/96 at every distance               -> MOVE dashjump maxRise 2.6 (was 2.75)
     double      gap, nav press (release at vy <= 0.5): 8.4 clean · 8.8: k0 16 · 9.0: k0 96, k1 77
                 gap, late press (release at vy <= -6):  9.0, 9.5 clean · 10.0: k0-k3 fail
-                                                                                 -> MOVE double maxH 9.5 kept (Tim, 2026-11-09)
+                                                                                 -> MOVE double maxH 8.4 (D-017; 9.5 kept earlier, superseded)
     jump        gap 5.0, 5.4, 5.6 clean (top of the grid)                        -> MOVE jump maxH 5.0 unchanged
     stair       8 risers on 0.6 treads (the gym's shape), 10 wide: see below
 
@@ -165,7 +164,7 @@ dash cannot reach the face from d > 2.61, about 11 of the 96 phases, at ANY heig
 failures at 0.30 and 0.34 are those phases. 0.34 equals the autostep ceiling (B-14), which is what a grounded
 dash with no vertical component should give.
 
-**Not clean at the current value, kept PROVISIONAL (OQ-063):**
+**Not clean at the then-current value, kept PROVISIONAL (OQ-063). SUPERSEDED by D-017 (2026-11-09), see "D-017" below:**
 
     dash gap    3.4: k4 1, k5 3 · 3.6: k3 1, k4 1, k5 3 · 3.8: k2 1, k3 1, k4 1, k5 3
                 4.0: k2 1, k3 1, k4 3, k5 2 · 4.2: k2-k5 fail · 4.4: every k fails. k0 and k1 clean to 4.2.
@@ -197,6 +196,60 @@ gym's nav passes only because the bot walks one line at one phase. B-28 re-shape
 golden and trace re-record). New: 0.6 treads stall at 30 and 45 deg oblique even at 0.30, below the
 autostep ceiling that B-14 measured on single risers with 6 u treads. FACE_RISE bounds each face, and it
 does not see consecutive narrow treads. B-29.
+
+## D-017 every timing clean (2026-11-09)
+
+Tim's ruling (PHASE-0-DECISIONS D-017): a MOVE budget is clean at EVERY press timing and approach in the
+window, not at some. It supersedes the "kept" values above. Applied from the B-20 tables:
+
+    double maxH     9.5 -> 8.4    nav press clean k0-k5 to 8.4; 8.8 fails k0
+    double maxRise  3.5 -> 2.9    every takeoff distance clean to 2.9; 3.2 fails d5
+    dash maxH       4.0 -> 2.6    clean k0-k5 to 2.6; 2.8 fails k4, k5
+
+dash gap, below B-20's grid. Same protocol (96 phases x 5 placements x k0..k5, 14 400 trials, 0 console
+errors, Darwin SwiftShader, 6dba83d, 3930 s; run by a second session under sub-claim OQ-063-dash, and its raw
+log checked against this table):
+
+    value u        k0     k1     k2     k3     k4     k5
+    2.6             0      0      0      0      0      0
+    2.8             0      0      0      0      1      1
+    3.0             0      0      0      0      0      1
+    3.2             0      0      0      1      0      1
+    3.4             0      0      0      0      1      1      (B-20 had k4 1, k5 3: same timings, smaller count)
+
+Above 2.6 the failures are flat at <= 1/96, confined to late presses, and not rising with distance. That is
+the same shape as the jump rise below, and it goes to B-30 with it. The rule is strict, so 2.6 is the number.
+The gym's and 04's dash gaps are 2.0 u edge to edge; their waypoints now span 2.5 (D-017).
+
+The floor below 2.6, run alone on the machine (same protocol, 11 520 trials, 0 console errors, 2196 s, branch
+oq063-every-timing, game code as fc5682f):
+
+    value u        k0     k1     k2     k3     k4     k5
+    2.0             0      0      0      0      0      0
+    2.2             0      0      0      0      0      0
+    2.4             0      0      0      0      0      0
+    2.6             0      0      0      0      0      0
+
+So 2.6 is clean on two independent runs, and every grid value under it is clean. Unlike jump rise, the
+dash number has a real every-timing floor, so it is applied, not a CONFLICT.
+
+**jump maxRise: no every-timing value exists in the grid (CONFLICT, B-30).** Measured below 2.0, same
+protocol (96 phases x 5 placements x 6 distances, 11 520 trials, 0 console errors, Darwin SwiftShader,
+branch oq063-every-timing at 47955d4, 58 min):
+
+    value u      d0.4   d0.8   d1.2   d1.6     d2   d2.4
+    1.4             0      0      0      1      0      0
+    1.6             0      0      0      1      0      0
+    1.8             0      0      0      0      0      0
+    2.0             0      0      0      0      0      0
+
+B-20's run, same values and protocol, had 2.0 failing at d0.8 1 and d1.6 1. Put together:
+- **The failure does not fall away with height:** 1.4 fails as 2.0 once did, and 2.4 and 2.6 are clean.
+- **2.0 is not stable either:** it went from 2 failures to 0 between two runs on the same machine.
+
+That is a single-phase defect, or nondeterminism in the harness, not a height limit. Walking the number
+down cannot satisfy D-017, so maxRise stays 2.0 in code, PROVISIONAL. B-30 dumps the failing phase and
+placement and diagnoses it before any jump rise number is called every-timing clean.
 
 ## H4 asset budgets (2026-11-08)
 
