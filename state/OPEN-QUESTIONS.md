@@ -1493,4 +1493,12 @@ took, each PROVISIONAL:
     fixed in this PR: the bay row's taper was off by one at the far end; D-020's far-field check could be met by
     the wall alone (now judged with the wall lifted away: 8.4%); the coverage check's name claimed more than it
     tests (item 15); and authored placement numbers missing from MEASUREMENTS.
+17. **KNOWN STALE GOLDEN: chapter 1's Linux cam4.** Chapter 1's Linux goldens come from two runs. cam0, cam1,
+    cam2 and cam5 are run 42914586358's actuals (a22953b), taken after the bay taper and the open cleft, each
+    within 0.001% of its darwin twin. cam3 and cam4 are still run 42911617289's (726cc6e), taken before those
+    two fixes: CI writes an actual only for a camera over 0.5%, and on the final build they drifted 0.066% and
+    0.363%, so there was nothing to take. Against darwin, cam3 is 0.075% (173 px) and cam4 is 0.365% (840 px).
+    cam4 passes, but 0.363% of its 0.5% is already spent on a layout change and not on a platform difference.
+    Re-taking it costs one deliberately red run (the harness writes an actual only on a failure or a missing
+    golden, `tools/harness/visual.ts`). Not done here: the camera is within tolerance.
 status: PROVISIONAL
