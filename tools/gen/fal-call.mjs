@@ -52,6 +52,13 @@ const PRICES = {
     only(p, ['image_url', 'seed', 'texture_size', 'mesh_simplify', 'ss_guidance_strength', 'ss_sampling_steps', 'slat_guidance_strength', 'slat_sampling_steps']);
     return 200;
   },
+  // Page and pricing API both say 0.02 but neither names the unit. Charged per input image,
+  // which is the larger reading.
+  'fal-ai/trellis/multi': (p) => {
+    only(p, ['image_urls', 'seed', 'texture_size', 'mesh_simplify', 'multiimage_algo', 'ss_guidance_strength', 'ss_sampling_steps', 'slat_guidance_strength', 'slat_sampling_steps']);
+    if (!Array.isArray(p.image_urls) || p.image_urls.length < 1 || p.image_urls.length > 4) throw new Error('image_urls must be an array of 1 to 4 images');
+    return 200 * p.image_urls.length;
+  },
   // "$0.225 Geometry, $0.375 Normal, $0.45 LowPoly. PBR materials, multi-view images, and a custom
   // face count each add $0.15."
   'fal-ai/hunyuan3d-v3/image-to-3d': (p) => {

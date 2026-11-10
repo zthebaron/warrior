@@ -24,6 +24,8 @@ const modes = opt('--modes', 'unlit,clay').split(',');
 const size = Number(opt('--size', 512));
 const elev = Number(opt('--elev', 10));
 const asJson = has('--json');
+const time = opt('--time', null);
+const clipName = opt('--clip', '');
 const PAPER = opt('--bg', '#cabfac'); // default: STYLE-BIBLE paper-cream
 const [glb, out] = a;
 if (!glb || !out) { console.error('usage: render-glb.mjs <model.glb> <out.png> [--views 0,45,90,180] [--modes unlit,clay] [--size 512] [--elev 10] [--bg #rrggbb]'); process.exit(2); }
@@ -41,10 +43,21 @@ renderer.setPixelRatio(1); renderer.setSize(size, size); renderer.setClearColor(
 document.body.appendChild(renderer.domElement);
 const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/__glb');
 const root = gltf.scene;
+const t = q.get('time');
+let duration = 0;
+if (t !== null && gltf.animations.length) {
+  // pose the first clip at t seconds, so a rigged model can be seen mid-stride
+  const mixer = new THREE.AnimationMixer(root);
+  const clip = gltf.animations.find((x) => x.name === q.get('clip')) ?? gltf.animations[0];
+  duration = clip.duration;
+  mixer.clipAction(clip).play();
+  mixer.setTime(Number(t));
+}
 root.updateMatrixWorld(true);
+root.traverse((o) => { if (o.isSkinnedMesh) { o.skeleton.update(); o.computeBoundingBox(); } });
 const box = new THREE.Box3().setFromObject(root);
 const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
-const stats = { min: box.min.toArray(), max: box.max.toArray(), size: s.toArray(), meshes: 0, triangles: 0, textures: [], skinned: 0, animations: gltf.animations.map((x) => x.name) };
+const stats = { min: box.min.toArray(), max: box.max.toArray(), size: s.toArray(), meshes: 0, triangles: 0, textures: [], skinned: 0, animations: gltf.animations.map((x) => x.name), duration };
 const mats = new Map();
 root.traverse((o) => {
   if (!o.isMesh) return;
@@ -99,7 +112,7 @@ try {
   const errs = [];
   page.on('pageerror', (e) => errs.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
-  await page.goto(`http://127.0.0.1:${port}/?size=${size}`);
+  await page.goto(`http://127.0.0.1:${port}/?size=${size}${time === null ? '' : '&time=' + time}&clip=${encodeURIComponent(clipName)}`);
   try { await page.waitForFunction('window.__ready === true', { timeout: 120000 }); }
   catch { throw new Error('model did not load: ' + errs.join(' | ')); }
   const stats = await page.evaluate(() => window.__stats);

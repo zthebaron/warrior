@@ -1,0 +1,55 @@
+{
+  "note": "Hero models generated on fal.ai from generated input paintings. Human-readable version: MANIFEST.md. Loader notes: HANDOFF.md. Money: state/FAL-LEDGER.md.",
+  "convention": "Static models: +Y up, front toward +Z, base on y = 0, centred on x and z, exactly 1.0 unit tall. Scale by the world height you want. warrior_rigged.glb is the exception: 1.7 units tall, see HANDOFF.md.",
+  "assets": [
+    {
+      "name": "warrior", "file": "warrior.glb", "input": "input/warrior.png", "input_back": "input/warrior_back.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d", "options": "Normal + PBR + back view", "request_id": "01a1c6ca-322a-7062-8dae-641d1d049d46",
+      "cost_final_usd": 0.675, "cost_all_attempts_usd": 2.2588,
+      "triangles_before": 500000, "triangles_after": 29400, "size": [0.632, 1, 0.393], "raw_height": 1.1321, "bytes": 3463260,
+      "ship": true, "verdict": "SHIP: the best result. Face is blank under the hat."
+    },
+    {
+      "name": "warrior_rigged", "file": "warrior_rigged.glb", "input": "input/warrior.png", "clip": "walk", "time": 0.3,
+      "endpoint": "fal-ai/meshy/rigging", "options": "auto-rig of warrior.glb; clips walk, run", "request_id": "01a1c6e3-846c-70d1-9cfa-a6a4bdf42a32",
+      "cost_final_usd": 0.8, "cost_all_attempts_usd": 0.8,
+      "triangles_before": 29400, "triangles_after": 29400, "size": [1.075, 1.7, 0.669], "raw_height": 1.7, "bytes": 4700800,
+      "ship": true, "verdict": "SHIP: 24 joints, walk + run. Shown mid-walk. Not yet run in the engine."
+    },
+    {
+      "name": "pine", "file": "pine.glb", "input": "input/pine.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d", "options": "Normal + PBR", "request_id": "01a1c6da-90c8-78b1-ad59-09ae39bd1a65",
+      "cost_final_usd": 0.525, "cost_all_attempts_usd": 0.8838,
+      "triangles_before": 500000, "triangles_after": 29400, "size": [1.201, 1, 0.478], "raw_height": 0.9708, "bytes": 2250492,
+      "ship": false, "verdict": "DO NOT SHIP: canopy is a thin sheet (see side). A bonsai, not a cliff pine."
+    },
+    {
+      "name": "cliff", "file": "cliff.glb", "input": "input/cliff.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d", "options": "Normal + PBR", "request_id": "01a1c6e1-74f4-7c82-baaf-ec3daa4e9aab",
+      "cost_final_usd": 0.525, "cost_all_attempts_usd": 1.2492,
+      "triangles_before": 500000, "triangles_after": 29400, "size": [0.502, 1, 0.537], "raw_height": 1.0156, "bytes": 2095440,
+      "ship": true, "verdict": "SHIP, with a caveat: a true solid, but a tidy pillar, not a jagged cliff."
+    },
+    {
+      "name": "boulder", "file": "boulder.glb", "input": "input/boulder.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d", "options": "Normal + PBR", "request_id": "01a1c6d5-7877-7be0-81c2-5574a2d976e3",
+      "cost_final_usd": 0.525, "cost_all_attempts_usd": 0.6446,
+      "triangles_before": 498896, "triangles_after": 29400, "size": [2.13, 1, 2.016], "raw_height": 0.5097, "bytes": 2114200,
+      "ship": true, "verdict": "SHIP: solid block. Reads as stacked slabs more than one angular rock."
+    },
+    {
+      "name": "torii", "file": "torii.glb", "input": "input/torii.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d", "options": "Normal + PBR", "request_id": "01a1c6d8-69af-7550-b7dd-09e2e86e9130",
+      "cost_final_usd": 0.525, "cost_all_attempts_usd": 0.6246,
+      "triangles_before": 500000, "triangles_after": 29400, "size": [1.052, 1, 0.162], "raw_height": 0.8296, "bytes": 1615904,
+      "ship": true, "verdict": "SHIP: clean gate, one flat vermilion (#e34234)."
+    },
+    {
+      "name": "lantern", "file": "lantern.glb", "input": "input/lantern.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d", "options": "Normal + PBR", "request_id": "01a1c6e3-617e-70f0-9913-7f54a2492104",
+      "cost_final_usd": 0.525, "cost_all_attempts_usd": 0.5848,
+      "triangles_before": 500000, "triangles_after": 29400, "size": [0.412, 1, 0.415], "raw_height": 1.0873, "bytes": 2572592,
+      "ship": true, "verdict": "SHIP (optional asset): the cleanest geometry of the run."
+    }
+  ]
+}

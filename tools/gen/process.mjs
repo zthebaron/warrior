@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Raw fal download -> the GLB that ships in assets/hero/.
 //
-//   node tools/gen/process.mjs <raw.glb> <out.glb> [--match <input.png>] [--elev 0] [--stats <file.json>]
+//   node tools/gen/process.mjs <raw.glb> <out.glb> [--match <input.png>] [--elev 0] [--tint <hex> [--pin-median]] [--stats <file.json>]
 //
 // 1. weld, then simplify to at most MAX_TRIS triangles (the error bound is raised until it gets there)
 // 2. textures resized to at most MAX_TEX px
@@ -35,6 +35,8 @@ const opt = (name, d) => { const i = a.indexOf(name); if (i === -1) return d; co
 const match = opt('--match', null);
 const elev = opt('--elev', '0');
 const statsFile = opt('--stats', null);
+const tint = opt('--tint', null);
+const pinMedian = (() => { const i = a.indexOf('--pin-median'); if (i === -1) return false; a.splice(i, 1); return true; })();
 const [src, dst] = a;
 if (!src || !dst) { console.error('usage: process.mjs <raw.glb> <out.glb> [--match <input.png>] [--elev 0] [--stats <file.json>]'); process.exit(2); }
 
@@ -172,15 +174,40 @@ if (match) {
   matchInfo = { input: match, renderPx: nr, paintingPx: np, lightness_curve_at_64_128_192_240: { cool: mid(luts[0]), warm: mid(luts[1]) } };
 }
 
+// ---- 3b. tint --------------------------------------------------------------------------------------
+// --tint <hex>: throw the hue away and rebuild every texel as that colour scaled by the texel's
+// lightness, so the texture is a single-hue ramp through the given palette colour. Used to put
+// stone and pine on the STYLE-BIBLE warm-grey ramp (the generator drifts to tan and olive) and
+// the torii on the authored accent. --pin-median additionally slides the lightness so the
+// texture's median lands exactly on the tint: for a subject that is one flat colour.
+if (tint) {
+  const T = [0, 2, 4].map((i) => parseInt(tint.replace('#', '').slice(i, i + 2), 16));
+  const lumT = 0.299 * T[0] + 0.587 * T[1] + 0.114 * T[2];
+  const seen = new Set();
+  for (const mat of doc.getRoot().listMaterials()) {
+    const tex = mat.getBaseColorTexture();
+    if (!tex || seen.has(tex)) continue;
+    seen.add(tex);
+    const { data, info } = await sharp(tex.getImage()).raw().toBuffer({ resolveWithObject: true });
+    const ch = info.channels, n = data.length / ch;
+    const L = new Float32Array(n);
+    for (let i = 0; i < n; i++) L[i] = 0.299 * data[i * ch] + 0.587 * data[i * ch + 1] + 0.114 * data[i * ch + 2];
+    let k = 1 / lumT;
+    if (pinMedian) { const sorted = Float32Array.from(L).sort(); k = 1 / Math.max(sorted[n >> 1], 1); }
+    for (let i = 0; i < n; i++) for (let c = 0; c < 3; c++) data[i * ch + c] = Math.min(255, Math.round(T[c] * L[i] * k));
+    tex.setImage(await sharp(data, { raw: info }).png().toBuffer()).setMimeType('image/png');
+  }
+}
+
 await io.write(dst, doc);
-const nb = getBounds(doc.getRoot().getDefaultScene() ?? doc.getRoot().listScenes()[0]);
+const nb =getBounds(doc.getRoot().getDefaultScene() ?? doc.getRoot().listScenes()[0]);
 const stats = {
   out: dst, bytes: statSync(dst).size,
   triangles_before: before.triangles, triangles_after: tris, simplify_error: usedError,
   textures_before: before.textures, textures_after: texSizes(doc), raw_bytes: before.bytes,
   raw_height: +height.toFixed(4),
   size: nb.max.map((v, i) => +(v - nb.min[i]).toFixed(3)), min: nb.min.map((v) => +v.toFixed(3)), max: nb.max.map((v) => +v.toFixed(3)),
-  match: matchInfo,
+  match: matchInfo, tint: tint ? { hex: tint, pin_median: pinMedian } : null,
 };
 if (statsFile) writeFileSync(statsFile, JSON.stringify(stats, null, 1) + '\n');
 console.log(`${dst}: ${before.triangles.toLocaleString()} -> ${tris.toLocaleString()} tris (error ${usedError}), textures ${before.textures.join(',')} -> ${stats.textures_after.join(',')}, ${(before.bytes / 1e6).toFixed(1)} MB -> ${(stats.bytes / 1e6).toFixed(2)} MB, size ${stats.size.join(' x ')}${matchInfo ? ', tone-matched' : ''}`);

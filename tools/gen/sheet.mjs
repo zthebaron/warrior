@@ -32,7 +32,8 @@ for (const [r, a] of assets.entries()) {
   const glb = join(ROOT, 'assets/hero', a.file);
   const strip = join(tmp, `${a.name}.png`), clay = join(tmp, `${a.name}.clay.png`);
   for (const [dst, extra] of [[strip, ['--views', '35,215,90', '--modes', 'unlit']], [clay, ['--views', '35', '--modes', 'clay']]]) {
-    const res = spawnSync(process.execPath, [join(HERE, 'render-glb.mjs'), glb, dst, '--size', String(CELL), '--elev', '12', ...extra], { encoding: 'utf8' });
+    const pose = a.clip ? ['--clip', a.clip, '--time', String(a.time ?? 0)] : []; // a rigged model is shown mid-clip
+    const res = spawnSync(process.execPath, [join(HERE, 'render-glb.mjs'), glb, dst, '--size', String(CELL), '--elev', '12', ...extra, ...pose], { encoding: 'utf8' });
     if (res.status !== 0) { console.error(`ERROR rendering ${a.name}: ${res.stderr}`); process.exit(1); }
   }
   layers.push({ input: text(W, LABEL, `${a.name}   ${a.triangles_after.toLocaleString()} tris   ${a.verdict}`, 24, 700), left: 0, top });

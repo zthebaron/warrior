@@ -35,4 +35,19 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 24 | 2026-11-10T18:47:36Z | fal-ai/trellis | trellis test: pine | $0.0200 | $0.0200 | 01a1c6c9-7f9a-7ad2-9cb1-65b0d39aeea1 | done | $0.7968 |
 | 25 | 2026-11-10T18:48:22Z | fal-ai/hunyuan3d-v3/image-to-3d | final: warrior (Normal + PBR + back view) | $0.6750 | $0.6750 | 01a1c6ca-322a-7062-8dae-641d1d049d46 | done | $1.4718 |
 | 26 | 2026-11-10T18:52:27Z | fal-ai/hunyuan3d-v3/image-to-3d | final: warrior, no PBR (PBR albedo came out de-lit and pale) + back view | $0.5250 | $0.5250 | 01a1c6cd-f12a-7b00-a006-0643216c132a | done | $1.9968 |
-| 27 | 2026-11-10T18:55:36Z | fal-ai/hunyuan3d-v3/image-to-3d | final: cliff (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6d0-d404-7ee2-b812-9ff2c0169fbe | submitted | $2.5218 |
+| 27 | 2026-11-10T18:55:36Z | fal-ai/hunyuan3d-v3/image-to-3d | final: cliff (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6d0-d404-7ee2-b812-9ff2c0169fbe | done | $2.5218 |
+| 28 | 2026-11-10T19:00:40Z | fal-ai/hunyuan3d-v3/image-to-3d | final: boulder (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6d5-7877-7be0-81c2-5574a2d976e3 | done | $3.0468 |
+| 29 | 2026-11-10T19:03:53Z | fal-ai/hunyuan3d-v3/image-to-3d | final: torii (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6d8-69af-7550-b7dd-09e2e86e9130 | done | $3.5718 |
+| 30 | 2026-11-10T19:06:14Z | fal-ai/hunyuan3d-v3/image-to-3d | final: pine (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6da-90c8-78b1-ad59-09ae39bd1a65 | done | $4.0968 |
+| 31 | 2026-11-10T19:09:49Z | fal-ai/nano-banana/edit | input image: cliff5 v5 | $0.0398 | $0.0398 | 01a1c6dd-d58c-7de0-b426-8799628c5773 | done | $4.1366 |
+| 32 | 2026-11-10T19:10:08Z | fal-ai/nano-banana/edit | input image: pine-side v5 | $0.0398 | $0.0398 | 01a1c6de-22bc-7953-a141-9ae5d9c1aab5 | done | $4.1764 |
+| 33 | 2026-11-10T19:11:03Z | fal-ai/nano-banana/edit | input image: cliff6 v6 | $0.0398 | $0.0398 | 01a1c6de-f926-7e82-b1a3-a9bc5163cf30 | done | $4.2162 |
+| 34 | 2026-11-10T19:11:42Z | fal-ai/trellis | trellis test: cliff | $0.0200 | $0.0200 | 01a1c6df-9102-7130-8600-ba7bcf19724e | done | $4.2362 |
+| 35 | 2026-11-10T19:12:48Z | fal-ai/trellis/multi | trellis test: pine, front + side view | $0.0400 | $0.0400 | 01a1c6e0-91a1-74d0-a895-72fe8a4a91b6 | done | $4.2762 |
+| 36 | 2026-11-10T19:13:46Z | fal-ai/hunyuan3d-v3/image-to-3d | final: cliff (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6e1-74f4-7c82-baaf-ec3daa4e9aab | done | $4.8012 |
+| 37 | 2026-11-10T19:14:16Z | fal-ai/nano-banana | input image: stone lantern v1 (optional asset) | $0.0398 | $0.0398 | 01a1c6e1-eb00-7f02-9f2c-27b28dbe02ba | done | $4.8410 |
+| 38 | 2026-11-10T19:14:59Z | fal-ai/trellis | trellis test: lantern | $0.0200 | $0.0200 | 01a1c6e2-90ec-7c20-9473-3f4eb95ad5cd | done | $4.8610 |
+| 39 | 2026-11-10T19:15:52Z | fal-ai/hunyuan3d-v3/image-to-3d | final: lantern (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6e3-617e-70f0-9913-7f54a2492104 | done | $5.3860 |
+| 40 | 2026-11-10T19:16:01Z | fal-ai/meshy/rigging | auto-rig: warrior (Meshy; page lists 0.20, pricing API 0.80, booked at 0.80) | $0.8000 | $0.8000 | 01a1c6e3-846c-70d1-9cfa-a6a4bdf42a32 | done | $6.1860 |
+| 41 | 2026-11-10T19:18:40Z | fal-ai/nano-banana | input image: pine v7 (chunky dome pads, seen from above) | $0.0398 | $0.0398 | 01a1c6e5-f0e8-70c3-8fae-f17e7562d4e0 | done | $6.2258 |
+| 42 | 2026-11-10T19:19:11Z | fal-ai/trellis | trellis test: pine7 | $0.0200 | $0.0200 | 01a1c6e6-694f-70d2-b702-5eab4aebcc43 | done | $6.2458 |
