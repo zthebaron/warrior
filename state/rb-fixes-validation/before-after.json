@@ -1,0 +1,122 @@
+[
+  {
+    "case": "baseline",
+    "expected": true,
+    "before": true,
+    "after": true,
+    "beforeBand": 4.2668031777761115,
+    "afterBand": 4.266803177776104
+  },
+  {
+    "case": "front-beam",
+    "expected": false,
+    "before": true,
+    "after": false,
+    "beforeBand": 4.2668031777761115,
+    "afterBand": 0
+  },
+  {
+    "case": "rear-beam",
+    "expected": false,
+    "before": true,
+    "after": false,
+    "beforeBand": 4.2668031777761115,
+    "afterBand": 0
+  },
+  {
+    "case": "lifted-beam",
+    "expected": true,
+    "before": true,
+    "after": true,
+    "beforeBand": 4.2668031777761115,
+    "afterBand": 4.266803177776104
+  },
+  {
+    "case": "rotated-clear",
+    "expected": true,
+    "before": false,
+    "after": true,
+    "beforeBand": 0,
+    "afterBand": 2.5959567076495054
+  },
+  {
+    "case": "rotated-blocked",
+    "expected": false,
+    "before": false,
+    "after": false,
+    "beforeBand": 0,
+    "afterBand": 0
+  },
+  {
+    "case": "envelope-blocked",
+    "expected": false,
+    "before": false,
+    "after": false,
+    "beforeBand": 0,
+    "afterBand": 0
+  },
+  {
+    "case": "honest-low",
+    "expected": true,
+    "before": true,
+    "after": true,
+    "beforeBand": 2.1216506803811592,
+    "afterBand": 2.1216506803811592
+  },
+  {
+    "case": "sunk-waypoint",
+    "expected": false,
+    "before": true,
+    "after": false,
+    "beforeBand": 2.1216506803811592,
+    "afterBand": 1.700469459370706
+  },
+  {
+    "case": "honest-high",
+    "expected": false,
+    "before": false,
+    "after": false,
+    "beforeBand": 1.700469459370706,
+    "afterBand": 1.700469459370706
+  },
+  {
+    "case": "floating-waypoint",
+    "expected": true,
+    "before": false,
+    "after": true,
+    "beforeBand": 1.700469459370706,
+    "afterBand": 2.1216506803811592
+  },
+  {
+    "case": "depth-edge",
+    "expected": false,
+    "before": true,
+    "after": false,
+    "beforeBand": 2.047172340524776,
+    "afterBand": 0
+  },
+  {
+    "case": "depth-interior",
+    "expected": true,
+    "before": true,
+    "after": true,
+    "beforeBand": 2.053216328401188,
+    "afterBand": 2.053216328401188
+  },
+  {
+    "case": "legacy-first-occluded",
+    "expected": false,
+    "before": true,
+    "after": false,
+    "beforeBand": 2.8217963038064795,
+    "afterBand": 0
+  },
+  {
+    "case": "legacy-second-clear",
+    "expected": true,
+    "before": true,
+    "after": true,
+    "beforeBand": 2.117187688305819,
+    "afterBand": 2.117187688305819
+  }
+]

@@ -1235,3 +1235,20 @@ status: PROVISIONAL (each item is a builder call; Tim ruled the rule, not these)
 6. **The window is the B-20 grid.** "Every timing" ranges over k0-k5, takeoff distances d, six approaches,
    96 phases x 5 placements; dash rise at 45 deg is excluded (geometry). Double's second press was
    sampled at two timings only (B-32); wall and climb are unmeasured under the rule (B-31).
+
+## RB003-RB004-FIX — independent findings verified and authorized
+
+Raised 2026-11-09 by Codex. Claude independently confirmed occluded top surfaces escaping rest-pose
+coverage, rotated primitive envelope false rejection, exact-edge probe depth optimism, and a sunk
+landing waypoint overstating readability. Its ceiling derivation upheld the published numbers;
+the feet/floor distinction is documentation only. Tim explicitly authorized fixing confirmed issues
+and a four-chapter playthrough on 2026-11-09. Promoted to backlog item RB003-RB004-FIX below the
+numbered backlog (stable task ID avoids collisions with concurrent content work). No thresholds,
+move budgets, shipped geometry, or goldens are authorized to weaken to accommodate these fixes.
+
+RB003-RB004-FIX follow-up (2026-11-09): Claude's independent review of fab01f0 found
+that collider:none placements escape both visibility gates. Verified in code:
+obstaclesOf filters them and the harness uses physics.castRay. This is within Tim's
+authorization to fix confirmed issues. Promote to the existing backlog item: separate
+visual geometry from arm collision and test render-only rear-beam rejection. Publication
+remains conditional on an independently clean review.

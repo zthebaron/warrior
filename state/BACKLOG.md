@@ -57,3 +57,16 @@ arithmetic (an arrival waits at the torii), which is why it had to land before t
 | Crow cue (chapter 1) | Q2, Q2a, Q5 | `f24a9ac`: `crow` block on a patroller (schema, patroller-only), pure in the patroller's loop fraction (`crowAt`, `loopFraction` shared with `patrollerAt`), ink-black, never pickable or lethal. Waypoint `cue` = wait at a torii for lift-off. Lint BAD_CUE, CUE_NOT_AT_TORII, NO_CROW_CUE. The bot holds for the perched -> airborne edge. Proven: chapter 1 crow segments clear 8/8 arrival phases reading the crow, against 4/8 and 6/8 blind; a quarter-loop mistimed lift fails 0/8 |
 | D-010 landing mark ships ON | D-010, Q2b | `b20296d` + `c512c78`: TUNING.landingMark = 1, `?landingmark=off` the comparison; STYLE-BIBLE §1/§9/§10 exception with a checkable spec; scene ratchet 00-gym 34 calls / 1,104 tris (OQ-040); goldens re-recorded on purpose: darwin cam0/cam1 locally, linux cam0/cam1 rendered by CI (PR #5), the rest byte-identical (OQ-041). Ballistic predictor dropped |
 | B-26 | Shard `phase-sweep` within a level when one level job nears its 20-min CI timeout. phase-sweep is 70-84% of every level (234-367 s of 289-437 s on 42561268355). After B-22, wall-clock is the slowest single level, so a longer chapter, not more chapters, is what grows it. Split the 8 arrival phases across jobs, or segments across jobs, and extend merge-reports coverage to match | OQ-061 | MISSING | 02-cliff-seam: phase-sweep 367 s of 437 s. The level job timeout is 20 min against about 13 min on the slowest runner seen |
+
+## RB003-RB004-FIX — confirmed review findings
+
+Approval: Tim, 2026-11-09, "Review Claude’s verification, fix the confirmed issues, and run a complete
+playthrough of all four chapters." Owner: Codex (`codex/rb-fixes`). State: DONE locally; not merged.
+
+Verified by Claude at ad1eef8 and b8dfd5f; evidence in `claude-rbverify/state/CLAUDE-VERIFY-RB003-RB004.md`.
+Fix forward/rear sightline occlusion, exact rotated-primitive arm collision, geometry-relative landing
+height, conservative probe edge sampling, and real-rig coverage beyond assisted faces. Preserve
+D-016 teach/practice severity. Correct only the feet-relative qualification of the valid ceiling numbers.
+Verified: regression fixtures fail on the old code and pass on the fix; all 11 static checks, 109
+runtime camera checks, all five per-level suites, and complete four-chapter progression pass.
+Evidence: `state/RB003-RB004-FIX-RESULTS.md` and `state/rb-fixes-validation/`.

@@ -211,5 +211,9 @@
 {"id":"CH1-ASSETS","agent":"ch1-assets","ts":"2026-11-10T01:51:00.838Z","released":true}
 {"id":"CH1-ASSETS","agent":"ch1-assets","ts":"2026-11-10T01:56:56.085Z","ttl_min":90}
 {"id":"PLAY-E2E","agent":"play-e2e","ts":"2026-11-10T01:57:16.301Z","ttl_min":90}
+{"id":"RB003-RB004-FIX","agent":"codex","ts":"2026-11-10T01:57:30.009Z","ttl_min":90}
 {"id":"PLAY-E2E","agent":"play-e2e","ts":"2026-11-10T02:01:35.182Z","released":true}
 {"id":"CH1-ASSETS","agent":"ch1-assets","ts":"2026-11-10T02:11:39.478Z","released":true}
+{"id":"RB003-RB004-FIX","agent":"codex","ts":"2026-11-10T02:12:09.216Z","released":true}
+{"id":"RB003-RB004-FIX","agent":"codex","ts":"2026-11-10T03:33:59.177Z","ttl_min":90}
+{"id":"RB003-RB004-FIX","agent":"codex","ts":"2026-11-10T03:41:37.056Z","released":true}

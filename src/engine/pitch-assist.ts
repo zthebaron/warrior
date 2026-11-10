@@ -26,6 +26,7 @@ export const PITCH_ASSIST = {
   minBandDeg: 2.0, //     = READABLE_RISE.minBandDeg (D-015b); the linter asserts the two are equal
   pitchStepDeg: 1, //     the target pitch is searched in whole degrees from the current pitch upward
   depthStepM: 0.5, //     the probe measures the landing's depth by stepping down-rays this far apart
+  sampleEdgeMarginM: 1e-4, // model only: strict interior margin for float32 edge hits (MEASUREMENTS RB-003/RB-004)
   depthMaxM: 15, //       ...up to this depth (D-016's deepest measured column); a deeper landing counts as 15
   epsM: 0.05, //          probe tolerance: the first down-ray lands this far inside the face (so it never grazes
   //                      the face plane), and a depth sample within this height of the top is the same surface
@@ -76,12 +77,12 @@ export function assistPitchDeg(rig: AssistRig, basePitchDeg: number, rise: numbe
   return null;
 }
 
-/** The landing depth the camera's probe reports for a landing `depth` deep: the last down-ray sample still on
+/** Conservative model of probe depth for a landing `depth` deep: the last down-ray sample strictly inside
  *  the top (epsM + k * depthStepM), capped at depthMaxM. The linter feeds assistPitchDeg this, not the true
- *  depth, so it models what the probe measures. */
+ *  depth. Edge samples can be lost to float32 raycasts and are deliberately not credited. */
 export function probedDepth(depth: number): number {
   const a = PITCH_ASSIST;
-  if (!(depth > a.epsM)) return 0;
-  const k = Math.floor((Math.min(depth, a.depthMaxM + a.epsM) - a.epsM) / a.depthStepM + 1e-9);
+  if (!(depth > a.epsM + a.sampleEdgeMarginM)) return 0;
+  const k = Math.floor((Math.min(depth - a.sampleEdgeMarginM, a.depthMaxM + a.epsM) - a.epsM) / a.depthStepM);
   return a.epsM + k * a.depthStepM;
 }
