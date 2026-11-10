@@ -905,3 +905,33 @@ Collision and simulation: no level, asset or linter file is touched (`git diff o
 tools/lint-level.mjs` is empty), so every geometry fingerprint is PR #27's. The full playtest passed with replay
 against the committed, un-re-recorded traces on all five levels, and every scene ratchet held exactly
 (33/1102, 75/6502, 49/5050, 49/5662, 48/5038).
+
+## Harness step() draw fix (2026-11-10, OQ-069)
+
+No constant changes. This records why a level job outgrew its 20-minute timeout on PR 29 and what the fix
+measures. `step(frame, false)` drew every tick (see OQ-069); the bot now draws only the ticks it asks for
+(`NAV_CONFIG.renderEvery`, unchanged at 30).
+
+CI, Linux SwiftShader, 640x360, seconds per stage. PR #27 head 164c9fb is D-018 (run 42844946239); PR 29 head
+5f93f22 is D-019 (run 42861208215, attempt 2). Both draw every tick; the difference is the D-019 shader.
+
+| Level | nav D-018 | nav D-019 | phase-sweep D-018 | phase-sweep D-019 | level job D-019 |
+|---|---|---|---|---|---|
+| 00-gym | 43.2 | 65.7 | 334.8 | 429.7 | 9.6 min |
+| 01-lower-stair | 45.1 | 70.4 | 486.6 | 792.6 | 16.3 min |
+| 02-cliff-seam | 38.6 | not reported | 331.8 | over 1036 (cut in segment 4 of 5) | cancelled at 20 min, both attempts |
+| 03-drifting-stones | 52.6 | 104.7 | 385.7 | 788.4 | 17.1 min |
+| 04-summit-ridge | 45.4 | 87.0 | 379.0 | 746.2 | 15.6 min |
+
+Local, darwin SwiftShader, D-019 head, the same commit before and after the fix:
+
+| | nav before | nav after | phase-sweep before | phase-sweep after | level before | level after |
+|---|---|---|---|---|---|---|
+| 02-cliff-seam | 13.4 s | 2.2 s | 127.3 s | 13.6 s | 168 s | 42 s |
+| 03-drifting-stones | 15.2 s | 2.3 s | 111.4 s | 11.4 s | 157 s | 44 s |
+
+Full playtest (five levels and the once-per-run stages), after: PASS in 229 s. Before: not re-timed here; the
+handoff gives about 12 min.
+
+Simulation unchanged: for both levels the before and after `harness-report.json` differ in 15 fields, all of
+them durations (`ms`, `durationMs`, `startedAt`), and in no check, detail or data value. Goldens unchanged.

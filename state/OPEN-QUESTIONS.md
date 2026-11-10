@@ -1340,3 +1340,43 @@ obstaclesOf filters them and the harness uses physics.castRay. This is within Ti
 authorization to fix confirmed issues. Promote to the existing backlog item: separate
 visual geometry from arm collision and test render-only rear-beam rejection. Publication
 remains conditional on an independently clean review.
+
+## OQ-069 — PR 29 could not go green on goldens alone: the level jobs time out, and the cause is a harness defect
+raised: 2026-11-10 by ink-refine (claim INK-REFINE), resuming from state/HANDOFF-INK.md.
+status: PROVISIONAL
+The handoff said PR 29 needed only its Linux goldens, and that 02-cliff-seam and 03-drifting-stones were
+"cancelled by the runner". They were not. Run 42861208215, both attempts: 02-cliff-seam was cut at the level
+job's own `timeout-minutes: 20` (started 17:26:44Z, cancelled 17:47:00Z, mid phase-sweep segment 4 of 5), so it
+never uploaded actuals, and a third rerun would end the same way. Every other level passed everything except
+`visual`, but took 9.6-17.1 min where PR #27's last run (42844946239) took 7.5-10.5.
+found:
+- `__HARNESS__.step(frame, render)` called `advance(1, render ? 1 : 0)`, and `advance` always draws the last
+  frame of a batch. With n = 1 the last frame is every frame, so `step(frame, false)` drew every tick and the
+  bot's `renderEvery: 30` ("render a frame every N ticks") never took effect. This is on main and predates D-019.
+- That is why phase-sweep was 70-84% of a level job (B-26), and why D-019's heavier fragment shader (8 directions
+  x up to 6 depth reads, four value-noise lookups per near pixel) multiplied it under SwiftShader: phase-sweep
+  334.8 -> 429.7 s on 00-gym (1.3x), 385.7 -> 788.4 s on 03-drifting-stones (2.0x), 331.8 s -> over 1036 s on
+  02-cliff-seam (over 3.1x, unfinished).
+took, each PROVISIONAL:
+1. **Fix the defect in PR 29, in `src/main.ts` only.** `step()` now passes its `render` flag through, so a tick
+   the bot did not ask to see is not drawn. PR 29 cannot be made green without it or something like it, and it is
+   the only option that needs no new number. `advance()` keeps its draw-the-final-frame rule for every other
+   caller: `counters`, `visual`, `accent` and `post` read the frame it leaves.
+2. **Proof that the simulation did not move:** 02-cliff-seam and 03-drifting-stones (moving hazards and
+   platforms) played before and after; the two harness reports differ in durations and in nothing else (every
+   check, arrival tick and position, sweep cell and replay result identical), and the darwin goldens pass
+   unchanged. No trace was re-recorded. Full playtest after: PASS, 229 s (the handoff gives about 12 min before).
+3. **Not taken: raising the 20-minute timeout.** There is no measured time for 02-cliff-seam at D-019 to set it
+   from (it never finished), and it would have hidden a 2-3x CI regression instead of removing its cause.
+4. **Not taken: making the D-019 shader cheaper.** `src/engine/ink-post.ts` and `src/engine/renderer.ts` are
+   owned by session a1 (Tim, 2026-11-10: blocky low-resolution output and frame rate at real display sizes).
+   What this run adds to that work: the pass's cost has never been measured on a GPU; MEASUREMENTS has no
+   frame time for D-018 or D-019. Under SwiftShader at 640x360, with a frame drawn per tick, D-019 made a walk
+   1.3x (00-gym) to 2.0x slower than D-018, and over 3.1x on 02-cliff-seam.
+5. **Left as it was: `replay.ts:58` and `chaos.ts:87`** (`advance(1, 60)`, same defect, small): B-44.
+6. **Linux goldens come from two runs:** 00, 01, 03, 04 from 42861208215's actuals (24 cameras, worst 0.010%
+   against darwin at pixelmatch 0.1); 02-cliff-seam from the first run after this fix, which is the first run
+   in which that level finishes.
+7. **PR 29's base.** PR #27 merged at 17:45Z but `ch1-assets` was not deleted, so GitHub did not retarget
+   PR 29. Retargeted by hand to main (`gh pr edit 29 --base main`): its old base is a merged branch that
+   nothing will ever merge again. PR #27 itself was not touched.
