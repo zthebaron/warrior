@@ -948,3 +948,102 @@ handoff gives about 12 min.
 
 Simulation unchanged: for both levels the before and after `harness-report.json` differ in 15 fields, all of
 them durations (`ms`, `durationMs`, `startedAt`), and in no check, detail or data value. Goldens unchanged.
+
+## INK-HIRES display constants (2026-11-10)
+
+`src/engine/ink-post.ts`, `INK_DISPLAY`: the display path, taken on any drawing buffer taller than 360 lines. The
+reference path (360 lines or fewer, the harness's 640x360) is the D-019 shader, untouched; every `INK_POST`
+constant above serves both.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| referenceLines | 360 | derived | the frame every stroke weight is authored on, and the harness's height. At or below it the reference shader runs and the output is the goldens' own bytes (table below) |
+| maxScale | 2 (internal texels per canvas pixel, per axis) | measured | at 2 each canvas pixel is an exact box of 4 decisions; edge pixels carrying an in-between value go from 0.3-1.2% to 28-57% (table below). Anything up to 5120x1440 runs at this scale or just under it |
+| maxInternalPixels | 24,000,000 | measured | the frame-rate cap, set on the M4 Max at 5120x1440 (144 Hz, period 6.94 ms): frame cost in the worst view is 4.01 ms at 20M, 4.65 ms at 24M, 5.56 ms at 30M (a full 2x). 24M leaves a third of the period spare in that view and 45% in the player's own view. 5120x1440 therefore runs at 1.80x (9238x2598 internal); 2560x1440 and 1920x1080 at the full 2x |
+| stride | uUnit rounded UP to a whole texel | measured | whole texels because the depth texture is sampled NEAREST (D-019's finding). Up, not to nearest: at 1.80x a 360p pixel is 7.2 texels, a stride of 7 makes the same-value rule take two strides where one reaches, and cost stopped falling with the internal size (rig view 4.10 ms at 24M against 4.56 ms at 30M; with the stride rounded up, 3.84 ms) |
+| stroke weight | a real number of texels; last texel covered in part | derived | the reference rounds base x noise to whole 360p pixels, which at 1440 lines is a stroke that changes width in 4 px blocks |
+| strokeBase (display) | the line through (4 u, 3 px), (12 u, 2 px), (20.5 u, 1 px), flat outside | derived from strokeBasePx | the centres of the reference's three distance bands. As steps, a receding stroke drops 4 device px at exactly 8 u and 16 u at 1440 lines |
+| diagonal step | counted as 1.414 texels | derived | the reference counts it as 1, which at 360 lines is a rounding and at 1440 a stroke 41% heavier across a diagonal edge |
+| resolve | ceil(scale) x ceil(scale) bilinear taps, (scale - 1) / (taps - 1) texels apart, averaged in linear light | derived | at a whole scale every tap is a texel centre (an exact box); at scale 1 it is the texel itself. The internal target is sRGB-encoded, so GL decodes before it filters |
+| grain (display) | value noise on the 360p pixel lattice, octaves x2 finer down to one device pixel, weights halving, amplitude grainAmp | derived | the reference's grain is one hash per device pixel: at 1440 lines the same paper would be 16x finer. Bounded by the same grainAmp (3 levels), static, seeded from grainSeed |
+
+## INK-HIRES display sizes: before / after (2026-11-10)
+
+Tim, after playing full screen at 5120x1440, 144 Hz, device pixel ratio 1, M4 Max: "very low rez and pixelated,
+quality is bad, slow refresh". Measured with `tools/measure-display.mjs` (new): the harness bundle in HEADED
+Chrome, GL renderer `ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max)`, chapter 1, eight views (the player's
+rig camera at spawn, the visual stage's six cameras, the post gate's grazing camera), 360 frames each, every
+frame one fixed tick and one full render. Before = 8d7858f (D-019 as merged into PR 29); after = this change.
+Frames and numbers: `docs/build-log/ink-hires/` (`before.json`, `after.json`, the PNGs, 1:1 crops).
+
+What was wrong, measured:
+
+| Reading | Verdict | Evidence |
+|---|---|---|
+| no anti-aliasing: `antialias: true` covers only the default framebuffer, the scene target has no samples | CONFIRMED | edge pixels carrying an in-between value: 0.3-1.2% at every size (`tools/edge-stats.mjs`, new). Every edge in the frame, fill or line, was a one-pixel staircase |
+| the post is authored at 360p and works in `uPx` blocks | PARTLY | true of the ink stroke only: its depth taps and its weight moved in `uPx` = round(height / 360) device px (4 at 1440 lines), so a stroke changed width in 4 px blocks (`crop-before-5120x1440-*.png`). The fills, the wash noise (world space) and the grain (per device pixel) were at device resolution: the frame was not a 360-line image |
+| the fragment shader is too slow at 7.4 Mpx | REFUTED | below: 144 fps at every size, a frame cost 1.4-1.7 ms at 5120x1440. "Slow refresh" was not reproduced in Chrome; see the note under the table |
+
+Frame time, ms. `frame` is the interval between animation frames with vsync on (it cannot go below the display's
+6.94 ms); `cost` is wall time per frame with the GPU forced to finish (a 1 px readPixels after every 8 frames).
+Worst of the eight views:
+
+| Size | frame p50 before | frame p95 before | frame p50 after | frame p95 after | frames over 10 ms (before / after, of 2880) | cost p50 / p95 before | cost p50 / p95 after | internal buffer after |
+|---|---|---|---|---|---|---|---|---|
+| 1920x1080 | 6.9 | 7.7 | 6.9 | 7.7 | 0 / 0 | 0.64 / 0.80 | 1.88 / 1.95 | 3840x2160 (2x) |
+| 2560x1440 | 6.9 | 7.8 | 6.9 | 7.8 | 0 / 0 | 1.00 / 1.05 | 3.20 / 3.24 | 5120x2880 (2x) |
+| 5120x1440 | 6.9 | 7.7 | 6.9 | 7.8 | 0 / 0 | 1.65 / 1.68 | 4.60 / 4.63 | 9238x2598 (1.80x) |
+
+The player's own view (rig camera at spawn) costs 0.54 / 0.86 / 1.39 ms before and 1.55 / 2.60 / 3.78 ms after.
+The production bundle with its real loop (60 Hz fixed tick, interpolated), W held for 8 s at 5120x1440: 1152
+frames, p50 6.9 ms, p95 7.5 ms, max 7.9 ms, none over 10 ms; before the change, 1152 frames, max 7.9 ms.
+
+Not reproduced: slow refresh. In Chrome on this Mac the game held the display's 144 Hz before the change and
+holds it after. If it was seen in another browser (Safari by default holds animation frames near 60 Hz), that
+is where to look, and this tool cannot say.
+
+Is it anti-aliased now (`tools/edge-stats.mjs`: of pixels on a strong horizontal edge, the share whose value
+lies between its two neighbours'):
+
+| Size | rig before | rig after | cam2 before | cam2 after | graze before | graze after |
+|---|---|---|---|---|---|---|
+| 1920x1080 | 0.7% | 41.9% | 0.4% | 40.6% | 1.2% | 37.9% |
+| 2560x1440 | 0.6% | 45.0% | 0.3% | 40.8% | 1.2% | 28.5% |
+| 5120x1440 | 0.6% | 57.4% | 0.3% | 52.9% | 1.1% | 40.9% |
+
+Is it the same picture (`tools/same-picture.mjs`, new: the display frame box-downscaled to 640x360 against the
+darwin golden of the same camera, chapter 1 cam2; `over` = pixels more than 32 levels apart):
+
+| Display frame | mean difference / 255 | over |
+|---|---|---|
+| 1920x1080 before | 3.25 | 2.35% |
+| 1920x1080 after | 3.74 | 2.43% |
+| 2560x1440 before | 3.32 | 2.31% |
+| 2560x1440 after | 3.69 | 2.43% |
+
+The difference image is lines only: the strokes and the edges, no area. The wash bands and every fill land
+where the reference puts them, and the new path is as close to the reference as the old one was.
+
+The grazing camera at 5120x1440 (`after-5120x1440-graze.png`): the flat ground carries no line. Judged by eye;
+the `post` gate judges that pose at 360 lines only.
+
+Where the display path's cost goes, 5120x1440 at a full 2x, rig view: the supersampled scene, an empty post and
+the resolve 2.2 ms; value_compression 0.65 ms; ink_edge 1.8 ms (2.45 ms before its depth taps were shared between
+opposite directions and fetched only when the near side asks: 5.25 ms a frame, then 4.57).
+
+Byte identity at 640x360 (the constraint: the committed goldens hold). All 30 visual-stage cameras, rendered as
+the harness renders them (headless Chromium, SwiftShader) and compared byte for byte with
+`tools/harness/golden/darwin`:
+
+| Level | Result |
+|---|---|
+| 00-gym, 02-cliff-seam, 03-drifting-stones, 04-summit-ridge | 24 of 24 cameras identical, every run |
+| 01-lower-stair | 6 of 6 identical in one run of five; in the others 2 or 3 cameras differ in ONE pixel each |
+
+Those single pixels are not this change. The same pixels differ, run to run, with the D-019 shader at 8d7858f
+untouched (six runs: cam3 (606,91), cam4 (146,279), cam0 (450,93), cam5 (586,91), once cam5 (1,285) and
+(2,286)): a pixel of paper showing through chapter 1's dressing, present or not from one run to the next. The
+`visual` gate's 0.5% allows 1152 such pixels; recorded here because "byte-identical" was the bar.
+
+Not measured: any GPU but this one. The cap is this Mac's. A weaker GPU at a large drawing buffer pays up to 4x
+the pixels it paid before and nothing here lowers the scale when frames run long.

@@ -40,6 +40,25 @@
 // Accent pixels (chroma above INK_POST.accentChroma: only the torii carry chroma) and the robe (§2's one other
 // named colour) are not value-remapped: the accent's hue is not the post pass's to change. Grain and the ink
 // edge still cover them.
+//
+// TWO SIZES OF THE SAME PICTURE (INK-HIRES). Every weight above is authored on a 360-line frame.
+//   reference  a drawing buffer of 360 lines or fewer (the harness's 640x360): the shader below, unchanged, one
+//              sample per pixel, straight to the canvas. This is the frame the goldens and the `post` gate judge.
+//   display    anything taller (a player's screen). The three passes are every one a hard per-pixel decision
+//              (snap to a ramp step, ink or no ink), so on a real display each edge was a staircase, and because
+//              the line's weight and its depth taps moved in whole 360p pixels (4 device px at 1440 lines), each
+//              stroke changed width in 4 px blocks. Hardware MSAA cannot fix that: it would blend two ramp steps
+//              BEFORE the snap, and the snap would turn the blend into a third step. So the decisions are
+//              supersampled instead, and filtered after they are made:
+//                1. the scene and its depth render at an INTERNAL size, the drawing buffer x a scale of 1 to
+//                   INK_DISPLAY.maxScale, held under INK_DISPLAY.maxInternalPixels (the frame-rate cap);
+//                2. the same value_compression, and an ink_edge with the same silhouette test, run per internal
+//                   texel. The stroke's weight is no longer rounded to whole pixels: it is a real number of
+//                   texels, the silhouette is located to the texel, and the last texel takes fractional coverage;
+//                3. one resolve pass averages the internal texels under each canvas pixel in linear light, and
+//                   lays the grain over it in 360p space, so the grain is the same paper at any size.
+//              It is built on the reference shader's own source text (displayShader), so the value map, the
+//              silhouette test and every constant are one copy and cannot drift apart.
 
 import * as THREE from 'three';
 
@@ -69,6 +88,13 @@ export const INK_POST = {
   grainSeed: 20261109,      // constant: grain is static and deterministic
   accentChroma: 0.2,        // max-min of sRGB channels; the ramp's largest is 0.047, every accent candidate > 0.5
   robeTol: 4 / 255,
+} as const;
+
+/** The display path's own numbers. MEASUREMENTS "INK-HIRES display constants", with the frame times behind the cap. */
+export const INK_DISPLAY = {
+  referenceLines: 360,              // the authored frame: at or below this the reference shader runs, unchanged
+  maxScale: 2,                      // internal texels per canvas pixel, per axis, at most
+  maxInternalPixels: 24_000_000,    // the internal buffer never exceeds this: the frame-rate cap
 } as const;
 
 const hex3 = (v: number): THREE.Vector3 => new THREE.Vector3(((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255);
@@ -213,6 +239,153 @@ ${Object.entries(DEFINES).map(([k, v]) => `    #define ${k} ${v}`).join('\n')}
     }`;
 }
 
+// ---- the display path (see the header). Everything above `void main()` in the reference shader is reused as is.
+const MAIN_MARK = '\n    void main() {';
+
+const DISPLAY_CHUNK: Record<Section6Pass, string> = {
+  value_compression: CHUNK.value_compression, // the same map, per internal texel
+  ink_edge: /* glsl */ `
+    if (band == 0) {
+      float n = vnoise(world * STROKE_FREQ);
+      // the reference rounds this to whole 360p pixels; here it stays a real number, so a stroke tapers into a
+      // break instead of stepping, and its base weight falls with distance along a line through the centres
+      // of the reference's three distance bands instead of dropping a whole step at 8u and 16u
+      float wf = min(STROKE_MAX, strokeBase(dist) * STROKE_GAIN * max(0.0, n - STROKE_GAP) / (1.0 - STROKE_GAP));
+      float reach = keepHue ? wf : max(wf, 1.0); // the same-value rule looks one 360p pixel out
+      vec2 farUv;
+      float d = reach > 0.0 ? silhouetteDist(reach * uUnit, farUv) : NO_EDGE;
+      if (d < NO_EDGE) {
+        // the reference's exception, unchanged: same shown value on both sides -> never thinner than a hairline
+        if (wf < 1.0 && !keepHue && d <= uUnit) {
+          float fv = shownValue(farUv);
+          if (fv >= 0.0 && abs(fv - (c.r + c.g + c.b) / 3.0) < LOW_CONTRAST) wf = 1.0;
+        }
+        ink = clamp(wf * uUnit - d + 0.5, 0.0, 1.0); // the last texel of the stroke is covered in part
+      }
+    }`,
+  paper_grain: '', // laid over the resolved frame, in 360p space: see resolveShader
+};
+
+function displayShader(passes: readonly Section6Pass[]): string {
+  const ref = fragmentShader(passes);
+  const cut = ref.indexOf(MAIN_MARK);
+  if (cut < 0) throw new Error('ink-post: the reference shader has no main() to build the display shader on');
+  const near = INK_POST.nearBandM, [d0, d1] = [INK_POST.strokeBasePx[0][0], INK_POST.strokeBasePx[1][0]];
+  return /* glsl */ `${ref.slice(0, cut)}
+    uniform float uUnit;   // internal texels per 360p pixel (a real number): every stroke weight scales by it
+    uniform int uStride;   // whole texels between depth taps along a direction (uUnit rounded up)
+    #define NO_EDGE 1.0e6
+    vec3 toLinear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+    // the reference's base weight is a step per distance band [0,${f1(d0)}) [${f1(d0)},${f1(d1)}) [${f1(d1)},${f1(near)}); this is the line through
+    // the centre of each band, so the weight of a stroke that recedes changes along it without a notch
+    float strokeBase(float dist) {
+      const float m0 = ${f1(d0 / 2)}, m1 = ${f1((d0 + d1) / 2)}, m2 = ${f1((d1 + near) / 2)};
+      return dist < m1 ? mix(STROKE_W0, STROKE_W1, clamp((dist - m0) / (m1 - m0), 0.0, 1.0))
+                       : mix(STROKE_W1, STROKE_W2, clamp((dist - m1) / (m2 - m1), 0.0, 1.0));
+    }
+    // Distance, in internal texels, from this texel to the nearest true silhouette it is the NEAR side of, within
+    // reach (+ half a texel); NO_EDGE if there is none. The test is silhouetteWithin's, tap for tap: whole-texel taps, evenly
+    // spaced along 8 directions, each side continued from its own two samples. Two things differ. A diagonal
+    // step is counted as its real length (1.414), so a stroke is as heavy across a diagonal edge as across an
+    // upright one. And once a silhouette is found between two taps, the boundary is bisected down to the first
+    // texel that has left this surface, so the stroke's edge is placed to the texel and not to the stride.
+    float silhouetteDist(float reach, out vec2 farUv) {
+      vec2 o[8]; // direction k's opposite is k ^ 1
+      o[0] = vec2(1.0, 0.0); o[1] = vec2(-1.0, 0.0); o[2] = vec2(0.0, 1.0); o[3] = vec2(0.0, -1.0);
+      o[4] = vec2(1.0, 1.0); o[5] = vec2(-1.0, -1.0); o[6] = vec2(-1.0, 1.0); o[7] = vec2(1.0, -1.0);
+      // the first tap out along each direction is also the tap BEHIND for the opposite direction: 8 fetches, not 16
+      float ring[8];
+      for (int k = 0; k < 8; k++) ring[k] = invZ(vUv + o[k] * uTexel * float(uStride));
+      float best = NO_EDGE;
+      for (int k = 0; k < 8; k++) {
+        float len = k < 4 ? 1.0 : 1.41421356;
+        vec2 tx = o[k] * uTexel;          // one whole texel along this direction
+        vec2 st = tx * float(uStride);
+        // a boundary found in stride r is at least (r - 1) strides + half a texel out, so one further stride
+        // than this could only return distances past reach + 0.5, where the stroke's coverage is already 0
+        int steps = int(ceil(reach / (len * float(uStride))));
+        float prev = ring[k ^ 1], cur = iz0, nxt = ring[k];
+        for (int r = 1; r <= steps; r++) {
+          float ahead = cur + (cur - prev) - nxt;
+          if (ahead > SIL_GAP * cur) {
+            // the far side's second sample is only fetched once the near side says there may be a silhouette
+            float nxt2 = invZ(vUv + st * float(r + 1));
+            float back = cur - (nxt - (nxt2 - nxt));
+            if (back > SIL_GAP * cur) {
+              int base = (r - 1) * uStride, lo = base, hi = r * uStride; // texel lo is on this surface, hi is not
+              float slope = (cur - prev) / float(uStride);              // this surface's 1/z per texel: exact on a plane
+              for (int b = 0; b < 8 && hi - lo > 1; b++) {
+                int mid = (lo + hi) / 2;
+                if (cur + slope * float(mid - base) - invZ(vUv + tx * float(mid)) > 0.5 * SIL_GAP * cur) hi = mid; else lo = mid;
+              }
+              float d = (float(hi) - 0.5) * len; // the boundary lies between texel hi-1 and texel hi
+              if (d < best) { best = d; farUv = vUv + tx * float(hi); }
+            }
+            break; // a silhouette, or a crease: either way this pixel's plane ends here
+          }
+          if (-ahead > SIL_GAP * cur || r == steps) break; // left this plane the other way (we are the far side), or out of reach
+          prev = cur; cur = nxt; nxt = invZ(vUv + st * float(r + 1));
+        }
+      }
+      return best <= reach + 0.5 ? best : NO_EDGE; // + 0.5: the texel the stroke's edge falls inside
+    }
+
+    void main() {
+      vec3 c = toSRGB(texture(tColor, vUv).rgb);
+      iz0 = invZ(vUv);
+      float dist = distAt(vUv);
+      vec3 world = worldAt(vUv, iz0);
+      int band = dist < ${INK_POST.nearBandM.toFixed(1)} ? 0 : (dist < ${INK_POST.midBandM.toFixed(1)} ? 1 : 2);
+      bool keepHue = keepsHue(c);
+      float ink = 0.0;
+      ${passes.map((p) => `// ---- ${p}\n${DISPLAY_CHUNK[p]}`).join('\n')}
+      // LINEAR light out: the internal target is sRGB-encoded by GL on write and decoded on read, so the resolve
+      // pass averages light, not code values (a half-covered edge pixel is then half as bright, as it should be)
+      outColor = vec4(mix(toLinear(clamp(c, 0.0, 1.0)), toLinear(uRamp[7]), ink), 1.0);
+    }`;
+}
+
+// Internal texels -> canvas pixels. uTaps x uTaps bilinear taps spread over the canvas pixel's footprint: at a
+// whole scale each tap sits on a texel centre (an exact box filter), at a fractional scale they overlap into a
+// tent, at scale 1 the one tap is the texel itself. Then the grain, which is why it is here and not above: it
+// belongs to the paper, not to the internal buffer. paper() is value noise on the 360p pixel lattice, plus
+// finer octaves down to (never below) one device pixel, so the tooth is there at any size and the same lattice
+// point carries the same grain whatever the resolution. Static, seeded, bounded by grainAmp as the reference's is.
+function resolveShader(passes: readonly Section6Pass[]): string {
+  return /* glsl */ `
+    precision highp float;
+    uniform sampler2D tInk;
+    uniform vec2 uTexel;     // one internal texel, in uv
+    uniform int uTaps;       // taps per axis: ceil(scale)
+    uniform float uSpread;   // internal texels between neighbouring taps
+    uniform float uUnitOut;  // canvas pixels per 360p pixel
+    in vec2 vUv;
+    out vec4 outColor;
+    vec3 toSRGB(vec3 c) { return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+    float hash21(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031 + ${(INK_POST.grainSeed % 1000).toFixed(1)} * 0.01); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+    float lattice(vec2 p) {
+      vec2 q = p - 0.5, i = floor(q), f = fract(q); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
+    }
+    float paper(vec2 p) {
+      float sum = 0.0, wsum = 0.0, w = 1.0, fq = 1.0;
+      for (int o = 0; o < 5; o++) {
+        if (o > 0 && fq > uUnitOut) break; // a finer octave would be finer than a device pixel
+        sum += w * lattice(p * fq + float(o) * 17.0); wsum += w; w *= 0.5; fq *= 2.0;
+      }
+      return sum / wsum;
+    }
+    void main() {
+      vec3 acc = vec3(0.0);
+      float h = 0.5 * float(uTaps - 1);
+      for (int j = 0; j < uTaps; j++) for (int i = 0; i < uTaps; i++)
+        acc += texture(tInk, vUv + (vec2(float(i), float(j)) - h) * uSpread * uTexel).rgb;
+      vec3 c = toSRGB(acc / float(uTaps * uTaps));
+      ${passes.includes('paper_grain') ? `c += (paper(gl_FragCoord.xy / uUnitOut) - 0.5) * 2.0 * ${INK_POST.grainAmp.toFixed(6)};` : ''}
+      outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+    }`;
+}
+
 const VERT = /* glsl */ `out vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 
 // harness only: distance from the camera per pixel, packed 24-bit fixed point of dist / far into RGB
@@ -235,6 +408,10 @@ export class InkPost {
   private readonly material: THREE.ShaderMaterial;
   private readonly distMaterial: THREE.ShaderMaterial;
   private readonly quad: THREE.Mesh;
+  // the display path (drawing buffers taller than INK_DISPLAY.referenceLines). Built on first use, so a
+  // reference-size session (the harness) compiles and allocates exactly what it did before.
+  private display: { target: THREE.WebGLRenderTarget; ink: THREE.ShaderMaterial; resolve: THREE.ShaderMaterial } | null = null;
+  private displayOn = false;
 
   constructor(private readonly renderer: THREE.WebGLRenderer, passes: readonly Section6Pass[] = SECTION6_PASSES) {
     this.passes = passes;
@@ -275,10 +452,69 @@ export class InkPost {
     this.quadScene.add(this.quad);
   }
 
+  /** Internal size for a drawing buffer: the buffer itself at reference size, else supersampled under the cap. */
+  static internalSize(width: number, height: number): { width: number; height: number; scale: number } {
+    const D = INK_DISPLAY;
+    if (height <= D.referenceLines) return { width, height, scale: 1 };
+    const scale = Math.max(1, Math.min(D.maxScale, Math.sqrt(D.maxInternalPixels / (width * height))));
+    return { width: Math.round(width * scale), height: Math.round(height * scale), scale };
+  }
+
+  /** width x height is the drawing buffer (the canvas), in device pixels. */
   setSize(width: number, height: number): void {
-    this.target.setSize(width, height);
-    (this.material.uniforms['uTexel']!.value as THREE.Vector2).set(1 / width, 1 / height);
+    const int = InkPost.internalSize(width, height);
+    this.displayOn = height > INK_DISPLAY.referenceLines;
+    this.target.setSize(int.width, int.height);
+    (this.material.uniforms['uTexel']!.value as THREE.Vector2).set(1 / int.width, 1 / int.height);
     this.material.uniforms['uPx']!.value = Math.max(1, Math.round(height / 360)); // integer: see silhouetteWithin
+    if (!this.displayOn) return;
+    const d = (this.display ??= this.buildDisplay());
+    d.target.setSize(int.width, int.height);
+    const unit = int.height / INK_DISPLAY.referenceLines; // internal texels per 360p pixel
+    d.ink.uniforms['uUnit']!.value = unit;
+    // whole texels (see silhouetteWithin), and never shorter than a 360p pixel: the same-value rule then reaches
+    // its one 360p pixel in a single stride, which is every near pixel's cheapest path
+    d.ink.uniforms['uStride']!.value = Math.max(1, Math.ceil(unit - 1e-6));
+    const taps = Math.ceil(int.height / height - 1e-6);
+    d.resolve.uniforms['uTaps']!.value = taps;
+    d.resolve.uniforms['uSpread']!.value = taps > 1 ? (int.height / height - 1) / (taps - 1) : 0;
+    d.resolve.uniforms['uUnitOut']!.value = height / INK_DISPLAY.referenceLines;
+  }
+
+  private buildDisplay(): NonNullable<InkPost['display']> {
+    // the inked frame at internal size. sRGB-encoded 8 bit, LINEAR filtered: GL decodes before it filters, so
+    // the resolve pass's taps average light
+    const target = new THREE.WebGLRenderTarget(1, 1, {
+      type: THREE.UnsignedByteType,
+      colorSpace: THREE.SRGBColorSpace,
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      depthBuffer: false,
+    });
+    const ink = new THREE.ShaderMaterial({
+      glslVersion: THREE.GLSL3,
+      // the reference material's own uniform objects: one camera sync and one size serve both
+      uniforms: { ...this.material.uniforms, uUnit: { value: 1 }, uStride: { value: 1 } },
+      vertexShader: VERT,
+      fragmentShader: displayShader(this.passes),
+      depthTest: false,
+      depthWrite: false,
+    });
+    const resolve = new THREE.ShaderMaterial({
+      glslVersion: THREE.GLSL3,
+      uniforms: {
+        tInk: { value: target.texture },
+        uTexel: this.material.uniforms['uTexel']!,
+        uTaps: { value: 1 },
+        uSpread: { value: 0 },
+        uUnitOut: { value: 1 },
+      },
+      vertexShader: VERT,
+      fragmentShader: resolveShader(this.passes),
+      depthTest: false,
+      depthWrite: false,
+    });
+    return { target, ink, resolve };
   }
 
   private syncCamera(camera: THREE.PerspectiveCamera): void {
@@ -298,6 +534,16 @@ export class InkPost {
     r.setRenderTarget(null);
     this.syncCamera(camera); // after the scene render: camera.matrixWorld is this frame's
     (this.material.uniforms['uCamWorld']!.value as THREE.Matrix4).copy(camera.matrixWorld);
+    if (this.displayOn && this.display) {
+      // display: the three passes per internal texel, then the resolve to the canvas
+      r.setRenderTarget(this.display.target);
+      this.quad.material = this.display.ink;
+      r.render(this.quadScene, this.quadCam);
+      r.setRenderTarget(null);
+      this.quad.material = this.display.resolve;
+      r.render(this.quadScene, this.quadCam);
+      return;
+    }
     this.quad.material = this.material;
     r.render(this.quadScene, this.quadCam);
   }

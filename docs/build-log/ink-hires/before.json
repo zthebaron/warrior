@@ -1,0 +1,291 @@
+{
+  "label": "before",
+  "level": "01-lower-stair",
+  "when": "2026-11-10T18:34:03.216Z",
+  "frames": 360,
+  "gl": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)",
+  "sizes": [
+    {
+      "size": "1920x1080",
+      "buffer": "1920x1080",
+      "dpr": 1,
+      "views": [
+        {
+          "view": "rig",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.54,
+          "cost_p95_ms": 0.59
+        },
+        {
+          "view": "cam0",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.35,
+          "cost_p95_ms": 0.4
+        },
+        {
+          "view": "cam1",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.54,
+          "cost_p95_ms": 0.59
+        },
+        {
+          "view": "cam2",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.54,
+          "cost_p95_ms": 0.59
+        },
+        {
+          "view": "cam3",
+          "p50_ms": 6.9,
+          "p95_ms": 7.6,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.54,
+          "cost_p95_ms": 0.64
+        },
+        {
+          "view": "cam4",
+          "p50_ms": 6.9,
+          "p95_ms": 7.5,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.52,
+          "cost_p95_ms": 0.58
+        },
+        {
+          "view": "cam5",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.49,
+          "cost_p95_ms": 0.54
+        },
+        {
+          "view": "graze",
+          "p50_ms": 6.9,
+          "p95_ms": 7.6,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.64,
+          "cost_p95_ms": 0.8
+        }
+      ],
+      "worst_view_p50_ms": 6.9,
+      "worst_view_p95_ms": 7.7,
+      "worst_view_cost_p50_ms": 0.64,
+      "worst_view_cost_p95_ms": 0.8,
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ]
+    },
+    {
+      "size": "2560x1440",
+      "buffer": "2560x1440",
+      "dpr": 1,
+      "views": [
+        {
+          "view": "rig",
+          "p50_ms": 6.9,
+          "p95_ms": 7.8,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.86,
+          "cost_p95_ms": 0.88
+        },
+        {
+          "view": "cam0",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.48,
+          "cost_p95_ms": 0.55
+        },
+        {
+          "view": "cam1",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.8,
+          "cost_p95_ms": 0.84
+        },
+        {
+          "view": "cam2",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.77,
+          "cost_p95_ms": 0.81
+        },
+        {
+          "view": "cam3",
+          "p50_ms": 6.9,
+          "p95_ms": 7.8,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.76,
+          "cost_p95_ms": 0.8
+        },
+        {
+          "view": "cam4",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.79,
+          "cost_p95_ms": 0.84
+        },
+        {
+          "view": "cam5",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.75,
+          "cost_p95_ms": 0.88
+        },
+        {
+          "view": "graze",
+          "p50_ms": 6.9,
+          "p95_ms": 7.8,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1,
+          "cost_p95_ms": 1.05
+        }
+      ],
+      "worst_view_p50_ms": 6.9,
+      "worst_view_p95_ms": 7.8,
+      "worst_view_cost_p50_ms": 1,
+      "worst_view_cost_p95_ms": 1.05,
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ]
+    },
+    {
+      "size": "5120x1440",
+      "buffer": "5120x1440",
+      "dpr": 1,
+      "views": [
+        {
+          "view": "rig",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.39,
+          "cost_p95_ms": 1.43
+        },
+        {
+          "view": "cam0",
+          "p50_ms": 6.9,
+          "p95_ms": 7.6,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 0.75,
+          "cost_p95_ms": 0.8
+        },
+        {
+          "view": "cam1",
+          "p50_ms": 6.9,
+          "p95_ms": 7.6,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.25,
+          "cost_p95_ms": 1.28
+        },
+        {
+          "view": "cam2",
+          "p50_ms": 6.9,
+          "p95_ms": 7.6,
+          "max_ms": 7.7,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.21,
+          "cost_p95_ms": 1.24
+        },
+        {
+          "view": "cam3",
+          "p50_ms": 6.9,
+          "p95_ms": 7.7,
+          "max_ms": 7.9,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.14,
+          "cost_p95_ms": 1.29
+        },
+        {
+          "view": "cam4",
+          "p50_ms": 6.9,
+          "p95_ms": 7.6,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.24,
+          "cost_p95_ms": 1.26
+        },
+        {
+          "view": "cam5",
+          "p50_ms": 6.9,
+          "p95_ms": 7.5,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.13,
+          "cost_p95_ms": 1.15
+        },
+        {
+          "view": "graze",
+          "p50_ms": 6.9,
+          "p95_ms": 7.5,
+          "max_ms": 7.8,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 1.65,
+          "cost_p95_ms": 1.68
+        }
+      ],
+      "worst_view_p50_ms": 6.9,
+      "worst_view_p95_ms": 7.7,
+      "worst_view_cost_p50_ms": 1.65,
+      "worst_view_cost_p95_ms": 1.68,
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ]
+    }
+  ]
+}
