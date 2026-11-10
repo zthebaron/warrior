@@ -28,7 +28,8 @@
 import fs from 'node:fs';
 
 const TREAD_MAX_X = 0.6;   // the stair treads and the perch stones are 0.6u along x; no ledge is under 3u
-const OVERLAP_EPS = 0.02;  // u, total: 0.01u per side. Depth resolution at 130u (24-bit, near 0.1) is ~0.01u
+const OVERLAP_EPS = 0.08;  // u, total (0.04 per side). DERIVED: > kit_ledge's stroke float (0.003 x a 7u face = 0.021u)
+                           // + depth resolution at 130u (~0.01u, 24-bit, near 0.1), so the box below's strokes stay inside
 const TILE_X = 4.5;        // u: kit_ledge's 0.014 stroke is 0.06u wide at this length
 
 // STYLE-BIBLE section 3, placed for a camera that walks z ~ 0 from x 0 to 108, looking +x (+z is

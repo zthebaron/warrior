@@ -21,15 +21,18 @@ def build(lib):
     r = lib.rng(SEED)
     kit = lib.Kit("kit_cloud_band")
     kit.face([(-HALF_X, 0.0, HALF_Z), (HALF_X, 0.0, HALF_Z), (HALF_X, 0.0, -HALF_Z), (-HALF_X, 0.0, -HALF_Z)], SHEET)
-    z = -HALF_Z
+    # Strips ACROSS the view: the camera looks down +x, so a strip spanning z at a fixed x reads as a
+    # horizontal band on screen, stacked into the distance (section 4: "horizontal banded wash").
+    # Strips along x would converge to the vanishing point and read as floorboards: a surface.
+    x = -HALF_X
     k = 0
-    while z < HALF_Z:
+    while x < HALF_X:
         w = r.uniform(3.0, 9.0)
-        if k % 2:  # alternate strips: band, gap, band ... irregular widths and ragged ends
-            z1 = min(HALF_Z, z + w)
-            x0 = -HALF_X + r.uniform(0.0, 12.0)
-            x1 = HALF_X - r.uniform(0.0, 12.0)
-            kit.face([(x0, LIFT, z1), (x1, LIFT, z1), (x1, LIFT, z), (x0, LIFT, z)], BAND)
-        z += w
+        if k % 2:  # alternate: band, gap, band ... irregular widths, ragged ends
+            x1 = min(HALF_X, x + w)
+            z0 = -HALF_Z + r.uniform(0.0, 12.0)
+            z1 = HALF_Z - r.uniform(0.0, 12.0)
+            kit.face([(x, LIFT, z1), (x1, LIFT, z1), (x1, LIFT, z0), (x, LIFT, z0)], BAND)
+        x += w
         k += 1
     return kit.finish()

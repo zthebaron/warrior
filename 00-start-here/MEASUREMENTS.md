@@ -271,7 +271,7 @@ is raised here with the new measurement and the reason.
 | kit_crow (CH1-ASSETS) | 60 / 60 | 2328 / 2328 | 6372 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 | kit_mid_cliff (CH1-ASSETS) | 64 / 64 | 2380 / 2380 | 6028 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 | kit_far_peak (CH1-ASSETS) | 48 / 48 | 2228 / 2228 | 4968 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
-| kit_cloud_band (CH1-ASSETS) | 14 / 14 | 2064 / 2064 | 2732 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
+| kit_cloud_band (CH1-ASSETS) | 22 / 22 | 2124 / 2124 | 3296 | 1 / 1 | 32 / 32 | 1 / 1 | 1 / 1 |
 
 Cells are measured / limit. Renderer cross-check (SwiftShader): torii 1 call / 108 tris,
 rock 1 call / 216 tris. CH1-ASSETS lines: new lines, not raises, each measured by `npm run
@@ -280,7 +280,11 @@ harness `assets` stage (48/48: every asset loads with Draco + KTX2, 1 draw call,
 triangle count, 32x32 texture, unlit). All seven are built `collider: "none"` (see "CH1-ASSETS
 dressing" below). Adding them left kit_torii and kit_rock_mass byte-identical (manifest sha256
 `07956ca0...` and `c1b264ba...` unchanged): `lib.py` gained one function at its end and no
-palette cell. Placed in 00-gym the scene went 30 -> 33 peak draw calls and
+palette cell.
+  - kit_cloud_band RAISED 14 / 2064 -> 22 / 2124 (same day, before merge): its strips ran along x, the view
+    direction, so they converged into floorboards (a surface: STYLE §4, §9 item 12). Re-authored ACROSS the
+    view (strips at fixed x spanning z), which stack into horizontal screen bands. The strip count rose with
+    the narrower axis it now walks. Measured by `assets:build`. Placed in 00-gym the scene went 30 -> 33 peak draw calls and
 640 -> 1,072 peak triangles (+2 x 108 +216, exactly).
 
 Budget history:
@@ -320,7 +324,7 @@ draw calls, 500,000 triangles) still apply on top.
 | Level | Peak draw calls | Peak triangles |
 |---|---|---|
 | 00-gym | 34 / 34 | 1,104 / 1,104 |
-| 01-lower-stair | 74 / 74 | 6,648 / 6,648 |
+| 01-lower-stair | 74 / 74 | 6,704 / 6,704 |
 | 02-cliff-seam | 49 / 49 | 5,040 / 5,040 |
 | 03-drifting-stones | 50 / 50 | 5,664 / 5,664 |
 | 04-summit-ridge | 49 / 49 | 5,040 / 5,040 |
@@ -341,12 +345,12 @@ greybox prim_box added (the 1.25 jump-teach step at x 6-10, the two 1.75 shelves
 91.5-94.5). Exactly +3 draw calls and +3 x 12 = +36 triangles, one unbatched box each, measured by the
 harness `counters` stage on Darwin SwiftShader. Revert D-015a and this line reverts with it.
 
-01-lower-stair, raised 46 / 3,888 -> 74 / 6,648 (CH1-ASSETS, 2026-11-09): the greybox replaced by the kit.
+01-lower-stair, raised 46 / 3,888 -> 74 / 6,704 (CH1-ASSETS, 2026-11-09; 6,648 with the first 14-tri cloud): the greybox replaced by the kit.
 Measured by the harness `counters` stage, Darwin SwiftShader, peak over the trace. What changed in what is
 DRAWN (no collider changed; see "CH1-ASSETS dressing"): -17 prim_box meshes, -3 checkpoint pads, -1 fall
 plane (palette "ink" does not draw them); +23 kit_ledge, +10 kit_stair_tread, +5 kit_mid_cliff,
 +5 kit_far_peak, +9 kit_cloud_band; patrollers 12 -> 36 tris each (kit_slide_stone), crows 12 -> 60
-(kit_crow). The static sum is 77 calls / 6,678 tris. The measured peak is lower because `renderer.info`
+(kit_crow). The static sum is 77 calls / 6,750 tris (with the re-authored 22-tri cloud). The measured peak is lower because `renderer.info`
 counts after frustum culling, and no frame of the trace sees every placement. Still 4x under the Tier-1
 300-call ceiling.
 
@@ -357,13 +361,16 @@ collider. `tools/levelgen/dress-01.mjs` lays a collider-none kit placement over 
 own pos and scale, so the drawn top is the collider top. The placements are appended after every authored
 entry, so `geometry[i]` indices and lint messages do not move. The constants it uses:
 
-| Constant | Value | Basis |
-|---|---|---|
-| TREAD_MAX_X | 0.6 u | the stair treads and perch stones are 0.6 u along x; the narrowest ledge is 3 u, so the rule cannot misfile one |
-| OVERLAP_EPS | 0.02 u total (0.01 u per side), x and z only, never y | a box sitting on a larger one (the 1.25 step, both 1.75 shelves) has its z sides coplanar with the box below; two different patterns on one plane z-fight. 24-bit depth with near 0.1 resolves ~0.0015 u at 50 u and ~0.01 u at 130 u (z^2 / (near * 2^24)); the farthest raised box is inside 130 u of every camera in the goldens. Never y, so a walkable top is never offset |
-| TILE_X | 4.5 u | kit_ledge's stroke is 0.014 of the box; at 4.5 u that is 0.06 u, a brush line. The 41 u sweep slab untiled would draw 0.6 u bars |
-| kit_cloud_band LIFT | 0.04 u | the paper_cream bands above the mist_pale sheet; the band height is 9.5 u below the lowest walkable top |
-| cloud sea y | -9.5 | 0.5 u above the fall plane (-10), 9.5 u below the lowest top (0): a gap reads as a drop into cloud, never as floor (STYLE §9 item 12) |
+None of these is a MEASURED budget: each is labelled DERIVED (computed from other numbers here) or
+AUTHORED (an art choice, recorded so it is never a bare number in code).
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| TREAD_MAX_X | 0.6 u | derived | the stair treads and perch stones are 0.6 u along x; the narrowest ledge is 3 u, so the rule cannot misfile one |
+| OVERLAP_EPS | 0.08 u total (0.04 u per side), x and z only, never y | derived | a box sitting on a larger one (the 1.25 step, both 1.75 shelves) has its sides coplanar with the box below, and two patterns on one plane z-fight. It must clear kit_ledge's fracture strokes, which float 0.003 x the face width off the face: 0.021 u on a 7 u face. A first cut at 0.01 per side let them show through. To that it adds the depth resolution, z^2 / (near * 2^24): ~0.0015 u at 50 u and ~0.01 u at 130 u. 0.021 + 0.01 < 0.04. Never y, so a walkable top is never offset. The cost: the drawn riser of a step or shelf sits 0.04 u proud of its collider |
+| TILE_X | 4.5 u | authored | kit_ledge's stroke is 0.014 of the box; at 4.5 u that is 0.06 u, a brush line. The 41 u sweep slab untiled would draw 0.6 u bars |
+| kit_cloud_band LIFT | 0.04 u | authored | the paper_cream bands above the mist_pale sheet; the band height is 9.5 u below the lowest walkable top |
+| cloud sea y | -9.5 | authored | 0.5 u above the fall plane (-10), 9.5 u below the lowest top (0): a gap reads as a drop into cloud, never as floor (STYLE §9 item 12) |
 
 Proof that collision did not move: `node tools/geometry-fingerprint.mjs levels/01-lower-stair.json
 assets/dist/manifest.json` dumps every collider placement (with a hash of each placed kit soup), every
@@ -373,8 +380,8 @@ placements added: the same hash, byte-identical. A mutation giving one dressing 
 "trimesh"` changes it (35 placements, `DIFFERS at "colliders"`). Lint did NOT catch that mutation, which is
 the silent failure, so lint now has DRESS_COLLIDES, pinned in lint:self.
 
-Nav, every simulation line identical (same build, Darwin SwiftShader, `playtest --level=01-lower-stair
---instrument=on`, before = main 080d3e3, after = this branch; 47 of 47 lines identical):
+Nav, every simulation line identical (Darwin SwiftShader, `playtest --level=01-lower-stair --instrument=on`;
+before = main 080d3e3's own build, after = this branch's build; 47 of 47 simulation lines identical):
 
 | Segment | Before | After |
 |---|---|---|

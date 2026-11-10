@@ -1108,9 +1108,13 @@ took, each PROVISIONAL:
    Under "ink", prim_box, the sun, the checkpoint pads and the fall plane are not DRAWN (their colliders and the
    kill plane are untouched), the patroller and crow draw their kits, and the background is paper-cream. 00-gym
    and 02-04 stay greybox, with goldens unchanged.
-6. **Out of this scope, and still off the ramp in chapter 1's frames:** the player (a greybox capsule in
-   `VISUAL.stateColors`, not STYLE §7's robed figure near #7d8590). It is the next asset, and a hero asset
-   (.blend), not kit. Recorded as B-33.
+6. **Out of this scope, and still off the ramp in chapter 1's frames: the player.** It is a greybox capsule
+   with a LIT material (`MeshStandardMaterial`, `VISUAL.stateColors`). Under "ink" no light is added, so in
+   chapter 1 it renders as a flat silhouette of pure `#000000` (sampled from the cam0 golden), not ink-black
+   `#20201e`, and its state colours do not show there. They still do in the gym. The greybox state colours
+   were off the §2 ramp too (saturated, §9 item 3). A non-directional ambient light would bring them back as
+   flat saturated fills, which is worse against §9.3, so none was added. The fix is the figure itself, STYLE
+   §7's robed exile near #7d8590: a hero asset (.blend), not kit. Recorded as B-33.
 7. **Tile seams.** kit_ledge is tiled every ~4.5 u; where tiles abut, a faint dashed line shows across the top
    (the neighbour's lip through the raster seam). It reads as a slab joint and was kept. It is a raster detail,
    so expect it to differ between darwin and linux goldens; that is why each platform has its own.

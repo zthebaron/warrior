@@ -28,11 +28,11 @@
       "kind": "mesh",
       "file": "kit_cloud_band.glb",
       "source": "assets/src/kit_cloud_band.py",
-      "sha256": "7f4c0ee4f723f622e293dc12c853e497fb2f6ffa74631bd96c793acf2f8b1a52",
+      "sha256": "0f18d5e8390bbb3a60f055a690934a26a862e6b1761081b56f94fbaf82d40860",
       "collider": "none",
-      "triangles": 14,
-      "bytes": 2064,
-      "bytes_export": 2732,
+      "triangles": 22,
+      "bytes": 2124,
+      "bytes_export": 3296,
       "bbox": {
         "min": [
           -60,
