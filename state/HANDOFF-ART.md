@@ -1,57 +1,53 @@
-# HANDOFF-ART: READ THIS SECTION FIRST (art pass 2, written 2026-11-10 ~22:25Z by session art-pass-2)
+# HANDOFF-ART (written 2026-11-10 ~22:27Z by session art-pass-2, for a fresh session with zero memory)
 
-Everything below the line was written before PR 31 merged and is history. Current state:
-- **PR 31 (art pass 1) is MERGED.** Its CI story is OQ-070 item 15 and MEASUREMENTS "D-020 production load".
-- **Art pass 2 is PR 34**, branch `art-pass-2` off main: D-021 in PHASE-0-DECISIONS, OQ-071, MEASUREMENTS "D-021 ..." sections, backlog B-51 to B-53. Evidence in `docs/build-log/d021/` (the 5120x1440 player-view frame is `ch1-player-5120x1440.png`).
-- **What it built:** ink levels do not draw kit_rock_mass (`src/loaders/level.ts` `INK.collideOnly`); `src/loaders/cliff-wall.ts` stands painted cards there, derived from the rock placements; `src/loaders/backdrop.ts` uses ART-GEN's peaks, cliffs and mist; `src/loaders/path-wash.ts` brushes the path; the player is `warrior_anim` (`src/entities/character-model.ts`); cards are made by `tools/art/backdrop-cards.mjs` from `assets/backdrop/gen` and held by `assets:budget`.
-- **Tools added:** `node tools/harness/motion.ts <dir>` (the figure in motion, as strips; `--clips` for every clip frame by frame); harness hooks `showMeshes(prefix, visible)`, `showFigure(clip, time)`, `figureClips()`.
-- **Gotchas:** cards are blended and write no depth, so draw order is explicit (the wall after the mist, the figure last: `paintLast`). The post stage shows the undrawn rock for its ink-only frame and hides it again; a new harness stage that toggles meshes must restore them. CI writes Linux actuals only for cameras over 0.5%, so take goldens from the run and compare the rest to darwin.
-- **Open for Tim:** OQ-071 (all PROVISIONAL), above all items 2, 3, 6 and 14.
+## 1. Branch, PR, and exactly what is left
+- Worktree `/Users/timdevallee/Code/warrior/.claude/worktrees/ch1-assets`, branch `art-pass-2` (off main; head 4f004a4 + this file). PR 31 (art pass 1) and PR 33 (art-gen round 2) are MERGED.
+- **PR #34** `art-pass-2` -> main: OPEN, DRAFT. https://github.com/zthebaron/warrior/pull/34. Tim merges; he asked for ONE PR.
+- Local state at 4f004a4: full playtest PASS before the last two fixes; after them chapter 1 `counters`, `post` 26/26 and `visual` (darwin) PASS; typecheck, lint:levels, lint:decisions, assets:budget PASS. Not re-run after them: the other four levels and the game stages (CI will).
+- **Only thing red on CI: `level (01-lower-stair)` on `visual`** (so `playtest` too). The committed Linux goldens for chapter 1 are run 42911617289's actuals, taken BEFORE two layout fixes (bay taper, the open cleft), so some cameras now differ.
+- **Which run holds the actuals:** the newest COMPLETED run on art-pass-2 (`gh run list --branch art-pass-2 --limit 3 --json databaseId,status,conclusion,headSha`). Pushing this file starts one more run; its frames are the same as 4f004a4's. Check first that every stage but `visual` passed (`gh run view <run> --log-failed`, grep `│ [a-z-]+ +(PASS|FAIL)`).
+- **Pull and commit** (each git command alone):
+  `gh run download <run> -n harness-report-01-lower-stair -D $CLAUDE_JOB_DIR/tmp/ci34b/01-lower-stair`
+  copy each `.../tools/harness/golden/linux/01-lower-stair/camN.actual.png` that exists over `tools/harness/golden/linux/01-lower-stair/camN.png` (CI writes an actual only for a camera over 0.5%); compare all six to `golden/darwin/01-lower-stair/camN.png` with pixelmatch threshold 0.1 (expect <= 0.02%; a camera NOT taken that is over 0.1% is a stale golden: record it in OQ-071). The script `$CLAUDE_JOB_DIR/tmp/take-linux.mjs <root> <ci dir>` does copy + compare if the job tmp survives.
+  `git add tools/harness/golden/linux` / `git commit -m "D-021: linux goldens, chapter 1, from CI run <id> actuals"` / `git push origin HEAD:refs/heads/art-pass-2` / wait for 9/9.
+- **Then:** `gh pr edit 34 --body-file $CLAUDE_JOB_DIR/tmp/ap2/pr-body.md` (drafted; if gone rebuild from D-021 and OQ-071) after adding: the independent review (7 findings, all fixed), the far-field check at 8.4% with the wall lifted away, the open cleft, the green run id, the CI bare-URL load (1.8 s). Then `gh pr ready 34`.
+- **Release the claims** ART-PASS-2, B-45, B-46, B-49 (agent `art-pass-2`) from a detached origin/main, ONE ledger-only commit: a worktree for that exists at `$CLAUDE_JOB_DIR/tmp/claim-wt` (`git fetch origin`; `git switch --detach origin/main`; `node tools/claim.mjs release <id> --agent art-pass-2` x4; `git add state/CLAIMS.jsonl`; commit; `git log --oneline origin/main..HEAD` must be exactly 1; `git push origin HEAD:main`). Then `git worktree remove` it.
+- Report to Tim: the screenshot is `docs/build-log/d021/ch1-player-5120x1440.png` (5120x1440, player's camera at spawn, real GPU, final build). `git diff --stat origin/main...HEAD -- src/engine/ink-post.ts src/engine/renderer.ts` is EMPTY.
 
----
+## 2. What art pass 2 built (D-021 in PHASE-0-DECISIONS; OQ-071; MEASUREMENTS "D-021 ..." sections)
+- **Rock undrawn:** `src/loaders/level.ts` `INK.collideOnly: ['kit_rock_mass']`. In an ink level (chapter 1) the rock goes to physics by the same untouched code and its draw loop is skipped; it keeps a hidden mesh named `undrawn:kit_rock_mass` for the harness. The three boulders are gone from `tools/levelgen/dress-01.mjs`.
+- **Painted cliff wall:** `src/loaders/cliff-wall.ts` `CLIFF_WALL`, built from the rock placements (`RockMass`: x, base, top, frontZ, minX, maxX). All cards are flat, parallel to the path, FRONT faces only, blended, no depth write. Three rows:
+  front: 3 small cards a mass at -2.9/0/+2.9 u, 6.5-8 wide, 13-21 tall, 0.2 u behind the collision front (z -3.78), cycle of 7; never past a mass's own extent on a side with no neighbour (the wall's ends, and the gap at x 36-40.5, which stays an open cleft);
+  bay: one per join, 5 u further back, 20-40 tall, none where masses are > 10 u apart;
+  back: every second mass, 11-14 u back, 46-64 tall. Ink 1 / 0.88 / 0.72. Ends taper.
+  Pines (pine_a/b/c) on every second mass from the second, rooted on a ledge of its tallest front card (`CLIFF_WALL.ledge`). One mesh per painting per row = 12 draw calls; draw order back 100, bay 200, front 300, pine 400.
+- **Nothing painted hides the player:** `src/engine/paint-layer.ts` `paintLast` (the figure is drawn after every card; used in `src/loaders/character.ts`).
+- **Cards:** `tools/art/backdrop-cards.mjs` makes `assets/backdrop/cards/*.png` from ART-GEN's `assets/backdrop/gen` (read only): resize, clamp to paper value and ramp chroma 30, bleed colour under the cut, fade cliff feet, plus the generated `path_wash`. Cliffs ship at 2048 px. `budgets.json` `cards`; `tools/assets/paint-budget.mjs` re-runs the script and compares pixels. `--check` exists.
+- **Far field:** `src/loaders/backdrop.ts` `BACKDROP`: one seed ridge ring (460 u), six painted peaks at 0.6 height with feet at y -3.5, six painted mid cliffs (feet y -4), the paper mist sheets, three thin mist bands on the void side drawn after the sheets. The seed-crop mid cliffs are deleted.
+- **Animated warrior:** `assets/char/warrior_anim.glb` (from `assets/hero/rigged/`, via `assets/src/hero.json` + `npm run assets:build`). `src/entities/character-model.ts` `CHARACTER.poseOf`: idle -> idle loop; run/sprint -> walk below half run speed else run; jump, wall_jump -> run HELD at 0.106 s; double_jump -> run held at 0.422 s; fall -> land held at 0 s; land -> land once; dash -> dash loop; wall_slide, ledge_grab -> climb held at 0 s; ledge_climb -> climb once. **Rejected clips: jump, fall, wall** (head and rigid hat pitch over in every frame). Cross-fade: per-clip weights eased over 0.1 s and normalised, driven only by the player's state clock (idempotent under `redraw()`).
+- **Brushed path:** `src/loaders/path-wash.ts`: one paint-layer mesh over every unturned prim_box top, world-space UVs, repeat 24 x 6 u, polygonOffset.
+- **Gate:** `tools/harness/post.ts`. `POST_GATE` untouched; the 17 ink-only checks run with the undrawn rock SHOWN. New paint checks: rock undrawn as shipped (13 kept hidden, 0 drawn); dark mass where the rock stands 8.6% (>= 4%, 0.1% with the wall lifted); rock pixels drawn over 99.9% (>= 90%, pooled); far field 8.4% with the wall lifted (>= 3%); void paper 47.4% with the rock drawn in place of the wall (>= 41%; mutation mist-pale 15.1%).
+- **Tools:** `node tools/harness/motion.ts <dir> [--only=..] [--clips]` (strips of the figure in motion); harness hooks `showMeshes(prefix, visible)`, `showFigure(clip, time)`, `figureClips()`.
+- **Numbers:** scene ratchet 127 draw calls / 287,036 triangles; 144.9 fps at 5120x1440, 2.81 ms a frame (M4 Max); cards 8.3 MB.
 
-# HANDOFF-ART (written 2026-11-10 ~20:20Z by session art-pass-1, for a fresh session with zero memory)
-
-## 1. Branch, PR, CI
-- Worktree `/Users/timdevallee/Code/warrior/.claude/worktrees/ch1-assets`, branch `art-pass-1` (HEAD 7fefbd3 + this file). main (eeaacac, with PR 30 INK-HIRES and PR 32 ART-GEN) is merged in.
-- PR #31 `art-pass-1` -> main: OPEN, DRAFT, MERGEABLE. Tim: take it out of draft once the backdrop, the rigged warrior and the torii are in and CI is green; he merges. Then send him the 5120x1440 screenshot (`docs/build-log/d020/ch1-warrior-5120x1440.png`).
-- Claim `ART-PASS-1` (agent `art-pass-1`, taken 18:19:49Z, ttl 480 min) is live on main. Release when PR 31 is green, from a detached origin/main (HANDOFF-INK.md section 1 has the exact sequence).
-- CI run **42893283097** on 7fefbd3 (complete): static and matrix PASS; all five level jobs FAIL; **game FAILS**; playtest (merge) fails as a result. Pushing this file starts a new run on the new head: take actuals from the newest COMPLETED run on art-pass-1.
-  - Levels (2.5-6 min each): `visual` only, confirmed in the 00-gym and 03 logs (one FAIL line each); assumed for 01, 02, 04: check. Cause: Linux goldens are still D-019's; darwin goldens were re-taken on all five levels.
-  - **game (job 130099672397): `reachable` 12/13**: `✗ bare URL reaches the entry chapter (production bundle): loaded "(nothing)", expected "01-lower-stair"`. Passes locally. NOT diagnosed. It is the PRODUCTION bundle (dist/) at the bare URL not reporting a loaded level in time. Start in `tools/harness/reachable.ts` (the wait for `document.body.dataset.level`) and the console errors of that page. Suspects: the load is now slower than that wait on CI (every level decodes `assets/char/warrior_rigged.glb`, a 1024 px KTX2, plus chapter 1's four 1 MB hero glbs and three backdrop PNGs, on SwiftShader); or a production-only path (`import.meta.glob` of `assets/char/*.glb` / `assets/backdrop/*.png`, the KTX2 transcoder under /vendor/basis). Reproduce locally with `npm run playtest -- --only=reachable`; if it only fails on CI, measure the load time there before touching any wait (a wait is a number: MEASUREMENTS).
-- Fix for the levels (each git command alone):
-  `for l in 00-gym 01-lower-stair 02-cliff-seam 03-drifting-stones 04-summit-ridge; do gh run download <run> -n harness-report-$l -D $CLAUDE_JOB_DIR/tmp/ci31/$l; done`
-  check every stage but `visual` passed in each log; copy `tools/harness/golden/linux/<l>/camN.actual.png` over `tools/harness/golden/linux/<l>/camN.png` (N 0-5); compare to darwin with pixelmatch 0.1 (PR 29 was <= 0.016%; the paint layer is drawn on the MSAA canvas, so expect a little more: look at any camera over 0.1%); `git add tools/harness/golden/linux`; commit "D-020: linux goldens, all five levels, from CI run <id> actuals"; `git push origin HEAD:refs/heads/art-pass-1`; wait for 9/9.
-- Then: `gh pr edit 31 --body-file $CLAUDE_JOB_DIR/tmp/pr-art-final.md` (drafted; if the job tmp is gone, rebuild it from D-020 and add the green run id), `gh pr ready 31`, release the claim, report.
-- Small fix still owed: BACKLOG B-47 says "6.0 MB added"; with cliff_b it is 7.0 MB.
-
-## 2. What art pass 1 built (D-020 in PHASE-0-DECISIONS; OQ-070; MEASUREMENTS "D-020 ..." sections)
-- **Paint layer** `src/engine/paint-layer.ts`, called from `src/main.ts` right after `renderer.render()`. Painted meshes are on three.js layer 1 in the same scene; per frame: clear canvas depth, draw the ink geometry depth-only, draw layer 1 with depth test. `paintMaterial()` = unlit + the ink pass's static grain. `ink-post.ts` / `renderer.ts` are NOT edited.
-- **Painted backdrop** `src/loaders/backdrop.ts` (`BACKDROP`), ink-palette levels only (chapter 1). Textures: `tools/art/backdrop-textures.mjs` -> `assets/backdrop/*.png` from the seed (far_ridge from hero_11s, mid_cliff_a/b from hero_9s). Layers: paper sky = nothing; 3 static ridge rings (r 300/380/460); 5 mid-cliff planes; mist = 6 paper-cream sheets y -7..-3 (bare paper). kit_mid_cliff / kit_far_peak / kit_cloud_band are no longer placed (`tools/levelgen/dress-01.mjs`).
-- **Hero class**: `tools/assets/budgets.json` `classes.hero` (30000 tris, 1024 px, 1 texture/material/draw call) + a measured line per asset; `backdrop` and `characters` blocks checked by `tools/assets/paint-budget.mjs` inside `npm run assets:budget`. Manifest schema has optional `class: "hero"`.
-- **Import path**: `npm run assets:build` (`tools/assets/build.mjs`) imports ONLY what `assets/src/hero.json` names: `static` from `assets/hero/<name>.glb` -> `assets/dist/` (unlit, base colour only, chroma cap 26, optional simplify, 1024 px KTX2 UASTC, Draco, collider none); `characters` from `assets/hero/rigged/<name>.glb` -> `assets/char/` (same but no flatten/Draco, skin and clips kept). A new asset fails the build once and prints its measured numbers: add the line. `HERO_DIR=` / `ASSETS_OUT=` (repo-relative) give a dry run. assets/hero and tools/gen belong to ART-GEN.
-- **Warrior**: `src/loaders/character.ts` loads `assets/char/warrior_rigged.glb` whole (KTX2 via `assetLoader()`), paint material, layer 1, synthesises a `rest` clip from the bind pose. `src/entities/character-model.ts` `CHARACTER.poseOf`: idle, land -> rest; run, sprint -> stride (walk clip below 0.5 x run speed, else run clip at speed/runSpeed); jump, double_jump, wall_jump -> run@0.17; fall -> run@0.50; dash -> run@0.33; wall_slide -> walk@0.00; ledge_grab, ledge_climb -> walk@0.53; 0.1 s blend. Scaled to the capsule (1.9 u), half turn, feet at y 0. `player.ts` builds it when `prepareLevel` has preloaded it; the capsule stays the collider.
-- **Torii**: `assets/src/hero.json` `skins.kit_torii`. A kit_torii placement keeps its own triangles as collider and is DRAWN as hero `torii` (9510 tris, no texture) fitted to kit_torii's bbox in `src/loaders/assets.ts` `skinFor`, flat accent material (`?accent=` works). No level file changed.
-- **Dressing** (chapter 1, `dress-01.mjs` `HERO`): 4 lanterns, 3 boulders on rock masses, cliff + cliff_b stacks in the void.
-- **Gate**: `tools/harness/post.ts`: the 17 D-018/D-019 checks judge the ink pass alone (paint off); `PAINT_GATE` adds 6 checks on the painted frame. Harness hooks `paintLayer(on?)`, `redraw()`. All six seen red.
-- **Tools**: `tools/harness/frame.ts` (one frame, any size/pose, SwiftShader), `tools/art/sheet.mjs` (sheet + ramp shares), `tools/measure-display.mjs` (INK-HIRES: real GPU fps + frames). Evidence in `docs/build-log/d020/`.
-- **Proofs**: `node tools/geometry-fingerprint.mjs levels/<l>.json assets/dist/manifest.json` hashes are 3f8ace62 / 03d7d47a / f656ed93 / 95c2a998 / eba0e40e (identical to before the work); nine kit glb shas unchanged; full local playtest PASS (~460 s); M4 Max 144.9 fps at 5120x1440, 4.39 ms a frame.
-
-## 3. Unfinished or known wrong
-- PR 31 not green (section 1). Hero work for the near rock (kit_rock_mass slabs) not done: needs collision-without-drawing (B-46).
-- Two clips only; held frames are placeholders (B-45). Painted things get no ink edge; grain is per device pixel (B-48). Greybox levels have no backdrop or dressing (B-50). Pines unused (B-49). Hero files ~1 MB each (B-47). `replay`/`chaos` still draw every tick (B-44) and `chaos` is now the longest level stage.
-- PROVISIONAL for Tim (OQ-070): chroma cap 26 mutes the warrior's orange gourds and straw hat (D-003); the torii is 1.28x wider for its height than delivered; kit_mid_cliff removed too.
-- The Blender stand-in figure was stopped on Tim's order; its files are outside the repo (`$CLAUDE_JOB_DIR/tmp/standin-figure`), not shipped.
+## 3. Unfinished or known wrong (all in OQ-071, PROVISIONAL for Tim)
+- PR 34 not green yet (section 1). The other four levels and game stages were not re-run locally after the last two fixes.
+- From the player's camera the wall is still a wall seen along its length (B-52): the rock is a straight wall at the path's edge, so cards cannot turn toward the camera without a level change. I would fix this next.
+- The rock's ledges are climbable and not painted as ledges; at the joins (x ~10, 48, 66, 74) a player can step off the path edge through the painting and fall, visibly (B-51).
+- The two 3D cliff stacks in the void are now the most game-like things in the frame (B-53); untouched, not in the four jobs.
+- Three mist bands stand against D-020's "the mist must be bare paper" (OQ-071 item 6). Style Bible strains recorded, not amended (item 11).
+- The coverage check is pooled, not per collider (item 15). The far-field check's wrong value (0%) is D-020's, not re-measured.
+- Bay and front cards can share a painting at one mass (a critic's finding, not fixed). No soft-landing pose. Walk and wall were judged frame by frame only, not in motion.
+- Cliffs are 6.5 MB of PNG (B-47). `boulder` is still built, unplaced. PR 31's seven stale Linux goldens on other levels remain.
 
 ## 4. Gotchas (and read section 4 of state/HANDOFF-INK.md: all of it still holds)
-- The shell guard rejects heredocs and any compound command containing the word `git`, even inside a grep pattern. Write scripts with the Write tool and run them; run each git command alone.
-- GitHub runs no CI on a PR that conflicts with main (mergeStateStatus DIRTY): a push that "does nothing" means merge origin/main first.
-- `npm run assets:build` replaces `assets/dist/` wholesale and rewrites `assets/char/`; after it, check the kit shas against the manifest and `git status`.
-- A playtest is ~460 s for everything, ~90 s a level; `--level=X --only=post` ~15 s. One at a time (port 4317); `tools/measure-display.mjs` uses 4391 and opens a headed Chrome.
-- A harness stage that switches a feature on itself cannot see that the game ships it off (found by mutation: the paint layer). Mutate, expect red.
-- `gh run view --log` returns nothing while a run is in progress; job conclusions are available earlier.
-- Compare paint against the ink frame at the SAME world tick (`redraw`), or moving hazards read as paint.
-- Blender-free: hero assets need no Blender, the kit does (5.2.3 at /Applications/Blender.app).
+- The shell guard rejects ANY compound command containing `git` (`&&`, pipes, heredocs): a refused command runs NOTHING, including the non-git parts before it. Run each git command alone; put edits in a script file and run it.
+- A `cd` into a subfolder persists: always `cd` to the worktree root first. The Write tool refuses a file changed on disk since it was read.
+- Wash cards write no depth: the mist sheets paper over anything drawn before them, so near cards draw after (order >= 100) and far cards stand with their feet just under the mist top (y -3).
+- A card level with a torii post (z -3.6) bleeds 1 px into it (accent and hue checks red); a card behind a sliding stone's face (z -4.0) shows the stone. Hence `frontBehind: 0.2`.
+- `tools/measure-display.mjs` takes space-separated args and overwrites `<label>.json` with only the views it ran; it opens a headed Chrome. Keep only `ch1-player-5120x1440.png` (rename from `art-pass-2-5120x1440-rig.png`).
+- A stage that toggles meshes or the paint layer must restore them. Never `--record`; `--update-goldens` only. One playtest/frame/motion run at a time; never edit `src/` during one.
+- `npm run assets:build` needs Blender and ktx and rewrites `assets/char/`; check the kit shas after.
 
 ## 5. Background shells
-- None. The CI wait loop for run 42893283097 has finished; the stand-in figure agent was stopped; no playtest is in progress.
+- One read-only wait loop (id bc8k87opl) polling the CI run for 4f004a4; safe to kill. No playtest, workflow or other process is running.
