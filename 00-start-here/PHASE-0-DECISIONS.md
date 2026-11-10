@@ -1184,3 +1184,64 @@ Tim's call (Q2b: on measured evidence only; the evidence is the first render and
 outline lowers ACCENT_AREA (ch1 0.103-0.243%, floor 0.0204%). To be re-judged with grain and edge in place.
 
 implemented_by: 57c8c3c (§1 material/light purge, ink-post.ts, harness `post` stage, kit re-valuing, dress-01 --check in lint:levels, darwin goldens)
+
+
+## D-019 — outlining everything is outlining nothing: the ink edge belongs to true silhouettes, and the near field goes dark. B-40, B-41. DECIDED
+
+**Ruled by Tim** (2026-11-10), on `docs/build-log/d018/sheet-ch1-cam2.png`, seed left and D-018 right: the
+shipped look "reads as a basic 3D paint stroke, not a painting". Four gaps, in order of cost. ONE: the ink edge
+fires on every discontinuity, so every box edge and tile seam gets the same uniform line; in the seed almost
+nothing is outlined, form comes from value masses and contour appears at a few silhouette boundaries only.
+Suppress it on interior and coplanar seams and on distant forms, keep it on true silhouette boundaries, vary its
+weight along the stroke. TWO: no value range: the frame uses the middle of the ramp and never the ends. Push
+the near field dark, keep the far field pale, widen the spread. THREE (bare paper, ~40% of the seed frame) and
+FOUR (slab silhouettes, B-37/B-38) are NOT in this entry: ONE and TWO first, no other post work until they land.
+**Applied by the builder, PROVISIONAL until Tim confirms:** every number and threshold below "Built", the
+never-break exception, and the paper top on undressed boxes.
+
+**The finding, as measured** (PR #27's shader under this entry's gate, all five levels): 100.0% of near
+silhouette pixels inked and 56-70% of interior convex creases an ink line, at a constant 2px (1px share 0.0%);
+69-82% of mid-distance silhouettes drawn; dark MASS 1.1-1.2% of the near field. In ch1 cam2, ink-deep was 0.0%
+and ink-grey 1.8% of the frame, and its 10.9% ink-black was all line. Seed hero_7s: ink-grey 9.6%, ink-deep
+8.0%, ink-black 5.4%, as mass.
+
+**Built.**
+1. `ink_edge`: a line only on the near side of a real depth jump (a neighbour >= 1.2x farther). A crease, a
+   coplanar seam and a detail floating off its face have no jump and get none. Near band only. Weight =
+   base(distance: 3/2/1 px) x noise anchored in WORLD space, 0 (the brush lifts) to 4px; fixed to the form, so
+   it does not swim when the camera moves.
+2. `value_compression`: the near band is pushed dark with nearness (+3 steps inside ~10 u, +2 to ~17 u, +1 to
+   ~23 u; paper never), boundaries ragged by the same world-anchored noise so they read as wash edges. Mid and
+   far are unchanged: they only ever lighten (D-018).
+3. **The exception to the break, mine and PROVISIONAL.** Where the form and what is behind it are shown at the
+   same or an adjacent step (a paper platform top against paper sky), the line is the only thing that marks
+   where the ground ends, so it always holds a hairline. The seed lets even that line break; a platformer
+   cannot. 97.3-99.4% of such pixels are inked.
+4. **Forced by ONE, mine and PROVISIONAL.** An undressed prim_box of one flat value has no visible top once
+   creases are not outlined, and READABLE_RISE is about seeing that there is ground up there. Its top is now
+   paper and its faces wash-light, two steps apart: form from value. One unlit material, vertex colours; draw
+   calls unchanged.
+5. The gate: harness `post` gains six D-019 checks, each threshold between the measured D-018 value and the
+   shipped one. Eight mutations of the shader source each turn it red (MEASUREMENTS "D-019 ink edge and value
+   range").
+
+**Measurement: the same sheet, re-taken** (`docs/build-log/d019/sheet-ch1-cam2.png`: [seed hero_7s | D-018 |
+D-019], same camera, same seed frame).
+
+| | Seed hero_7s | ch1 cam2, D-018 | ch1 cam2, D-019 |
+|---|---|---|---|
+| ink-grey / ink-deep / ink-black, share of frame | 9.6 / 8.0 / 5.4% | 1.8 / 0.0 / 10.9% (line) | 13.6 / 6.2 / 4.1% |
+| paper-cream | 37.2% | 26.1% | 28.4% |
+| near silhouette px inked (ch1, six cameras) | | 100.0% | 69.4% (breaks) |
+| interior creases that are an ink line | | 64.4% | 30.7% (the kit's own lips, B-38) |
+| mid-distance silhouettes carrying a line | | 69.3% | 3.0% |
+| near field that is dark mass | | 1.2% | 9.2% |
+
+**STYLE-BIBLE amended in place, marked D-019:** §3's outline column (near: silhouette boundaries only, weight
+varying; mid: none, was "grey, thin") and §6's ink-edge sentence (was "on depth and normal discontinuity").
+
+**Still off the seed, recorded not tuned away:** wash-mid 19.0% against 8.4% and the slab silhouettes (B-37,
+B-38); paper 28.4% against 37.2% (B-42, gap THREE, not started). **Unchanged:** no level, asset or linter file;
+every geometry fingerprint is PR #27's; replay passes against the committed traces; every scene ratchet holds.
+
+implemented_by: 6474469 (ink_edge silhouette-only with world-anchored weight, the near value push, paper tops on undressed boxes, the six D-019 gate checks, STYLE §3/§6 amendments, darwin goldens)
