@@ -1,6 +1,11 @@
 // WebGLRenderer setup: sRGB output, the STYLE §6 post pass (D-018), resize, context loss, DPR cap.
 // Tone mapping stays set for the direct asset probes; the scene itself renders into the post target, where
 // three applies none, so the palette's bytes arrive exact.
+//
+// `antialias: true` multisamples the DEFAULT framebuffer only, and every game frame reaches it as one quad that
+// covers it edge to edge, so it does nothing for the picture (the direct asset probes are what it still serves).
+// The picture's anti-aliasing is InkPost's display path: on any drawing buffer taller than 360 lines the scene
+// and the post run supersampled and are filtered down to the canvas (INK-HIRES, see ink-post.ts).
 
 import * as THREE from 'three';
 
@@ -61,7 +66,7 @@ export class Renderer {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
-    this.post.setSize(size.x, size.y);
+    this.post.setSize(size.x, size.y); // the canvas, in device pixels: InkPost picks its own internal size from it
   }
 
   render(): void {
