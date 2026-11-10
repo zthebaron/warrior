@@ -21,6 +21,11 @@ const CROPS = {
   cliff: ['hero_5s', 0, 0, 820, 720],
   boulder: ['hero_1s', 660, 700, 520, 380],
   torii: ['hero_9s', 670, 270, 300, 350],
+  // Round 2, the painted backdrop cards (make-backdrop-payloads.mjs). All clear of the figure.
+  bd_cliff: ['hero_7s', 0, 0, 760, 640],        // the cliff on the left: near-black vertical ink masses
+  bd_peaks: ['hero_11s', 760, 215, 1160, 150],  // the far ridge on the horizon
+  bd_mist: ['hero_11s', 1270, 380, 650, 560],   // the cloud sea
+  bd_wide: ['hero_11s', 1270, 200, 650, 500],   // far ridge over the cloud sea, mostly bare paper
 };
 for (const [name, [frame, left, top, width, height]] of Object.entries(CROPS)) {
   const scale = Math.max(1, Math.ceil(1024 / Math.max(width, height)));

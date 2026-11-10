@@ -1,0 +1,353 @@
+{
+ "peaks_a": {
+  "file": "peaks_a.png",
+  "what": "far peak: one rounded summit with a long shoulder",
+  "cut": "wash",
+  "request_id": "01a1c710-c7bb-7701-b6ae-e69357a22465",
+  "source": "3168x1344",
+  "out": "2048x479",
+  "scale": 0.88,
+  "paper_source": "#d0c3b0",
+  "paper_unevenness": 1.08,
+  "grain": 0.0261,
+  "grain_coarse": 0.008,
+  "floor": [
+   0.037,
+   0.06
+  ],
+  "inked_share": 0.409,
+  "opaque_share": 0,
+  "densest": 0.64,
+  "hue_drift": 4.1,
+  "hue_lean_rgb": [
+   2.1,
+   1.1,
+   -3.2
+  ],
+  "touches_edge": []
+ },
+ "peaks_b": {
+  "file": "peaks_b.png",
+  "what": "far peak: one long low range (painted with a paler peak behind it, which was too faint to cut)",
+  "cut": "wash",
+  "request_id": "01a1c711-3624-7c41-a159-eb92e0308a1a",
+  "source": "3168x1344",
+  "out": "2048x390",
+  "scale": 0.876,
+  "paper_source": "#e8d7be",
+  "paper_unevenness": 1.37,
+  "grain": 0.0216,
+  "grain_coarse": 0.0105,
+  "floor": [
+   0.039,
+   0.068
+  ],
+  "inked_share": 0.349,
+  "opaque_share": 0,
+  "densest": 0.53,
+  "hue_drift": 4.1,
+  "hue_lean_rgb": [
+   2.3,
+   0.8,
+   -3.1
+  ],
+  "touches_edge": []
+ },
+ "peaks_c": {
+  "file": "peaks_c.png",
+  "what": "far peaks: a jagged sawtooth range",
+  "cut": "wash",
+  "request_id": "01a1c711-9350-7881-8d3d-5c0595dd561a",
+  "source": "3168x1344",
+  "out": "2048x602",
+  "scale": 1.063,
+  "paper_source": "#eee0cc",
+  "paper_unevenness": 1.56,
+  "grain": 0.0219,
+  "grain_coarse": 0.0135,
+  "floor": [
+   0.047,
+   0.084
+  ],
+  "inked_share": 0.356,
+  "opaque_share": 0,
+  "densest": 0.49,
+  "hue_drift": 5.9,
+  "hue_lean_rgb": [
+   3.3,
+   1.3,
+   -4.6
+  ],
+  "touches_edge": []
+ },
+ "cliff_a": {
+  "file": "cliff_a.png",
+  "what": "cliff face: one leaning tower",
+  "cut": "matte",
+  "request_id": "01a1c70d-eaaf-7f90-9d49-425e9f301993",
+  "source": "1536x2752",
+  "out": "875x2048",
+  "scale": 0.844,
+  "paper_source": "#e7d4b9",
+  "paper_unevenness": 1.17,
+  "grain": 0.0169,
+  "grain_coarse": 0.0104,
+  "floor": [
+   0.036,
+   0.066
+  ],
+  "inked_share": 0.551,
+  "opaque_share": 0.483,
+  "densest": 1,
+  "hue_drift": 3,
+  "hue_lean_rgb": [
+   1.7,
+   0.2,
+   -1.9
+  ],
+  "touches_edge": []
+ },
+ "cliff_b": {
+  "file": "cliff_b.png",
+  "what": "cliff face: two buttresses split by a cleft",
+  "cut": "matte",
+  "request_id": "01a1c70e-c63a-7fb0-b794-e80b2092d3c0",
+  "source": "1536x2752",
+  "out": "962x2048",
+  "scale": 0.837,
+  "paper_source": "#f4e0c2",
+  "paper_unevenness": 0.97,
+  "grain": 0.0157,
+  "grain_coarse": 0.0081,
+  "floor": [
+   0.031,
+   0.053
+  ],
+  "inked_share": 0.657,
+  "opaque_share": 0.586,
+  "densest": 1,
+  "hue_drift": 5.6,
+  "hue_lean_rgb": [
+   3.7,
+   0.2,
+   -4
+  ],
+  "touches_edge": []
+ },
+ "cliff_c": {
+  "file": "cliff_c.png",
+  "what": "cliff face: stepped, with an overhanging top",
+  "cut": "matte",
+  "request_id": "01a1c70f-2583-7c32-9d63-2d7ebea197c9",
+  "source": "1536x2752",
+  "out": "1026x2048",
+  "scale": 0.826,
+  "paper_source": "#e5d2b7",
+  "paper_unevenness": 1.26,
+  "grain": 0.0176,
+  "grain_coarse": 0.0105,
+  "floor": [
+   0.037,
+   0.066
+  ],
+  "inked_share": 0.648,
+  "opaque_share": 0.598,
+  "densest": 1,
+  "hue_drift": 4.4,
+  "hue_lean_rgb": [
+   2.9,
+   -0.1,
+   -2.8
+  ],
+  "touches_edge": []
+ },
+ "pine_a": {
+  "file": "pine_a.png",
+  "what": "cliff pine: growing out to the right",
+  "cut": "open",
+  "request_id": "01a1c70f-9334-7b61-967a-adb06fe45114",
+  "source": "2400x1792",
+  "out": "2048x1421",
+  "scale": 1.048,
+  "paper_source": "#cec3b2",
+  "paper_unevenness": 1.92,
+  "grain": 0.0299,
+  "grain_coarse": 0.0155,
+  "floor": [
+   0.101,
+   0.194
+  ],
+  "inked_share": 0.266,
+  "opaque_share": 0.247,
+  "densest": 1,
+  "hue_drift": 4.4,
+  "hue_lean_rgb": [
+   3,
+   -0.2,
+   -2.8
+  ],
+  "touches_edge": []
+ },
+ "pine_b": {
+  "file": "pine_b.png",
+  "what": "cliff pine: growing out to the left",
+  "cut": "open",
+  "request_id": "01a1c70f-fc35-7d43-8582-c73010edbcf7",
+  "source": "2400x1792",
+  "out": "2048x1600",
+  "scale": 0.988,
+  "paper_source": "#cebca6",
+  "paper_unevenness": 1.81,
+  "grain": 0.0232,
+  "grain_coarse": 0.0113,
+  "floor": [
+   0.072,
+   0.14
+  ],
+  "inked_share": 0.276,
+  "opaque_share": 0.246,
+  "densest": 1,
+  "hue_drift": 8.2,
+  "hue_lean_rgb": [
+   5.7,
+   -0.1,
+   -5.6
+  ],
+  "touches_edge": []
+ },
+ "pine_c": {
+  "file": "pine_c.png",
+  "what": "cliff pine: hanging down below its root",
+  "cut": "open",
+  "request_id": "01a1c710-6b93-70c3-909e-2bf1b1ada021",
+  "source": "2400x1792",
+  "out": "2048x1759",
+  "scale": 1.1,
+  "paper_source": "#e9d8bd",
+  "paper_unevenness": 1.59,
+  "grain": 0.0163,
+  "grain_coarse": 0.0138,
+  "floor": [
+   0.079,
+   0.162
+  ],
+  "inked_share": 0.286,
+  "opaque_share": 0.265,
+  "densest": 1,
+  "hue_drift": 3.6,
+  "hue_lean_rgb": [
+   2.2,
+   -0.1,
+   -2.2
+  ],
+  "touches_edge": []
+ },
+ "mist_a": {
+  "file": "mist_a.png",
+  "what": "mist: three soft streaks (painted as a fuller bank; only its darker streaks cut)",
+  "cut": "wash",
+  "request_id": "01a1c711-f207-7a43-8827-cb525a812c5e",
+  "source": "3168x1344",
+  "out": "2048x580",
+  "scale": 1.178,
+  "paper_source": "#e2d0b7",
+  "paper_unevenness": 1.15,
+  "grain": 0.0191,
+  "grain_coarse": 0.0108,
+  "floor": [
+   0.037,
+   0.067
+  ],
+  "inked_share": 0.316,
+  "opaque_share": 0,
+  "densest": 0.67,
+  "hue_drift": 6.6,
+  "hue_lean_rgb": [
+   4.1,
+   1,
+   -5.1
+  ],
+  "touches_edge": []
+ },
+ "mist_b": {
+  "file": "mist_b.png",
+  "what": "mist band: two drifting layers",
+  "cut": "wash",
+  "request_id": "01a1c712-71a7-7b32-abbb-fb89adbc990e",
+  "source": "3168x1344",
+  "out": "2048x425",
+  "scale": 0.697,
+  "paper_source": "#eeddc5",
+  "paper_unevenness": 0.91,
+  "grain": 0.0139,
+  "grain_coarse": 0.0077,
+  "floor": [
+   0.027,
+   0.049
+  ],
+  "inked_share": 0.347,
+  "opaque_share": 0,
+  "densest": 0.56,
+  "hue_drift": 5.5,
+  "hue_lean_rgb": [
+   3.5,
+   0.6,
+   -4.1
+  ],
+  "touches_edge": []
+ },
+ "wide_a": {
+  "file": "wide_a.png",
+  "what": "wide backdrop: peaks grouped on the right",
+  "cut": "wash",
+  "request_id": "01a1c712-ceb7-7a13-b483-170951e8c56c",
+  "source": "3168x1344",
+  "out": "2048x403",
+  "scale": 0.753,
+  "paper_source": "#decbb1",
+  "paper_unevenness": 1.15,
+  "grain": 0.0185,
+  "grain_coarse": 0.0112,
+  "floor": [
+   0.039,
+   0.07
+  ],
+  "inked_share": 0.13,
+  "opaque_share": 0,
+  "densest": 0.83,
+  "hue_drift": 1.7,
+  "hue_lean_rgb": [
+   -0.1,
+   0.1,
+   0
+  ],
+  "touches_edge": []
+ },
+ "wide_b": {
+  "file": "wide_b.png",
+  "what": "wide backdrop: a long chain, tallest on the left",
+  "cut": "wash",
+  "request_id": "01a1c713-2bc6-7410-bd47-48e5c6186c31",
+  "source": "3168x1344",
+  "out": "2048x386",
+  "scale": 0.68,
+  "paper_source": "#dfceb6",
+  "paper_unevenness": 1,
+  "grain": 0.0146,
+  "grain_coarse": 0.0092,
+  "floor": [
+   0.03,
+   0.056
+  ],
+  "inked_share": 0.198,
+  "opaque_share": 0,
+  "densest": 1,
+  "hue_drift": 2.8,
+  "hue_lean_rgb": [
+   1.4,
+   0.6,
+   -2
+  ],
+  "touches_edge": []
+ }
+}

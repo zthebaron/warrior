@@ -1,6 +1,6 @@
 {
-  "note": "Hero models generated on fal.ai from generated input paintings. Human-readable version: MANIFEST.md. Loader notes: HANDOFF.md. Money: state/FAL-LEDGER.md.",
-  "convention": "Static models: +Y up, front toward +Z, base on y = 0, centred on x and z, exactly 1.0 unit tall, one 1024 px base-colour texture, one material, one primitive. Scale by the world height you want. rigged/warrior_rigged.glb is the exception: 1.7 units tall, see HANDOFF.md. rejected/ holds what should not ship.",
+  "note": "Hero models generated on fal.ai from generated input paintings. Human-readable version: MANIFEST.md. Loader notes: HANDOFF.md. Money: state/FAL-LEDGER.md. Round 2 (PROMPT-ART-GEN-2.md) added warrior_anim, boulder_b and wedge, and the painted backdrop cards in assets/backdrop/gen/ (their manifest is assets/backdrop/MANIFEST.md).",
+  "convention": "Static models: +Y up, front toward +Z, base on y = 0, centred on x and z, exactly 1.0 unit tall, one 1024 px base-colour texture, one material, one primitive. Scale by the world height you want. rigged/warrior_anim.glb (and the superseded rigged/warrior_rigged.glb) is the exception: 1.7 units tall, see HANDOFF.md. rejected/ holds what should not ship.",
   "assets": [
     {
       "name": "warrior",
@@ -20,9 +20,9 @@
         0.393
       ],
       "raw_height": 1.1321,
-      "bytes": 3170420,
+      "bytes": 2960148,
       "ship": true,
-      "verdict": "SHIP: the best result. Face is blank under the hat."
+      "verdict": "SHIP: the best result. Round 2 painted the face and hands to skin."
     },
     {
       "name": "warrior_rigged",
@@ -44,8 +44,42 @@
       ],
       "raw_height": 1.7,
       "bytes": 3905320,
+      "ship": false,
+      "verdict": "SUPERSEDED by warrior_anim (round 2). Kept as the paint tool's reference."
+    },
+    {
+      "name": "warrior_anim",
+      "file": "rigged/warrior_anim.glb",
+      "input": "input/warrior.png",
+      "clip": "dash",
+      "time": 0,
+      "endpoint": "fal-ai/meshy/rigging/multi-animation",
+      "options": "rig + 10 library clips of warrior.glb in one request; cut locally into idle walk run jump fall land dash wall climb",
+      "request_id": "01a1c6fb-7230-7952-bbdc-8d3d7272c61d",
+      "cost_final_usd": 2.0,
+      "cost_all_attempts_usd": 2.0,
+      "triangles_before": 29400,
+      "triangles_after": 29400,
+      "size": [
+        1.075,
+        1.7,
+        0.669
+      ],
+      "raw_height": 1.7,
+      "bytes": 3846332,
       "ship": true,
-      "verdict": "SHIP: 24 joints, walk + run. Shown mid-walk. Not yet run in the engine."
+      "clips": {
+        "idle": 9.967,
+        "walk": 1.033,
+        "run": 0.633,
+        "jump": 0.4,
+        "fall": 0.7,
+        "land": 0.9,
+        "dash": 0.6,
+        "wall": 0.467,
+        "climb": 0.4
+      },
+      "verdict": "SHIP: 24 joints, nine clips. Good: idle walk run land dash. Acceptable: jump fall. Weak: wall climb. Shown at the start of dash."
     },
     {
       "name": "pine",
@@ -172,7 +206,50 @@
       "bytes": 2317256,
       "ship": true,
       "verdict": "SHIP (optional asset): the cleanest geometry of the run."
+    },
+    {
+      "name": "boulder_b",
+      "file": "boulder_b.glb",
+      "input": "input/boulder_b.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d",
+      "options": "Normal + PBR",
+      "request_id": "01a1c71d-e7f9-7ee3-bfef-00be51509ba9",
+      "cost_final_usd": 0.525,
+      "cost_all_attempts_usd": 0.5848,
+      "triangles_before": 500000,
+      "triangles_after": 29400,
+      "size": [
+        0.633,
+        1,
+        0.635
+      ],
+      "raw_height": 0.9911,
+      "bytes": 2050884,
+      "ship": true,
+      "verdict": "SHIP (round 2): a solid standing stone with cracked facets. A second ground rock."
+    },
+    {
+      "name": "wedge",
+      "file": "wedge.glb",
+      "input": "input/wedge.png",
+      "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d",
+      "options": "Normal + PBR",
+      "request_id": "01a1c720-81ea-7753-997e-d30ed1981934",
+      "cost_final_usd": 0.525,
+      "cost_all_attempts_usd": 0.5848,
+      "triangles_before": 500000,
+      "triangles_after": 29400,
+      "size": [
+        0.547,
+        1,
+        1.126
+      ],
+      "raw_height": 0.808,
+      "bytes": 1950636,
+      "ship": true,
+      "verdict": "SHIP (round 2): asked for as a spire, came back a solid wedge twice as deep as it is wide.",
+      "asked_for": "spire (the name in the ledger and in tools/gen/payloads/in-spire.json)"
     }
   ],
-  "total_committed_usd": 6.8306
+  "total_committed_usd": 11.6
 }

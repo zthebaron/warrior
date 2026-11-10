@@ -1,0 +1,7 @@
+{
+  "prompt": "Repaint this boulder as a different rock of the same stone. Keep how it is painted: one single solid block of stone with big flat broken facets and sharp edges, the same three-quarter view from slightly above so that its top and two side faces show, the same flat grey ink wash and dark brush outline, the same plain empty aged-paper background. Change its shape: make it a standing stone, clearly taller than it is wide (about one and a half times as tall), a heavy upright wedge that is broad at its flat base and has a single slanted top face tilting down to the left, with one corner knocked off near the top and one deep diagonal crack across its front face. It is as thick front to back as it is wide. It stays one solid block: no stacked slabs, no thin plates or sheets, no nested outlines, no horizontal bands, no small stones round its foot, no grass, no tufts, no small marks or dots round the edge. Whole rock in frame with a paper margin all round, no shadow.",
+  "image_urls": ["file:assets/hero/input/boulder.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

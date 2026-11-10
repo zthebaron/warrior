@@ -5,7 +5,8 @@
 # The duplicate is byte-compared before it is dropped; the OBJ and thumbnail are not kept.
 #
 # Per-asset colour treatment (process.mjs explains each flag):
-#   warrior  tone-matched to its painting, hue kept (he is the one asset with real colour)
+#   warrior  tone-matched to its painting, hue kept (he is the one asset with real colour), then
+#            face and hands re-toned to skin by paint-warrior.mjs
 #   torii    one flat hue: the authored accent vermilion_a from assets/src/accent.json
 #   pine     tone-matched, then a single-hue ramp whose median is STYLE-BIBLE ink-deep (pine mass)
 #   the rest tone-matched, then a single-hue ramp whose median is STYLE-BIBLE stone-mid
@@ -28,4 +29,10 @@ esac
 out="assets/hero/$n.glb"
 [ "$n" = pine ] && { mkdir -p assets/hero/rejected; out="assets/hero/rejected/$n.glb"; }
 node tools/gen/process.mjs "$raw/$n.glb" "$out" "$@" --stats "assets/build/gen/out/$n.stats.json" || exit 1
+# Round 2: the warrior's face and hands are re-toned locally (paint-warrior.mjs says how). It is a
+# step here so that rebuilding the model cannot silently drop the paint. The round 1 rig is the
+# source of the skin weights and of the unpainted atlas, and is never written.
+if [ "$n" = warrior ]; then
+  node tools/gen/paint-warrior.mjs --weights assets/hero/rigged/warrior_rigged.glb --apply "$out" || exit 1
+fi
 node tools/gen/render-glb.mjs "$out" "assets/build/gen/out/$n.views.png" --size 420 --views 0,35,90,215

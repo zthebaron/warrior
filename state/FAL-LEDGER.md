@@ -1,6 +1,7 @@
 # fal.ai ledger
 
-Cap **$10.00**, absolute. No new call starts at or past **$9.50**. Written by `tools/gen/fal-call.mjs`
+Cap **$20.00** in total, absolute, across rounds 1 and 2 (raised from $10.00 by Tim at 11:29 am PST on
+2026-11-10). No new call starts at or past **$19.50**. Written by `tools/gen/fal-call.mjs`
 only: the row is appended as `pending` before the request is sent, so a crash cannot hide a charge.
 
 Every row counts toward the total at its listed price, with one exception: `rejected` means fal
@@ -54,3 +55,24 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 43 | 2026-11-10T19:27:00Z | fal-ai/nano-banana/edit | input image: cliff variant b (optional asset) | $0.0398 | $0.0398 | 01a1c6ed-921e-7581-b639-eec41ae1baa6 | done | $6.2856 |
 | 44 | 2026-11-10T19:27:33Z | fal-ai/trellis | trellis test: cliff_b | $0.0200 | $0.0200 | 01a1c6ee-11fa-7a61-9a8c-eaec4046aa87 | done | $6.3056 |
 | 45 | 2026-11-10T19:28:23Z | fal-ai/hunyuan3d-v3/image-to-3d | final: cliff_b (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6ee-d88e-7683-a2a2-b61b3d9b93c7 | done | $6.8306 |
+| 46 | 2026-11-10T19:42:09Z | fal-ai/meshy/rigging/multi-animation | animate: warrior, rig + 10 library clips (page 0.20 + 0.12 per clip = 1.40; pricing API 0.08 per generation; booked above both at 0.80 + 0.12 per clip) | $2.0000 | $2.0000 | 01a1c6fb-7230-7952-bbdc-8d3d7272c61d | done | $8.8306 |
+| 47 | 2026-11-10T20:02:04Z | fal-ai/nano-banana/edit | backdrop card: cliff_a, 1K (resolution test) | $0.0398 | $0.0398 | 01a1c70d-ac85-7a62-96a1-84775e018fa3 | done | $8.8704 |
+| 48 | 2026-11-10T20:02:20Z | fal-ai/nano-banana-2/edit | backdrop card: cliff_a, native 2K (resolution test) | $0.1200 | $0.1200 | 01a1c70d-eaaf-7f90-9d49-425e9f301993 | done | $8.9904 |
+| 49 | 2026-11-10T20:03:16Z | fal-ai/nano-banana-2/edit | backdrop card: cliff_b, native 2K | $0.1200 | $0.1200 | 01a1c70e-c63a-7fb0-b794-e80b2092d3c0 | done | $9.1104 |
+| 50 | 2026-11-10T20:03:40Z | fal-ai/nano-banana-2/edit | backdrop card: cliff_c, native 2K | $0.1200 | $0.1200 | 01a1c70f-2583-7c32-9d63-2d7ebea197c9 | done | $9.2304 |
+| 51 | 2026-11-10T20:04:08Z | fal-ai/nano-banana-2/edit | backdrop card: pine_a, native 2K | $0.1200 | $0.1200 | 01a1c70f-9334-7b61-967a-adb06fe45114 | done | $9.3504 |
+| 52 | 2026-11-10T20:04:35Z | fal-ai/nano-banana-2/edit | backdrop card: pine_b, native 2K | $0.1200 | $0.1200 | 01a1c70f-fc35-7d43-8582-c73010edbcf7 | done | $9.4704 |
+| 53 | 2026-11-10T20:05:04Z | fal-ai/nano-banana-2/edit | backdrop card: pine_c, native 2K | $0.1200 | $0.1200 | 01a1c710-6b93-70c3-909e-2bf1b1ada021 | done | $9.5904 |
+| 54 | 2026-11-10T20:05:27Z | fal-ai/nano-banana-2/edit | backdrop card: peaks_a, native 2K | $0.1200 | $0.1200 | 01a1c710-c7bb-7701-b6ae-e69357a22465 | done | $9.7104 |
+| 55 | 2026-11-10T20:05:56Z | fal-ai/nano-banana-2/edit | backdrop card: peaks_b, native 2K | $0.1200 | $0.1200 | 01a1c711-3624-7c41-a159-eb92e0308a1a | done | $9.8304 |
+| 56 | 2026-11-10T20:06:20Z | fal-ai/nano-banana-2/edit | backdrop card: peaks_c, native 2K | $0.1200 | $0.1200 | 01a1c711-9350-7881-8d3d-5c0595dd561a | done | $9.9504 |
+| 57 | 2026-11-10T20:06:44Z | fal-ai/nano-banana-2/edit | backdrop card: mist_a, native 2K | $0.1200 | $0.1200 | 01a1c711-f207-7a43-8827-cb525a812c5e | done | $10.0704 |
+| 58 | 2026-11-10T20:07:16Z | fal-ai/nano-banana-2/edit | backdrop card: mist_b, native 2K | $0.1200 | $0.1200 | 01a1c712-71a7-7b32-abbb-fb89adbc990e | done | $10.1904 |
+| 59 | 2026-11-10T20:07:40Z | fal-ai/nano-banana-2/edit | backdrop card: wide_a, native 2K | $0.1200 | $0.1200 | 01a1c712-ceb7-7a13-b483-170951e8c56c | done | $10.3104 |
+| 60 | 2026-11-10T20:08:04Z | fal-ai/nano-banana-2/edit | backdrop card: wide_b, native 2K | $0.1200 | $0.1200 | 01a1c713-2bc6-7410-bd47-48e5c6186c31 | done | $10.4304 |
+| 61 | 2026-11-10T20:16:42Z | fal-ai/nano-banana/edit | input image: rock variant boulder-b (round 2, priority 3) | $0.0398 | $0.0398 | 01a1c71b-122f-70f2-8539-3a5d6917a21b | done | $10.4702 |
+| 62 | 2026-11-10T20:17:22Z | fal-ai/nano-banana/edit | input image: rock variant spire (round 2, priority 3) | $0.0398 | $0.0398 | 01a1c71b-b072-7ff1-9c70-e03aef1d716c | done | $10.5100 |
+| 63 | 2026-11-10T20:17:52Z | fal-ai/trellis | trellis test: boulder_b | $0.0200 | $0.0200 | 01a1c71c-261f-7923-91c3-22bb3e56617c | done | $10.5300 |
+| 64 | 2026-11-10T20:18:49Z | fal-ai/trellis | trellis test: spire | $0.0200 | $0.0200 | 01a1c71d-029a-70c1-bd5a-462e0469cd85 | done | $10.5500 |
+| 65 | 2026-11-10T20:19:48Z | fal-ai/hunyuan3d-v3/image-to-3d | final: boulder_b (Normal + PBR) | $0.5250 | $0.5250 | 01a1c71d-e7f9-7ee3-bfef-00be51509ba9 | done | $11.0750 |
+| 66 | 2026-11-10T20:22:38Z | fal-ai/hunyuan3d-v3/image-to-3d | final: spire (Normal + PBR) | $0.5250 | $0.5250 | 01a1c720-81ea-7753-997e-d30ed1981934 | done | $11.6000 |

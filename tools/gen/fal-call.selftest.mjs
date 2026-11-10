@@ -21,6 +21,7 @@ let seq = 0;
 const payload = (obj) => { const f = join(dir, `p${seq++}.json`); writeFileSync(f, JSON.stringify(obj)); return f; };
 const TRELLIS = { image_url: 'https://example.invalid/a.png' };
 const HUNYUAN_PBR = { input_image_url: 'https://example.invalid/a.png', generate_type: 'Normal', enable_pbr: true };
+const ANIM10 = { model_url: 'https://example.invalid/a.glb', animation_action_ids: [243, 466, 503, 470, 644, 448, 482, 435, 478, 492] };
 
 const cases = [
   ['missing ledger', null, 'fal-ai/trellis', TRELLIS, 3, /does not exist/],
@@ -31,16 +32,27 @@ const cases = [
   ['row zero-rated without being rejected', HEAD + row(1, '5.0000', '0.0000', 'abc', 'done', '0.0000'), 'fal-ai/trellis', TRELLIS, 3, /must count/],
   ['rejected row carrying a request id', HEAD + row(1, '5.0000', '0.0000', 'abc', 'rejected', '0.0000'), 'fal-ai/trellis', TRELLIS, 3, /cannot carry a request id/],
   ['unknown status', HEAD + row(1, '5.0000', '5.0000', 'abc', 'refunded', '5.0000'), 'fal-ai/trellis', TRELLIS, 3, /unknown status/],
-  ['at $9.99, a 2 cent call', at('9.9900'), 'fal-ai/trellis', TRELLIS, 3, /stop line/],
-  ['exactly at the $9.50 stop line', at('9.5000'), 'fal-ai/trellis', TRELLIS, 3, /stop line/],
-  ['below stop line but call would cross $10.00', at('9.4800'), 'fal-ai/hunyuan3d-v3/image-to-3d', HUNYUAN_PBR, 3, /exceeds the cap/],
-  ['one tick over the cap', at('9.4751'), 'fal-ai/hunyuan3d-v3/image-to-3d', HUNYUAN_PBR, 3, /exceeds the cap/],
+  // The cap is $20.00 in total and the stop line $19.50 (raised by Tim, 11:29 am PST 2026-11-10).
+  ['at $19.99, a 2 cent call', at('19.9900'), 'fal-ai/trellis', TRELLIS, 3, /stop line/],
+  ['exactly at the $19.50 stop line', at('19.5000'), 'fal-ai/trellis', TRELLIS, 3, /stop line/],
+  ['below stop line but call would cross $20.00', at('19.4800'), 'fal-ai/hunyuan3d-v3/image-to-3d', HUNYUAN_PBR, 3, /exceeds the cap/],
+  ['one tick over the cap', at('19.4751'), 'fal-ai/hunyuan3d-v3/image-to-3d', HUNYUAN_PBR, 3, /exceeds the cap/],
+  ['the 10-clip animation call would cross $20.00', at('18.0001'), 'fal-ai/meshy/rigging/multi-animation', ANIM10, 3, /exceeds the cap/],
+  ['animation call with no clips', at('0.0200'), 'fal-ai/meshy/rigging/multi-animation', { model_url: 'u', animation_action_ids: [] }, 3, /1 to 10 ids/],
+  ['animation call with 11 clips', at('0.0200'), 'fal-ai/meshy/rigging/multi-animation', { model_url: 'u', animation_action_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, 3, /1 to 10 ids/],
+  ['animation call with a repeated clip', at('0.0200'), 'fal-ai/meshy/rigging/multi-animation', { model_url: 'u', animation_action_ids: [5, 5] }, 3, /must be distinct/],
+  ['animation call with an id outside the library', at('0.0200'), 'fal-ai/meshy/rigging/multi-animation', { model_url: 'u', animation_action_ids: [697] }, 3, /0\.\.696/],
+  ['4K image', at('0.0200'), 'fal-ai/nano-banana-2', { prompt: 'x', resolution: '4K' }, 3, /1K or 2K/],
+  ['image call with web search', at('0.0200'), 'fal-ai/nano-banana-2', { prompt: 'x', enable_web_search: true }, 3, /not priced/],
   ['unknown endpoint', at('0.0200'), 'fal-ai/flux-pro/v1.1-ultra', { prompt: 'x' }, 3, /not in the price table/],
   ['two images in one call', at('0.0200'), 'fal-ai/nano-banana/edit', { prompt: 'x', image_urls: ['https://example.invalid/a.png'], num_images: 2 }, 3, /num_images must be 1/],
   ['a field the wrapper cannot price', at('0.0200'), 'fal-ai/hunyuan3d-v3/image-to-3d', { ...HUNYUAN_PBR, enable_safety_checker: false }, 3, /not priced/],
   ['rodin add-on', at('0.0200'), 'fal-ai/hyper3d/rodin', { input_image_urls: ['https://example.invalid/a.png'], addons: 'HighPack' }, 3, /not priced/],
-  // Allowed: lands exactly on $10.00. Must write the pending row, THEN hit the (disabled) network.
-  ['lands exactly on the cap: allowed, row first', at('9.4750'), 'fal-ai/hunyuan3d-v3/image-to-3d', HUNYUAN_PBR, 97, /NETWORK/, (after) => /\| 2 \| .* \| \$0\.5250 \| \$0\.5250 \| - \| pending \| \$10\.0000 \|/.test(after)],
+  // Allowed: lands exactly on $20.00. Must write the pending row, THEN hit the (disabled) network.
+  ['lands exactly on the cap: allowed, row first', at('19.4750'), 'fal-ai/hunyuan3d-v3/image-to-3d', HUNYUAN_PBR, 97, /NETWORK/, (after) => /\| 2 \| .* \| \$0\.5250 \| \$0\.5250 \| - \| pending \| \$20\.0000 \|/.test(after)],
+  // The raise took effect: past the old $10.00 cap a call is allowed again, row first.
+  ['past the old $10.00 cap: allowed, row first', at('10.0000'), 'fal-ai/trellis', TRELLIS, 97, /NETWORK/, (after) => /\| 2 \| .* \| \$0\.0200 \| \$0\.0200 \| - \| pending \| \$10\.0200 \|/.test(after)],
+  ['10-clip animation call lands exactly on the cap: allowed, row first', at('18.0000'), 'fal-ai/meshy/rigging/multi-animation', ANIM10, 97, /NETWORK/, (after) => /\| 2 \| .* \| \$2\.0000 \| \$2\.0000 \| - \| pending \| \$20\.0000 \|/.test(after)],
   ['empty ledger: allowed, row first', HEAD, 'fal-ai/trellis', TRELLIS, 97, /NETWORK/, (after) => /\| 1 \| .* \| \$0\.0200 \| \$0\.0200 \| - \| pending \| \$0\.0200 \|/.test(after)],
 ];
 
@@ -54,6 +66,12 @@ const prices = [
   ['fal-ai/nano-banana/edit', { prompt: 'x', image_urls: ['u'] }, '$0.0398'],
   ['fal-ai/hyper3d/rodin', { input_image_urls: ['u'] }, '$0.4000'],
   ['fal-ai/meshy/rigging', { model_url: 'u' }, '$0.8000'],
+  ['fal-ai/meshy/rigging/multi-animation', ANIM10, '$2.0000'],
+  ['fal-ai/meshy/rigging/multi-animation', { model_url: 'u', animation_action_ids: [0, 92, 466] }, '$1.1600'],
+  ['fal-ai/nano-banana', { prompt: 'x' }, '$0.0398'],
+  ['fal-ai/nano-banana-2', { prompt: 'x' }, '$0.0800'],
+  ['fal-ai/nano-banana-2', { prompt: 'x', resolution: '2K' }, '$0.1200'],
+  ['fal-ai/nano-banana-2/edit', { prompt: 'x', image_urls: ['u'], resolution: '2K' }, '$0.1200'],
 ];
 
 let failed = 0;
