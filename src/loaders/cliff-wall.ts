@@ -150,7 +150,7 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
   sorted.forEach((m, i) => {
     const frontZ = m.frontZ - W.frontBehind;
     const end = Math.min(i, sorted.length - 1 - i); // how far this mass is from the nearer end of the wall
-    const tall = <T extends { height: number }>(s: T, row: keyof typeof W.taper): T => ({ ...s, height: s.height * (W.taper[row][end] ?? 1) });
+    const tall = <T extends { height: number }>(s: T, row: keyof typeof W.taper, from = end): T => ({ ...s, height: s.height * (W.taper[row][from] ?? 1) });
 
     let host: { x: number; s: CardStyle } | null = null;
     for (const dx of W.frontAt) {
@@ -161,7 +161,8 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
 
     const n = sorted[i + 1];
     if (n && n.x - m.x <= W.bayMaxGap) {
-      const b = tall(W.bay[i % W.bay.length]!, 'bay');
+      // a bay card belongs to a join, and there is one join fewer than masses: its own distance from the nearer end
+      const b = tall(W.bay[i % W.bay.length]!, 'bay', Math.min(i, sorted.length - 2 - i));
       plane('bay', b, (m.x + n.x) / 2, Math.min(m.baseY, n.baseY) - W.bayFoot, Math.min(m.frontZ, n.frontZ) - W.frontBehind - W.bayBehind, 0.5, 0);
     }
     if (i % W.backEvery === 0) {
@@ -172,7 +173,9 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
       const p = W.pines[((i - W.pineFrom) / W.pineEvery) % W.pines.length]!;
       const height = p.width / cardAspect(p.card);
       // the host painting's ledge, in the world (mirrored with the card); the pine's own root goes there
-      const [lu, lv] = W.ledge[host.s.card] ?? [0.5, 0.6];
+      const ledge = W.ledge[host.s.card];
+      if (!ledge) throw new Error(`[cliff-wall] no ledge recorded for "${host.s.card}": a pine cannot root on it`);
+      const [lu, lv] = ledge;
       const hx = host.x + ((host.s.mirror ? 1 - lu : lu) - 0.5) * host.s.width, hy = m.baseY - W.frontFoot + lv * host.s.height;
       const rx = p.mirror ? 1 - p.root[0] : p.root[0];
       plane('pine', { card: p.card, width: p.width, height, mirror: p.mirror }, hx, hy, frontZ, rx, p.root[1]);

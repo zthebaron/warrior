@@ -1222,7 +1222,9 @@ front runs from z -3.58 to -5.58 against a path edge at z -3.5; pockets up to 2.
 | ink | front 1, bay 0.88, back 0.72 | authored | §3: nearer is darker; it is what separates the rows |
 | taper | front 0.85, 0.95; bay 0.55, 0.75, 0.9; back 0.5, 0.7, 0.88 | authored | the wall ended in a straight vertical edge. Tapering the front row to 0.5 exposed the thinner rows behind it at spawn |
 | pines | every second mass from the second; 6 to 7.5 wide; rooted on its tallest front card's ledge (cliff_a 0.2,0.58; cliff_b 0.7,0.65; cliff_c 0.4,0.46) | authored | 1 to 7 u above the path, inside the player's frame. Beside the spawn camera a pine was a smear across a third of the frame |
-| draw order | back 100, bay 200, front 300, pines 400; the figure 1e9 | derived | after the mist sheets (0 to 13 and the bands), which would otherwise paper over them |
+| pine roots | where the root is in each pine's own image, from its left and its foot: pine_a 0.08,0.1; pine_b 0.84,0.08; pine_c 0.12,0.86 | measured | read off the three paintings: the rock clump the trunk grows from |
+| taper, by row | front and back by the mass's distance from the nearer end of the wall; bay by the join's (there is one join fewer than masses) | derived | a review found the bay row tapered by the mass index, so the far end never reached its lowest step |
+| draw order | back 100, bay 200, front 300, pines 400; the figure 1e9 | derived | after the whole backdrop (orders 0 to 21: ridge 0, peaks 1-6, mid cliffs 7-12, mist sheets 13-18, bands 19-21); the sheets would otherwise paper over the cards |
 | draw calls | 12 for the wall | measured | one mesh per painting per row; one a card was 39, and the scene peak 153 |
 
 ## D-021 painted backdrop (2026-11-10)
@@ -1236,6 +1238,9 @@ ridge rings are gone; the rows of "D-020 painted backdrop" for them are history.
 | far peaks | 6 cards at 350 to 430 u, 230 to 260 wide, 0.6 of their painting's height, ink 0.4 to 1, feet at y -3.5 | authored | at full height and ink 0.5 to 0.8 they read as jagged alpine clusters 17 to 24 levels under paper; the seed's ridges are low humps about 40 under. Feet at y -10 were cut along one straight line by the mist. The sawtooth card is laid at 0.4: its ridge stroke was darker than §3's far band |
 | mid cliffs | 6 of the painted cliff cards, 36 to 72 tall, ink 0.5 to 0.6, feet at y -4 | authored | at ink 0.6 the darkest texel (ink-black) lands at 99, lighter than ink-grey (79): §3's mid band |
 | mist bands | 3 cards at 210 to 280 u on the void side, ink 0.3 to 0.4, drawn after the sheets | authored | Tim: use mist_a/b where they beat the seed crops. Thin and at the horizon only (OQ-071 item 6) |
+| peak placements | card, bearing (degrees from +x toward +z), radius: peaks_b 8, 400; peaks_a 62, 350 (mirrored); wide_b 118, 410; peaks_a 176, 370; peaks_c 236, 430 (mirrored); wide_a 312, 400. Widths 240, 250, 260, 240, 230, 250. Ink 0.9, 1, 0.8, 0.9, 0.4, 0.75 | authored | about 55 degrees apart, so one or two are in any view; the rounded paintings on the void side (8 to 176), the sawtooth behind the wall |
+| mid cliff placements | card, x, z, height, yaw, ink: cliff_b 36, -62, 70, -6, 0.5; cliff_a 84, -56, 62, 10, 0.55 (mirrored); cliff_c 128, -60, 72, -12, 0.5; cliff_c -34, -30, 46, 40, 0.55 (mirrored); cliff_a 150, -22, 44, -70, 0.6; cliff_b 166, 8, 36, -95, 0.5 (mirrored) | authored | three behind the wall, 52 to 58 u from the path; one behind the start and two past the goal (x 101), turned to face back down the path |
+| mist band placements | card, bearing, radius, width, foot y, ink: mist_b 40, 250, 170, -5, 0.4; mist_a 105, 210, 150, -6, 0.3 (mirrored); mist_b 160, 280, 190, -5, 0.35 (mirrored) | authored | on the void side only (bearings 40 to 160); feet under the mist's top |
 
 ## D-021 path wash (2026-11-10)
 
@@ -1278,7 +1283,8 @@ its floor of 10% (23.4% with the rock), creases outlined 57.1% against its ceili
 |---|---|---|---|
 | the rock collides and is not drawn, as the game ships | `INK.collideOnly` emptied: 13 drawn, 0 kept hidden | 0 drawn, 13 kept hidden | 0 drawn, all kept |
 | where the rock stands, the player's frame reaches the dark end as mass | the wall lifted away (every run): 0.1% | 8.5% | >= 4% |
-| every undrawn collider is covered by paint | the wall lifted away (every run): 11.8% (the mid cliffs behind it) | 99.9% | >= 90% |
+| where the rock would be seen, the frame is drawn over (POOLED over all 13 masses and six cameras) | the wall lifted away (every run): 11.8% (the mid cliffs behind it) | 99.9% | >= 90% |
+| a painted far field on a dressed level (D-020's check, same floor), judged with the wall lifted away | layer off: 0% (D-020). With the wall counted it read 37.9%, which the wall alone would satisfy | 8.4% | >= 3% |
 | the void is bare paper (D-020's check, same floor) | mist drawn mist-pale: 15.1% (D-020 measured 17.2%) | 47.4%, judged with the rock drawn in place of the painted wall; 41.3% of the frame the player sees | >= 41% |
 
 Two failures found on the way and fixed: a card level with a torii post (1 px of accent lost, 1 px of hue), and

@@ -1482,4 +1482,12 @@ took, each PROVISIONAL:
 13. **PR 31's seven stale Linux goldens** (OQ-070 item 15) are unchanged by this pass on four levels.
 14. **KNOWN LIMIT: the two 3D cliff stacks in the void** (D-020, Tim's "sparingly") now stand out against
     painted cliffs. Not touched: they were not in the four jobs.
+15. **KNOWN GATE LIMIT: the coverage check is pooled.** It asks what share of the pixels where ANY undrawn rock
+    would be seen are drawn over, across all six cameras. One bare mass among thirteen (under about a tenth of
+    those pixels) would stay green. The wall gives every mass three front cards by construction, so none is bare
+    today; a per-mass check needs each mass shown alone and its own floor measured.
+16. **An independent review of the diff** (three reviewers, each finding verified) confirmed seven things, all
+    fixed in this PR: the bay row's taper was off by one at the far end; D-020's far-field check could be met by
+    the wall alone (now judged with the wall lifted away: 8.4%); the coverage check's name claimed more than it
+    tests (item 15); and authored placement numbers missing from MEASUREMENTS.
 status: PROVISIONAL
