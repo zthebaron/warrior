@@ -1116,8 +1116,9 @@ took, each PROVISIONAL:
    flat saturated fills, which is worse against §9.3, so none was added. The fix is the figure itself, STYLE
    §7's robed exile near #7d8590: a hero asset (.blend), not kit. Recorded as B-33.
 7. **Tile seams.** kit_ledge is tiled every ~4.5 u; where tiles abut, a faint dashed line shows across the top
-   (the neighbour's lip through the raster seam). It reads as a slab joint and was kept. It is a raster detail,
-   so expect it to differ between darwin and linux goldens; that is why each platform has its own.
+   (the neighbour's lip through the raster seam). It reads as a slab joint and was kept. Predicted to differ by
+   platform; measured, it does not: the linux CI actuals (run 42728983822) match the darwin goldens to 0 px at
+   the harness pixelmatch threshold on all six cams.
 status: PROVISIONAL
 
 ## OQ-065 — Audit of the #18 split CI: does the per-level coverage gate hold?
