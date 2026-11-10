@@ -121,7 +121,13 @@ export type ManifestAsset = PrimitiveAsset | MeshAsset;
  * pads, a red fall plane) were off the ramp and are gone; the fall plane is drawn only in the debug overlay.
  */
 export const LEVEL_VISUAL = {
-  defaultColor: ramp('mist-pale'),  // an undressed prim_box: one step below paper; the ink edge carries the form
+  defaultColor: ramp('wash-light'), // the FACES of an undressed prim_box: TWO steps below its paper top (41 levels), so
+                                    // top and face separate by value alone at any distance, with no line (D-019)
+  // D-019: the walkable TOP of an undressed box or platform is paper. The ink edge no longer outlines creases
+  // (it is silhouette-only), so a box of one flat value would have no top at all, and READABLE_RISE is
+  // about seeing that there is ground up there. Form from value, as in the seed: a paper path over a darker
+  // face (STYLE §4 Paths). Not a light: every top is paper whichever way the box is turned.
+  topColor: ramp('paper-cream'),
   platformColor: ramp('stone-mid'),
   hazardColor: ramp('ink-deep'),    // patrollers and hazard volumes read as dark ink masses
   crowColor: ramp('ink-black'),     // a crow is never coloured (Q2), it signals by motion
@@ -424,6 +430,22 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     return m;
   };
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+  // a walkable box: top face V.topColor, the other five the box's own value. Vertex colours on ONE unlit
+  // material, so it is still one draw call per box (D-019).
+  const walkMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+  const walkGeos = new Map<number, THREE.BoxGeometry>();
+  const walkGeo = (c: number): THREE.BoxGeometry => {
+    let geo = walkGeos.get(c);
+    if (!geo) {
+      geo = new THREE.BoxGeometry(1, 1, 1);
+      const top = new THREE.Color(V.topColor), side = new THREE.Color(c), n = geo.getAttribute('normal');
+      const col = new Float32Array(n.count * 3);
+      for (let k = 0; k < n.count; k++) { const u = n.getY(k) > 0.5 ? top : side; col.set([u.r, u.g, u.b], k * 3); }
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      walkGeos.set(c, geo);
+    }
+    return geo;
+  };
 
   const ink = isInk(data);
   // a kit mesh drawn in place of a hazard cube (INK): same pose and scale, so `size` stays the volume
@@ -482,7 +504,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     }
     const size = sizeOf(a, p.scale);
     if (!ink) { // INK: the box is collision only; its collider-none kit dressing is what is drawn
-      const mesh = new THREE.Mesh(boxGeo, mat((p.tag && V.tagColors[p.tag]) || V.defaultColor));
+      const mesh = new THREE.Mesh(walkGeo((p.tag && V.tagColors[p.tag]) || V.defaultColor), walkMat);
       mesh.position.set(...p.pos);
       mesh.quaternion.copy(q);
       mesh.scale.copy(size);
@@ -507,7 +529,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     const kind = def.collider ?? a.collider;
     if (kind === 'none') throw new Error(`[level] platforms[${i}]: a platform needs a collider`);
     const collider = physics.world.createCollider(colliderDesc(kind, size, `platforms[${i}]`), body);
-    const mesh = new THREE.Mesh(boxGeo, mat(V.platformColor));
+    const mesh = new THREE.Mesh(walkGeo(V.platformColor), walkMat);
     mesh.userData['translates'] = 'platform'; // NOT #18: a moving platform is the `platform` move (Q2), not ambience
     mesh.scale.copy(size);
     mesh.position.copy(start);
@@ -656,6 +678,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
         if (o instanceof THREE.Mesh && o.geometry !== boxGeo && !o.userData['sharedAsset']) o.geometry.dispose();
       });
       boxGeo.dispose();
+      for (const geo of walkGeos.values()) geo.dispose();
+      walkMat.dispose();
       for (const m of matCache.values()) m.dispose();
     },
   };

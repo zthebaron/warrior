@@ -94,8 +94,8 @@ Depth is conveyed **only** by value and atmosphere. Never by blur, never by ligh
 
 | Band | World distance | Value range | Outlines | Detail |
 |---|---|---|---|---|
-| **Near** | 0–25u | full ramp, `ink-black` present | black, full weight | fracture lines, needle clusters, fabric folds |
-| **Mid** | 25–80u | `wash-light` to `ink-grey` only | grey, thin | major forms only, no surface texture |
+| **Near** | 0–25u | full ramp, `ink-black` present **as mass, darkest nearest** *(D-019)* | black, **on true silhouette boundaries only, weight varying along the stroke** *(D-019)* | fracture lines, needle clusters, fabric folds |
+| **Mid** | 25–80u | `wash-light` to `ink-grey` only | **none** *(D-019; was "grey, thin")* | major forms only, no surface texture |
 | **Far** | 80u+ | `paper-cream` to `mist-pale` only | **none** | silhouette only |
 
 Transitions are not gradual fades. Each band has its own treatment and the change at the
@@ -164,7 +164,11 @@ Corollaries:
 areas. It does NOT scroll or animate: a moving grain reads as film, which is wrong. Must
 be seeded from a constant so visual regression stays deterministic.
 
-**Ink edge** — a dark outline pass on depth and normal discontinuity. Weight scales DOWN
+**Ink edge** *(amended on evidence, D-019: outlining everything is outlining nothing)* — a dark stroke on **true
+silhouette boundaries only** (a real depth jump), never on an interior crease or a coplanar seam, and never on
+distant forms. Its weight **varies along the stroke** and it may break, except where the two forms it separates
+are the same value: there it is the only edge the ground has, and it holds. *(Was: "a dark outline pass on depth
+and normal discontinuity.")* Weight scales DOWN
 with distance (see §3) so far geometry does not turn noisy.
 
 **Value compression by depth** — the three-band treatment applied as a post pass, not
@@ -257,4 +261,4 @@ In order. Any failure is a failure.
 *Derived from the locked seed. If the seed changes, this document is void and must be
 re-derived — do not patch it. Amendments made on MEASUREMENT under a recorded decision are
 the one exception, and each is marked in place (section 2: D-001, D-003, D-006; sections 1, 9, 10:
-D-010, the landing mark).*
+D-010, the landing mark; sections 3 and 6: D-019, the ink edge and the near value range).*
