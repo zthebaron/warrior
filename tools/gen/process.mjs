@@ -199,8 +199,21 @@ if (tint) {
   }
 }
 
+// ---- 5. one texture ----------------------------------------------------------------------------------
+// The hero class (tools/assets/budgets.json classes.hero, D-020) is one texture, one material, one
+// draw call. The base colour is the painting and is all an unlit ink material reads, so the
+// normal and metallic-roughness maps are dropped here. They survive in the untouched download.
+for (const mat of doc.getRoot().listMaterials()) {
+  mat.setNormalTexture(null).setMetallicRoughnessTexture(null).setOcclusionTexture(null).setEmissiveTexture(null);
+  mat.setMetallicFactor(0).setRoughnessFactor(1);
+  for (const ext of mat.listExtensions()) mat.setExtension(ext.extensionName, null);
+}
+await doc.transform(prune());
+// every material extension was just removed, so no declared extension is still in use
+for (const ext of doc.getRoot().listExtensionsUsed()) ext.dispose();
+
 await io.write(dst, doc);
-const nb =getBounds(doc.getRoot().getDefaultScene() ?? doc.getRoot().listScenes()[0]);
+const nb = getBounds(doc.getRoot().getDefaultScene() ?? doc.getRoot().listScenes()[0]);
 const stats = {
   out: dst, bytes: statSync(dst).size,
   triangles_before: before.triangles, triangles_after: tris, simplify_error: usedError,

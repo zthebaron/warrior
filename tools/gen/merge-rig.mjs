@@ -49,6 +49,15 @@ for (const spec of clips) {
   }
   report.push(`${name} ${duration.toFixed(3)}s ${anim.listChannels().length} channels`);
 }
+// One texture, as for the static models: Meshy hands back the normal and metallic-roughness maps
+// it was given, and an unlit material reads neither.
+for (const mat of root.listMaterials()) {
+  mat.setNormalTexture(null).setMetallicRoughnessTexture(null).setOcclusionTexture(null).setEmissiveTexture(null);
+  mat.setMetallicFactor(0).setRoughnessFactor(1);
+  for (const ext of mat.listExtensions()) mat.setExtension(ext.extensionName, null);
+}
 await base.transform(dedup(), prune());
+// every material extension was just removed, so no declared extension is still in use
+for (const ext of root.listExtensionsUsed()) ext.dispose();
 await io.write(out, base);
 console.log(`${out}: ${root.listSkins()[0].listJoints().length} joints, clips: ${report.join('; ')}, ${(statSync(out).size / 1e6).toFixed(2)} MB`);
