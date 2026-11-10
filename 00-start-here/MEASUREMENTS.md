@@ -381,7 +381,9 @@ placements added: the same hash, byte-identical. A mutation giving one dressing 
 the silent failure, so lint now has DRESS_COLLIDES, pinned in lint:self.
 
 Nav, every simulation line identical (Darwin SwiftShader, `playtest --level=01-lower-stair --instrument=on`;
-before = main 080d3e3's own build, after = this branch's build; 47 of 47 simulation lines identical):
+before = main's own build, after = this branch's build; 47 of 47 simulation lines identical. Taken twice,
+because main moved under the work: against 080d3e3, and again after rebasing onto d173785 (PR #26, D-017),
+whose ch1 fingerprint is the same 3c766f28...):
 
 | Segment | Before | After |
 |---|---|---|
