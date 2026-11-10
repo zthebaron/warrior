@@ -173,5 +173,17 @@ pin('double', 'maxH', 8.4, 8.5);     // nav press clean k0-k5 to 8.4; 8.8 fails 
 pin('double', 'maxRise', 2.9, 3.0);  // clean from every takeoff distance to 2.9; 3.2 fails d5 (3.5 was most-distances)
 pin('dash', 'maxH', 2.6, 2.7);       // clean k0-k5 to 2.6; 2.8 fails k4, k5 (4.0 was k0-k1 only)
 
+// ---- DRESS_COLLIDES (CH1-ASSETS): dressing never becomes collision -----------------------------------
+// The silent failure this guards: a kit mesh given a collider moves every verdict while the prim_box
+// measurements here still pass. Proven on the shipped chapter 1, whose dressing is all collider none.
+console.log('DRESS_COLLIDES (assets dress the geometry, they do not replace it)');
+const ch1 = load('levels/01-lower-stair.json');
+const dressed = ch1.geometry.filter((g) => (g.tag ?? '').startsWith('dress:'));
+check('shipped chapter 1 is dressed, and no dressing collides', dressed.length > 0 && !lintLevel(ch1, manifest).errors.some((e) => e.startsWith('[DRESS_COLLIDES]')), `${dressed.length} dressing placements`);
+const mutated = structuredClone(ch1);
+mutated.geometry.find((g) => (g.tag ?? '').startsWith('dress:')).collider = 'trimesh';
+const mr = lintLevel(mutated, manifest);
+check('one dressing placement given collider trimesh FAILS DRESS_COLLIDES, and nothing else', codes(mr).length === 1 && codes(mr)[0] === 'DRESS_COLLIDES', codes(mr).join(', ') || 'no errors: art became collision silently');
+
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');
 process.exit(fails ? 1 : 0);

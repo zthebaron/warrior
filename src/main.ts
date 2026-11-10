@@ -274,6 +274,7 @@ async function boot(): Promise<void> {
     renderer.scene.fog = data.fog
       ? new THREE.Fog(data.fog.color ?? RENDER_CONFIG.clearColor, data.fog.near ?? GAME_RULES.fogDefaults.near, data.fog.far ?? GAME_RULES.fogDefaults.far)
       : null;
+    renderer.scene.background = new THREE.Color(level.background ?? RENDER_CONFIG.clearColor); // CH1-ASSETS: per level, restored for greybox
     const [x, y, z] = data.spawn.pos;
     const facing = data.spawn.facing * DEG2RAD;
     if (!player) {

@@ -24,6 +24,191 @@
       "collider": "trimesh"
     },
     {
+      "name": "kit_cloud_band",
+      "kind": "mesh",
+      "file": "kit_cloud_band.glb",
+      "source": "assets/src/kit_cloud_band.py",
+      "sha256": "7f4c0ee4f723f622e293dc12c853e497fb2f6ffa74631bd96c793acf2f8b1a52",
+      "collider": "none",
+      "triangles": 14,
+      "bytes": 2064,
+      "bytes_export": 2732,
+      "bbox": {
+        "min": [
+          -60,
+          0,
+          -40
+        ],
+        "max": [
+          60,
+          0.03662,
+          40
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_crow",
+      "kind": "mesh",
+      "file": "kit_crow.glb",
+      "source": "assets/src/kit_crow.py",
+      "sha256": "dc80b71d1973a07eeceb90e46695c4758b9559c2c9a41be0300d1c6c664c5031",
+      "collider": "none",
+      "triangles": 60,
+      "bytes": 2328,
+      "bytes_export": 6372,
+      "bbox": {
+        "min": [
+          -0.36,
+          -0.5,
+          -0.5
+        ],
+        "max": [
+          0.36001,
+          0.35003,
+          0.5
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_far_peak",
+      "kind": "mesh",
+      "file": "kit_far_peak.glb",
+      "source": "assets/src/kit_far_peak.py",
+      "sha256": "5af99deb2af70ff63de1cb0608fa29e36923b97e900f0a46ed107c7add78c267",
+      "collider": "none",
+      "triangles": 48,
+      "bytes": 2228,
+      "bytes_export": 4968,
+      "bbox": {
+        "min": [
+          -30,
+          0,
+          -1
+        ],
+        "max": [
+          30,
+          45.9989,
+          0.99963
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_ledge",
+      "kind": "mesh",
+      "file": "kit_ledge.glb",
+      "source": "assets/src/kit_ledge.py",
+      "sha256": "850028aaef9a372192d4769871c081563828f1045119828fe75dfa7256094f25",
+      "collider": "none",
+      "triangles": 74,
+      "bytes": 2428,
+      "bytes_export": 6980,
+      "bbox": {
+        "min": [
+          -0.503,
+          -0.5,
+          -0.503
+        ],
+        "max": [
+          0.503,
+          0.49998,
+          0.503
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_mid_cliff",
+      "kind": "mesh",
+      "file": "kit_mid_cliff.glb",
+      "source": "assets/src/kit_mid_cliff.py",
+      "sha256": "4fdaf496cc567a7070be0cd83bb79c367f452c2db384d54799408731632b399c",
+      "collider": "none",
+      "triangles": 64,
+      "bytes": 2380,
+      "bytes_export": 6028,
+      "bbox": {
+        "min": [
+          -10.01814,
+          0,
+          -4.48309
+        ],
+        "max": [
+          10.58249,
+          30,
+          4.04649
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
       "name": "kit_rock_mass",
       "kind": "mesh",
       "file": "kit_rock_mass.glb",
@@ -43,6 +228,80 @@
           4.25926,
           12,
           2.11715
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_slide_stone",
+      "kind": "mesh",
+      "file": "kit_slide_stone.glb",
+      "source": "assets/src/kit_slide_stone.py",
+      "sha256": "ba775d7c1c0cf4c9a4782f89fc0a88f96166c37a5a619a311a366869ff2ae46e",
+      "collider": "none",
+      "triangles": 36,
+      "bytes": 2068,
+      "bytes_export": 4268,
+      "bbox": {
+        "min": [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        "max": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "kit_palette",
+          "mime": "image/ktx2",
+          "width": 32,
+          "height": 32
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --mipmaps false --jobs 1 (resize cap 256px)"
+      }
+    },
+    {
+      "name": "kit_stair_tread",
+      "kind": "mesh",
+      "file": "kit_stair_tread.glb",
+      "source": "assets/src/kit_stair_tread.py",
+      "sha256": "cbad70977b57c4da11ad543cfcb58d654a5d65ca6c79ddb8c8a1794e0cfb9146",
+      "collider": "none",
+      "triangles": 50,
+      "bytes": 2092,
+      "bytes_export": 5256,
+      "bbox": {
+        "min": [
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        "max": [
+          0.5,
+          0.5,
+          0.5
         ]
       },
       "materials": 1,
