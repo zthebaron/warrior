@@ -174,6 +174,8 @@ export const INK = {
   // built from these same placements and stands in front of them.
   collideOnly: ['kit_rock_mass'],
 } as const;
+/** Name prefix of the hidden mesh an undrawn collider keeps (D-021). */
+export const UNDRAWN = 'undrawn:';
 const isInk = (data: Pick<LevelData, 'palette'>): boolean => data.palette === INK.palette;
 const inkBackground = (): number => {
   const c = paletteJson.colors.find((x) => x.name === INK.background);
@@ -508,6 +510,20 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
         maxX = Math.max(maxX, v.x + p.pos[0]);
       }
       rockMasses.push({ x: p.pos[0], baseY, topY, frontZ, minX, maxX });
+    }
+    if (undrawn) {
+      // Kept in the scene, never visible in the game: the harness shows it for the frame that tests the ink
+      // pass alone (tools/harness/post.ts), and to ask whether the paint covers it (B-46).
+      for (const part of loaded.drawn) {
+        const mesh = new THREE.Mesh(part.geometry, part.material);
+        mesh.name = `${UNDRAWN}${a.name}`;
+        mesh.userData['sharedAsset'] = true;
+        mesh.position.set(...p.pos);
+        mesh.quaternion.copy(q);
+        mesh.scale.copy(scale);
+        mesh.visible = false;
+        root.add(mesh);
+      }
     }
     for (const part of undrawn ? [] : loaded.drawn) { // D-020: what the asset is drawn as (itself, or its skin); collision below is always its own
       const mesh = new THREE.Mesh(part.geometry, part.material);

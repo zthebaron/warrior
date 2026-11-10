@@ -34,20 +34,9 @@ export const LAYERS = [
     ink: 'wash-mid',             // the darkest wash in the crop is lighter than this, so alpha stays below 1
     floor: 0.05,                 // density below this is paper noise (sky luminance sd 1.6-2.3 of 88): no ink
   },
-  // The mid cliffs: the seed's wall, clear of pines, torii and the figure. Two silhouettes from one crop.
-  ...[['mid_cliff_a.png', 7], ['mid_cliff_b.png', 19]].map(([out, seed]) => ({
-    kind: 'matte',
-    out,
-    src: 'reference/seed/hero/hero_9s.png',
-    rect: [0, 0, 470, 540],
-    size: [512, 512],
-    haze: 0.38,                  // toward paper: the crop's ink-black (31) lands at 91, between wash-mid and ink-grey
-    seed,                        // the silhouette's noise
-    top: [0.05, 0.16],           // the top edge sits this far down, as a fraction of the height: [least, most]
-    side: [0.02, 0.09],          // the side edges sit this far in, as a fraction of the width
-    foot: 0.34,                  // the lowest fraction of the height fades out to nothing
-    edge: 0.012,                 // the brush edge is this wide, as a fraction of the width
-  })),
+  // D-021: the two mid-cliff mattes that were cut here from hero_9s (mid_cliff_a, mid_cliff_b) are gone. The mid
+  // cliffs are ART-GEN's painted cliff cards now (tools/art/backdrop-cards.mjs), which have a silhouette of
+  // their own; these had an authored one. The matte code below is kept: it is how a seed crop becomes a form.
 ];
 
 const hash = (n, seed) => { const x = Math.sin(n * 127.1 + seed * 311.7) * 43758.5453; return x - Math.floor(x); };

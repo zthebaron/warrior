@@ -21,6 +21,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const { PNG } = createRequire(import.meta.url)('pngjs');
@@ -208,7 +209,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       if (!same) bad++;
       continue;
     }
-    if (!statsOnly) fs.writeFileSync(file, PNG.sync.write(png, { deflateLevel: 9 }));
+    // pngjs's own default deflate strategy made the cliffs 18% larger than this one does
+    if (!statsOnly) fs.writeFileSync(file, PNG.sync.write(png, { deflateLevel: 9, deflateStrategy: zlib.constants.Z_DEFAULT_STRATEGY, filterType: -1 }));
     const bytes = statsOnly ? 0 : fs.statSync(file).size;
     total += bytes;
     const n = png.width * png.height;

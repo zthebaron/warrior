@@ -29,6 +29,11 @@
 //   §2/§6 NO HUE          outside the accent and the robe, no pixel carries more chroma than the ramp does
 //   §6  NO VIGNETTE       sky in the corners is the same paper as sky in the middle, within 2 levels
 //
+// D-021: in an ink level the near rock collides and is NOT drawn; painted cards stand there. The checks above
+// test the ink PASS (where it lays a line, how it pushes the near field dark), so they go on judging it on the
+// level's whole geometry: the undrawn rock is shown for that frame only, as the grazing camera is a pose only
+// this stage takes. What the PLAYER sees is judged by the paint checks at the end, on the painted frame.
+//
 // The expectations are written HERE, not imported from src/engine/ink-post.ts, so deleting a pass from the
 // code cannot quietly delete its test. Proof that each check bites: MEASUREMENTS "D-018 post gate" and
 // "D-019 ink edge and value range".
@@ -85,7 +90,18 @@ export const PAINT_GATE = {
   changed: 8,            // levels (2 x tol): a pixel this far from the ink-only frame is one the paint layer drew
   minPaintedShare: 0.03, // of the six cameras' pixels: 0% with the layer off, 6.9% shipped (chapter 1)
   minPaperShare: 0.41,   // of the six cameras' pixels: 17.2% with the mist drawn mist-pale, 35.3% on D-019
-                         // (cloud-band strips, no mist), 46.9% shipped
+                         // (cloud-band strips, no mist), 46.9% shipped. D-021: where the near rock is painted, judged
+                         // with the rock itself drawn in place of the painted wall: the frame this floor was measured
+                         // on. The wall is rock; this check is about the void
+  // D-021, a level whose near rock is painted (MEASUREMENTS "D-021 paint gate"). The wrong value of both is
+  // measured on every run, from the same frame with the wall lifted away.
+  rock: 'kit_rock_mass', // the asset a dressed level collides with and does not draw (src/loaders/level.ts INK.collideOnly)
+  undrawn: 'undrawn:',   // name prefix of the hidden mesh an undrawn collider keeps (src/loaders/level.ts UNDRAWN)
+  wall: 'cliff:',        // name prefix of the painted wall's cards (src/loaders/cliff-wall.ts)
+  minDarkShare: 0.04,    // of the pixels where the undrawn rock would be seen, dark MASS in the player's frame:
+                         // 0.1% with the wall lifted away, 8.6% shipped
+  minRockCovered: 0.9,   // of the pixels where the undrawn rock would be seen, drawn over by something: 13.6%
+                         // with the wall lifted away (the mid cliffs behind it), 100% shipped
 };
 
 export async function post(ctx: Ctx): Promise<StageResult> {
@@ -103,8 +119,14 @@ export async function post(ctx: Ctx): Promise<StageResult> {
     try {
       // D-020: from here to the paint-layer checks, the frame judged is the ink pass alone
       const shipped = await g.page.evaluate(() => window.__HARNESS__!.paintLayer()); // as the game starts, before this stage switches anything
+      // D-021: as the game starts, how much of the level's rock is drawn (the stage shows it itself, further down)
+      const rockPlaced = (ctx.level as unknown as { geometry: { asset: string }[] }).geometry.filter((p) => p.asset === PAINT_GATE.rock).length;
+      const rockDrawn = (await g.page.evaluate(() => window.__HARNESS__!.translators())).filter((t) => t.name.endsWith(`/${PAINT_GATE.rock}`)).length; // every VISIBLE renderable, by its path
       const paintStatus = await g.page.evaluate(() => window.__HARNESS__!.paintLayer(false));
+      // D-021: the rock this level collides with and does not draw is drawn for the ink-only frame
+      const undrawn = await g.page.evaluate((p) => window.__HARNESS__!.showMeshes(p, true), PAINT_GATE.undrawn);
       let compN = 0, compPaper = 0, compChanged = 0, compHue = 0, compStill = 0, compMoved = 0, accentLost = 0;
+      let voidN = 0, voidPaper = 0, compDark = 0, voidDark = 0, rockN = 0, rockCovered = 0, rockBare = 0;
       const compHueAt: string[] = [];
       const passes = await g.page.evaluate(() => window.__HARNESS__!.postPasses());
       const extra = passes.filter((p) => !G.passes.includes(p)), missing = G.passes.filter((p) => !passes.includes(p));
@@ -141,21 +163,62 @@ export async function post(ctx: Ctx): Promise<StageResult> {
         const D2 = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist; // a crow may fly into the sky
         const { width: W, height: H } = shot, D = probe.dist, far = D.reduce((m, v) => (v > m ? v : m), 0);
         if (paintStatus.painted > 0 && !grazing) { // the same pose with the paint layer on: the player's frame
-          // drawn at the SAME world tick as `again`, so the two frames differ only where the paint layer drew
+          // the ink pass as the game ships it (the undrawn rock hidden again), at the SAME world tick as `again`
+          let ink = again, Dink = D2;
+          if (undrawn > 0) {
+            await g.page.evaluate((p) => { window.__HARNESS__!.showMeshes(p, false); window.__HARNESS__!.redraw(); }, PAINT_GATE.undrawn);
+            ink = PNG.sync.read(await g.page.locator('canvas').screenshot());
+            Dink = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist;
+          }
+          // drawn at the same tick again, so the two frames differ only where the paint layer drew
           await g.page.evaluate(() => { window.__HARNESS__!.paintLayer(true); window.__HARNESS__!.redraw(); });
           const comp = PNG.sync.read(await g.page.locator('canvas').screenshot());
           if (process.env['POST_DEBUG_DIR']) writeFileSync(join(process.env['POST_DEBUG_DIR'], `${ctx.levelId}-${cam.name}-painted.png`), PNG.sync.write(comp));
+          // D-021: the player's frame with the painted wall lifted away. `bare`: nothing in its place, which is
+          // the wrong value of the two checks that need the wall. `voided`: the rock itself drawn in its place,
+          // which is the frame the void's paper share was measured on before the wall was painted (the rock is
+          // not void, and must not count as paper).
+          let bare = comp, voided = comp;
+          if (undrawn > 0) {
+            await g.page.evaluate((p) => { window.__HARNESS__!.showMeshes(p, false); window.__HARNESS__!.redraw(); }, PAINT_GATE.wall);
+            bare = PNG.sync.read(await g.page.locator('canvas').screenshot());
+            await g.page.evaluate((p) => { window.__HARNESS__!.showMeshes(p, true); window.__HARNESS__!.redraw(); }, PAINT_GATE.undrawn);
+            voided = PNG.sync.read(await g.page.locator('canvas').screenshot());
+            await g.page.evaluate(([w, u]) => { window.__HARNESS__!.showMeshes(w, true); window.__HARNESS__!.showMeshes(u, false); }, [PAINT_GATE.wall, PAINT_GATE.undrawn] as const);
+          }
           await g.page.evaluate(() => window.__HARNESS__!.advance(1));
           const comp2 = PNG.sync.read(await g.page.locator('canvas').screenshot());
           const D3 = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist; // the ink depth under comp2
-          await g.page.evaluate(() => window.__HARNESS__!.paintLayer(false));
+          await g.page.evaluate((p) => { window.__HARNESS__!.paintLayer(false); window.__HARNESS__!.showMeshes(p, true); }, PAINT_GATE.undrawn);
+          const cv = (img: PNG, k: number): number => (img.data[k * 4]! + img.data[k * 4 + 1]! + img.data[k * 4 + 2]!) / 3;
+          const Wc = shot.width, Hc = shot.height;
+          // dark MASS, as the ink check defines it: ink-grey or darker here and 3px away on every side
+          const mass = (img: PNG, k: number): boolean => {
+            const x = k % Wc, y = (k - x) / Wc;
+            if (x < 3 || y < 3 || x >= Wc - 3 || y >= Hc - 3) return false;
+            const dk = (j: number): boolean => cv(img, j) <= vInkGrey + G.tol;
+            return dk(k) && dk(k - 3) && dk(k + 3) && dk(k - 3 * Wc) && dk(k + 3 * Wc);
+          };
           for (let i = 0; i < shot.width * shot.height; i++) {
             const o = i * 4, r = comp.data[o]!, gg = comp.data[o + 1]!, b = comp.data[o + 2]!, v = (r + gg + b) / 3;
             const chroma = Math.max(r, gg, b) - Math.min(r, gg, b), accent = chroma > G.accentChroma;
             const robe = Math.abs(r - G.robe[0]) <= G.tol * 2 && Math.abs(gg - G.robe[1]) <= G.tol * 2 && Math.abs(b - G.robe[2]) <= G.tol * 2;
-            const ir = again.data[o]!, ig = again.data[o + 1]!, ib = again.data[o + 2]!, inkChroma = Math.max(ir, ig, ib) - Math.min(ir, ig, ib);
+            const ir = ink.data[o]!, ig = ink.data[o + 1]!, ib = ink.data[o + 2]!, inkChroma = Math.max(ir, ig, ib) - Math.min(ir, ig, ib);
             compN++;
             if (Math.abs(v - vPaper) <= G.tol && !accent) compPaper++;
+            {
+              const br = voided.data[o]!, bg = voided.data[o + 1]!, bb = voided.data[o + 2]!;
+              voidN++;
+              if (Math.abs((br + bg + bb) / 3 - vPaper) <= G.tol && Math.max(br, bg, bb) - Math.min(br, bg, bb) <= G.accentChroma) voidPaper++;
+            }
+            // where the undrawn rock WOULD be seen: nearer, with it shown (D2), than the ink pass has without it
+            if (undrawn > 0 && D2[i]! < Dink[i]! * 0.999) {
+              rockN++;
+              if (Math.abs(v - vPaper) > G.tol) rockCovered++;
+              if (Math.abs(cv(bare, i) - vPaper) > G.tol) rockBare++;
+              if (mass(comp, i)) compDark++;
+              if (mass(bare, i)) voidDark++;
+            }
             if (!accent && !robe && chroma > chromaMax + 1) { compHue++; if (compHueAt.length < 3) compHueAt.push(`${cam.name} (${i % shot.width},${Math.floor(i / shot.width)}) rgb(${r},${gg},${b})`); }
             if (inkChroma > G.accentChroma && !accent) accentLost++;
             if (Math.abs(v - (ir + ig + ib) / 3) > PAINT_GATE.changed) {
@@ -167,7 +230,7 @@ export async function post(ctx: Ctx): Promise<StageResult> {
               let clear = xx > 0 && yy > 0 && xx < shot.width - 1 && yy < shot.height - 1;
               for (let dy = -1; clear && dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
                 const j = i + dy * shot.width + dx;
-                if (D2[j]! < far * 0.999 || D3[j]! < far * 0.999) { clear = false; break; }
+                if (Dink[j]! < far * 0.999 || D3[j]! < far * 0.999) { clear = false; break; }
               }
               if (clear) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
             }
@@ -310,8 +373,17 @@ export async function post(ctx: Ctx): Promise<StageResult> {
         paintStatus.painted > 0 && (dressed ? paintStatus.backdrop > 0 && compN > 0 && compChanged / compN >= P.minPaintedShare : paintStatus.backdrop === 0),
         dressed ? `${paintStatus.painted} painted meshes, ${paintStatus.backdrop} of them the far field; ${pc(compChanged, compN)} of the frame differs from the ink pass alone (need >= ${P.minPaintedShare * 100}%)` : `${paintStatus.painted} painted meshes, ${paintStatus.backdrop} of them a far field (undressed: none allowed); ${pc(compChanged, compN)} of the frame is painted`);
       if (paintStatus.painted > 0) {
-        if (dressed) st.check('D-020 mist: the void is bare paper, not grey shapes', compN > 0 && compPaper / compN >= P.minPaperShare,
-          `paper is ${pc(compPaper, compN)} of the painted frame (need >= ${P.minPaperShare * 100}%)`);
+        if (dressed) st.check('D-020 mist: the void is bare paper, not grey shapes', voidN > 0 && voidPaper / voidN >= P.minPaperShare,
+          undrawn > 0 ? `paper is ${pc(voidPaper, voidN)} of the painted frame with the rock drawn in place of the painted wall (need >= ${P.minPaperShare * 100}%); ${pc(compPaper, compN)} of the frame the player sees`
+            : `paper is ${pc(voidPaper, voidN)} of the painted frame (need >= ${P.minPaperShare * 100}%)`);
+        if (dressed && rockPlaced > 0) st.check('D-021 a dressed level\'s rock collides and is not drawn, as the game ships', rockDrawn === 0 && undrawn === rockPlaced,
+          `${rockPlaced} ${P.rock} placements: ${rockDrawn} drawn, ${undrawn} kept hidden`);
+        if (undrawn > 0) {
+          st.check('D-021 painted near field: where the rock stands, the player\'s frame reaches the dark end as mass', rockN > 0 && compDark / rockN >= P.minDarkShare,
+            `${pc(compDark, rockN)} of the ${rockN} px where the rock would be seen are dark MASS in the painted frame (ink-grey or darker, and so 3px away on every side) (need >= ${P.minDarkShare * 100}%); ${pc(voidDark, rockN)} with the cliff wall lifted away`);
+          st.check('D-021 undrawn rock: every collider that is not drawn is covered by paint', rockN > 0 && rockCovered / rockN >= P.minRockCovered,
+            `${undrawn} undrawn meshes; of ${rockN} px where they would be seen, ${pc(rockCovered, rockN)} are drawn over (need >= ${P.minRockCovered * 100}%); ${pc(rockBare, rockN)} with the cliff wall lifted away`);
+        }
         st.check('D-020 paint layer: no hue (the painted frame stays on the ramp\'s chroma)', compHue === 0,
           `${compHue} of ${compN} px above the ramp's chroma ${chromaMax}${compHueAt.length ? `: ${compHueAt.join('; ')}` : ''}`);
         st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', (dressed ? compStill > 0 : true) && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed`);

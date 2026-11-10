@@ -16,18 +16,19 @@
 //   pine    on every second front card, rooted on its face and reaching past its edge. Drawn after its row.
 //
 // Every card is a plane on the paint layer (unlit, drawn after the ink pass). Cards are blended and write no
-// depth, so the draw order is explicit and fixed: back row, bay row, front row, pines, each card in its row in
-// the order it was built, all after the mist (src/loaders/backdrop.ts), which would otherwise paper over them.
-// A fixed order is right from anywhere on the path, because every card in a row stands at one depth. Cards are
-// FRONT faces only: the camera's arm is a single ray and can thread a gap in the rock; from behind the wall it
-// then sees through the cards to the path, not the back of a painting.
+// depth, so the draw order is explicit and fixed: back row, bay row, front row, pines, all after the mist
+// (src/loaders/backdrop.ts), which would otherwise paper over them. All the cards of one painting in one row
+// are ONE mesh (one draw call: 12 for the wall, not one a card); within a row the meshes are drawn farthest
+// first. A fixed order is right from anywhere on the path, because the cards of a mesh stand at one depth.
+// Cards are FRONT faces only: the camera's arm is a single ray and can thread a gap in the rock; from behind
+// the wall it then sees through the cards to the path, not the back of a painting.
 //
 // Every number is in MEASUREMENTS.md "D-021 cliff wall".
 
 import * as THREE from 'three';
 
 import { paint, paintMaterial } from '../engine/paint-layer';
-import { cardAspect, cardPlane, cardTexture } from './backdrop';
+import { cardAspect, cardTexture } from './backdrop';
 
 /** A rock mass the level collides with and does not draw: where it stands and how far its collision reaches. */
 export interface RockMass {
@@ -86,7 +87,7 @@ export const CLIFF_WALL = {
     { card: 'pine_c', width: 6, mirror: true, root: [0.12, 0.86], at: [0.16, 0.62] },
     { card: 'pine_b', width: 6.5, mirror: false, root: [0.84, 0.08], at: [0.55, 0.44] },
   ] as PineStyle[],
-  /** draw order: the first of each row; every card adds one. All after the backdrop's mist sheets. */
+  /** draw order: the first mesh of each row; each further mesh of the row adds one. All after the backdrop's mist sheets. */
   order: { back: 100, bay: 200, front: 300, pine: 400 },
 };
 
@@ -96,27 +97,23 @@ const W = CLIFF_WALL;
 export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose(): void } {
   const root = new THREE.Group();
   root.name = 'cliff-wall';
-  const materials = new Map<string, THREE.Material>();
-  const geos: THREE.BufferGeometry[] = [];
-  const material = (card: string): THREE.Material => {
-    let m = materials.get(card);
-    if (!m) {
-      m = paintMaterial({ map: cardTexture(card), wash: true });
-      materials.set(card, m);
-    }
-    return m;
-  };
-  const next = { back: W.order.back, bay: W.order.bay, front: W.order.front, pine: W.order.pine };
+  type Row = keyof typeof W.order;
+  /** every card of one painting in one row: the quads of one mesh */
+  interface Batch { row: Row; card: string; pos: number[]; uv: number[]; idx: number[]; z: number; n: number }
+  const batches = new Map<string, Batch>();
   /** A card facing +z whose point (ax, ay) (0..1 from its left and its foot, as seen from the path) is at (x, y, z). */
-  const plane = (row: keyof typeof next, s: { card: string; width: number; height: number; mirror: boolean }, x: number, y: number, z: number, ax: number, ay: number): THREE.Mesh => {
-    const geo = cardPlane(s.width, s.height, s.mirror);
-    geos.push(geo);
-    const mesh = new THREE.Mesh(geo, material(s.card));
-    mesh.name = `cliff:${row}`;
-    mesh.position.set(x + (0.5 - ax) * s.width, y + (0.5 - ay) * s.height, z);
-    mesh.renderOrder = next[row]++;
-    root.add(mesh);
-    return mesh;
+  const plane = (row: Row, s: { card: string; width: number; height: number; mirror: boolean }, x: number, y: number, z: number, ax: number, ay: number): void => {
+    const key = `${row}:${s.card}`;
+    let b = batches.get(key);
+    if (!b) batches.set(key, (b = { row, card: s.card, pos: [], uv: [], idx: [], z: 0, n: 0 }));
+    const x0 = x - ax * s.width, y0 = y - ay * s.height, x1 = x0 + s.width, y1 = y0 + s.height;
+    const u0 = s.mirror ? 1 : 0, u1 = 1 - u0; // mirrored in the texture: a negative scale would turn the face away
+    const v = b.pos.length / 3;
+    b.pos.push(x0, y0, z, x1, y0, z, x1, y1, z, x0, y1, z); // counter-clockwise seen from +z: the face looks at the path
+    b.uv.push(u0, 0, u1, 0, u1, 1, u0, 1);
+    b.idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
+    b.z += z;
+    b.n++;
   };
 
   const sorted = [...masses].sort((a, b) => a.x - b.x);
@@ -144,12 +141,28 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
     }
   });
 
+  const disposables: { dispose(): void }[] = [];
+  const next = { ...W.order };
+  // within a row, the mesh standing farthest from the path is drawn first
+  for (const b of [...batches.values()].sort((a, c) => a.z / a.n - c.z / c.n)) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
+    geo.setIndex(b.idx);
+    geo.computeVertexNormals();
+    const mat = paintMaterial({ map: cardTexture(b.card), wash: true });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.name = `cliff:${b.row}`;
+    mesh.renderOrder = next[b.row]++;
+    root.add(mesh);
+    disposables.push(geo, mat); // the decoded textures stay cached (backdrop.ts)
+  }
+
   paint(root);
   return {
     root,
     dispose() {
-      for (const g of geos) g.dispose();
-      for (const m of materials.values()) m.dispose(); // the decoded textures stay cached (backdrop.ts)
+      for (const d of disposables) d.dispose();
     },
   };
 }

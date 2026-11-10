@@ -145,6 +145,8 @@ interface HarnessApi {
   levelSources(): Promise<Record<string, string>>;
   /** Harness-only: move the player (PR 4's hazards stage). */
   teleportPlayer(pos: Vec3): void;
+  /** D-021: show or hide every level mesh whose name starts with `prefix` (the undrawn rock, the cliff wall). Returns how many. */
+  showMeshes(prefix: string, visible: boolean): number;
   /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
   figureClips(): { name: string; duration: number }[];
   showFigure(clip: string | null, time?: number): void;
@@ -867,6 +869,13 @@ async function boot(): Promise<void> {
       },
       teleportPlayer: (pos) => {
         player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
+      },
+      showMeshes: (prefix, visible) => {
+        let n = 0;
+        level?.root.traverse((o) => {
+          if (o instanceof THREE.Mesh && o.name.startsWith(prefix)) { o.visible = visible; n++; }
+        });
+        return n;
       },
       figureClips: () => player?.figureClips() ?? [],
       showFigure: (clip, time) => player?.showFigure(clip, time),
