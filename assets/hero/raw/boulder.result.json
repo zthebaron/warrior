@@ -1,0 +1,34 @@
+{
+  "request_id": "01a1c6d5-7877-7be0-81c2-5574a2d976e3",
+  "result": {
+    "model_glb": {
+      "url": "https://v3b.fal.media/files/b/0ab1f10d/O7ZvJy8GW6CZfQiggjTel_model.glb",
+      "content_type": "model/gltf-binary",
+      "file_name": "model.glb",
+      "file_size": 39846532
+    },
+    "thumbnail": {
+      "url": "https://v3b.fal.media/files/b/0ab1f10e/bXygIQZToDALmCfuFh8xt_preview.png",
+      "content_type": "image/png",
+      "file_name": "preview.png",
+      "file_size": 114368
+    },
+    "model_urls": {
+      "glb": {
+        "url": "https://v3b.fal.media/files/b/0ab1f10d/O7ZvJy8GW6CZfQiggjTel_model.glb",
+        "content_type": "model/gltf-binary",
+        "file_name": "model.glb",
+        "file_size": 39846532
+      },
+      "fbx": null,
+      "obj": {
+        "url": "https://v3b.fal.media/files/b/0ab1f10d/TRxiD8rpXRNlq_3Ecnm1d_model.obj",
+        "content_type": "model/obj",
+        "file_name": "model.obj",
+        "file_size": 29130693
+      },
+      "usdz": null
+    },
+    "seed": null
+  }
+}

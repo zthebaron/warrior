@@ -1,0 +1,7 @@
+{
+  "prompt": "Edit this painting by adding exactly two things and changing nothing else. (1) One sheathed sword slung diagonally across his BACK: from the front only its wrapped hilt and round guard are visible, rising above his right shoulder (the viewer's left), plus the dark scabbard tip showing just below his left hip (the viewer's right); add one thin dark strap running diagonally across his chest from that shoulder to the opposite hip. The sword is behind his body, nothing of it crosses in front of the robe except the thin strap. (2) Two tan calabash gourds tied on a short cord, hanging at his left hip (the viewer's right) from the belt. Keep everything else identical: pose, arms away from the body, hat, face, robe, belt, leg wraps, sandals, line quality, flat ink-wash fill, plain empty aged-paper background, no shadow. One sword only.",
+  "image_urls": ["file:assets/build/gen/in/warrior_front_v2.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

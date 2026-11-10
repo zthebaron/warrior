@@ -13,3 +13,7 @@ dist-harness/
 !.env.example
 
 assets/build/
+
+# Untouched fal downloads: 251 MB. Kept on disk, not in LFS: CI checks out LFS in every job.
+# See assets/hero/MANIFEST.md, decision 1.
+assets/hero/raw/*.glb

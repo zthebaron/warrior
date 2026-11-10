@@ -1,0 +1,7 @@
+{
+  "prompt": "This painting shows a small pine tree on a round rock base, seen from the front. Paint the SAME tree seen from its right-hand side: walk a quarter of the way round it (rotate the viewpoint 90 degrees about the trunk) and keep the same height, still looking slightly down. It is the same object: the same round rock base, the same thick twisted near-black trunk, the same five thick foliage cushions at the same heights. From this side the trunk's lean points toward or away from the viewer, the cushions that were on the left and right are now in front of and behind the trunk and overlap it, and the tree is clearly several cushions deep: it has real thickness front to back and is not a flat fan. Same size in the frame, same top and bottom positions as the original. Same style: flat sumi-e ink wash on aged warm paper, dark brush outline, flat even fill, monochrome warm grey to near-black, no light source, no cast shadow. Plain empty paper background, nothing else in the picture.",
+  "image_urls": ["file:assets/hero/input/pine.png"],
+  "aspect_ratio": "1:1",
+  "output_format": "png",
+  "num_images": 1
+}

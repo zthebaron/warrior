@@ -1,0 +1,7 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: one tall free-standing crag of cliff rock resting on its own flat base, like a single buttress broken from the cliff wall in the reference image, redrawn alone and seen from a three-quarter angle slightly above, so that its top and two of its side faces show. It is one single solid block of stone, about twice as tall as it is wide, broadest at the bottom, with a few big flat broken facets, sharp edges, chipped corners, a jagged notched top and two or three deep vertical cracks. Every facet is close to the same mid-grey wash; tone changes only inside the cracks. Clean single outline: no nested outlines, no concentric contour lines, no stacked slabs, no thin plates or sheets, no horizontal strata bands, no stripes. No grass, no moss, no dots or small marks around the edge. No trees, no path, no gate.\n\nPlain empty paper background and nothing else in the picture: no ground line, no cliff wall, no mist, no clouds, no shadow, no text, no seal. Whole subject in frame with a paper margin all round.",
+  "image_urls": ["file:assets/build/gen/refs/ref_cliff.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}
