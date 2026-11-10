@@ -1130,3 +1130,57 @@ already differs from B-20's run at 2.0, so contention is not ruled out as a fact
 (UNREACHABLE), with literal numbers, so a MOVE edit turns it red. Reverting double to 9.5 / 3.5 fails 3 checks.
 
 implemented_by: 47955d4 (double 8.4 / 2.9, 02-cliff-seam re-shape and re-record, lint:self pins), fc5682f (dash 2.6, gym and 04 dash waypoints, re-aimed cams, UNREACHABLE float tolerance). jump maxRise is NOT implemented: CONFLICT, B-30
+
+
+## D-018 — the shipped look is a painting: no light, no lit material, §6 as a post pass, the seed as the target. B-34, B-35, B-36. DECIDED
+
+**Ruled by Tim** (2026-11-09, in the CH1-ASSETS session, outranking the post-only task he had given minutes
+earlier): STYLE-BIBLE §1 was violated at the MATERIAL level, not only in post. The shipped look must have zero
+lit materials and zero DirectionalLight: flat unlit fill snapped to a palette step, plus the §6 ink edge on depth
+and normal discontinuity, static seeded paper grain, and depth value compression as a post pass. The target is
+`reference/` (the seed), not the builder's reading of sumi-e. PR #27 is held until this lands.
+**Applied by the builder, PROVISIONAL until Tim confirms:** every number, map and threshold below "Built", and
+the §3 departure in OQ-067 item 2.
+
+**The finding, as measured.** On main d173785 the frame was a render of a painting. `src/` drew the level and
+the player with `MeshStandardMaterial` under a `DirectionalLight` (elevation 50, azimuth 135) and a
+`HemisphereLight`, so a stair tread's top and side, one material, rendered two values set by the light.
+§10 test 1 ("can you tell where the light is?") failed in every frame. Neither this nor the unused reference
+set was recorded anywhere as missing (B-35, B-36 now are).
+
+**Measurement: before / after frames** (`docs/build-log/d018/`; `sheet-ch1-cam2.png` is
+[seed hero_7s | before | after]). The metric is the share of non-accent, non-robe pixels OFF the §2 ramp
+(more than grain + rounding from every step). Lit shading cannot stay on an 8-step ramp; flat fills do.
+
+| Frame | Before (main d173785) | After (this entry) |
+|---|---|---|
+| 01-lower-stair cam2 | 65.5% off-ramp, 200 colours | 0.0%, 14 colours |
+| 00-gym cam3 | 97.6% off-ramp, 178 colours | 0.0%, 12 colours |
+| 02-cliff-seam cam2 | 67.9% off-ramp, 185 colours | 0.0%, 14 colours |
+
+**Built.**
+1. §1: zero lights, zero lit materials in `src/`. Every fill is an unlit `MeshBasicMaterial` of a NAMED ramp
+   step (`src/engine/palette.ts`, read from palette.json). The paper is the sky on every level. The player is a
+   flat robe #7d8590 (§2) with an ink-black nose; the per-state greybox hues are gone (§9 item 3). The fall
+   plane is debug-overlay only.
+2. §6: `src/engine/ink-post.ts` on every level: value_compression by depth band, ink_edge (screen-space Laplacian
+   of 1/z: zero on any plane, so it marks silhouettes and convex creases; near 2px ink-black, mid 1px ink-grey,
+   far none), paper_grain (static, seeded, 3/255). Nothing else: no bloom, vignette, grading, motion blur, SSR.
+3. The gate: harness stage `post` (every level, six cameras) judges each pass from the pixels plus a per-pixel
+   distance readback, and audits §1. It fails when a pass is ABSENT, not when a golden moves. Removing
+   value_compression, ink_edge or paper_grain from the code, or adding a DirectionalLight, each turned it red
+   (MEASUREMENTS "D-018 post gate").
+4. The kit re-valued against `reference/seed/hero`: paper path tops; light walls cut by black strokes; a paper
+   cloud sea with mist streaks; LOW horizon ridges, not peaks. kit_rock_mass changed COLOUR only: the geometry
+   fingerprint is identical to main on all five levels.
+
+**Departure, stated, not quiet (OQ-067 item 2).** §3 bounds the mid band at wash-light..ink-grey. Built
+literally, it turned the paper cloud sea and paper path tops grey between 25 and 80 u: a dark ring the seed never
+shows. Compression here only ever LIGHTENS. §3's dark bounds hold; its mid light bound does not. Amending §3 is
+Tim's call (Q2b: on measured evidence only; the evidence is the first render and hero_3s/7s/11s).
+
+**Not done, against the seed (B-36):** pines (in every hero frame; no kit asset), a tapered dry-brush ink line
+(this one has constant weight), the §7 figure (B-33). **Accent:** the hue is untouched, as instructed; the ink
+outline lowers ACCENT_AREA (ch1 0.103-0.243%, floor 0.0204%). To be re-judged with grain and edge in place.
+
+implemented_by: 32e6ca5 (§1 material/light purge, ink-post.ts, harness `post` stage, kit re-valuing, dress-01 --check in lint:levels, darwin goldens)
