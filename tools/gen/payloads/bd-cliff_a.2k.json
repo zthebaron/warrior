@@ -1,0 +1,10 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: one tall cliff face, a single towering wall of rock like the cliff on the left of the reference image, painted alone and seen straight on. One single tower of rock that leans slightly to the right, widest a third of the way up and narrowing to a split, pointed top. It is much taller than it is wide, between two and three times as tall. Its contour is jagged and broken: a notched, uneven top, chipped corners, overhangs and deep vertical clefts down its sides, so that no edge runs straight. Dark, near-black ink masses: long vertical dry-brush strokes of near-black ink for the clefts, crevices and the undersides of overhangs, laid over mid-grey wash faces, with a few slivers of bare paper where the brush skipped. The tone varies only by brush wash, never by lighting: there is no lit side and no shaded side. No horizontal strata bands and no stripes. The foot of the cliff breaks up and fades out into bare paper, as if it stood in mist; there is no ground. No trees, no bushes, no grass. The reference image is a piece of the original painting: take the brush handling, the ink values and the paper from the cliff wall in it, but paint only the subject described here.\n\nPlain empty aged-paper background and nothing else in the picture: no ground line, no figure, no gate, no path, no sun, no moon, no birds, no text, no seal, no border, no frame. The paper is one flat even pale tone from edge to edge, with no vignette and no dark corners. Whole subject in frame with a clear margin of bare paper all round. Strictly monochrome warm grey: no blue, no green, no brown tint.",
+  "image_urls": [
+    "file:assets/build/gen/refs/ref_bd_cliff.png"
+  ],
+  "aspect_ratio": "9:16",
+  "output_format": "png",
+  "num_images": 1,
+  "resolution": "2K"
+}

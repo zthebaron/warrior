@@ -1,0 +1,10 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: a wide, quiet, far-away view: distant mountain peaks rising out of a sea of mist. Three peaks grouped in the right-hand third, the middle one tallest, and one small low island of rock far off on the left. Most of the picture is bare paper: the sky above is empty paper and the mist sea below is empty paper with only a few very pale horizontal wash streaks. The peaks are pale silhouettes in two or three pale grey values, each with one soft, slightly darker stroke along its ridge line and no hard outline, and each fading out at its foot into the mist. Nothing in the picture is darker than a middle grey. It fills the full width of the picture, but leaves the top third and the bottom third almost empty. The reference image is a piece of the original painting: take the brush handling, the ink values and the paper from the far ridge and the cloud sea in it, but paint only the subject described here.\n\nPlain aged-paper everywhere that is not painted, one flat even pale tone with no vignette and no dark corners. No figure, no gate, no path, no cliff, no trees, no sun, no moon, no birds, no text, no seal, no border. Strictly monochrome warm grey: no blue, no green, no brown tint.",
+  "image_urls": [
+    "file:assets/build/gen/refs/ref_bd_wide.png"
+  ],
+  "aspect_ratio": "21:9",
+  "output_format": "png",
+  "num_images": 1,
+  "resolution": "2K"
+}

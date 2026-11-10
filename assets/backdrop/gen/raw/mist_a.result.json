@@ -1,0 +1,18 @@
+{
+  "request_id": "01a1c711-f207-7a43-8827-cb525a812c5e",
+  "result": {
+    "images": [
+      {
+        "url": "https://v3b.fal.media/files/b/0ab1f288/WW64OW4RQdgwtC5K7qZuJ_4k7KML74.png",
+        "content_type": "image/png",
+        "file_name": "WW64OW4RQdgwtC5K7qZuJ_4k7KML74.png",
+        "file_size": null,
+        "width": 3168,
+        "height": 1344
+      }
+    ],
+    "description": "",
+    "conversations": [],
+    "grounding_metadata": []
+  }
+}

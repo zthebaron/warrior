@@ -1,0 +1,10 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: one gnarled old cliff pine, like the pines growing out of the cliff in the reference image, painted alone. It hangs down from the lump of rock at the upper left: the trunk drops below its root in a long windswept curve to the right, so that most of the foliage pads are lower than the rock. The trunk is thick, twisted and near-black, bending in crooked elbows, with a few crooked branches. Each branch ends in a flat, layered, horizontal pad of dark needle foliage: five to seven pads in all, stacked at different heights like shelves, each pad a solid dark mass with a ragged brushed edge. At the root there is only a small rough lump of grey rock, no bigger than one foliage pad, and nothing else of the cliff. Readable silhouette. The reference image is a piece of the original painting: take the brush handling, the ink values and the paper from the pines in it, but paint only the subject described here.\n\nPlain empty aged-paper background and nothing else in the picture: no ground line, no figure, no gate, no path, no sun, no moon, no birds, no text, no seal, no border, no frame. The paper is one flat even pale tone from edge to edge, with no vignette and no dark corners. Whole subject in frame with a clear margin of bare paper all round. Strictly monochrome warm grey: no blue, no green, no brown tint.",
+  "image_urls": [
+    "file:assets/build/gen/refs/ref_pine.png"
+  ],
+  "aspect_ratio": "4:3",
+  "output_format": "png",
+  "num_images": 1,
+  "resolution": "2K"
+}
