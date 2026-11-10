@@ -123,3 +123,19 @@ traversal times above. Every per-level stage passed for the gym and chapters
 1–4, including unchanged visual goldens. The combined coverage check reports
 PASS with no missing stages. Fresh evidence: `review-game-report.json`,
 `review-levels-report.json`, and `review-coverage.json` in the validation folder.
+
+### Final independent verdict
+
+Claude reviewed source commit 9ef428a independently and returned **CLEAN** in
+`state/CLAUDE-REVIEW-9ef428a.md`. It rebuilt the camera stage, checked all 20
+shipped rises, and independently tested additional render-only boxes and kit
+meshes. Both gates rejected hidden landings; raised/clear controls passed.
+Its check of the separate PR #27 content also passed lint.
+
+Non-blocking limits remain: mesh collision and rendered detail can differ, so
+`lint:levels` alone can overestimate the rendered band (Claude measured up to
+0.86 degrees on shipped faces). READABLE_CASE checks the actual rendered
+verdict and passes every shipped face. Its uncertainty guard does not extend
+to the older ASSIST_CASE/B-18/B-23 assertions, and no fixture explicitly forces
+the final ambiguous-failure branch. Player-body occlusion remains excluded.
+These are follow-up advisories, not blockers in Claude's verdict.
