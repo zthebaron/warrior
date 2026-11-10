@@ -230,3 +230,7 @@
 {"id":"B-45","agent":"art-pass-2","ts":"2026-11-10T20:55:03.823Z","ttl_min":480}
 {"id":"B-46","agent":"art-pass-2","ts":"2026-11-10T20:55:03.855Z","ttl_min":480}
 {"id":"B-49","agent":"art-pass-2","ts":"2026-11-10T20:55:03.884Z","ttl_min":480}
+{"id":"ART-PASS-2","agent":"art-pass-2","ts":"2026-11-10T22:50:41.102Z","released":true}
+{"id":"B-45","agent":"art-pass-2","ts":"2026-11-10T22:50:41.129Z","released":true}
+{"id":"B-46","agent":"art-pass-2","ts":"2026-11-10T22:50:41.159Z","released":true}
+{"id":"B-49","agent":"art-pass-2","ts":"2026-11-10T22:50:41.189Z","released":true}
