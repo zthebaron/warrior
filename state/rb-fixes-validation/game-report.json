@@ -1,0 +1,1347 @@
+{
+  "harness": "warrior-playtest/H3",
+  "startedAt": "2026-11-10T02:04:23.477Z",
+  "node": "v26.9.0",
+  "args": {
+    "only": "reachable,pitch-assist,run-metric,ambient-motion"
+  },
+  "environment": {
+    "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+    "chromium": "158.0.8127.18",
+    "baseUrl": "http://127.0.0.1:4317",
+    "preflight": {
+      "stage": "preflight",
+      "ok": true,
+      "checks": [
+        {
+          "name": "build harness bundle",
+          "ok": true,
+          "detail": "dist-harness/"
+        },
+        {
+          "name": "build production bundle",
+          "ok": true,
+          "detail": "dist/"
+        },
+        {
+          "name": "dist-harness/ built from the source on disk",
+          "ok": true,
+          "detail": "every file the build read is byte-identical on disk"
+        },
+        {
+          "name": "dist/ built from the source on disk",
+          "ok": true,
+          "detail": "every file the build read is byte-identical on disk"
+        },
+        {
+          "name": "harness API stripped from production bundle",
+          "ok": true,
+          "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+        },
+        {
+          "name": "vite preview serving over HTTP",
+          "ok": true,
+          "detail": "http://127.0.0.1:4317"
+        },
+        {
+          "name": "chromium launched with pinned args",
+          "ok": true,
+          "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+        },
+        {
+          "name": "webgl2 context on about:blank",
+          "ok": true,
+          "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        },
+        {
+          "name": "harness API exposed with ?harness=1",
+          "ok": true,
+          "detail": "HARNESS_API_V1"
+        },
+        {
+          "name": "bundled levels match levels/ on disk",
+          "ok": true,
+          "detail": "every levels/*.json byte-identical to dist-harness/"
+        }
+      ],
+      "ms": 1390,
+      "data": {}
+    }
+  },
+  "levels": [
+    {
+      "id": "00-gym",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/00-gym.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 2,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 3 warnings: [TIGHT] seg 3->4 via dash is at 96% of the limit [TIGHT] seg 14->15 via jump is at 100% of the limit [FACE_RISE] seg 18->19 via ground: 8 faces taller than MOVE.ground.autostep 0.34u, the largest the player walks up without a jump (B-14); the tallest is +0.40u at x=62.20 z=0.00 (onto geometry[13]). A ground segment is bounded per face, not by slope x run (B-19): split it into risers <= 0.34u, or make it a jump. Gym only: a warning, its risers are B-20's"
+            }
+          ],
+          "ms": 2,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1390,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "01-lower-stair",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/01-lower-stair.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean"
+            }
+          ],
+          "ms": 27,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1390,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "02-cliff-seam",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/02-cliff-seam.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 2 warnings: [TIGHT] seg 12->13 via double is at 95% of the limit [TIGHT] seg 19->20 via double is at 95% of the limit"
+            }
+          ],
+          "ms": 21,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1390,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "03-drifting-stones",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/03-drifting-stones.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 3 warnings: [TIGHT] seg 3->4 via double is at 95% of the limit [TIGHT] seg 9->10 via dash is at 96% of the limit [TIGHT] seg 19->20 via dash is at 96% of the limit"
+            }
+          ],
+          "ms": 15,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1390,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "04-summit-ridge",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/04-summit-ridge.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 4 warnings: [TIGHT] seg 5->6 via dashjump is at 94% of the limit [TIGHT] seg 9->10 via dash is at 96% of the limit [TIGHT] seg 12->13 via dashjump is at 94% of the limit [TIGHT] seg 18->19 via dashjump is at 94% of the limit"
+            }
+          ],
+          "ms": 48,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1390,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "(game)",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "reachable",
+          "ok": true,
+          "checks": [
+            {
+              "name": "an entry chapter exists",
+              "ok": true,
+              "detail": "01-lower-stair (chapter 1)"
+            },
+            {
+              "name": "bare URL reaches the entry chapter (production bundle)",
+              "ok": true,
+              "detail": "loaded \"01-lower-stair\", expected \"01-lower-stair\""
+            },
+            {
+              "name": "every chapter is on the progression chain",
+              "ok": true,
+              "detail": "01-lower-stair > 02-cliff-seam > 03-drifting-stones > 04-summit-ridge"
+            },
+            {
+              "name": "default level (no ?level=) is the entry chapter",
+              "ok": true,
+              "detail": "game default loaded \"01-lower-stair\""
+            },
+            {
+              "name": "a player can finish 01-lower-stair (bot plays it to results)",
+              "ok": true,
+              "detail": "results after 15.35s"
+            },
+            {
+              "name": "Enter at results of 01-lower-stair loads the next chapter",
+              "ok": true,
+              "detail": "got 02-cliff-seam, expected 02-cliff-seam (chapter 2)"
+            },
+            {
+              "name": "a player can finish 02-cliff-seam (bot plays it to results)",
+              "ok": true,
+              "detail": "results after 27.30s"
+            },
+            {
+              "name": "Enter at results of 02-cliff-seam loads the next chapter",
+              "ok": true,
+              "detail": "got 03-drifting-stones, expected 03-drifting-stones (chapter 3)"
+            },
+            {
+              "name": "a player can finish 03-drifting-stones (bot plays it to results)",
+              "ok": true,
+              "detail": "results after 29.32s"
+            },
+            {
+              "name": "Enter at results of 03-drifting-stones loads the next chapter",
+              "ok": true,
+              "detail": "got 04-summit-ridge, expected 04-summit-ridge (chapter 4)"
+            },
+            {
+              "name": "a player can finish 04-summit-ridge (bot plays it to results)",
+              "ok": true,
+              "detail": "results after 24.15s"
+            },
+            {
+              "name": "Enter at results of the last chapter (04-summit-ridge) returns to the menu",
+              "ok": true,
+              "detail": "state menu"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 19082,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "(game)",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "pitch-assist",
+          "ok": true,
+          "checks": [
+            {
+              "name": "fixture loads (assist on)",
+              "ok": true,
+              "detail": "tools/harness/fixtures/pitch-assist.json"
+            },
+            {
+              "name": "a35_d6: +3.5 onto 6u reads with the assist, as the linter says",
+              "ok": true,
+              "detail": "top band 2.42deg at view pitch 24.0deg (assist +6.0); linter: reads at 24deg"
+            },
+            {
+              "name": "w40_d6: +4 onto 6u reads with the assist, as the linter says",
+              "ok": true,
+              "detail": "top band 2.33deg at view pitch 28.0deg (assist +10.0); linter: reads at 28deg"
+            },
+            {
+              "name": "c45_d6: +4.5 onto 6u reads with the assist, as the linter says",
+              "ok": true,
+              "detail": "top band 2.17deg at view pitch 32.0deg (assist +14.0); linter: reads at 32deg"
+            },
+            {
+              "name": "c45_d15: +4.5 onto 15u reads with the assist, as the linter says",
+              "ok": true,
+              "detail": "top band 2.33deg at view pitch 30.0deg (assist +12.0); linter: reads at 30deg"
+            },
+            {
+              "name": "c45_d25: +4.5 onto 2.5u still does not read, as the linter says",
+              "ok": true,
+              "detail": "top band 0.00deg at view pitch 18.0deg (assist +0.0); linter: no pitch reads"
+            },
+            {
+              "name": "facing away releases the assist",
+              "ok": true,
+              "detail": "assist +0.00deg, view pitch 18.0deg"
+            },
+            {
+              "name": "zero console errors (assist on)",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "fixture loads (assist off)",
+              "ok": true,
+              "detail": "tools/harness/fixtures/pitch-assist.json"
+            },
+            {
+              "name": "a35_d6: +3.5 onto 6u does NOT read at rest (assist off)",
+              "ok": true,
+              "detail": "top band 0.50deg at view pitch 18.0deg (assist +0.0); linter: reads at 24deg"
+            },
+            {
+              "name": "w40_d6: +4 onto 6u does NOT read at rest (assist off)",
+              "ok": true,
+              "detail": "top band 0.00deg at view pitch 18.0deg (assist +0.0); linter: reads at 28deg"
+            },
+            {
+              "name": "c45_d6: +4.5 onto 6u does NOT read at rest (assist off)",
+              "ok": true,
+              "detail": "top band 0.00deg at view pitch 18.0deg (assist +0.0); linter: reads at 32deg"
+            },
+            {
+              "name": "c45_d15: +4.5 onto 15u does NOT read at rest (assist off)",
+              "ok": true,
+              "detail": "top band 0.00deg at view pitch 18.0deg (assist +0.0); linter: reads at 30deg"
+            },
+            {
+              "name": "c45_d25: +4.5 onto 2.5u does NOT read at rest (assist off)",
+              "ok": true,
+              "detail": "top band 0.00deg at view pitch 18.0deg (assist +0.0); linter: no pitch reads"
+            },
+            {
+              "name": "zero console errors (assist off)",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "READABLE_CASE 01-lower-stair critical_path[2]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 4.750deg at 18.0deg; model 4.781deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 01-lower-stair critical_path[11]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 2.750deg at 18.0deg; model 2.731deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 01-lower-stair critical_path[12]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 9.083deg at 18.0deg; model 9.130deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 01-lower-stair critical_path[19]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 2.750deg at 18.0deg; model 2.731deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 01-lower-stair critical_path[20]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 7.667deg at 18.0deg; model 7.635deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 01-lower-stair: ran every measured rise, including rest-readable faces",
+              "ok": true,
+              "detail": "5 of 5"
+            },
+            {
+              "name": "ASSIST_CASE 01-lower-stair: ran every derived case",
+              "ok": true,
+              "detail": "0 of 0"
+            },
+            {
+              "name": "READABLE_CASE 02-cliff-seam critical_path[2]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 2.667deg at 30.0deg; model 2.596deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 02-cliff-seam critical_path[5]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 3.500deg at 54.0deg; model 3.541deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 02-cliff-seam critical_path[9]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 4.250deg at 18.0deg; model 4.267deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 02-cliff-seam critical_path[15]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 10.167deg at 18.0deg; model 10.180deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 02-cliff-seam critical_path[18]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 2.417deg at 26.0deg; model 2.462deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 02-cliff-seam: ran every measured rise, including rest-readable faces",
+              "ok": true,
+              "detail": "5 of 5"
+            },
+            {
+              "name": "ASSIST_CASE 02-cliff-seam: ran every derived case",
+              "ok": true,
+              "detail": "3 of 3"
+            },
+            {
+              "name": "ASSIST_CASE 02-cliff-seam critical_path[2] reads in the real rig",
+              "ok": true,
+              "detail": "critical_path[2] climb +4.50 onto 22.00u: real rig reads 2.67deg at view pitch 30.0deg (probe target 30); linter modelled 30deg, needs >= 2deg"
+            },
+            {
+              "name": "ASSIST_CASE 02-cliff-seam critical_path[5] reads in the real rig",
+              "ok": true,
+              "detail": "critical_path[5] wall +3.75 onto 1.00u: real rig reads 3.50deg at view pitch 54.0deg (probe target 54); linter modelled 54deg, needs >= 2deg"
+            },
+            {
+              "name": "ASSIST_CASE 02-cliff-seam critical_path[18] reads in the real rig",
+              "ok": true,
+              "detail": "critical_path[18] climb +4.00 onto 14.00u: real rig reads 2.42deg at view pitch 26.0deg (probe target 26); linter modelled 26deg, needs >= 2deg"
+            },
+            {
+              "name": "READABLE_CASE 03-drifting-stones critical_path[4]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 10.750deg at 18.0deg; model 10.756deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 03-drifting-stones critical_path[14]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 8.417deg at 18.0deg; model 8.453deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 03-drifting-stones: ran every measured rise, including rest-readable faces",
+              "ok": true,
+              "detail": "2 of 2"
+            },
+            {
+              "name": "ASSIST_CASE 03-drifting-stones: ran every derived case",
+              "ok": true,
+              "detail": "0 of 0"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[2]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 9.000deg at 18.0deg; model 8.994deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[4]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 9.583deg at 18.0deg; model 9.609deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[6]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 10.417deg at 18.0deg; model 10.483deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[13]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 7.083deg at 18.0deg; model 7.134deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[15]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 3.167deg at 18.0deg; model 3.141deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[16]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 7.583deg at 18.0deg; model 7.526deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[19]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 8.000deg at 18.0deg; model 8.015deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge critical_path[21]: rig and model agree",
+              "ok": true,
+              "detail": "fixed stand pose: rig 8.333deg at 18.0deg; model 8.325deg (reads)"
+            },
+            {
+              "name": "READABLE_CASE 04-summit-ridge: ran every measured rise, including rest-readable faces",
+              "ok": true,
+              "detail": "8 of 8"
+            },
+            {
+              "name": "ASSIST_CASE 04-summit-ridge: ran every derived case",
+              "ok": true,
+              "detail": "0 of 0"
+            },
+            {
+              "name": "READABLE_CASE regression baseline: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression baseline: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 9"
+            },
+            {
+              "name": "READABLE_CASE regression baseline: model and real rig read the target",
+              "ok": true,
+              "detail": "model 4.267deg; rig 4.250deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression front-beam: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression front-beam: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 9"
+            },
+            {
+              "name": "READABLE_CASE regression front-beam: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 0.000deg; rig 0.000deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression rear-beam: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression rear-beam: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 9"
+            },
+            {
+              "name": "READABLE_CASE regression rear-beam: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 0.000deg; rig 0.000deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression lifted-beam: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression lifted-beam: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 9"
+            },
+            {
+              "name": "READABLE_CASE regression lifted-beam: model and real rig read the target",
+              "ok": true,
+              "detail": "model 4.267deg; rig 4.250deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression rotated-clear: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression rotated-clear: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression rotated-clear: model and real rig read the target",
+              "ok": true,
+              "detail": "model 2.596deg; rig 2.667deg at 30.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression rotated-blocked: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression rotated-blocked: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression rotated-blocked: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 0.000deg; rig 0.000deg at 30.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression envelope-blocked: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression envelope-blocked: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression envelope-blocked: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 0.000deg; rig 0.000deg at 30.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression honest-low: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression honest-low: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression honest-low: model and real rig read the target",
+              "ok": true,
+              "detail": "model 2.122deg; rig 2.083deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression sunk-waypoint: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression sunk-waypoint: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression sunk-waypoint: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 1.700deg; rig 1.750deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression honest-high: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression honest-high: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression honest-high: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 1.700deg; rig 1.750deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression floating-waypoint: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression floating-waypoint: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression floating-waypoint: model and real rig read the target",
+              "ok": true,
+              "detail": "model 2.122deg; rig 2.083deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression depth-edge: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression depth-edge: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression depth-edge: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 0.000deg; rig 0.000deg at 18.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression depth-interior: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression depth-interior: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 2"
+            },
+            {
+              "name": "READABLE_CASE regression depth-interior: model and real rig read the target",
+              "ok": true,
+              "detail": "model 2.053deg; rig 2.000deg at 36.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression legacy-first-occluded: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression legacy-first-occluded: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 9"
+            },
+            {
+              "name": "READABLE_CASE regression legacy-first-occluded: model and real rig reject the target",
+              "ok": true,
+              "detail": "model 0.000deg; rig 0.000deg at 21.0deg"
+            },
+            {
+              "name": "READABLE_CASE regression legacy-second-clear: fixture loads",
+              "ok": true,
+              "detail": "ok"
+            },
+            {
+              "name": "READABLE_CASE regression legacy-second-clear: target is evaluated",
+              "ok": true,
+              "detail": "waypoint 16"
+            },
+            {
+              "name": "READABLE_CASE regression legacy-second-clear: model and real rig read the target",
+              "ok": true,
+              "detail": "model 2.117deg; rig 3.583deg at 24.0deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/assist-cases.json: the linter accepts clean and rejects overhung",
+              "ok": true,
+              "detail": "accepts [clean], rejects [overhung]"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/assist-cases.json: the assist-dependent set is clean",
+              "ok": true,
+              "detail": "clean"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/assist-cases.json loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/assist-cases.json"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/assist-cases.json clean: the real rig reads it, as the linter says",
+              "ok": true,
+              "detail": "rig 2.33deg at view pitch 28.0deg (probe target 28); linter 2.32deg from an eye 4.79u above the feet at 28deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/assist-cases.json overhung: the real rig does NOT read it, as the linter says",
+              "ok": true,
+              "detail": "rig 0.00deg at view pitch 28.0deg (probe target 28); linter 0.00deg from an eye 3.46u above the feet at 28deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/assist-cases.json: stood every rise the linter evaluated in the rig",
+              "ok": true,
+              "detail": "2 of 2"
+            },
+            {
+              "name": "ASSIST_CASE proof tools/harness/fixtures/assist-cases.json: ran every derived case",
+              "ok": true,
+              "detail": "1 of 1"
+            },
+            {
+              "name": "ASSIST_CASE proof tools/harness/fixtures/assist-cases.json clean reads in the real rig at the modelled pitch",
+              "ok": true,
+              "detail": "critical_path[2] wall +4.00 onto 6.00u: real rig reads 2.33deg at view pitch 28.0deg (probe target 28); linter modelled 28deg, needs >= 2deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json: the linter accepts band_clear, low_clear and rejects band_walled, low_walled",
+              "ok": true,
+              "detail": "accepts [band_clear, low_clear], rejects [band_walled, low_walled]"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json: the assist-dependent set is band_clear",
+              "ok": true,
+              "detail": "band_clear"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/wall-arm.json"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json band_walled: the real rig does NOT read it, as the linter says",
+              "ok": true,
+              "detail": "rig 0.00deg at view pitch 29.0deg (probe target 29); linter 0.00deg from an eye 1.91u above the feet at 29deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json band_clear: the real rig reads it, as the linter says",
+              "ok": true,
+              "detail": "rig 2.42deg at view pitch 29.0deg (probe target 29); linter 2.39deg from an eye 4.89u above the feet at 29deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json low_walled: the real rig does NOT read it, as the linter says",
+              "ok": true,
+              "detail": "rig 0.00deg at view pitch 18.0deg (probe target none); linter 0.00deg from an eye 1.75u above the feet at 18deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json low_clear: the real rig reads it, as the linter says",
+              "ok": true,
+              "detail": "rig 2.17deg at view pitch 18.0deg (probe target none); linter 2.19deg from an eye 3.66u above the feet at 18deg"
+            },
+            {
+              "name": "B-23 proof tools/harness/fixtures/wall-arm.json: stood every rise the linter evaluated in the rig",
+              "ok": true,
+              "detail": "4 of 4"
+            },
+            {
+              "name": "ASSIST_CASE proof tools/harness/fixtures/wall-arm.json: ran every derived case",
+              "ok": true,
+              "detail": "1 of 1"
+            },
+            {
+              "name": "ASSIST_CASE proof tools/harness/fixtures/wall-arm.json band_clear reads in the real rig at the modelled pitch",
+              "ok": true,
+              "detail": "critical_path[4] wall +3.75 onto 3.50u: real rig reads 2.42deg at view pitch 29.0deg (probe target 29); linter modelled 29deg, needs >= 2deg"
+            }
+          ],
+          "ms": 12415,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "(game)",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "run-metric",
+          "ok": true,
+          "checks": [
+            {
+              "name": "an entry chapter exists",
+              "ok": true,
+              "detail": "01-lower-stair"
+            },
+            {
+              "name": "the level has a fall plane to die on",
+              "ok": true,
+              "detail": "fall y -10"
+            },
+            {
+              "name": "run A (clean) plays: one death, then finish",
+              "ok": true,
+              "detail": "1 death(s), 8 samples"
+            },
+            {
+              "name": "run B (heavy) plays: 15 s idle, 3 deaths, finish, 10 s on results",
+              "ok": true,
+              "detail": "3 death(s), 50 samples"
+            },
+            {
+              "name": "the two runs have different histories (else the comparison proves nothing)",
+              "ok": true,
+              "detail": "deaths A 1, B 3"
+            },
+            {
+              "name": "state \"play\" was seen in both runs",
+              "ok": true,
+              "detail": "A true, B true"
+            },
+            {
+              "name": "state \"death\" was seen in both runs",
+              "ok": true,
+              "detail": "A true, B true"
+            },
+            {
+              "name": "state \"results\" was seen in both runs",
+              "ok": true,
+              "detail": "A true, B true"
+            },
+            {
+              "name": "\"play\": visible text is constant within run B",
+              "ok": true,
+              "detail": "\"Warrior — H2 spike\""
+            },
+            {
+              "name": "\"death\": visible text is constant within run B",
+              "ok": true,
+              "detail": "\"Warrior — H2 spike\\nfell\""
+            },
+            {
+              "name": "\"results\": visible text is constant within run B",
+              "ok": true,
+              "detail": "\"Warrior — H2 spike\\nCOMPLETE\\nEnter: next chapter\""
+            },
+            {
+              "name": "\"play\": visible text is identical across runs (no run metric on screen)",
+              "ok": true,
+              "detail": "\"Warrior — H2 spike\""
+            },
+            {
+              "name": "\"death\": visible text is identical across runs (no run metric on screen)",
+              "ok": true,
+              "detail": "\"Warrior — H2 spike\\nfell\""
+            },
+            {
+              "name": "\"results\": visible text is identical across runs (no run metric on screen)",
+              "ok": true,
+              "detail": "\"Warrior — H2 spike\\nCOMPLETE\\nEnter: next chapter\""
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 8455,
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": "(game)",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "ambient-motion",
+          "ok": true,
+          "checks": [
+            {
+              "name": "00-gym: nothing translates except the player, hazards and platforms",
+              "ok": true,
+              "detail": "33 renderables, 3 moved, all tagged (platform, player)"
+            },
+            {
+              "name": "00-gym: zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "01-lower-stair: nothing translates except the player, hazards and platforms",
+              "ok": true,
+              "detail": "45 renderables, 6 moved, all tagged (hazard, player)"
+            },
+            {
+              "name": "01-lower-stair: zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "02-cliff-seam: nothing translates except the player, hazards and platforms",
+              "ok": true,
+              "detail": "49 renderables, 6 moved, all tagged (hazard, player)"
+            },
+            {
+              "name": "02-cliff-seam: zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "03-drifting-stones: nothing translates except the player, hazards and platforms",
+              "ok": true,
+              "detail": "49 renderables, 6 moved, all tagged (platform, hazard, player)"
+            },
+            {
+              "name": "03-drifting-stones: zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "04-summit-ridge: nothing translates except the player, hazards and platforms",
+              "ok": true,
+              "detail": "48 renderables, 6 moved, all tagged (hazard, player)"
+            },
+            {
+              "name": "04-summit-ridge: zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "the sampler sees motion at all (tagged movers > 0 across levels)",
+              "ok": true,
+              "detail": "27 tagged movers"
+            }
+          ],
+          "ms": 3716,
+          "data": {}
+        }
+      ]
+    }
+  ],
+  "class": "PASS",
+  "ok": true,
+  "durationMs": 45614
+}

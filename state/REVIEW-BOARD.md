@@ -144,9 +144,9 @@ the face (the check is pure geometry, it cannot see colour: STYLE-BIBLE value co
 a landing whose prim_box is deep but whose waypoint sits near its far edge; a rise reached by a ground
 via that is in fact one 0.5+ face.
 severity: real
-verified: no
-verdict:
-promoted_to:
+verified: yes — independently reproduced by Claude at ad1eef8 and b8dfd5f, 2026-11-09
+verdict: REFUTED — the universal classifier claim fails on occluded tops, rotated rear primitives and sunk landing waypoints; shipped content still reads. Fixes authorized by Tim 2026-11-09.
+promoted_to: RB003-RB004-FIX in state/BACKLOG.md
 
 ## RB-004 — attack this: "under the pitch assist the teachable ceilings are 4.48, 4.62 and 4.67 u onto 2.5, 6 and 15 u landings, AND the linter's model of the assist matches the real rig for every face chapter 2 will use."
 from: builder-d016, restated by kit at the chat REVIEWER's direction (2026-11-08, by delegation from Tim) · raised: 2026-11-08 · restated: 2026-11-08
@@ -182,6 +182,6 @@ check: break either half and show it.
 expected: no counter-example to 1. Item 2 is where any finding is. The fixture covers one overhang shape, and
 ASSIST_CASE runs only at the 2 u standoff the linter models.
 severity: blocker for chapter 2 if half 2 breaks (a face certified readable that is not)
-verified: no
-verdict:
-promoted_to:
+verified: yes — independent derivation and real-rig measurements by Claude, 2026-11-09
+verdict: PARTIAL — ideal feet-relative ceilings hold; exact 2.55-depth advice and universal model/rig agreement do not. Rest-readable occlusion escapes the original guard; the depth-edge case is caught by it. No shipped chapter-2 blocker found.
+promoted_to: RB003-RB004-FIX in state/BACKLOG.md (Tim authorized confirmed fixes 2026-11-09)

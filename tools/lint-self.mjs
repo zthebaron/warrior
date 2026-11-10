@@ -4,6 +4,7 @@
 // Usage: node tools/lint-self.mjs   (npm run lint:self; runs in CI after lint:levels)
 import fs from 'fs';
 import { armAt, assistedPitchDeg, groundFaces, lintLevel, MOVE, obstaclesOf, readableBandDeg, riseViews, withColliders, READABLE_RISE, REST_EYE } from './lint-level.mjs';
+import { readabilityFixtures } from './fixtures/readability.mjs';
 import { CAMERA_TUNING } from '../src/engine/camera-tuning.ts';
 
 const rawManifest = JSON.parse(fs.readFileSync('assets/dist/manifest.json', 'utf8'));
@@ -56,8 +57,9 @@ const preLevel = load('tools/fixtures/lint/01-lower-stair.pre-d015.json');
 const pre = lintLevel(preLevel, manifest), preRR = rr(pre);
 // Under Q5's current table climb is not a chapter-1 move (CHAPTER_MOVE fails the file), so neither 3.5 face
 // is a teaching instance: both are flagged, as WARNINGS (D-016).
-// D-016b: with the assist modelled both 3.5 faces now read (at rest they do not: the vectors above).
-check('pre-D-015 chapter 1: both 3.5 faces read with the pitch assist (no READABLE_RISE)', preRR.err.length === 0 && preRR.warn.length === 0, `${preRR.err.length} errors, ${preRR.warn.length} warnings`);
+// D-016b: the assist exposes both angular bands. RB-003 visibility additionally finds the first
+// obscured by a torii: the real-rig regression confirms it; the second still reads.
+check('pre-D-015 chapter 1: sightline occlusion flags the first face; the second remains readable', preRR.err.length === 0 && preRR.warn.length === 1 && preRR.warn[0].includes('critical_path[9]'), `${preRR.err.length} errors, ${preRR.warn.length} warnings`);
 check('pre-D-015 chapter 1 FAILS CHAPTER_TEACH on jump (first jump over the void)', pre.errors.some((e) => e.startsWith('[CHAPTER_TEACH]') && e.includes('"jump"')));
 
 // ---- D-016: READABLE_RISE is an ERROR on a teaching instance and a WARNING on practice -------------------
@@ -112,7 +114,20 @@ console.log('B-23: the collided arm');
   // (a manifest withColliders did not load) the same face is flagged: the soup is load-bearing, and the
   // fallback errs toward failing.
   const env = lintLevel(load('tools/fixtures/lint/01-lower-stair.pre-d015.json'), rawManifest).warnings.filter((e) => e.startsWith('[READABLE_RISE]'));
-  check('envelope fallback (no collision soup): the torii\'s bbox blocks the arm, the face is flagged', env.length === 1 && /pushed in by geometry\[9\]/.test(env[0]), env[0]?.slice(0, 160) ?? 'not flagged');
+  check('envelope fallback (no collision soup): the torii\'s bbox blocks the arm, the face is flagged', env.some(w => /critical_path\[9\]/.test(w) && /pushed in by geometry\[9\]/.test(w)), env[0]?.slice(0, 160) ?? 'not flagged');
+}
+
+// RB-003/RB-004: independent reviewer constructions, plus controls, against the actual rule.
+console.log('RB-003/RB-004: visibility, exact rotated boxes, geometry heights and depth edges');
+for (const fx of readabilityFixtures(load('levels/02-cliff-seam.json'), load('tools/harness/fixtures/wall-arm.json'), preLevel)) {
+  const result = lintLevel(fx.level, manifest);
+  const flagged = [...result.errors, ...result.warnings].some(s => s.startsWith(`[READABLE_RISE] critical_path[${fx.index}] `));
+  const v = riseViews(fx.level, manifest).find(v => v.index === fx.index);
+  check(`${fx.name}: READABLE_RISE ${fx.reads ? 'accepts' : 'rejects'} waypoint ${fx.index}`, flagged === !fx.reads && v?.reads === fx.reads,
+    `band ${v?.bandDeg.toFixed(3)}deg; flagged ${flagged}`);
+  if (fx.name === 'rotated-clear' || fx.name === 'baseline' || fx.name === 'lifted-beam')
+    check(`${fx.name}: no unrelated semantic errors`, result.ok, result.errors.join(' '));
+  if (fx.name === 'rotated-clear') check('rotated slab clear of the true arm leaves the full camera distance', Math.abs(v.eyeM - (CAMERA_TUNING.pivotHeight + CAMERA_TUNING.distance * Math.sin(v.pitchDeg * Math.PI / 180))) < 1e-9);
 }
 
 const gym = lintLevel(load('levels/00-gym.json'), manifest);

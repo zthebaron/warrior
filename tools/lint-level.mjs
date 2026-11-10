@@ -21,11 +21,12 @@ export const MOVE = {
 // load them, and both carry the reverse cross-reference. Change the rig and this check moves with it.
 import { CAMERA_TUNING, allowedArm } from '../src/engine/camera-tuning.ts';
 import { RENDER_CONFIG } from '../src/engine/render-config.ts';
+import { visibleTopBand } from './visible-top.mjs';
 
 // standoffM and minBandDeg: D-015b's ruling, recorded in MEASUREMENTS.md "D-015 readable rise".
 export const READABLE_RISE = { standoffM: 2.0, minBandDeg: 2.0 };
 // D-016b: READABLE_RISE models the ASSISTED pitch (D-015d, B-18), by calling the camera's own rule.
-import { PITCH_ASSIST, assistPitchDeg, probeHeight, probedDepth, topBandDeg } from '../src/engine/pitch-assist.ts';
+import { PITCH_ASSIST, assistPitchDeg, probeHeight, probedDepth } from '../src/engine/pitch-assist.ts';
 export const ASSIST_RIG = { pivotHeight: CAMERA_TUNING.pivotHeight, distance: CAMERA_TUNING.distance, initialPitchDeg: CAMERA_TUNING.initialPitchDeg, pitchMaxDeg: CAMERA_TUNING.pitchMaxDeg, fovDeg: RENDER_CONFIG.fovDeg };
 if (PITCH_ASSIST.minBandDeg !== READABLE_RISE.minBandDeg || READABLE_RISE.standoffM > PITCH_ASSIST.probeM)
   throw new Error(`pitch assist and READABLE_RISE disagree: assist reads ${PITCH_ASSIST.minBandDeg}deg within ${PITCH_ASSIST.probeM}u, the linter asks ${READABLE_RISE.minBandDeg}deg at ${READABLE_RISE.standoffM}u (MEASUREMENTS "D-015d pitch assist")`);
@@ -143,10 +144,11 @@ export function obstaclesOf(level, manifest){
     else if(a.bbox){ lo=a.bbox.min.map((v,k)=>v*sc[k]); hi=a.bbox.max.map((v,k)=>v*sc[k]); }
     else return; // UNKNOWN_ASSET reports it
     const R=Array.isArray(g.rot)&&g.rot.some(v=>v!==0)?rotXYZ(g.rot):null;
-    const mn=[Infinity,Infinity,Infinity], mx=[-Infinity,-Infinity,-Infinity];
+    const mn=[Infinity,Infinity,Infinity], mx=[-Infinity,-Infinity,-Infinity], corners=[];
     for(let m=0;m<8;m++){
       const p=[m&1?hi[0]:lo[0], m&2?hi[1]:lo[1], m&4?hi[2]:lo[2]];
       const q=R?R.map(r=>r[0]*p[0]+r[1]*p[1]+r[2]*p[2]):p;
+      corners.push(q.map((v,k)=>v+g.pos[k]));
       for(let k=0;k<3;k++){ mn[k]=Math.min(mn[k],q[k]+g.pos[k]); mx[k]=Math.max(mx[k],q[k]+g.pos[k]); }
     }
     let tris=null;
@@ -158,7 +160,7 @@ export function obstaclesOf(level, manifest){
       }
       tris={W,ix};
     }
-    out.push({ gi, mn, mx, tris });
+    out.push({ gi, mn, mx, tris, corners, obb:a.kind==='primitive'&&R?{R,pos:g.pos,lo,hi}:null });
   });
   return out;
 }
@@ -206,6 +208,14 @@ function rayHit(obst,o,dir,max){
       }
       continue;
     }
+    if(b.obb){ // inverse rotation preserves distance; broadphase envelope is never the final shape
+      const {R,pos,lo,hi}=b.obb, rel=o.map((v,k)=>v-pos[k]);
+      const localO=[0,1,2].map(k=>R[0][k]*rel[0]+R[1][k]*rel[1]+R[2][k]*rel[2]);
+      const localD=[0,1,2].map(k=>R[0][k]*dir[0]+R[1][k]*dir[1]+R[2][k]*dir[2]);
+      const hit=rayHit([{gi:b.gi,mn:lo,mx:hi}],localO,localD,max);
+      if(hit&&(best===null||hit.t<best.t)) best=hit;
+      continue;
+    }
     const t=Math.max(0,t0); if(t<=max&&(best===null||t<best.t)) best={t,gi:b.gi};
   }
   return best;
@@ -232,14 +242,23 @@ export function armAt(obst, feet, u, pitchDeg){
 //   1. the camera's assist picks its target with the UNOBSTRUCTED rig (camera.ts assistWant ->
 //      assistPitchDeg): `pitch` = base 18 when the free-arm top reads, the assisted pitch, or null (no assist);
 //   2. the arm then collides (camera.ts update): the eye is pivot + allowedArm(hit) at that pitch.
-// The band is the top surface seen from THAT eye. It reads iff it is >= minBandDeg. Nothing else.
+// The band is the unoccluded top surface seen from THAT eye (RB-003 verification).
 function riseView(boxes,obst,a,c){
   const L=landingDepth(boxes,a,c); if(!L) return null;
-  const rise=c[1]-a[1], len=Math.hypot(c[0]-a[0],c[2]-a[2]), u=[(c[0]-a[0])/len,(c[2]-a[2])/len], s=READABLE_RISE.standoffM;
+  const len=Math.hypot(c[0]-a[0],c[2]-a[2]), u=[(c[0]-a[0])/len,(c[2]-a[2])/len], s=READABLE_RISE.standoffM;
   const face=[a[0]+u[0]*L.t0, a[1], a[2]+u[1]*L.t0], stand=[face[0]-u[0]*s, a[1], face[2]-u[1]*s];
+  // A waypoint may be sunk into its support by autostep tolerance; use the actual surfaces.
+  // For a stand point over a gap retain the authored takeoff elevation (the rig's prescribed pose).
+  const support=boxes.filter(b=>under(b,stand[0],stand[2])&&Math.abs(b.top-a[1])<=MOVE.ground.autostep).sort((p,q)=>q.top-p.top)[0];
+  if(support) stand[1]=support.top;
+  const rise=L.box.top-stand[1];
   const base=CAMERA_TUNING.initialPitchDeg, target=assistedPitchDeg(rise,L.depth), pitch=target??base;
   const rest=armAt(obst,stand,u,base), at=pitch===base?rest:armAt(obst,stand,u,pitch);
-  const restBand=topBandDeg(ASSIST_RIG,base,rise,L.depth,s,rest.arm), band=topBandDeg(ASSIST_RIG,pitch,rise,L.depth,s,at.arm);
+  const visible=(pose,p)=>{
+    const back=pose.arm*Math.cos(p/DEG), eye=[stand[0]-u[0]*back,stand[1]+pose.eye,stand[2]-u[1]*back];
+    return visibleTopBand(obst,eye,u,L.box.top,s+back,s+back+L.depth,p,RENDER_CONFIG.fovDeg,L.gi);
+  };
+  const restBand=visible(rest,base), band=visible(at,pitch);
   return { L, rise, u, stand, facingDeg:Math.atan2(-u[0],-u[1])*DEG, base, target, pitch, rest, at, restBand, band,
     freeRestBand:readableBandDeg(rise,L.depth), reads:band>=READABLE_RISE.minBandDeg };
 }
@@ -427,8 +446,8 @@ export function lintLevel(level, manifest){
   // D-016: an ERROR on a move's teaching instance (the rest pose is what the player meets when the move is
   // new, so it may not ask them to pitch up), a WARNING on every later use (a practised move may). Chapters
   // only (the gym is a budget rig authored AT the move limits; OQ-046). `ground` rises are skipped as
-  // stairs/slopes read face by face; that is ASSUMED (this linter bounds a ground rise only by its slope),
-  // so a tall face authored as `ground` is caught by nav, not here (OQ-046, RB-003). A `platform` ride
+  // stairs/slopes read face by face;
+  // FACE_RISE now bounds individual ground risers (B-19). A `platform` ride
   // has no face.
   const boxes=boxesOf(level), obst=obstaclesOf(level,manifest);
   if(typeof level.chapter==='number'&&level.chapter>=1) for(let i=1;i<cp.length;i++){

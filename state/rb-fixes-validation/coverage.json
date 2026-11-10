@@ -1,0 +1,11 @@
+{
+  "class": "PASS",
+  "problems": [],
+  "levels": [
+    "00-gym",
+    "01-lower-stair",
+    "02-cliff-seam",
+    "03-drifting-stones",
+    "04-summit-ridge"
+  ]
+}

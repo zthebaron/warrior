@@ -15,6 +15,9 @@
 //      its REAL level: real arm collision, real probe. It must read, and the real probe must settle at the
 //      pitch the linter modelled. The stage asserts it ran exactly the derived set, so no waypoint can go
 //      without a case.
+//   READABLE_CASE (RB-003/RB-004): every measured chapter rise is also checked at its exact
+//      prescribed pose, including rest-readable faces and stand points over gaps. The actual probe
+//      and arm are snapped there after query warm-up; no player fall can move the measured pose.
 //   5. B-23: the linter now collides the arm (geometry behind the stand point lowers the eye). On
 //      fixtures/assist-cases.json (a wall clean and under an overhang) and fixtures/wall-arm.json (+3.75 and
 //      +2.50, each with its wall 1u behind and with nothing behind), every rise the linter evaluates is stood
@@ -26,6 +29,9 @@ import { join } from 'node:path';
 import { Stage, guard, VIEWPORT, type Ctx, type StageResult, type Vec3 } from './lib.ts';
 // @ts-expect-error plain .mjs, no types: the linter's own model of the assist (the camera's rule)
 import { assistCases, assistedPitchDeg, riseViews, withColliders, READABLE_RISE } from '../lint-level.mjs';
+
+// @ts-expect-error plain .mjs fixture data
+import { readabilityFixtures } from '../fixtures/readability.mjs';
 
 const FIXTURE = 'tools/harness/fixtures/pitch-assist.json';
 const CASE_FIXTURE = 'tools/harness/fixtures/assist-cases.json';
@@ -47,12 +53,15 @@ interface Target { top: number; box: { x0: number; x1: number; z0: number; z1: n
 
 const faceTarget = (f: Face): Target => ({ top: f.rise, box: { x0: f.face, x1: f.face + f.depth, z0: f.z - 3.5, z1: f.z + 3.5 } });
 
-/** Stand the player at `stand` facing `facing`, let the real rig settle, and measure the degrees of the
- *  frame's centre column that are the landing's top surface (one ray per row from the real camera pose). */
-async function measureAt(page: import('playwright').Page, tg: Target, stand: Vec3, facing: number): Promise<Measured> {
+/** Measure the real camera's visible target-top band. The default lets the player and rig settle.
+ *  exactPose warms the queries, then snaps the real rig at the prescribed position without advancing
+ *  physics: gap-crossing stand points can be in mid-air. This is a pose check, not a nav test. */
+async function measureAt(page: import('playwright').Page, tg: Target, stand: Vec3, facing: number, exactPose = false): Promise<Measured> {
   return page.evaluate(
-    ([tg, stand, facing, settle, rows]) => {
+    ([tg, stand, facing, settle, rows, exactPose]) => {
       const H = window.__HARNESS__!;
+      // Query structures must exist before snapping; then freeze the prescribed pose over gaps too.
+      if (exactPose) H.advance(1, 0);
       H.setInput(null);
       H.respawnAt(stand, facing, 0);
       // B-23: respawnAt moves the player only. The camera must be BEHIND the facing (where a player who
@@ -60,7 +69,7 @@ async function measureAt(page: import('playwright').Page, tg: Target, stand: Vec
       // never meets what is behind the stand point. Before B-23 every case not facing spawn's yaw was
       // measured side-on (OQ-056 item 3's 0.00deg).
       H.cameraYaw(facing);
-      const snap = H.advance(settle, 1);
+      const snap = exactPose ? H.snapshot() : H.advance(settle, 1);
       const c = H.cameraPose();
       const [fx, fy, fz] = c.forward;
       // right = forward x worldUp, up = right x forward
@@ -79,9 +88,9 @@ async function measureAt(page: import('playwright').Page, tg: Target, stand: Vec
         const [px, py, pz] = h.point;
         if (h.normal[1] > 0.99 && Math.abs(py - tg.top) < 1e-3 && px >= tg.box.x0 && px <= tg.box.x1 && pz >= tg.box.z0 && pz <= tg.box.z1) hits++;
       }
-      return { band: hits * step * (180 / Math.PI), viewPitchDeg: c.viewPitchDeg, assistOffsetDeg: c.assistOffsetDeg, probe: c.probe, feet: snap.feet };
+      return { band: hits * c.fovDeg / rows, viewPitchDeg: c.viewPitchDeg, assistOffsetDeg: c.assistOffsetDeg, probe: c.probe, feet: snap.feet };
     },
-    [tg, stand, facing, SETTLE_FRAMES, VIEWPORT.height * 2] as const,
+    [tg, stand, facing, SETTLE_FRAMES, VIEWPORT.height * 2, exactPose] as const,
   );
 }
 
@@ -150,22 +159,48 @@ export async function pitchAssist(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments
     const files = readdirSync(join(ctx.root, 'levels')).filter((f) => /^[0-9].*\.json$/.test(f));
     for (const file of files) {
       const level = JSON.parse(readFileSync(join(ctx.root, 'levels', file), 'utf8'));
+      if (level.chapter < 1) continue; // the gym remains the deliberately exempt budget rig
       const cases = assistCases(level, manifest) as AssistCase[];
-      if (!cases.length) {
-        st.check(`ASSIST_CASE ${level.id}: no waypoint depends on the assist`, true, `0 of ${level.critical_path.length} critical_path waypoints`);
-        continue;
-      }
+      const views = riseViews(level, manifest) as RiseView[];
       const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
       try {
         await page.goto(`${ctx.baseUrl}/?harness=1&level=${encodeURIComponent(level.id)}`);
         await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
         await page.evaluate(() => window.__HARNESS__!.start());
+        let ran = 0;
+        for (const v of views) {
+          const m = await measureAt(page, v, v.stand, v.facingDeg, true);
+          ran++;
+          st.check(`READABLE_CASE ${level.id} critical_path[${v.index}]: rig and model agree`,
+            (m.band >= min2) === v.reads,
+            `fixed stand pose: rig ${m.band.toFixed(3)}deg at ${m.viewPitchDeg.toFixed(1)}deg; model ${v.bandDeg.toFixed(3)}deg (${v.reads ? 'reads' : 'does not read'})`);
+        }
+        st.check(`READABLE_CASE ${level.id}: ran every measured rise, including rest-readable faces`, ran === views.length, `${ran} of ${views.length}`);
         const results = await runAllCases(page, cases, min2);
         st.check(`ASSIST_CASE ${level.id}: ran every derived case`, results.length === cases.length, `${results.length} of ${cases.length}`);
         for (const r of results) st.check(`ASSIST_CASE ${level.id} critical_path[${r.c.index}] reads in the real rig`, r.ok, r.why);
       } finally {
         await page.close();
       }
+    }
+
+    // RB-003/RB-004: both directions on independently reproduced occlusion/OBB/height/edge cases.
+    const chapter = JSON.parse(readFileSync(join(ctx.root, 'levels/02-cliff-seam.json'), 'utf8'));
+    const wallFixture = JSON.parse(readFileSync(join(ctx.root, WALL_FIXTURE), 'utf8'));
+    for (const fx of readabilityFixtures(chapter, wallFixture, JSON.parse(readFileSync(join(ctx.root, 'tools/fixtures/lint/01-lower-stair.pre-d015.json'), 'utf8')))) {
+      const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+      try {
+        await page.goto(`${ctx.baseUrl}/?harness=1&level=00-gym`);
+        await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1');
+        const loaded = await page.evaluate((t) => window.__HARNESS__!.startJson(t), JSON.stringify(fx.level));
+        if (!st.check(`READABLE_CASE regression ${fx.name}: fixture loads`, loaded.ok, loaded.error ?? 'ok')) continue;
+        const v = (riseViews(fx.level, manifest) as RiseView[]).find(v => v.index === fx.index);
+        if (!st.check(`READABLE_CASE regression ${fx.name}: target is evaluated`, !!v, `waypoint ${fx.index}`) || !v) continue;
+        const m = await measureAt(page, v, v.stand, v.facingDeg, true);
+        st.check(`READABLE_CASE regression ${fx.name}: model and real rig ${fx.reads ? 'read' : 'reject'} the target`,
+          v.reads === fx.reads && (m.band >= min2) === fx.reads,
+          `model ${v.bandDeg.toFixed(3)}deg; rig ${m.band.toFixed(3)}deg at ${m.viewPitchDeg.toFixed(1)}deg`);
+      } finally { await page.close(); }
     }
 
     // Proof that the linter's collided arm (B-23) and the real rig agree, both ways, on what is behind the

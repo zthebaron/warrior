@@ -568,7 +568,7 @@ in the real rig, at the pitch modelled here.
 - **Proof fixture:** the same +4.0 wall reads 2.33 deg when clean. Under an overhang 3.6 u high behind the
   approach it reads 0.00 deg (arm pulled in), and the check fails it.
 - **Today:** gym and chapter 1 have 0 cases. A climb at maxRise 4.50 needs a landing at
-least 2.55 u deep.
+strictly more than 2.55 u deep (2.56 tested). The former inclusive 2.55 claim is superseded by the RB-003/RB-004 edge measurement below.
 
 **B-23: the collided arm (2026-11-08).** READABLE_RISE no longer assumes an unobstructed arm. It predicts
 the eye the camera actually produces, in the camera's own two steps:
@@ -643,3 +643,34 @@ Shown to fail before being listed as `harness` rows in SPEC §7:
 - Tier-2 (hardware only): which compressed format a real GPU transcodes to, and GPU memory.
   SwiftShader advertises ASTC, ETC1, ETC2, S3TC and BPTC, so in CI the texture STAYS
   compressed (ASTC 4x4). That is a property of SwiftShader, not a guarantee about players' GPUs.
+
+## RB-003 / RB-004 independent verification (2026-11-09)
+
+Codex's counterexamples were independently reproduced by Claude at ad1eef8 and b8dfd5f;
+verification report: `state/CLAUDE-VERIFY-RB003-RB004.md` in the `claude-rbverify` worktree.
+Tim authorized the confirmed fixes and four-chapter playthrough on 2026-11-09.
+
+- Forward beam: original chapter 2 + box [55,10.35,0], scale [0.5,0.7,7]. Lint accepted;
+  real landing band 0 degrees. Control with beam lifted 3 u: readable again. A rear beam
+  [49.5,10.6,0], scale [1,0.4,7], hides the top without colliding the arm or obstructing nav.
+- Rotated rear slab [4,4,1], scale [0.3,8,4], yaw 45: envelope arm 4.87 versus real arm 7.0;
+  real band 2.647 degrees. Use exact oriented boxes, not their world-axis envelopes.
+- Landing top 2.5 with waypoint 2.2 on a 2.5-deep shelf: real band 1.715 degrees, model 2.122.
+  Use geometry heights for the rise; waypoint tolerance locates support, not a substitute height.
+- The 4.48 / 4.62 / 4.67 ceilings remain correct for ideal feet-relative coordinates.
+  Fixture feet settle 0.00997391585 above the authored floor: authored rise is conservative by
+  about 0.01 u. Do not add that skin to movement or readability budgets.
+- The exact 2.55-depth prescription above is superseded: it must be **strictly deeper than 2.55**;
+  2.56 is the tested working value. At +4.50, 2.549 and 2.550 read 0 degrees, 2.551 and 2.560 read
+  2.059/2.060 degrees by independent target-directed rays. The final float32 ray at 12.55 lands
+  exactly on the far edge and is missed; the model had counted it.
+- `PITCH_ASSIST.sampleEdgeMarginM = 1e-4 u` is a conservative numerical guard for the model's
+  down-ray samples, not a new camera or gameplay budget. The measured sample/edge discrepancy is
+  2.384e-7 u at the 2.55 fixture. A 1e-4 margin rejects edge-dependent samples while retaining
+  the measured 0.001 u interior control. Regression fixtures pin both sides; the runtime probe
+  is unchanged. This guard is not a guarantee for arbitrarily large world coordinates.
+- Static visibility subtracts exact projected occlusion intervals from the top band; it introduces
+  no ray-count or angular sampling budget. Runtime READABLE_CASE uses the existing 720-ray
+  protocol (VIEWPORT.height * 2), and the real snapped camera at the exact prescribed stand point.
+  One warm-up physics tick builds Rapier queries before the snapshot; no settling/falling is used
+  for this pose check. Existing 30-tick ASSIST_CASE checks remain for assisted standing faces.

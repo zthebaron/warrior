@@ -1,0 +1,46 @@
+[
+  {
+    "check": "typecheck",
+    "exit": 0
+  },
+  {
+    "check": "lint:levels",
+    "exit": 0
+  },
+  {
+    "check": "lint:self",
+    "exit": 0
+  },
+  {
+    "check": "check:patrol",
+    "exit": 0
+  },
+  {
+    "check": "check:progression",
+    "exit": 0
+  },
+  {
+    "check": "lint:not-list",
+    "exit": 0
+  },
+  {
+    "check": "lint:pack",
+    "exit": 0
+  },
+  {
+    "check": "lint:decisions",
+    "exit": 0
+  },
+  {
+    "check": "lint:accent",
+    "exit": 0
+  },
+  {
+    "check": "assets:budget",
+    "exit": 0
+  },
+  {
+    "check": "check:merge-reports",
+    "exit": 0
+  }
+]

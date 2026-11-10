@@ -1,0 +1,5295 @@
+{
+  "harness": "warrior-playtest/H3",
+  "startedAt": "2026-11-10T02:05:31.163Z",
+  "node": "v26.9.0",
+  "args": {
+    "only": "nav,phase-sweep,replay,chaos,counters,hazards,assets,accent,visual"
+  },
+  "environment": {
+    "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+    "chromium": "158.0.8127.18",
+    "baseUrl": "http://127.0.0.1:4317",
+    "preflight": {
+      "stage": "preflight",
+      "ok": true,
+      "checks": [
+        {
+          "name": "build harness bundle",
+          "ok": true,
+          "detail": "dist-harness/"
+        },
+        {
+          "name": "build production bundle",
+          "ok": true,
+          "detail": "dist/"
+        },
+        {
+          "name": "dist-harness/ built from the source on disk",
+          "ok": true,
+          "detail": "every file the build read is byte-identical on disk"
+        },
+        {
+          "name": "dist/ built from the source on disk",
+          "ok": true,
+          "detail": "every file the build read is byte-identical on disk"
+        },
+        {
+          "name": "harness API stripped from production bundle",
+          "ok": true,
+          "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+        },
+        {
+          "name": "vite preview serving over HTTP",
+          "ok": true,
+          "detail": "http://127.0.0.1:4317"
+        },
+        {
+          "name": "chromium launched with pinned args",
+          "ok": true,
+          "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+        },
+        {
+          "name": "webgl2 context on about:blank",
+          "ok": true,
+          "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+        },
+        {
+          "name": "harness API exposed with ?harness=1",
+          "ok": true,
+          "detail": "HARNESS_API_V1"
+        },
+        {
+          "name": "bundled levels match levels/ on disk",
+          "ok": true,
+          "detail": "every levels/*.json byte-identical to dist-harness/"
+        }
+      ],
+      "ms": 1309,
+      "data": {}
+    }
+  },
+  "levels": [
+    {
+      "id": "00-gym",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/00-gym.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 2,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 3 warnings: [TIGHT] seg 3->4 via dash is at 96% of the limit [TIGHT] seg 14->15 via jump is at 100% of the limit [FACE_RISE] seg 18->19 via ground: 8 faces taller than MOVE.ground.autostep 0.34u, the largest the player walks up without a jump (B-14); the tallest is +0.40u at x=62.20 z=0.00 (onto geometry[13]). A ground segment is bounded per face, not by slope x run (B-19): split it into risers <= 0.34u, or make it a jump. Gym only: a warning, its risers are B-20's"
+            }
+          ],
+          "ms": 2,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1309,
+          "data": {}
+        },
+        {
+          "stage": "nav",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results at 27.95s"
+            },
+            {
+              "name": "within 12s x 3 segments",
+              "ok": true,
+              "detail": "27.95s / 36s"
+            },
+            {
+              "name": "never below bounds.min.y",
+              "ok": true,
+              "detail": "min feet y -0.27 vs -15"
+            },
+            {
+              "name": "waypoints reached in order",
+              "ok": true,
+              "detail": "23/23: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]"
+            },
+            {
+              "name": "every declared move completed",
+              "ok": true,
+              "detail": "ground 12/12, climb 1/1, dash 1/1, wall 1/1, dashjump 1/1, jump 4/4, double 1/1, platform 1/1"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 4346,
+          "data": {
+            "moves": {
+              "ground": 12,
+              "climb": 1,
+              "dash": 1,
+              "wall": 1,
+              "dashjump": 1,
+              "jump": 4,
+              "double": 1,
+              "platform": 1
+            },
+            "ticks": 1677,
+            "reached": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22
+            ]
+          }
+        },
+        {
+          "stage": "phase-sweep",
+          "ok": true,
+          "checks": [
+            {
+              "name": "linter respawn constants match the game",
+              "ok": true,
+              "detail": "{\"checkpointRadius\":2,\"heightTolerance\":2,\"goalRadiusDefault\":1,\"bodyRadius\":0.35,\"bodyHeight\":1.9}"
+            },
+            {
+              "name": "seg 0 spawn = checkpoint[0] -> checkpoint[1]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 0 spawn = checkpoint[0] -> checkpoint[1]: every phase clears (gym: 12s budget not asserted)",
+              "ok": true,
+              "detail": "worst arrival 13.23s (wait + run)"
+            },
+            {
+              "name": "seg 1 checkpoint[1] -> goal: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 1 checkpoint[1] -> goal: every phase clears (gym: 12s budget not asserted)",
+              "ok": true,
+              "detail": "worst arrival 18.72s (wait + run)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 29899,
+          "data": {
+            "period": 6,
+            "segments": [
+              {
+                "name": "seg 0 spawn = checkpoint[0] -> checkpoint[1]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 13.233333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 45,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 135,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 270,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 315,
+                    "ok": true,
+                    "sec": 13.216666666666667,
+                    "why": null
+                  }
+                ],
+                "worst": 13.233333333333333
+              },
+              {
+                "name": "seg 1 checkpoint[1] -> goal",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 16.466666666666665,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 45,
+                    "ok": true,
+                    "sec": 15.716666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 14.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 135,
+                    "ok": true,
+                    "sec": 14.216666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 12.933333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 18.716666666666665,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 270,
+                    "ok": true,
+                    "sec": 17.966666666666665,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 315,
+                    "ok": true,
+                    "sec": 17.216666666666665,
+                    "why": null
+                  }
+                ],
+                "worst": 18.716666666666665
+              }
+            ]
+          }
+        },
+        {
+          "stage": "replay",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results after 1677 ticks"
+            },
+            {
+              "name": "checkpoints in order",
+              "ok": true,
+              "detail": "got [0,1], expected [0,1]"
+            },
+            {
+              "name": "position within 0.5u",
+              "ok": true,
+              "detail": "final (90.51, 3.21, -0.01) vs (90.51, 3.21, -0.01): 0.000u"
+            },
+            {
+              "name": "frames within 5%",
+              "ok": true,
+              "detail": "1677 vs 1677 ticks (0.00%, 27.95s)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 564,
+          "data": {
+            "trace": "tools/harness/traces/00-gym.json"
+          }
+        },
+        {
+          "stage": "chaos",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ran full duration",
+              "ok": true,
+              "detail": "3600/3600 ticks, 5 deaths/respawns"
+            },
+            {
+              "name": "in bounds",
+              "ok": true,
+              "detail": "every tick inside level.bounds"
+            },
+            {
+              "name": "not stuck",
+              "ok": true,
+              "detail": "moved >= 0.5u in every active 5s window"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "velocity under cap x2",
+              "ok": true,
+              "detail": "|h| max 20.00 <= 40 ; |v| max 35.00 <= 70"
+            },
+            {
+              "name": "no NaN transforms",
+              "ok": true,
+              "detail": "feet, velocity, platforms finite every tick"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "5 deaths, clock advanced 0.8000s across each (respawn delay 0.8s)"
+            }
+          ],
+          "ms": 808,
+          "data": {
+            "seed": 20261107
+          }
+        },
+        {
+          "stage": "hazards",
+          "ok": true,
+          "checks": [
+            {
+              "name": "fixture loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/patroller.json"
+            },
+            {
+              "name": "runtime = pure function of the clock",
+              "ok": true,
+              "detail": "40 samples over 11.33s, max |runtime - independent oracle| 1.8e-15u"
+            },
+            {
+              "name": "touching the patroller is death",
+              "ok": true,
+              "detail": "death #1 at t=11.3500s"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "clock 11.3500 -> 12.1500s (+0.8000, respawn delay 0.8s)"
+            },
+            {
+              "name": "respawn at a new phase",
+              "ok": true,
+              "detail": "patroller loop fraction 0.8240 at death -> 0.9349 at respawn"
+            },
+            {
+              "name": "pause freezes the world clock",
+              "ok": true,
+              "detail": "state pause, clock 12.1500 -> 12.1500s over 120 frames"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 698,
+          "data": {}
+        },
+        {
+          "stage": "counters",
+          "ok": true,
+          "checks": [
+            {
+              "name": "draw calls < 300",
+              "ok": true,
+              "detail": "peak 34"
+            },
+            {
+              "name": "scene budget recorded",
+              "ok": true,
+              "detail": "budgets.json scenes[\"00-gym\"]"
+            },
+            {
+              "name": "draw calls <= 34 (scene)",
+              "ok": true,
+              "detail": "peak 34"
+            },
+            {
+              "name": "triangles <= 1104 (scene)",
+              "ok": true,
+              "detail": "peak 1104"
+            },
+            {
+              "name": "triangles < 500,000",
+              "ok": true,
+              "detail": "peak 1,104"
+            },
+            {
+              "name": "geometries < 400",
+              "ok": true,
+              "detail": "peak 7"
+            },
+            {
+              "name": "textures < 120",
+              "ok": true,
+              "detail": "peak 3"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none (63 samples over trace playback (1677 frames) + 6 cameras)"
+            }
+          ],
+          "ms": 513,
+          "data": {
+            "peak": {
+              "calls": 34,
+              "triangles": 1104,
+              "geometries": 7,
+              "textures": 3,
+              "samples": 63
+            }
+          }
+        },
+        {
+          "stage": "assets",
+          "ok": true,
+          "checks": [
+            {
+              "name": "manifest has mesh assets",
+              "ok": true,
+              "detail": "2: kit_rock_mass, kit_torii"
+            },
+            {
+              "name": "kit_rock_mass loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_rock_mass draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_rock_mass triangles <= 216",
+              "ok": true,
+              "detail": "216 rendered (manifest 216)"
+            },
+            {
+              "name": "kit_rock_mass textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_rock_mass unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "kit_torii loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_torii draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_torii triangles <= 108",
+              "ok": true,
+              "detail": "108 rendered (manifest 108)"
+            },
+            {
+              "name": "kit_torii textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_torii unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "test level with a mesh asset loads (B-16)",
+              "ok": true,
+              "detail": "cold page, tools/harness/fixtures/mesh-asset.json via startJson: kit_torii on screen, accent 5.514% of frame"
+            }
+          ],
+          "ms": 1101,
+          "data": {
+            "ktx2Support": {
+              "astc": true,
+              "etc1": true,
+              "etc2": true,
+              "dxt": true,
+              "bptc": true,
+              "pvrtc": false
+            },
+            "tier2": {
+              "kit_rock_mass": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#383838:17708",
+                  "#534e4b:14982",
+                  "#69645f:7564",
+                  "#20201e:1138",
+                  "#827d76:876",
+                  "#323232:369"
+                ],
+                "pixels": {
+                  "covered": 45327,
+                  "nearPalette": 43335,
+                  "maxError": 110,
+                  "nearPaletteShare": 0.9561
+                }
+              },
+              "kit_torii": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#e34234:11511",
+                  "#20201e:4076",
+                  "#f1219a:287",
+                  "#f810cc:240",
+                  "#ea3267:215",
+                  "#581856:123"
+                ],
+                "pixels": {
+                  "covered": 16812,
+                  "nearPalette": 15587,
+                  "maxError": 118,
+                  "nearPaletteShare": 0.9271
+                }
+              }
+            }
+          }
+        },
+        {
+          "stage": "accent",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ACCENT_AREA torii (50, 0, 0)",
+              "ok": true,
+              "detail": "0.0768% of frame is THIS gate's accent at pitch 25 deg (rest 18: 0.0603%), best of 12 reachable pitches, scanned from (0, 0, 0), 50.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (88, 3.2, 0)",
+              "ok": true,
+              "detail": "0.1250% of frame is THIS gate's accent at pitch 5 deg (rest 18: 0.1033%), best of 12 reachable pitches, scanned from (50, 0, 0), 38.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 3131,
+          "data": {
+            "accentArea": {
+              "floor_pct": 0.0204,
+              "accent": "vermilion_a #e34234",
+              "rows": [
+                {
+                  "pos": [
+                    50,
+                    0,
+                    0
+                  ],
+                  "from": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "dist": 50,
+                  "pct": 0.07682291666666667,
+                  "pitch": 25,
+                  "restPct": 0.06032986111111111
+                },
+                {
+                  "pos": [
+                    88,
+                    3.2,
+                    0
+                  ],
+                  "from": [
+                    50,
+                    0,
+                    0
+                  ],
+                  "dist": 38,
+                  "pct": 0.125,
+                  "pitch": 5,
+                  "restPct": 0.1032986111111111
+                }
+              ]
+            }
+          }
+        },
+        {
+          "stage": "visual",
+          "ok": true,
+          "checks": [
+            {
+              "name": "cam0 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam1 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam2 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam3 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam4 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam5 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 1064,
+          "data": {
+            "goldens": "tools/harness/golden/darwin/00-gym"
+          }
+        }
+      ]
+    },
+    {
+      "id": "01-lower-stair",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/01-lower-stair.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean"
+            }
+          ],
+          "ms": 29,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1309,
+          "data": {}
+        },
+        {
+          "stage": "nav",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results at 15.35s"
+            },
+            {
+              "name": "within 12s x 4 segments",
+              "ok": true,
+              "detail": "15.35s / 48s"
+            },
+            {
+              "name": "never below bounds.min.y",
+              "ok": true,
+              "detail": "min feet y -0.34 vs -15"
+            },
+            {
+              "name": "waypoints reached in order",
+              "ok": true,
+              "detail": "22/22: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]"
+            },
+            {
+              "name": "every declared move completed",
+              "ok": true,
+              "detail": "ground 13/13, jump 8/8"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 3401,
+          "data": {
+            "moves": {
+              "ground": 13,
+              "jump": 8
+            },
+            "ticks": 921,
+            "reached": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21
+            ]
+          }
+        },
+        {
+          "stage": "phase-sweep",
+          "ok": true,
+          "checks": [
+            {
+              "name": "linter respawn constants match the game",
+              "ok": true,
+              "detail": "{\"checkpointRadius\":2,\"heightTolerance\":2,\"goalRadiusDefault\":1,\"bodyRadius\":0.35,\"bodyHeight\":1.9}"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 5.05s (wait + run)"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 2.97s (wait + run)"
+            },
+            {
+              "name": "seg 2: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 4/8 arrival phases (offsets 0,3,4,7); blind clears take 2.92s; reading the crow clears 8/8, 3.35-6.85s incl. the wait"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 6.85s (wait + run)"
+            },
+            {
+              "name": "seg 3: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 2/8 arrival phases (offsets 3,7); blind clears take 3.20s; reading the crow clears 8/8, 3.27-6.77s incl. the wait"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> goal: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> goal: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 6.77s (wait + run)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 31235,
+          "data": {
+            "period": 4,
+            "segments": [
+              {
+                "name": "seg 0 spawn -> checkpoint[0]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 5.05,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 5.016666666666667,
+                    "why": null
+                  }
+                ],
+                "worst": 5.05
+              },
+              {
+                "name": "seg 1 checkpoint[0] -> checkpoint[1]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 2.966666666666667,
+                    "why": null
+                  }
+                ],
+                "worst": 2.966666666666667
+              },
+              {
+                "name": "seg 2 checkpoint[1] -> checkpoint[2]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 3.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 6.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 6.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 5.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 5.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 3.85,
+                    "why": null
+                  }
+                ],
+                "worst": 6.85
+              },
+              {
+                "name": "seg 3 checkpoint[2] -> goal",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 3.2666666666666666,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 6.766666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 6.266666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 5.766666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 5.266666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 4.766666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.266666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 3.7666666666666666,
+                    "why": null
+                  }
+                ],
+                "worst": 6.766666666666667
+              }
+            ],
+            "blind": [
+              {
+                "segment": 2,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": false,
+                    "why": "FELL on seg 13->14 (via ground, \"wait for the crow, then cross the sweep\") — died at (64.69, 5.51, -0.00), target was (72.00, 5.50, 0.00), last reached waypoint 13",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 2.9166666666666665
+                  },
+                  {
+                    "offset": 2,
+                    "ok": true,
+                    "why": null,
+                    "sec": 2.9166666666666665
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 13->14 (via ground, \"wait for the crow, then cross the sweep\") — died at (65.27, 5.51, -0.00), target was (72.00, 5.50, 0.00), last reached waypoint 13",
+                    "sec": 1.2333333333333334
+                  },
+                  {
+                    "offset": 4,
+                    "ok": false,
+                    "why": "FELL on seg 13->14 (via ground, \"wait for the crow, then cross the sweep\") — died at (64.69, 5.51, -0.00), target was (72.00, 5.50, 0.00), last reached waypoint 13",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 2.9166666666666665
+                  },
+                  {
+                    "offset": 6,
+                    "ok": true,
+                    "why": null,
+                    "sec": 2.9166666666666665
+                  },
+                  {
+                    "offset": 7,
+                    "ok": false,
+                    "why": "FELL on seg 13->14 (via ground, \"wait for the crow, then cross the sweep\") — died at (65.27, 5.51, -0.00), target was (72.00, 5.50, 0.00), last reached waypoint 13",
+                    "sec": 1.2333333333333334
+                  }
+                ]
+              },
+              {
+                "segment": 3,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.2
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.2
+                  },
+                  {
+                    "offset": 2,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.2
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 17->18 (via ground, \"2u short of the first riser, inside the sweep lane: crossed on the crow, like the run it replaces\") — died at (87.73, 5.51, 0.00), target was (89.50, 5.50, 0.00), last reached waypoint 17",
+                    "sec": 1.3
+                  },
+                  {
+                    "offset": 4,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.2
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.2
+                  },
+                  {
+                    "offset": 6,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.2
+                  },
+                  {
+                    "offset": 7,
+                    "ok": false,
+                    "why": "FELL on seg 17->18 (via ground, \"2u short of the first riser, inside the sweep lane: crossed on the crow, like the run it replaces\") — died at (87.73, 5.51, 0.00), target was (89.50, 5.50, 0.00), last reached waypoint 17",
+                    "sec": 1.3
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "stage": "replay",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results after 921 ticks"
+            },
+            {
+              "name": "checkpoints in order",
+              "ok": true,
+              "detail": "got [0,1,2], expected [0,1,2]"
+            },
+            {
+              "name": "position within 0.5u",
+              "ok": true,
+              "detail": "final (99.61, 9.01, -0.00) vs (99.61, 9.01, -0.00): 0.000u"
+            },
+            {
+              "name": "frames within 5%",
+              "ok": true,
+              "detail": "921 vs 921 ticks (0.00%, 15.35s)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 508,
+          "data": {
+            "trace": "tools/harness/traces/01-lower-stair.json"
+          }
+        },
+        {
+          "stage": "chaos",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ran full duration",
+              "ok": true,
+              "detail": "3600/3600 ticks, 1 deaths/respawns"
+            },
+            {
+              "name": "in bounds",
+              "ok": true,
+              "detail": "every tick inside level.bounds"
+            },
+            {
+              "name": "not stuck",
+              "ok": true,
+              "detail": "moved >= 0.5u in every active 5s window"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "velocity under cap x2",
+              "ok": true,
+              "detail": "|h| max 20.00 <= 40 ; |v| max 17.33 <= 70"
+            },
+            {
+              "name": "no NaN transforms",
+              "ok": true,
+              "detail": "feet, velocity, platforms finite every tick"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "1 deaths, clock advanced 0.8000s across each (respawn delay 0.8s)"
+            }
+          ],
+          "ms": 852,
+          "data": {
+            "seed": 20261107
+          }
+        },
+        {
+          "stage": "hazards",
+          "ok": true,
+          "checks": [
+            {
+              "name": "fixture loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/patroller.json"
+            },
+            {
+              "name": "runtime = pure function of the clock",
+              "ok": true,
+              "detail": "40 samples over 11.33s, max |runtime - independent oracle| 1.8e-15u"
+            },
+            {
+              "name": "touching the patroller is death",
+              "ok": true,
+              "detail": "death #1 at t=11.3500s"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "clock 11.3500 -> 12.1500s (+0.8000, respawn delay 0.8s)"
+            },
+            {
+              "name": "respawn at a new phase",
+              "ok": true,
+              "detail": "patroller loop fraction 0.8240 at death -> 0.9349 at respawn"
+            },
+            {
+              "name": "pause freezes the world clock",
+              "ok": true,
+              "detail": "state pause, clock 12.1500 -> 12.1500s over 120 frames"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 683,
+          "data": {}
+        },
+        {
+          "stage": "counters",
+          "ok": true,
+          "checks": [
+            {
+              "name": "draw calls < 300",
+              "ok": true,
+              "detail": "peak 46"
+            },
+            {
+              "name": "scene budget recorded",
+              "ok": true,
+              "detail": "budgets.json scenes[\"01-lower-stair\"]"
+            },
+            {
+              "name": "draw calls <= 46 (scene)",
+              "ok": true,
+              "detail": "peak 46"
+            },
+            {
+              "name": "triangles <= 3888 (scene)",
+              "ok": true,
+              "detail": "peak 3888"
+            },
+            {
+              "name": "triangles < 500,000",
+              "ok": true,
+              "detail": "peak 3,888"
+            },
+            {
+              "name": "geometries < 400",
+              "ok": true,
+              "detail": "peak 7"
+            },
+            {
+              "name": "textures < 120",
+              "ok": true,
+              "detail": "peak 3"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none (38 samples over trace playback (921 frames) + 6 cameras)"
+            }
+          ],
+          "ms": 459,
+          "data": {
+            "peak": {
+              "calls": 46,
+              "triangles": 3888,
+              "geometries": 7,
+              "textures": 3,
+              "samples": 38
+            }
+          }
+        },
+        {
+          "stage": "assets",
+          "ok": true,
+          "checks": [
+            {
+              "name": "manifest has mesh assets",
+              "ok": true,
+              "detail": "2: kit_rock_mass, kit_torii"
+            },
+            {
+              "name": "kit_rock_mass loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_rock_mass draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_rock_mass triangles <= 216",
+              "ok": true,
+              "detail": "216 rendered (manifest 216)"
+            },
+            {
+              "name": "kit_rock_mass textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_rock_mass unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "kit_torii loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_torii draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_torii triangles <= 108",
+              "ok": true,
+              "detail": "108 rendered (manifest 108)"
+            },
+            {
+              "name": "kit_torii textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_torii unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "test level with a mesh asset loads (B-16)",
+              "ok": true,
+              "detail": "cold page, tools/harness/fixtures/mesh-asset.json via startJson: kit_torii on screen, accent 5.514% of frame"
+            }
+          ],
+          "ms": 1125,
+          "data": {
+            "ktx2Support": {
+              "astc": true,
+              "etc1": true,
+              "etc2": true,
+              "dxt": true,
+              "bptc": true,
+              "pvrtc": false
+            },
+            "tier2": {
+              "kit_rock_mass": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#383838:17708",
+                  "#534e4b:14982",
+                  "#69645f:7564",
+                  "#20201e:1138",
+                  "#827d76:876",
+                  "#323232:369"
+                ],
+                "pixels": {
+                  "covered": 45327,
+                  "nearPalette": 43335,
+                  "maxError": 110,
+                  "nearPaletteShare": 0.9561
+                }
+              },
+              "kit_torii": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#e34234:11511",
+                  "#20201e:4076",
+                  "#f1219a:287",
+                  "#f810cc:240",
+                  "#ea3267:215",
+                  "#581856:123"
+                ],
+                "pixels": {
+                  "covered": 16812,
+                  "nearPalette": 15587,
+                  "maxError": 118,
+                  "nearPaletteShare": 0.9271
+                }
+              }
+            }
+          }
+        },
+        {
+          "stage": "accent",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ACCENT_AREA torii (34, 2, 0)",
+              "ok": true,
+              "detail": "0.1879% of frame is THIS gate's accent at pitch 25 deg (rest 18: 0.1645%), best of 12 reachable pitches, scanned from (0, 0, 0), 34.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (55, 5.5, 0)",
+              "ok": true,
+              "detail": "0.2747% of frame is THIS gate's accent at pitch 15 deg (rest 18: 0.1806%), best of 12 reachable pitches, scanned from (34, 2, 0), 21.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (77, 5.5, 0)",
+              "ok": true,
+              "detail": "0.3641% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.1866%), best of 12 reachable pitches, scanned from (55, 5.5, 0), 22.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (99, 9, 0)",
+              "ok": true,
+              "detail": "0.4297% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.1949%), best of 12 reachable pitches, scanned from (77, 5.5, 0), 22.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 5494,
+          "data": {
+            "accentArea": {
+              "floor_pct": 0.0204,
+              "accent": "vermilion_a #e34234",
+              "rows": [
+                {
+                  "pos": [
+                    34,
+                    2,
+                    0
+                  ],
+                  "from": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "dist": 34,
+                  "pct": 0.1879340277777778,
+                  "pitch": 25,
+                  "restPct": 0.1644965277777778
+                },
+                {
+                  "pos": [
+                    55,
+                    5.5,
+                    0
+                  ],
+                  "from": [
+                    34,
+                    2,
+                    0
+                  ],
+                  "dist": 21,
+                  "pct": 0.2747395833333333,
+                  "pitch": 15,
+                  "restPct": 0.18055555555555555
+                },
+                {
+                  "pos": [
+                    77,
+                    5.5,
+                    0
+                  ],
+                  "from": [
+                    55,
+                    5.5,
+                    0
+                  ],
+                  "dist": 22,
+                  "pct": 0.3641493055555556,
+                  "pitch": -25,
+                  "restPct": 0.18663194444444445
+                },
+                {
+                  "pos": [
+                    99,
+                    9,
+                    0
+                  ],
+                  "from": [
+                    77,
+                    5.5,
+                    0
+                  ],
+                  "dist": 22,
+                  "pct": 0.4296875,
+                  "pitch": -25,
+                  "restPct": 0.1948784722222222
+                }
+              ]
+            }
+          }
+        },
+        {
+          "stage": "visual",
+          "ok": true,
+          "checks": [
+            {
+              "name": "cam0 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam1 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam2 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam3 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam4 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam5 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 1152,
+          "data": {
+            "goldens": "tools/harness/golden/darwin/01-lower-stair"
+          }
+        }
+      ]
+    },
+    {
+      "id": "02-cliff-seam",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/02-cliff-seam.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 2 warnings: [TIGHT] seg 12->13 via double is at 95% of the limit [TIGHT] seg 19->20 via double is at 95% of the limit"
+            }
+          ],
+          "ms": 21,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1309,
+          "data": {}
+        },
+        {
+          "stage": "nav",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results at 27.30s"
+            },
+            {
+              "name": "within 12s x 5 segments",
+              "ok": true,
+              "detail": "27.30s / 60s"
+            },
+            {
+              "name": "never below bounds.min.y",
+              "ok": true,
+              "detail": "min feet y -0.01 vs -15"
+            },
+            {
+              "name": "waypoints reached in order",
+              "ok": true,
+              "detail": "22/22: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]"
+            },
+            {
+              "name": "every declared move completed",
+              "ok": true,
+              "detail": "ground 14/14, climb 2/2, wall 1/1, double 3/3, jump 1/1"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 5598,
+          "data": {
+            "moves": {
+              "ground": 14,
+              "climb": 2,
+              "wall": 1,
+              "double": 3,
+              "jump": 1
+            },
+            "ticks": 1638,
+            "reached": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21
+            ]
+          }
+        },
+        {
+          "stage": "phase-sweep",
+          "ok": true,
+          "checks": [
+            {
+              "name": "linter respawn constants match the game",
+              "ok": true,
+              "detail": "{\"checkpointRadius\":2,\"heightTolerance\":2,\"goalRadiusDefault\":1,\"bodyRadius\":0.35,\"bodyHeight\":1.9}"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 4.87s (wait + run)"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 2.65s (wait + run)"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 2.35s (wait + run)"
+            },
+            {
+              "name": "seg 3: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 4/8 arrival phases (offsets 0,3,4,7); blind clears take 4.92s; reading the crow clears 8/8, 5.35-8.85s incl. the wait"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> checkpoint[3]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> checkpoint[3]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 8.85s (wait + run)"
+            },
+            {
+              "name": "seg 4: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 4/8 arrival phases (offsets 0,3,4,7); blind clears take 6.78s; reading the crow clears 8/8, 7.23-10.73s incl. the wait"
+            },
+            {
+              "name": "seg 4 checkpoint[3] -> goal: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 4 checkpoint[3] -> goal: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 10.73s (wait + run)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 44749,
+          "data": {
+            "period": 4,
+            "segments": [
+              {
+                "name": "seg 0 spawn -> checkpoint[0]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 4.866666666666666,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 4.85,
+                    "why": null
+                  }
+                ],
+                "worst": 4.866666666666666
+              },
+              {
+                "name": "seg 1 checkpoint[0] -> checkpoint[1]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 2.65,
+                    "why": null
+                  }
+                ],
+                "worst": 2.65
+              },
+              {
+                "name": "seg 2 checkpoint[1] -> checkpoint[2]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 2.35,
+                    "why": null
+                  }
+                ],
+                "worst": 2.35
+              },
+              {
+                "name": "seg 3 checkpoint[2] -> checkpoint[3]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 5.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 8.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 8.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 7.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 7.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 6.85,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 6.35,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 5.85,
+                    "why": null
+                  }
+                ],
+                "worst": 8.85
+              },
+              {
+                "name": "seg 4 checkpoint[3] -> goal",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 7.233333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 10.733333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 10.233333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 9.733333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 9.233333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 8.733333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 8.233333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 7.733333333333333,
+                    "why": null
+                  }
+                ],
+                "worst": 10.733333333333333
+              }
+            ],
+            "blind": [
+              {
+                "segment": 3,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": false,
+                    "why": "FELL on seg 10->11 (via ground, \"wait for the crow, then cross the sweep\") — died at (71.69, 10.01, -0.00), target was (79.00, 10.00, 0.00), last reached waypoint 10",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.916666666666667
+                  },
+                  {
+                    "offset": 2,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.916666666666667
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 10->11 (via ground, \"wait for the crow, then cross the sweep\") — died at (72.27, 10.01, -0.00), target was (79.00, 10.00, 0.00), last reached waypoint 10",
+                    "sec": 1.2333333333333334
+                  },
+                  {
+                    "offset": 4,
+                    "ok": false,
+                    "why": "FELL on seg 10->11 (via ground, \"wait for the crow, then cross the sweep\") — died at (71.69, 10.01, -0.00), target was (79.00, 10.00, 0.00), last reached waypoint 10",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.916666666666667
+                  },
+                  {
+                    "offset": 6,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.916666666666667
+                  },
+                  {
+                    "offset": 7,
+                    "ok": false,
+                    "why": "FELL on seg 10->11 (via ground, \"wait for the crow, then cross the sweep\") — died at (72.27, 10.01, -0.00), target was (79.00, 10.00, 0.00), last reached waypoint 10",
+                    "sec": 1.2333333333333334
+                  }
+                ]
+              },
+              {
+                "segment": 4,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": false,
+                    "why": "FELL on seg 16->17 (via ground, \"wait for the crow, cross the sweep, 2u short of the face\") — died at (107.68, 11.51, -0.00), target was (115.00, 11.50, 0.00), last reached waypoint 16",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 6.783333333333333
+                  },
+                  {
+                    "offset": 2,
+                    "ok": true,
+                    "why": null,
+                    "sec": 6.783333333333333
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 16->17 (via ground, \"wait for the crow, cross the sweep, 2u short of the face\") — died at (108.26, 11.51, -0.00), target was (115.00, 11.50, 0.00), last reached waypoint 16",
+                    "sec": 1.2333333333333334
+                  },
+                  {
+                    "offset": 4,
+                    "ok": false,
+                    "why": "FELL on seg 16->17 (via ground, \"wait for the crow, cross the sweep, 2u short of the face\") — died at (107.68, 11.51, -0.00), target was (115.00, 11.50, 0.00), last reached waypoint 16",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 6.783333333333333
+                  },
+                  {
+                    "offset": 6,
+                    "ok": true,
+                    "why": null,
+                    "sec": 6.783333333333333
+                  },
+                  {
+                    "offset": 7,
+                    "ok": false,
+                    "why": "FELL on seg 16->17 (via ground, \"wait for the crow, cross the sweep, 2u short of the face\") — died at (108.26, 11.51, -0.00), target was (115.00, 11.50, 0.00), last reached waypoint 16",
+                    "sec": 1.2333333333333334
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "stage": "replay",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results after 1638 ticks"
+            },
+            {
+              "name": "checkpoints in order",
+              "ok": true,
+              "detail": "got [0,1,2,3], expected [0,1,2,3]"
+            },
+            {
+              "name": "position within 0.5u",
+              "ok": true,
+              "detail": "final (143.55, 15.51, -0.00) vs (143.55, 15.51, -0.00): 0.000u"
+            },
+            {
+              "name": "frames within 5%",
+              "ok": true,
+              "detail": "1638 vs 1638 ticks (0.00%, 27.30s)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 562,
+          "data": {
+            "trace": "tools/harness/traces/02-cliff-seam.json"
+          }
+        },
+        {
+          "stage": "chaos",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ran full duration",
+              "ok": true,
+              "detail": "3600/3600 ticks, 2 deaths/respawns"
+            },
+            {
+              "name": "in bounds",
+              "ok": true,
+              "detail": "every tick inside level.bounds"
+            },
+            {
+              "name": "not stuck",
+              "ok": true,
+              "detail": "moved >= 0.5u in every active 5s window"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "velocity under cap x2",
+              "ok": true,
+              "detail": "|h| max 20.00 <= 40 ; |v| max 30.93 <= 70"
+            },
+            {
+              "name": "no NaN transforms",
+              "ok": true,
+              "detail": "feet, velocity, platforms finite every tick"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "2 deaths, clock advanced 0.8000s across each (respawn delay 0.8s)"
+            }
+          ],
+          "ms": 904,
+          "data": {
+            "seed": 20261107
+          }
+        },
+        {
+          "stage": "hazards",
+          "ok": true,
+          "checks": [
+            {
+              "name": "fixture loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/patroller.json"
+            },
+            {
+              "name": "runtime = pure function of the clock",
+              "ok": true,
+              "detail": "40 samples over 11.33s, max |runtime - independent oracle| 1.8e-15u"
+            },
+            {
+              "name": "touching the patroller is death",
+              "ok": true,
+              "detail": "death #1 at t=11.3500s"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "clock 11.3500 -> 12.1500s (+0.8000, respawn delay 0.8s)"
+            },
+            {
+              "name": "respawn at a new phase",
+              "ok": true,
+              "detail": "patroller loop fraction 0.8240 at death -> 0.9349 at respawn"
+            },
+            {
+              "name": "pause freezes the world clock",
+              "ok": true,
+              "detail": "state pause, clock 12.1500 -> 12.1500s over 120 frames"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 685,
+          "data": {}
+        },
+        {
+          "stage": "counters",
+          "ok": true,
+          "checks": [
+            {
+              "name": "draw calls < 300",
+              "ok": true,
+              "detail": "peak 50"
+            },
+            {
+              "name": "scene budget recorded",
+              "ok": true,
+              "detail": "budgets.json scenes[\"02-cliff-seam\"]"
+            },
+            {
+              "name": "draw calls <= 50 (scene)",
+              "ok": true,
+              "detail": "peak 50"
+            },
+            {
+              "name": "triangles <= 5052 (scene)",
+              "ok": true,
+              "detail": "peak 5052"
+            },
+            {
+              "name": "triangles < 500,000",
+              "ok": true,
+              "detail": "peak 5,052"
+            },
+            {
+              "name": "geometries < 400",
+              "ok": true,
+              "detail": "peak 7"
+            },
+            {
+              "name": "textures < 120",
+              "ok": true,
+              "detail": "peak 3"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none (62 samples over trace playback (1638 frames) + 6 cameras)"
+            }
+          ],
+          "ms": 498,
+          "data": {
+            "peak": {
+              "calls": 50,
+              "triangles": 5052,
+              "geometries": 7,
+              "textures": 3,
+              "samples": 62
+            }
+          }
+        },
+        {
+          "stage": "assets",
+          "ok": true,
+          "checks": [
+            {
+              "name": "manifest has mesh assets",
+              "ok": true,
+              "detail": "2: kit_rock_mass, kit_torii"
+            },
+            {
+              "name": "kit_rock_mass loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_rock_mass draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_rock_mass triangles <= 216",
+              "ok": true,
+              "detail": "216 rendered (manifest 216)"
+            },
+            {
+              "name": "kit_rock_mass textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_rock_mass unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "kit_torii loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_torii draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_torii triangles <= 108",
+              "ok": true,
+              "detail": "108 rendered (manifest 108)"
+            },
+            {
+              "name": "kit_torii textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_torii unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "test level with a mesh asset loads (B-16)",
+              "ok": true,
+              "detail": "cold page, tools/harness/fixtures/mesh-asset.json via startJson: kit_torii on screen, accent 5.514% of frame"
+            }
+          ],
+          "ms": 1099,
+          "data": {
+            "ktx2Support": {
+              "astc": true,
+              "etc1": true,
+              "etc2": true,
+              "dxt": true,
+              "bptc": true,
+              "pvrtc": false
+            },
+            "tier2": {
+              "kit_rock_mass": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#383838:17708",
+                  "#534e4b:14982",
+                  "#69645f:7564",
+                  "#20201e:1138",
+                  "#827d76:876",
+                  "#323232:369"
+                ],
+                "pixels": {
+                  "covered": 45327,
+                  "nearPalette": 43335,
+                  "maxError": 110,
+                  "nearPaletteShare": 0.9561
+                }
+              },
+              "kit_torii": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#e34234:11511",
+                  "#20201e:4076",
+                  "#f1219a:287",
+                  "#f810cc:240",
+                  "#ea3267:215",
+                  "#581856:123"
+                ],
+                "pixels": {
+                  "covered": 16812,
+                  "nearPalette": 15587,
+                  "maxError": 118,
+                  "nearPaletteShare": 0.9271
+                }
+              }
+            }
+          }
+        },
+        {
+          "stage": "accent",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ACCENT_AREA torii (30, 4.5, 0)",
+              "ok": true,
+              "detail": "0.2227% of frame is THIS gate's accent at pitch 18 deg (rest 18: 0.2227%), best of 12 reachable pitches, scanned from (0, 0, 0), 30.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (44, 7.2, 0)",
+              "ok": true,
+              "detail": "0.4757% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.1293%), best of 12 reachable pitches, scanned from (30, 4.5, 0), 14.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (62, 10, 0)",
+              "ok": true,
+              "detail": "0.5998% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.2804%), best of 12 reachable pitches, scanned from (44, 7.2, 0), 18.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (98, 11.5, 0)",
+              "ok": true,
+              "detail": "0.1350% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.0790%), best of 12 reachable pitches, scanned from (62, 10, 0), 36.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (143, 15.5, 0)",
+              "ok": true,
+              "detail": "0.0764% of frame is THIS gate's accent at pitch 18 deg (rest 18: 0.0764%), best of 12 reachable pitches, scanned from (98, 11.5, 0), 45.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 6693,
+          "data": {
+            "accentArea": {
+              "floor_pct": 0.0204,
+              "accent": "vermilion_a #e34234",
+              "rows": [
+                {
+                  "pos": [
+                    30,
+                    4.5,
+                    0
+                  ],
+                  "from": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "dist": 30,
+                  "pct": 0.22265625,
+                  "pitch": 18,
+                  "restPct": 0.22265625
+                },
+                {
+                  "pos": [
+                    44,
+                    7.2,
+                    0
+                  ],
+                  "from": [
+                    30,
+                    4.5,
+                    0
+                  ],
+                  "dist": 14,
+                  "pct": 0.4756944444444444,
+                  "pitch": -25,
+                  "restPct": 0.1293402777777778
+                },
+                {
+                  "pos": [
+                    62,
+                    10,
+                    0
+                  ],
+                  "from": [
+                    44,
+                    7.2,
+                    0
+                  ],
+                  "dist": 18,
+                  "pct": 0.5998263888888888,
+                  "pitch": -25,
+                  "restPct": 0.2803819444444444
+                },
+                {
+                  "pos": [
+                    98,
+                    11.5,
+                    0
+                  ],
+                  "from": [
+                    62,
+                    10,
+                    0
+                  ],
+                  "dist": 36,
+                  "pct": 0.1349826388888889,
+                  "pitch": -25,
+                  "restPct": 0.07899305555555555
+                },
+                {
+                  "pos": [
+                    143,
+                    15.5,
+                    0
+                  ],
+                  "from": [
+                    98,
+                    11.5,
+                    0
+                  ],
+                  "dist": 45,
+                  "pct": 0.0763888888888889,
+                  "pitch": 18,
+                  "restPct": 0.0763888888888889
+                }
+              ]
+            }
+          }
+        },
+        {
+          "stage": "visual",
+          "ok": true,
+          "checks": [
+            {
+              "name": "cam0 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam1 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam2 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam3 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam4 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam5 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 1081,
+          "data": {
+            "goldens": "tools/harness/golden/darwin/02-cliff-seam"
+          }
+        }
+      ]
+    },
+    {
+      "id": "03-drifting-stones",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/03-drifting-stones.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 3 warnings: [TIGHT] seg 3->4 via double is at 95% of the limit [TIGHT] seg 9->10 via dash is at 96% of the limit [TIGHT] seg 19->20 via dash is at 96% of the limit"
+            }
+          ],
+          "ms": 14,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1309,
+          "data": {}
+        },
+        {
+          "stage": "nav",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results at 29.32s"
+            },
+            {
+              "name": "within 12s x 5 segments",
+              "ok": true,
+              "detail": "29.32s / 60s"
+            },
+            {
+              "name": "never below bounds.min.y",
+              "ok": true,
+              "detail": "min feet y -0.17 vs -15"
+            },
+            {
+              "name": "waypoints reached in order",
+              "ok": true,
+              "detail": "22/22: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]"
+            },
+            {
+              "name": "every declared move completed",
+              "ok": true,
+              "detail": "ground 14/14, jump 2/2, double 1/1, platform 2/2, dash 2/2"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 6085,
+          "data": {
+            "moves": {
+              "ground": 14,
+              "jump": 2,
+              "double": 1,
+              "platform": 2,
+              "dash": 2
+            },
+            "ticks": 1759,
+            "reached": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21
+            ]
+          }
+        },
+        {
+          "stage": "phase-sweep",
+          "ok": true,
+          "checks": [
+            {
+              "name": "linter respawn constants match the game",
+              "ok": true,
+              "detail": "{\"checkpointRadius\":2,\"heightTolerance\":2,\"goalRadiusDefault\":1,\"bodyRadius\":0.35,\"bodyHeight\":1.9}"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 6.63s (wait + run)"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 7.67s (wait + run)"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 1.03s (wait + run)"
+            },
+            {
+              "name": "seg 3: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 4/8 arrival phases (offsets 0,2,3,6); blind clears take 4.52s; reading the crow clears 8/8, 4.57-8.32s incl. the wait"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> checkpoint[3]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> checkpoint[3]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 8.32s (wait + run)"
+            },
+            {
+              "name": "seg 4 checkpoint[3] -> goal: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 4 checkpoint[3] -> goal: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 8.25s (wait + run)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 42201,
+          "data": {
+            "period": 5,
+            "segments": [
+              {
+                "name": "seg 0 spawn -> checkpoint[0]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 38,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 75,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 113,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 188,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 263,
+                    "ok": true,
+                    "sec": 6.633333333333334,
+                    "why": null
+                  }
+                ],
+                "worst": 6.633333333333334
+              },
+              {
+                "name": "seg 1 checkpoint[0] -> checkpoint[1]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 3.5,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 38,
+                    "ok": true,
+                    "sec": 7.666666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 75,
+                    "ok": true,
+                    "sec": 7.05,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 113,
+                    "ok": true,
+                    "sec": 6.416666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 5.8,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 188,
+                    "ok": true,
+                    "sec": 5.166666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 4.55,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 263,
+                    "ok": true,
+                    "sec": 3.9166666666666665,
+                    "why": null
+                  }
+                ],
+                "worst": 7.666666666666667
+              },
+              {
+                "name": "seg 2 checkpoint[1] -> checkpoint[2]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 38,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 75,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 113,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 188,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 263,
+                    "ok": true,
+                    "sec": 1.0333333333333334,
+                    "why": null
+                  }
+                ],
+                "worst": 1.0333333333333334
+              },
+              {
+                "name": "seg 3 checkpoint[2] -> checkpoint[3]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 4.95,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 38,
+                    "ok": true,
+                    "sec": 8.316666666666666,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 75,
+                    "ok": true,
+                    "sec": 7.7,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 113,
+                    "ok": true,
+                    "sec": 7.066666666666666,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 6.45,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 188,
+                    "ok": true,
+                    "sec": 5.816666666666666,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 5.2,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 263,
+                    "ok": true,
+                    "sec": 4.566666666666666,
+                    "why": null
+                  }
+                ],
+                "worst": 8.316666666666666
+              },
+              {
+                "name": "seg 4 checkpoint[3] -> goal",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 4.283333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 38,
+                    "ok": true,
+                    "sec": 8.25,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 75,
+                    "ok": true,
+                    "sec": 7.633333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 113,
+                    "ok": true,
+                    "sec": 7,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 6.383333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 188,
+                    "ok": true,
+                    "sec": 5.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 225,
+                    "ok": true,
+                    "sec": 5.133333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 263,
+                    "ok": true,
+                    "sec": 4.5,
+                    "why": null
+                  }
+                ],
+                "worst": 8.25
+              }
+            ],
+            "blind": [
+              {
+                "segment": 3,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": false,
+                    "why": "FELL on seg 11->12 (via ground, \"wait for the crow, then cross the sweep\") — died at (84.69, 1.01, -0.00), target was (92.00, 1.00, 0.00), last reached waypoint 11",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.516666666666667
+                  },
+                  {
+                    "offset": 2,
+                    "ok": false,
+                    "why": "FELL on seg 11->12 (via ground, \"wait for the crow, then cross the sweep\") — died at (87.02, 1.01, -0.00), target was (92.00, 1.00, 0.00), last reached waypoint 11",
+                    "sec": 1.4833333333333334
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 11->12 (via ground, \"wait for the crow, then cross the sweep\") — died at (84.69, 1.01, -0.00), target was (92.00, 1.00, 0.00), last reached waypoint 11",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 4,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.516666666666667
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.516666666666667
+                  },
+                  {
+                    "offset": 6,
+                    "ok": false,
+                    "why": "FELL on seg 11->12 (via ground, \"wait for the crow, then cross the sweep\") — died at (84.69, 1.01, -0.00), target was (92.00, 1.00, 0.00), last reached waypoint 11",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 7,
+                    "ok": true,
+                    "why": null,
+                    "sec": 4.516666666666667
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "stage": "replay",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results after 1759 ticks"
+            },
+            {
+              "name": "checkpoints in order",
+              "ok": true,
+              "detail": "got [0,1,2,3], expected [0,1,2,3]"
+            },
+            {
+              "name": "position within 0.5u",
+              "ok": true,
+              "detail": "final (132.61, 2.51, 0.00) vs (132.61, 2.51, 0.00): 0.000u"
+            },
+            {
+              "name": "frames within 5%",
+              "ok": true,
+              "detail": "1759 vs 1759 ticks (0.00%, 29.32s)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 594,
+          "data": {
+            "trace": "tools/harness/traces/03-drifting-stones.json"
+          }
+        },
+        {
+          "stage": "chaos",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ran full duration",
+              "ok": true,
+              "detail": "3600/3600 ticks, 14 deaths/respawns"
+            },
+            {
+              "name": "in bounds",
+              "ok": true,
+              "detail": "every tick inside level.bounds"
+            },
+            {
+              "name": "not stuck",
+              "ok": true,
+              "detail": "moved >= 0.5u in every active 5s window"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "velocity under cap x2",
+              "ok": true,
+              "detail": "|h| max 20.00 <= 40 ; |v| max 35.00 <= 70"
+            },
+            {
+              "name": "no NaN transforms",
+              "ok": true,
+              "detail": "feet, velocity, platforms finite every tick"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "14 deaths, clock advanced 0.8000s across each (respawn delay 0.8s)"
+            }
+          ],
+          "ms": 834,
+          "data": {
+            "seed": 20261107
+          }
+        },
+        {
+          "stage": "hazards",
+          "ok": true,
+          "checks": [
+            {
+              "name": "fixture loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/patroller.json"
+            },
+            {
+              "name": "runtime = pure function of the clock",
+              "ok": true,
+              "detail": "40 samples over 11.33s, max |runtime - independent oracle| 1.8e-15u"
+            },
+            {
+              "name": "touching the patroller is death",
+              "ok": true,
+              "detail": "death #1 at t=11.3500s"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "clock 11.3500 -> 12.1500s (+0.8000, respawn delay 0.8s)"
+            },
+            {
+              "name": "respawn at a new phase",
+              "ok": true,
+              "detail": "patroller loop fraction 0.8240 at death -> 0.9349 at respawn"
+            },
+            {
+              "name": "pause freezes the world clock",
+              "ok": true,
+              "detail": "state pause, clock 12.1500 -> 12.1500s over 120 frames"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 676,
+          "data": {}
+        },
+        {
+          "stage": "counters",
+          "ok": true,
+          "checks": [
+            {
+              "name": "draw calls < 300",
+              "ok": true,
+              "detail": "peak 50"
+            },
+            {
+              "name": "scene budget recorded",
+              "ok": true,
+              "detail": "budgets.json scenes[\"03-drifting-stones\"]"
+            },
+            {
+              "name": "draw calls <= 50 (scene)",
+              "ok": true,
+              "detail": "peak 50"
+            },
+            {
+              "name": "triangles <= 5664 (scene)",
+              "ok": true,
+              "detail": "peak 5664"
+            },
+            {
+              "name": "triangles < 500,000",
+              "ok": true,
+              "detail": "peak 5,664"
+            },
+            {
+              "name": "geometries < 400",
+              "ok": true,
+              "detail": "peak 7"
+            },
+            {
+              "name": "textures < 120",
+              "ok": true,
+              "detail": "peak 3"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none (66 samples over trace playback (1759 frames) + 6 cameras)"
+            }
+          ],
+          "ms": 527,
+          "data": {
+            "peak": {
+              "calls": 50,
+              "triangles": 5664,
+              "geometries": 7,
+              "textures": 3,
+              "samples": 66
+            }
+          }
+        },
+        {
+          "stage": "assets",
+          "ok": true,
+          "checks": [
+            {
+              "name": "manifest has mesh assets",
+              "ok": true,
+              "detail": "2: kit_rock_mass, kit_torii"
+            },
+            {
+              "name": "kit_rock_mass loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_rock_mass draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_rock_mass triangles <= 216",
+              "ok": true,
+              "detail": "216 rendered (manifest 216)"
+            },
+            {
+              "name": "kit_rock_mass textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_rock_mass unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "kit_torii loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_torii draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_torii triangles <= 108",
+              "ok": true,
+              "detail": "108 rendered (manifest 108)"
+            },
+            {
+              "name": "kit_torii textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_torii unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "test level with a mesh asset loads (B-16)",
+              "ok": true,
+              "detail": "cold page, tools/harness/fixtures/mesh-asset.json via startJson: kit_torii on screen, accent 5.514% of frame"
+            }
+          ],
+          "ms": 1103,
+          "data": {
+            "ktx2Support": {
+              "astc": true,
+              "etc1": true,
+              "etc2": true,
+              "dxt": true,
+              "bptc": true,
+              "pvrtc": false
+            },
+            "tier2": {
+              "kit_rock_mass": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#383838:17708",
+                  "#534e4b:14982",
+                  "#69645f:7564",
+                  "#20201e:1138",
+                  "#827d76:876",
+                  "#323232:369"
+                ],
+                "pixels": {
+                  "covered": 45327,
+                  "nearPalette": 43335,
+                  "maxError": 110,
+                  "nearPaletteShare": 0.9561
+                }
+              },
+              "kit_torii": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#e34234:11511",
+                  "#20201e:4076",
+                  "#f1219a:287",
+                  "#f810cc:240",
+                  "#ea3267:215",
+                  "#581856:123"
+                ],
+                "pixels": {
+                  "covered": 16812,
+                  "nearPalette": 15587,
+                  "maxError": 118,
+                  "nearPaletteShare": 0.9271
+                }
+              }
+            }
+          }
+        },
+        {
+          "stage": "accent",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ACCENT_AREA torii (46, 1, 0)",
+              "ok": true,
+              "detail": "0.0859% of frame is THIS gate's accent at pitch 25 deg (rest 18: 0.0829%), best of 12 reachable pitches, scanned from (0, 0, 0), 46.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (64, 1, 0)",
+              "ok": true,
+              "detail": "0.7539% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.2930%), best of 12 reachable pitches, scanned from (46, 1, 0), 18.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (75, 1, 0)",
+              "ok": true,
+              "detail": "1.1719% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.4622%), best of 12 reachable pitches, scanned from (64, 1, 0), 11.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (108.2, 2.5, 0)",
+              "ok": true,
+              "detail": "0.1632% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.1098%), best of 12 reachable pitches, scanned from (75, 1, 0), 33.2m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (132, 2.5, 0)",
+              "ok": true,
+              "detail": "0.3919% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.1150%), best of 12 reachable pitches, scanned from (108.2, 2.5, 0), 23.8m away (floor 0.0204%)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 6763,
+          "data": {
+            "accentArea": {
+              "floor_pct": 0.0204,
+              "accent": "vermilion_a #e34234",
+              "rows": [
+                {
+                  "pos": [
+                    46,
+                    1,
+                    0
+                  ],
+                  "from": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "dist": 46,
+                  "pct": 0.0859375,
+                  "pitch": 25,
+                  "restPct": 0.08289930555555555
+                },
+                {
+                  "pos": [
+                    64,
+                    1,
+                    0
+                  ],
+                  "from": [
+                    46,
+                    1,
+                    0
+                  ],
+                  "dist": 18,
+                  "pct": 0.75390625,
+                  "pitch": -25,
+                  "restPct": 0.29296875
+                },
+                {
+                  "pos": [
+                    75,
+                    1,
+                    0
+                  ],
+                  "from": [
+                    64,
+                    1,
+                    0
+                  ],
+                  "dist": 11,
+                  "pct": 1.171875,
+                  "pitch": -25,
+                  "restPct": 0.4622395833333333
+                },
+                {
+                  "pos": [
+                    108.2,
+                    2.5,
+                    0
+                  ],
+                  "from": [
+                    75,
+                    1,
+                    0
+                  ],
+                  "dist": 33.2,
+                  "pct": 0.16319444444444445,
+                  "pitch": -25,
+                  "restPct": 0.10980902777777778
+                },
+                {
+                  "pos": [
+                    132,
+                    2.5,
+                    0
+                  ],
+                  "from": [
+                    108.2,
+                    2.5,
+                    0
+                  ],
+                  "dist": 23.8,
+                  "pct": 0.3919270833333333,
+                  "pitch": -25,
+                  "restPct": 0.1150173611111111
+                }
+              ]
+            }
+          }
+        },
+        {
+          "stage": "visual",
+          "ok": true,
+          "checks": [
+            {
+              "name": "cam0 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam1 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam2 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam3 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam4 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam5 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 1081,
+          "data": {
+            "goldens": "tools/harness/golden/darwin/03-drifting-stones"
+          }
+        }
+      ]
+    },
+    {
+      "id": "04-summit-ridge",
+      "class": "PASS",
+      "stages": [
+        {
+          "stage": "schema",
+          "ok": true,
+          "checks": [
+            {
+              "name": "level.schema.json",
+              "ok": true,
+              "detail": "levels/04-summit-ridge.json"
+            },
+            {
+              "name": "schema rejects score/par_time/rank",
+              "ok": true,
+              "detail": "score, par_time, rank rejected"
+            }
+          ],
+          "ms": 0,
+          "data": {}
+        },
+        {
+          "stage": "lint-level",
+          "ok": true,
+          "checks": [
+            {
+              "name": "lint-level.mjs",
+              "ok": true,
+              "detail": "clean, 4 warnings: [TIGHT] seg 5->6 via dashjump is at 94% of the limit [TIGHT] seg 9->10 via dash is at 96% of the limit [TIGHT] seg 12->13 via dashjump is at 94% of the limit [TIGHT] seg 18->19 via dashjump is at 94% of the limit"
+            }
+          ],
+          "ms": 48,
+          "data": {}
+        },
+        {
+          "stage": "preflight",
+          "ok": true,
+          "checks": [
+            {
+              "name": "build harness bundle",
+              "ok": true,
+              "detail": "dist-harness/"
+            },
+            {
+              "name": "build production bundle",
+              "ok": true,
+              "detail": "dist/"
+            },
+            {
+              "name": "dist-harness/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "dist/ built from the source on disk",
+              "ok": true,
+              "detail": "every file the build read is byte-identical on disk"
+            },
+            {
+              "name": "harness API stripped from production bundle",
+              "ok": true,
+              "detail": "0/3 sentinels in dist/, 3/3 in dist-harness/"
+            },
+            {
+              "name": "vite preview serving over HTTP",
+              "ok": true,
+              "detail": "http://127.0.0.1:4317"
+            },
+            {
+              "name": "chromium launched with pinned args",
+              "ok": true,
+              "detail": "158.0.8127.18  --enable-unsafe-swiftshader --use-gl=swiftshader --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+            },
+            {
+              "name": "webgl2 context on about:blank",
+              "ok": true,
+              "detail": "renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+            },
+            {
+              "name": "harness API exposed with ?harness=1",
+              "ok": true,
+              "detail": "HARNESS_API_V1"
+            },
+            {
+              "name": "bundled levels match levels/ on disk",
+              "ok": true,
+              "detail": "every levels/*.json byte-identical to dist-harness/"
+            }
+          ],
+          "ms": 1309,
+          "data": {}
+        },
+        {
+          "stage": "nav",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results at 24.15s"
+            },
+            {
+              "name": "within 12s x 5 segments",
+              "ok": true,
+              "detail": "24.15s / 60s"
+            },
+            {
+              "name": "never below bounds.min.y",
+              "ok": true,
+              "detail": "min feet y -0.01 vs -15"
+            },
+            {
+              "name": "waypoints reached in order",
+              "ok": true,
+              "detail": "23/23: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]"
+            },
+            {
+              "name": "every declared move completed",
+              "ok": true,
+              "detail": "ground 13/13, jump 3/3, double 2/2, dashjump 3/3, dash 1/1"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 4898,
+          "data": {
+            "moves": {
+              "ground": 13,
+              "jump": 3,
+              "double": 2,
+              "dashjump": 3,
+              "dash": 1
+            },
+            "ticks": 1449,
+            "reached": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22
+            ]
+          }
+        },
+        {
+          "stage": "phase-sweep",
+          "ok": true,
+          "checks": [
+            {
+              "name": "linter respawn constants match the game",
+              "ok": true,
+              "detail": "{\"checkpointRadius\":2,\"heightTolerance\":2,\"goalRadiusDefault\":1,\"bodyRadius\":0.35,\"bodyHeight\":1.9}"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 0 spawn -> checkpoint[0]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 4.93s (wait + run)"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 1 checkpoint[0] -> checkpoint[1]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 2.00s (wait + run)"
+            },
+            {
+              "name": "seg 2: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 4/8 arrival phases (offsets 0,3,4,7); blind clears take 3.48s; reading the crow clears 8/8, 3.93-7.43s incl. the wait"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 2 checkpoint[1] -> checkpoint[2]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 7.43s (wait + run)"
+            },
+            {
+              "name": "seg 3: HAZARD_INERT (blind departure must fail some phase)",
+              "ok": true,
+              "detail": "blind departures fail 4/8 arrival phases (offsets 2,3,6,7); blind clears take 3.02s; reading the crow clears 8/8, 3.10-6.60s incl. the wait"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> checkpoint[3]: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 3 checkpoint[2] -> checkpoint[3]: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 6.60s (wait + run)"
+            },
+            {
+              "name": "seg 4 checkpoint[3] -> goal: clears from some phase",
+              "ok": true,
+              "detail": "8/8 arrival phases clear on departure"
+            },
+            {
+              "name": "seg 4 checkpoint[3] -> goal: every phase within 12s",
+              "ok": true,
+              "detail": "worst arrival 4.75s (wait + run)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 37444,
+          "data": {
+            "period": 4,
+            "segments": [
+              {
+                "name": "seg 0 spawn -> checkpoint[0]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 4.933333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 4.916666666666667,
+                    "why": null
+                  }
+                ],
+                "worst": 4.933333333333334
+              },
+              {
+                "name": "seg 1 checkpoint[0] -> checkpoint[1]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 2,
+                    "why": null
+                  }
+                ],
+                "worst": 2
+              },
+              {
+                "name": "seg 2 checkpoint[1] -> checkpoint[2]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 3.933333333333333,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 7.433333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 6.933333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 6.433333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 5.933333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 5.433333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.933333333333334,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 4.433333333333334,
+                    "why": null
+                  }
+                ],
+                "worst": 7.433333333333334
+              },
+              {
+                "name": "seg 3 checkpoint[2] -> checkpoint[3]",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 3.1,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 6.6,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 6.1,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 5.6,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 5.1,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 4.6,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.1,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 3.6,
+                    "why": null
+                  }
+                ],
+                "worst": 6.6
+              },
+              {
+                "name": "seg 4 checkpoint[3] -> goal",
+                "runs": [
+                  {
+                    "offset": 0,
+                    "tick": 0,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 1,
+                    "tick": 30,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 2,
+                    "tick": 60,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 3,
+                    "tick": 90,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 4,
+                    "tick": 120,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 5,
+                    "tick": 150,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 6,
+                    "tick": 180,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  },
+                  {
+                    "offset": 7,
+                    "tick": 210,
+                    "ok": true,
+                    "sec": 4.75,
+                    "why": null
+                  }
+                ],
+                "worst": 4.75
+              }
+            ],
+            "blind": [
+              {
+                "segment": 2,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": false,
+                    "why": "FELL on seg 7->8 (via ground, \"wait for the crow, then cross the sweep\") — died at (61.69, 2.51, -0.00), target was (69.00, 2.50, 0.00), last reached waypoint 7",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.4833333333333334
+                  },
+                  {
+                    "offset": 2,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.4833333333333334
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 7->8 (via ground, \"wait for the crow, then cross the sweep\") — died at (62.27, 2.51, -0.00), target was (69.00, 2.50, 0.00), last reached waypoint 7",
+                    "sec": 1.2333333333333334
+                  },
+                  {
+                    "offset": 4,
+                    "ok": false,
+                    "why": "FELL on seg 7->8 (via ground, \"wait for the crow, then cross the sweep\") — died at (61.69, 2.51, -0.00), target was (69.00, 2.50, 0.00), last reached waypoint 7",
+                    "sec": 1.15
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.4833333333333334
+                  },
+                  {
+                    "offset": 6,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.4833333333333334
+                  },
+                  {
+                    "offset": 7,
+                    "ok": false,
+                    "why": "FELL on seg 7->8 (via ground, \"wait for the crow, then cross the sweep\") — died at (62.27, 2.51, -0.00), target was (69.00, 2.50, 0.00), last reached waypoint 7",
+                    "sec": 1.2333333333333334
+                  }
+                ]
+              },
+              {
+                "segment": 3,
+                "blind": [
+                  {
+                    "offset": 0,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.0166666666666666
+                  },
+                  {
+                    "offset": 1,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.0166666666666666
+                  },
+                  {
+                    "offset": 2,
+                    "ok": false,
+                    "why": "FELL on seg 14->15 (via jump, \"+1.75 onto the shelf\") — died at (95.90, 3.51, -0.00), target was (99.25, 5.25, 0.00), last reached waypoint 14",
+                    "sec": 1.7333333333333334
+                  },
+                  {
+                    "offset": 3,
+                    "ok": false,
+                    "why": "FELL on seg 13->14 (via ground, \"2u short of the riser, inside the sweep lane: crossed on the crow\") — died at (94.73, 3.52, -0.00), target was (96.00, 3.50, 0.00), last reached waypoint 13",
+                    "sec": 1.5666666666666667
+                  },
+                  {
+                    "offset": 4,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.0166666666666666
+                  },
+                  {
+                    "offset": 5,
+                    "ok": true,
+                    "why": null,
+                    "sec": 3.0166666666666666
+                  },
+                  {
+                    "offset": 6,
+                    "ok": false,
+                    "why": "FELL on seg 14->15 (via jump, \"+1.75 onto the shelf\") — died at (95.90, 3.51, -0.00), target was (99.25, 5.25, 0.00), last reached waypoint 14",
+                    "sec": 1.7333333333333334
+                  },
+                  {
+                    "offset": 7,
+                    "ok": false,
+                    "why": "FELL on seg 13->14 (via ground, \"2u short of the riser, inside the sweep lane: crossed on the crow\") — died at (94.73, 3.52, -0.00), target was (96.00, 3.50, 0.00), last reached waypoint 13",
+                    "sec": 1.5666666666666667
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "stage": "replay",
+          "ok": true,
+          "checks": [
+            {
+              "name": "goal reached",
+              "ok": true,
+              "detail": "results after 1449 ticks"
+            },
+            {
+              "name": "checkpoints in order",
+              "ok": true,
+              "detail": "got [0,1,2,3], expected [0,1,2,3]"
+            },
+            {
+              "name": "position within 0.5u",
+              "ok": true,
+              "detail": "final (141.06, 9.51, -0.00) vs (141.06, 9.51, -0.00): 0.000u"
+            },
+            {
+              "name": "frames within 5%",
+              "ok": true,
+              "detail": "1449 vs 1449 ticks (0.00%, 24.15s)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 547,
+          "data": {
+            "trace": "tools/harness/traces/04-summit-ridge.json"
+          }
+        },
+        {
+          "stage": "chaos",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ran full duration",
+              "ok": true,
+              "detail": "3600/3600 ticks, 2 deaths/respawns"
+            },
+            {
+              "name": "in bounds",
+              "ok": true,
+              "detail": "every tick inside level.bounds"
+            },
+            {
+              "name": "not stuck",
+              "ok": true,
+              "detail": "moved >= 0.5u in every active 5s window"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "velocity under cap x2",
+              "ok": true,
+              "detail": "|h| max 20.00 <= 40 ; |v| max 22.93 <= 70"
+            },
+            {
+              "name": "no NaN transforms",
+              "ok": true,
+              "detail": "feet, velocity, platforms finite every tick"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "2 deaths, clock advanced 0.8000s across each (respawn delay 0.8s)"
+            }
+          ],
+          "ms": 896,
+          "data": {
+            "seed": 20261107
+          }
+        },
+        {
+          "stage": "hazards",
+          "ok": true,
+          "checks": [
+            {
+              "name": "fixture loads",
+              "ok": true,
+              "detail": "tools/harness/fixtures/patroller.json"
+            },
+            {
+              "name": "runtime = pure function of the clock",
+              "ok": true,
+              "detail": "40 samples over 11.33s, max |runtime - independent oracle| 1.8e-15u"
+            },
+            {
+              "name": "touching the patroller is death",
+              "ok": true,
+              "detail": "death #1 at t=11.3500s"
+            },
+            {
+              "name": "world clock runs through death",
+              "ok": true,
+              "detail": "clock 11.3500 -> 12.1500s (+0.8000, respawn delay 0.8s)"
+            },
+            {
+              "name": "respawn at a new phase",
+              "ok": true,
+              "detail": "patroller loop fraction 0.8240 at death -> 0.9349 at respawn"
+            },
+            {
+              "name": "pause freezes the world clock",
+              "ok": true,
+              "detail": "state pause, clock 12.1500 -> 12.1500s over 120 frames"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 732,
+          "data": {}
+        },
+        {
+          "stage": "counters",
+          "ok": true,
+          "checks": [
+            {
+              "name": "draw calls < 300",
+              "ok": true,
+              "detail": "peak 49"
+            },
+            {
+              "name": "scene budget recorded",
+              "ok": true,
+              "detail": "budgets.json scenes[\"04-summit-ridge\"]"
+            },
+            {
+              "name": "draw calls <= 49 (scene)",
+              "ok": true,
+              "detail": "peak 49"
+            },
+            {
+              "name": "triangles <= 5040 (scene)",
+              "ok": true,
+              "detail": "peak 5040"
+            },
+            {
+              "name": "triangles < 500,000",
+              "ok": true,
+              "detail": "peak 5,040"
+            },
+            {
+              "name": "geometries < 400",
+              "ok": true,
+              "detail": "peak 7"
+            },
+            {
+              "name": "textures < 120",
+              "ok": true,
+              "detail": "peak 3"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none (56 samples over trace playback (1449 frames) + 6 cameras)"
+            }
+          ],
+          "ms": 495,
+          "data": {
+            "peak": {
+              "calls": 49,
+              "triangles": 5040,
+              "geometries": 7,
+              "textures": 3,
+              "samples": 56
+            }
+          }
+        },
+        {
+          "stage": "assets",
+          "ok": true,
+          "checks": [
+            {
+              "name": "manifest has mesh assets",
+              "ok": true,
+              "detail": "2: kit_rock_mass, kit_torii"
+            },
+            {
+              "name": "kit_rock_mass loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_rock_mass draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_rock_mass triangles <= 216",
+              "ok": true,
+              "detail": "216 rendered (manifest 216)"
+            },
+            {
+              "name": "kit_rock_mass textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_rock_mass unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "kit_torii loads (draco + ktx2)",
+              "ok": true,
+              "detail": "MeshBasicMaterial · 1 map(s)"
+            },
+            {
+              "name": "kit_torii draw calls <= 1",
+              "ok": true,
+              "detail": "1 rendered alone (manifest 1)"
+            },
+            {
+              "name": "kit_torii triangles <= 108",
+              "ok": true,
+              "detail": "108 rendered (manifest 108)"
+            },
+            {
+              "name": "kit_torii textures at declared size",
+              "ok": true,
+              "detail": "32x32 (manifest 32x32)"
+            },
+            {
+              "name": "kit_torii unlit material",
+              "ok": true,
+              "detail": "MeshBasicMaterial"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            },
+            {
+              "name": "test level with a mesh asset loads (B-16)",
+              "ok": true,
+              "detail": "cold page, tools/harness/fixtures/mesh-asset.json via startJson: kit_torii on screen, accent 5.514% of frame"
+            }
+          ],
+          "ms": 1081,
+          "data": {
+            "ktx2Support": {
+              "astc": true,
+              "etc1": true,
+              "etc2": true,
+              "dxt": true,
+              "bptc": true,
+              "pvrtc": false
+            },
+            "tier2": {
+              "kit_rock_mass": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#383838:17708",
+                  "#534e4b:14982",
+                  "#69645f:7564",
+                  "#20201e:1138",
+                  "#827d76:876",
+                  "#323232:369"
+                ],
+                "pixels": {
+                  "covered": 45327,
+                  "nearPalette": 43335,
+                  "maxError": 110,
+                  "nearPaletteShare": 0.9561
+                }
+              },
+              "kit_torii": {
+                "maps": [
+                  {
+                    "width": 32,
+                    "height": 32,
+                    "compressed": true,
+                    "format": 37808,
+                    "mipmaps": 1,
+                    "colorSpace": "srgb",
+                    "formatName": "RGBA_ASTC_4x4"
+                  }
+                ],
+                "top": [
+                  "#e34234:11511",
+                  "#20201e:4076",
+                  "#f1219a:287",
+                  "#f810cc:240",
+                  "#ea3267:215",
+                  "#581856:123"
+                ],
+                "pixels": {
+                  "covered": 16812,
+                  "nearPalette": 15587,
+                  "maxError": 118,
+                  "nearPaletteShare": 0.9271
+                }
+              }
+            }
+          }
+        },
+        {
+          "stage": "accent",
+          "ok": true,
+          "checks": [
+            {
+              "name": "ACCENT_AREA torii (34, 1.5, 0)",
+              "ok": true,
+              "detail": "0.1875% of frame is THIS gate's accent at pitch 25 deg (rest 18: 0.1471%), best of 12 reachable pitches, scanned from (0, 0, 0), 34.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (52, 2.5, 0)",
+              "ok": true,
+              "detail": "0.6840% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.3707%), best of 12 reachable pitches, scanned from (34, 1.5, 0), 18.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (80, 2.5, 0)",
+              "ok": true,
+              "detail": "0.2044% of frame is THIS gate's accent at pitch 25 deg (rest 18: 0.0859%), best of 12 reachable pitches, scanned from (52, 2.5, 0), 28.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (104, 7, 0)",
+              "ok": true,
+              "detail": "0.3615% of frame is THIS gate's accent at pitch -25 deg (rest 18: 0.1137%), best of 12 reachable pitches, scanned from (80, 2.5, 0), 24.0m away (floor 0.0204%)"
+            },
+            {
+              "name": "ACCENT_AREA torii (140.5, 9.5, 0)",
+              "ok": true,
+              "detail": "0.1259% of frame is THIS gate's accent at pitch 5 deg (rest 18: 0.0820%), best of 12 reachable pitches, scanned from (104, 7, 0), 36.5m away (floor 0.0204%)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 6746,
+          "data": {
+            "accentArea": {
+              "floor_pct": 0.0204,
+              "accent": "vermilion_a #e34234",
+              "rows": [
+                {
+                  "pos": [
+                    34,
+                    1.5,
+                    0
+                  ],
+                  "from": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "dist": 34,
+                  "pct": 0.1875,
+                  "pitch": 25,
+                  "restPct": 0.14713541666666666
+                },
+                {
+                  "pos": [
+                    52,
+                    2.5,
+                    0
+                  ],
+                  "from": [
+                    34,
+                    1.5,
+                    0
+                  ],
+                  "dist": 18,
+                  "pct": 0.6840277777777778,
+                  "pitch": -25,
+                  "restPct": 0.3706597222222222
+                },
+                {
+                  "pos": [
+                    80,
+                    2.5,
+                    0
+                  ],
+                  "from": [
+                    52,
+                    2.5,
+                    0
+                  ],
+                  "dist": 28,
+                  "pct": 0.20442708333333334,
+                  "pitch": 25,
+                  "restPct": 0.0859375
+                },
+                {
+                  "pos": [
+                    104,
+                    7,
+                    0
+                  ],
+                  "from": [
+                    80,
+                    2.5,
+                    0
+                  ],
+                  "dist": 24,
+                  "pct": 0.3615451388888889,
+                  "pitch": -25,
+                  "restPct": 0.11371527777777778
+                },
+                {
+                  "pos": [
+                    140.5,
+                    9.5,
+                    0
+                  ],
+                  "from": [
+                    104,
+                    7,
+                    0
+                  ],
+                  "dist": 36.5,
+                  "pct": 0.12586805555555555,
+                  "pitch": 5,
+                  "restPct": 0.08203125
+                }
+              ]
+            }
+          }
+        },
+        {
+          "stage": "visual",
+          "ok": true,
+          "checks": [
+            {
+              "name": "cam0 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam1 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam2 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam3 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam4 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "cam5 drift <= 0.5%",
+              "ok": true,
+              "detail": "0.000% (0 px)"
+            },
+            {
+              "name": "zero console errors",
+              "ok": true,
+              "detail": "none"
+            }
+          ],
+          "ms": 1086,
+          "data": {
+            "goldens": "tools/harness/golden/darwin/04-summit-ridge"
+          }
+        }
+      ]
+    }
+  ],
+  "class": "PASS",
+  "ok": true,
+  "durationMs": 270167
+}
