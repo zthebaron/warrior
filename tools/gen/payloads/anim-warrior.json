@@ -1,0 +1,5 @@
+{
+  "model_url": "file:assets/hero/warrior.glb",
+  "height_meters": 1.7,
+  "animation_action_ids": [243, 466, 503, 470, 644, 448, 482, 435, 478, 492]
+}

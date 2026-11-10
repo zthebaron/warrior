@@ -55,3 +55,4 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 43 | 2026-11-10T19:27:00Z | fal-ai/nano-banana/edit | input image: cliff variant b (optional asset) | $0.0398 | $0.0398 | 01a1c6ed-921e-7581-b639-eec41ae1baa6 | done | $6.2856 |
 | 44 | 2026-11-10T19:27:33Z | fal-ai/trellis | trellis test: cliff_b | $0.0200 | $0.0200 | 01a1c6ee-11fa-7a61-9a8c-eaec4046aa87 | done | $6.3056 |
 | 45 | 2026-11-10T19:28:23Z | fal-ai/hunyuan3d-v3/image-to-3d | final: cliff_b (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6ee-d88e-7683-a2a2-b61b3d9b93c7 | done | $6.8306 |
+| 46 | 2026-11-10T19:42:09Z | fal-ai/meshy/rigging/multi-animation | animate: warrior, rig + 10 library clips (page 0.20 + 0.12 per clip = 1.40; pricing API 0.08 per generation; booked above both at 0.80 + 0.12 per clip) | $2.0000 | $2.0000 | 01a1c6fb-7230-7952-bbdc-8d3d7272c61d | submitted | $8.8306 |
