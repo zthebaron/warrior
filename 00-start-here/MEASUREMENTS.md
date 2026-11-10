@@ -1162,3 +1162,28 @@ each cycle at eight times (`tools/gen/render-glb.mjs --clip <name> --time <t>`).
 | walkBelow | 0.5 of the run speed (3.5 m/s) | authored | Tim: "walk and run by speed". The player reaches run speed in 0.1 s, so the walk shows on analog input and while slowing |
 | run rate | ground speed / run speed | derived | a sprint (10 m/s) strides 1.43x faster; the walk plays as delivered |
 | blendSec | 0.1 s (6 ticks) | authored | long enough to hide a cut between two held frames, shorter than the dash (0.16 s) |
+
+## D-020 production load (2026-11-10)
+
+Why the `game` job failed on PR 31 (`reachable` 12/13 on CI runs 42893283097 and 42894610485: the production
+bundle at the bare URL had not loaded the entry chapter 20 s after Enter; it passed locally). Measured on the
+production bundle of 72a254f, headless Chromium on SwiftShader, Apple M4 Max, Enter to `body[data-level]`:
+
+| Viewport | Enter to level | Frames rendered during the load | Frame interval |
+|---|---|---|---|
+| 640x360 | 232 ms | 10 | 17 ms |
+| 1280x720 | 1,765 ms | 25 | 67-83 ms |
+| 1920x1080 | 3,696 ms | 25 | 133-167 ms |
+
+Above 640x360 the load is 25 frames long at any size: it is a chain of about 25 async hops (the level chunk, the
+manifest chunks, each glb, both decoders, the torii skin after kit_torii, then the four other level chunks for the
+progression index) and each hop queues behind one rendered frame, which on SwiftShader blocks the main thread
+(`GPU stall due to ReadPixels` in the console). So on a software renderer the load takes 25 x the frame time. A CPU
+throttle of 8x on the page alone only brings 640x360 to 1.3 s: the cost is the rasteriser, not the decode.
+
+The bare-URL page was the one harness page opened at Playwright's default 1280x720; every other page uses the
+pinned `VIEWPORT` (640x360, `tools/harness/lib.ts`). Fix: that page now uses `VIEWPORT` too, and the check prints
+the time it took. The 20 s wait did not change. Local run after the fix: 0.4 s after Enter. Not measured: the
+before-D-020 hop count (main passed at 1280x720 on CI, so it was under 20 s there), and the frame time on a CI
+runner (read it from the check's detail line on the next run). On a real GPU the frame does not block and the
+load is not frame-bound.

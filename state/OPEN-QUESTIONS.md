@@ -1431,4 +1431,12 @@ took, each PROVISIONAL:
 14. **Not built: collision without drawing.** A hero overlay for kit_rock_mass needs the kit mesh to collide and
     not be drawn; the skin mechanism does that for one model fitted to one kit asset, which suits a gate and not
     thirteen rock masses (B-46).
+15. **The bare-URL check runs at the pinned 640x360, not Playwright's 1280x720** (the `game` job's failure on PR
+    31). The level load is frame-bound on SwiftShader, about 25 frames at any size (MEASUREMENTS "D-020 production
+    load"), and D-020 made the chain longer; at 1280x720 a CI runner needed more than the 20 s wait. The wait is
+    unchanged and the check now prints the seconds it took. What this does NOT fix: the game still renders every
+    frame while a level loads, and the load is still 25 serial hops; on a slow software renderer a player would
+    wait the same 25 frames. Not a problem on a GPU (the frame does not block). Seven Linux goldens (00-gym
+    cam0-2, 02 cam0 and cam4, 03 cam0, 04 cam0) are still D-019's: they pass at 0.13-0.35% from the darwin frame,
+    under the 0.5% limit, and CI writes no actual for a camera that passes.
 status: PROVISIONAL

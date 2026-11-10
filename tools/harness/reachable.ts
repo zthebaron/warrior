@@ -19,7 +19,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { FIXED_HZ, Stage, guard, openGame, type Ctx, type StageResult } from './lib.ts';
+import { FIXED_HZ, Stage, VIEWPORT, guard, openGame, type Ctx, type StageResult } from './lib.ts';
 import { chapterChain, entryLevel as entryOf, type LevelRef } from '../../src/systems/progression.ts';
 import { NAV_CONFIG, walk } from './nav.ts';
 
@@ -64,14 +64,21 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
     // 1. as a player: production bundle, bare URL
     const prod = await serveProduction(ctx.root);
     try {
-      const page = await ctx.browser.newPage();
+      // The pinned harness viewport, as every other stage's page. A level load is ~25 async hops and each one
+      // queues behind a rendered frame, so on SwiftShader the load time is 25 x the frame time: at Playwright's
+      // default 1280x720 that overran this wait on a CI runner (MEASUREMENTS "D-020 production load").
+      const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
+      page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); }); // showError logs, it does not throw
       await page.goto(`${prod.url}/`);
       await page.waitForFunction(() => /Enter: start/.test(document.body.innerText), null, { timeout: 20000 });
+      const pressed = Date.now();
       await page.keyboard.press('Enter');
       const got = await page.waitForFunction(() => document.body.dataset['level'] ?? null, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
-      st.check('bare URL reaches the entry chapter (production bundle)', got === want!.id, `loaded "${got ?? '(nothing)'}", expected "${want!.id}"${errors.length ? `; page errors: ${errors.slice(0, 3).join(' | ')}` : ''}`);
+      const took = `${((Date.now() - pressed) / 1000).toFixed(1)}s after Enter`;
+      const shown = got ? '' : `; page shows: ${JSON.stringify((await page.evaluate(() => document.body.innerText).catch(() => '')).slice(0, 160))}`;
+      st.check('bare URL reaches the entry chapter (production bundle)', got === want!.id, `loaded "${got ?? '(nothing)'}", expected "${want!.id}", ${took}${shown}${errors.length ? `; page errors: ${errors.slice(0, 3).join(' | ')}` : ''}`);
       await page.close();
     } finally {
       prod.proc.kill();
