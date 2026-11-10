@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds assets/hero/warrior_anim.glb: ONE skinned warrior with the nine clips the game's states
+// Builds assets/hero/rigged/warrior_anim.glb: ONE skinned warrior with the nine clips the game's states
 // map onto, named exactly idle, walk, run, jump, fall, land, dash, wall, climb.
 //
 //   node tools/gen/build-anim.mjs <dir with the multi-animation download> <out.glb> [--probe]

@@ -1,5 +1,5 @@
 {
-  "note": "Hero models generated on fal.ai from generated input paintings. Human-readable version: MANIFEST.md. Loader notes: HANDOFF.md. Money: state/FAL-LEDGER.md. Round 2 (PROMPT-ART-GEN-2.md) added warrior_anim, boulder_b and spire, and the painted backdrop cards in assets/backdrop/gen/ (their manifest is assets/backdrop/MANIFEST.md).",
+  "note": "Hero models generated on fal.ai from generated input paintings. Human-readable version: MANIFEST.md. Loader notes: HANDOFF.md. Money: state/FAL-LEDGER.md. Round 2 (PROMPT-ART-GEN-2.md) added warrior_anim, boulder_b and wedge, and the painted backdrop cards in assets/backdrop/gen/ (their manifest is assets/backdrop/MANIFEST.md).",
   "convention": "Static models: +Y up, front toward +Z, base on y = 0, centred on x and z, exactly 1.0 unit tall, one 1024 px base-colour texture, one material, one primitive. Scale by the world height you want. rigged/warrior_anim.glb (and the superseded rigged/warrior_rigged.glb) is the exception: 1.7 units tall, see HANDOFF.md. rejected/ holds what should not ship.",
   "assets": [
     {
@@ -229,9 +229,9 @@
       "verdict": "SHIP (round 2): a solid standing stone with cracked facets. A second ground rock."
     },
     {
-      "name": "spire",
-      "file": "spire.glb",
-      "input": "input/spire.png",
+      "name": "wedge",
+      "file": "wedge.glb",
+      "input": "input/wedge.png",
       "endpoint": "fal-ai/hunyuan3d-v3/image-to-3d",
       "options": "Normal + PBR",
       "request_id": "01a1c720-81ea-7753-997e-d30ed1981934",
@@ -247,7 +247,8 @@
       "raw_height": 0.808,
       "bytes": 1950636,
       "ship": true,
-      "verdict": "SHIP AS A ROCK, NOT A SPIRE (round 2): solid, but a wedge twice as deep as it is wide."
+      "verdict": "SHIP (round 2): asked for as a spire, came back a solid wedge twice as deep as it is wide.",
+      "asked_for": "spire (the name in the ledger and in tools/gen/payloads/in-spire.json)"
     }
   ],
   "total_committed_usd": 11.6

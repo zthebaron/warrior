@@ -19,14 +19,14 @@ $2.00 against $1.40), so the real charge could be about $1.20 lower.
 | The warrior's missing clips | `rigged/warrior_anim.glb`, nine clips on one rig; `docs/build-log/art-gen/anim-sheet.png` | $2.0000 | good: idle, walk, run, land, dash. Acceptable: jump, fall. Weak: wall, climb |
 | Face and hands | painted into `warrior.glb` and `warrior_anim.glb` by `tools/gen/paint-warrior.mjs` | $0 | fixed; the mouth and nose stay faint |
 | Painted backdrop cards | `assets/backdrop/gen/`, thirteen PNGs with alpha | $1.5998 | eleven I would ship as they are, two with a note (`assets/backdrop/MANIFEST.md`) |
-| More rock variety | `boulder_b.glb`, `spire.glb` (and round 1's `cliff_b.glb`) | $1.1696 | `boulder_b` yes; `spire` is a solid wedge, not a spire |
+| More rock variety | `boulder_b.glb`, `wedge.glb` (and round 1's `cliff_b.glb`) | $1.1696 | `boulder_b` yes; `wedge` is the spire I asked for, come back a wedge |
 
 ## What I would ship
 
 | asset | ship? | one line |
 |---|---|---|
 | `warrior.glb` | **yes** | The best result. Reads as the design from every side, sword across the back. Round 2 painted the face and hands. |
-| `rigged/warrior_anim.glb` | **yes, untested in engine** (round 2) | Same mesh, 24-joint skeleton, nine clips. Does not fit a2's character loader as it stands (see HANDOFF). |
+| `rigged/warrior_anim.glb` | **yes, untested in engine** (round 2) | Same mesh, 24-joint skeleton, nine clips. In the folder a2's build reads rigged models from (see HANDOFF). |
 | `rigged/warrior_rigged.glb` | superseded | Round 1's rig with `walk` and `run` only. Kept as the paint tool's reference. |
 | `torii.glb` | **yes** | Clean gate with real thickness, one flat vermilion. |
 | `lantern.glb` | **yes** (optional asset) | The cleanest geometry of the run. |
@@ -34,7 +34,7 @@ $2.00 against $1.40), so the real charge could be about $1.20 lower.
 | `cliff.glb` | **yes, with a caveat** | A true solid, but a tidy pillar. Use it alongside `cliff_b`, not alone. |
 | `boulder.glb` | **yes** | A true solid, but it reads as stacked slabs more than one angular rock. |
 | `boulder_b.glb` | **yes** (round 2) | A solid standing stone with cracked facets, as thick as it is wide. A second ground rock. |
-| `spire.glb` | **yes, as a rock; not as a spire** (round 2) | A solid, but a wedge twice as deep as it is wide. |
+| `wedge.glb` | **yes** (round 2) | Asked for as a spire. It came back a solid wedge, twice as deep as it is wide. |
 | `rejected/pine.glb` | **no** | Trunk and base are solid; the canopy is a thin sheet. A bonsai on a disc, not a cliff pine. |
 
 Neither cliff is the towering, jagged wall of the seed. They are free-standing blocks of it.
@@ -51,7 +51,7 @@ every ledger row spent getting that asset, including rejected inputs and tests.
 | warrior_rigged | `warrior.glb` | `fal-ai/meshy/rigging` | $0.80 booked | $0.8000 | `01a1c6e3-846c-70d1-9cfa-a6a4bdf42a32` | 29,400 (unchanged) | 3.91 MB |
 | warrior_anim | `warrior.glb` | `fal-ai/meshy/rigging/multi-animation`, rig + 10 library clips | $2.00 booked | $2.0000 | `01a1c6fb-7230-7952-bbdc-8d3d7272c61d` | 29,400 (unchanged) | 3.85 MB |
 | boulder_b | `input/boulder_b.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $0.5848 | `01a1c71d-e7f9-7ee3-bfef-00be51509ba9` | 500,000 -> 29,400 | 39.0 MB -> 2.05 MB |
-| spire | `input/spire.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $0.5848 | `01a1c720-81ea-7753-997e-d30ed1981934` | 500,000 -> 29,400 | 40.7 MB -> 1.95 MB |
+| wedge ("spire" in the ledger) | `input/wedge.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $0.5848 | `01a1c720-81ea-7753-997e-d30ed1981934` | 500,000 -> 29,400 | 40.7 MB -> 1.95 MB |
 | pine | `input/pine.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $0.8838 | `01a1c6da-90c8-78b1-ad59-09ae39bd1a65` | 500,000 -> 29,400 | 49.6 MB -> 1.98 MB |
 | cliff | `input/cliff.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $1.2492 | `01a1c6e1-74f4-7c82-baaf-ec3daa4e9aab` | 500,000 -> 29,400 | 36.7 MB -> 1.92 MB |
 | cliff_b | `input/cliff_b.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $0.5848 | `01a1c6ee-d88e-7683-a2a2-b61b3d9b93c7` | 500,000 -> 29,400 | 38.9 MB -> 2.12 MB |
@@ -60,7 +60,7 @@ every ledger row spent getting that asset, including rejected inputs and tests.
 | lantern | `input/lantern.png` | hunyuan3d-v3, Normal + PBR | $0.525 | $0.5848 | `01a1c6e3-617e-70f0-9913-7f54a2492104` | 500,000 -> 29,400 | 44.9 MB -> 2.32 MB |
 
 The round 1 rows of the "all attempts" column sum to $6.8306; with `warrior_anim`, `boulder_b`
-and `spire` it is $10.0002, and the backdrop cards' $1.5998 make the ledger total, $11.6000. The
+and `wedge` it is $10.0002, and the backdrop cards' $1.5998 make the ledger total, $11.6000. The
 warrior's figure includes the $0.525 no-PBR comparison; the rigs are their own rows.
 
 ## What is wrong with each one
@@ -106,13 +106,13 @@ of clips and how each was cut. Rendered three frames each in `docs/build-log/art
 facets. Plainer than a real rock, but a true block from every side, and a different silhouette
 from `boulder` (which is wide and layered).
 
-**spire** (round 2). **Not a spire.** I asked for a tall rock needle three times as tall as wide,
-and its Trellis test was one (0.49 x 1 x 0.45). The Hunyuan final came back 0.55 x 1 x 1.13: a
+**wedge** (round 2). **Asked for as a spire; ledger rows 62, 64 and 66 call it that.** I asked
+for a tall rock needle three times as tall as wide, and its Trellis test was one (0.49 x 1 x 0.45). The Hunyuan final came back 0.55 x 1 x 1.13: a
 solid, but a wedge twice as deep as it is wide. End-on it is a narrow leaning stone; side-on it is
 a broad slab. Its edges are also drawn as pale lines where the painting had dark ones. It passed
 the brief's gate (solid from the side in the Trellis test) and still came out a different shape,
 which is the second time Hunyuan has diverged from a passing Trellis test (the first was round 1's
-first cliff). Usable as one more rock; do not place it expecting a spire.
+first cliff). Usable as one more rock. I renamed the file to what it is so that nobody places it expecting a spire.
 
 **pine.** Do not ship as a 3D prop. Seen from the side the canopy is a blade (the sheet's "side"
 column shows it). It is also the wrong tree: an upright bonsai on a round disc, where the brief
@@ -182,8 +182,8 @@ These are recorded here, not in `state/OPEN-QUESTIONS.md`, because the brief say
 ### Round 2 decisions
 
 10. **`warrior_anim.glb` is in `assets/hero/rigged/`, not at the brief's `assets/hero/warrior_anim.glb`.**
-    a2's `tools/assets/build.mjs` imports every `assets/hero/*.glb` as a static hero asset, which
-    would strip this file's skin and clips and want a budget line. Same reason as decision 4.
+    a2's `tools/assets/build.mjs` (at `72a254f`) reads rigged models from `assets/hero/rigged/` and
+    statics from `assets/hero/`; at the brief's path it would not be found as a character.
     `git mv` reverses it.
 11. **The backdrop cards are in `assets/backdrop/gen/`, not `assets/backdrop/`,** for the matching
     reason on the backdrop side (`assets/backdrop/MANIFEST.md`).
@@ -197,9 +197,9 @@ These are recorded here, not in `state/OPEN-QUESTIONS.md`, because the brief say
 14. **Round 2 ran without a line in `state/CLAIMS.jsonl`.** Round 1 released the ART-GEN claim at
     11:40:49 am PST, half a minute after round 2 started, and I did not notice until the end. A
     claim is a commit pushed to `main`, which this session may not do, so none was taken late.
-15. **Both round 2 rocks were bought.** Both passed the Trellis gate (solid from the side), so I
-    paid for both finals. `spire` then came back a wedge. $0.525 of the $1.1696 bought a usable
-    rock that is not the one asked for.
+15. **Both round 2 rocks were bought, and one was renamed.** Both passed the Trellis gate (solid
+    from the side), so I paid for both finals. The spire came back a wedge and is delivered as
+    `wedge.glb`. $0.525 of the $1.1696 bought a usable rock that is not the one asked for.
 
 ## Where the money stopped
 
@@ -228,7 +228,7 @@ Round 2 (ledger rows 46 to 66):
 Round 2 stopped at $11.60 of $20.00. What is left undone is not a matter of money:
 - **More clips would not fix `wall` and `climb`.** Their weakness is the hat brim and the lack of a
   ledge-climb in the library, not a missing purchase.
-- **More rocks by image-to-3D are a coin toss.** `spire` passed its Trellis test and still came
+- **More rocks by image-to-3D are a coin toss.** The spire passed its Trellis test and still came
   back a different shape. The painted cliff cards are the better answer for the cliff the seed shows.
 - **`peaks_b` and `mist_a` could be repainted darker** for $0.12 each so that more of them survives
   cutting. I did not, because eleven cards already cover every type the brief listed.
