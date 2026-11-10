@@ -9,6 +9,8 @@ import type { InputFrame } from '../engine/input';
 import { NEUTRAL_FRAME } from '../engine/input';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import type { Physics, Vec3Like } from '../engine/physics';
+import type { CharacterAsset } from '../loaders/character';
+import { CharacterModel } from './character-model';
 
 export const TUNING = {
   // --- presentation (feel test) ---
@@ -124,6 +126,7 @@ export class Player {
 
   private readonly ctrl: KinematicCharacterController;
   private readonly material: THREE.MeshBasicMaterial;
+  private readonly model: CharacterModel | null = null;
   private readonly prevCenter = new THREE.Vector3();
   private prevInput: InputFrame = { ...NEUTRAL_FRAME };
   private coyoteTimer = 0;
@@ -143,7 +146,8 @@ export class Player {
   private readonly climbTo = new THREE.Vector3();
   private ledgeTopY = 0;
 
-  constructor(private readonly physics: Physics, feet: Vec3Like, facing: number) {
+  /** figure: the rigged character to draw (D-020). Without one the player is drawn as the capsule it collides as. */
+  constructor(private readonly physics: Physics, feet: Vec3Like, facing: number, figure?: CharacterAsset) {
     const t = TUNING;
     this.center.set(feet.x, feet.y + this.feetOffset(), feet.z);
     const { body, collider } = physics.createKinematicCapsule(t.capsuleHalfHeight, t.capsuleRadius, this.center);
@@ -152,13 +156,21 @@ export class Player {
     this.ctrl = physics.createCharacterController();
 
     this.material = new THREE.MeshBasicMaterial({ color: VISUAL.robeColor });
-    const capsule = new THREE.Mesh(
-      new THREE.CapsuleGeometry(t.capsuleRadius, t.capsuleHalfHeight * 2, VISUAL.capSegments, VISUAL.radialSegments),
-      this.material,
-    );
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(...VISUAL.noseSize), new THREE.MeshBasicMaterial({ color: VISUAL.noseColor }));
-    nose.position.set(0, t.capsuleHalfHeight * VISUAL.noseHeightFactor, -t.capsuleRadius * VISUAL.noseForwardFactor);
-    this.mesh.add(capsule, nose);
+    if (figure) {
+      // The figure's feet are its origin; this.mesh's origin is the capsule's centre (the landing mark and
+      // the camera read it there). The capsule stays the collider: the figure is drawn, never collided with.
+      this.model = new CharacterModel(figure, 2 * this.feetOffset(), t.runSpeed);
+      this.model.root.position.y = -this.feetOffset();
+      this.mesh.add(this.model.root);
+    } else {
+      const capsule = new THREE.Mesh(
+        new THREE.CapsuleGeometry(t.capsuleRadius, t.capsuleHalfHeight * 2, VISUAL.capSegments, VISUAL.radialSegments),
+        this.material,
+      );
+      const nose = new THREE.Mesh(new THREE.BoxGeometry(...VISUAL.noseSize), new THREE.MeshBasicMaterial({ color: VISUAL.noseColor }));
+      nose.position.set(0, t.capsuleHalfHeight * VISUAL.noseHeightFactor, -t.capsuleRadius * VISUAL.noseForwardFactor);
+      this.mesh.add(capsule, nose);
+    }
     this.teleport(feet, facing);
   }
 
@@ -467,6 +479,7 @@ export class Player {
   render(alpha: number): void {
     this.mesh.position.lerpVectors(this.prevCenter, this.center, alpha);
     this.mesh.rotation.y = this.facing;
+    this.model?.pose(this.state, this.stateTime, Math.hypot(this.vel.x, this.vel.z));
   }
 }
 

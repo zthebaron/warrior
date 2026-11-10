@@ -106,6 +106,12 @@ distances.
 **No element may span two bands.** A cliff that runs from near to far is drawn as separate
 masses, each belonging to one band.
 
+*(D-020: the table is how the INK PASS treats what it draws. A PAINTED thing, the far field cut from the seed, a
+hero model, the figure, is drawn after that pass and is not snapped to a band's steps: it carries its own
+brushwork. It must still sit in its band by construction (a far ridge is a pale wash; a mid cliff is lightened
+so that nothing in it is darker than `ink-grey`), and it may carry no hue the ramp does not have. Measured: inside
+the pass a painted plane keeps two tones at 150u and six at 60u.)*
+
 ---
 
 ## 4. ENVIRONMENT GRAMMAR
@@ -130,8 +136,10 @@ visible and crooked. Always `ink-deep` or `ink-black`, never mid-value.
 **Torii** — vermilion post-and-lintel. **Placed in sequence along a path as waypoint
 markers**, not as single landmarks. Two or three receding into mist is the canonical use.
 
-**Cloud sea** — horizontal banded wash in `paper-cream` and `mist-pale`. It has no form
-and no surface. It is a boundary, never a place.
+**Cloud sea** *(amended on evidence, D-020: Tim, gap THREE)* — BARE PAPER. It has no form, no surface and no
+shapes of its own: what stands in it thins into the paper. It is a boundary, never a place. *(Was: "horizontal
+banded wash in `paper-cream` and `mist-pale`". Measured: the banded wash left chapter 1's cam2 at 28.3% paper and
+18.0% mist-pale against the seed's 37.2% and 9.5%; as bare paper it is 40.4% and 7.1%.)*
 
 **Buildings** — pagoda and fortress forms: tiled roof planes with upswept eaves, plastered
 walls, stone bases. Roofs are the readable element; walls are flat fills.
@@ -175,6 +183,10 @@ with distance (see §3) so far geometry does not turn noisy.
 
 **Value compression by depth** — the three-band treatment applied as a post pass, not
 baked into materials.
+
+**Painted things** *(D-020)* — the far field, hero models and the figure are drawn after the three passes above
+and take the paper grain from this section and nothing else: no value snap and no ink edge. Their distance is in
+how they are painted (a paler wash farther off), not computed.
 
 **Forbidden in post:** bloom, vignette beyond a very slight paper darkening at the extreme
 corners, colour grading that introduces hue, motion blur, any screen-space reflection.
@@ -263,4 +275,5 @@ In order. Any failure is a failure.
 *Derived from the locked seed. If the seed changes, this document is void and must be
 re-derived — do not patch it. Amendments made on MEASUREMENT under a recorded decision are
 the one exception, and each is marked in place (section 2: D-001, D-003, D-006; sections 1, 9, 10:
-D-010, the landing mark; sections 1, 3 and 6: D-019, the ink edge and the near value range).*
+D-010, the landing mark; sections 1, 3 and 6: D-019, the ink edge and the near value range; sections 3, 4 and 6:
+D-020, painted things and the bare-paper cloud sea).*

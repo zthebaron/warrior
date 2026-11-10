@@ -1251,3 +1251,84 @@ B-38); paper 28.3% against 37.2% (B-42, gap THREE, not started). **Unchanged:** 
 every geometry fingerprint is PR #27's; replay passes against the committed traces; every scene ratchet holds.
 
 implemented_by: 6474469 (first cut: silhouette-only ink_edge with world-anchored weight, the near value push, the D-019 gate checks, STYLE §3/§6, darwin goldens), c917b0f (review fixes: the two-surfaces silhouette test, whole-pixel steps, same-value never-break, mist tops, inward ragged push, grazing camera and the gate's added checks)
+
+## D-020 — the look comes from painted things, not from more passes over boxes: a paint layer, a painted far field, hero assets and the rigged warrior. B-33, B-42, B-45 to B-50. DECIDED
+
+**Ruled by Tim** (2026-11-10, after playing the D-018 and D-019 builds; three messages, relayed):
+- "they still look really bad and nothing like the designs ... more shader or kit passes on 200-triangle boxes will
+  not get there." Gap FOUR (the Blender-python silhouette rebuild, B-37, B-38) is DROPPED.
+- Art pass 1. ONE: the far field as layered painted planes (paper sky, far peaks, mist sea, mid cliffs) textured
+  from crops of the seed, with parallax by depth, replacing the kit_far_peak and kit_cloud_band geometry; "the mist
+  must be bare paper". TWO: a hero asset class with real budgets ("about 30k triangles and a 1024 px texture per
+  asset, plus a whole-scene cap you measure on this Mac"), a GLB import path, "light ink post on them"; colliders
+  do not change. THREE: a model loader and animation state hookup so a rigged GLB replaces the capsule.
+- On ART-GEN's delivery (assets/hero, branch art-gen 7bc5e85): the player is `warrior_rigged.glb`, "walk and run
+  by speed, rest pose for idle, and hold a sensible frame for jump, fall, dash, wall and climb until more clips
+  exist"; `torii.glb` in place of kit_torii; `lantern.glb` as dressing; `cliff.glb` and `boulder.glb`
+  "sparingly with varied rotation and scale", the painted backdrop staying the main cliff mass; `pine.glb` not as a
+  3D prop. The Blender stand-in figure is stopped and not shipped.
+- `src/engine/ink-post.ts` and `src/engine/renderer.ts` are not edited (INK-HIRES owned them).
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-070):** every number below "Built", the chroma cap,
+the torii drawn as a skin of kit_torii, the held frames, where the dressing stands, and the Style Bible wording.
+
+**The finding, as measured.** The §6 pass snaps every pixel to one of eight ramp steps and, beyond 80 u, to paper
+or one flat mist tone (D-018). A painted texture drawn inside it is a posterisation: at 150 u two tones, at 60 u
+six. So "painted" and "light ink post" cannot be had inside that pass, and that file was not this session's to
+edit. On D-019, chapter 1 cam2 was 28.3% paper and 18.0% mist-pale against the seed's 37.2% and 9.5%; the
+mist-pale was kit_cloud_band's strips (7.0% of the frame) and the kit's lower face bands.
+
+**Built.**
+1. **The paint layer** (`src/engine/paint-layer.ts`, hooked from `src/main.ts`). A painted mesh sits on three.js
+   layer 1 in the same scene graph. Each frame the ink pass draws layer 0 as before; then the canvas depth is
+   cleared, the ink geometry is drawn into it depth-only, and the painted meshes are drawn with the depth test on.
+   A painted material is unlit and carries the ink pass's own static grain, and nothing else: that is the "light
+   ink post". Nothing translates: painted planes are fixed in the world and parallax is perspective (Q2a).
+2. **The far field of an ink level** (`src/loaders/backdrop.ts`, textures by `tools/art/backdrop-textures.mjs`
+   from the seed): paper sky = no geometry; three rings of the seed's far ridge (hero_11s) at 300, 380 and 460 u;
+   five mid cliffs carrying the seed's cliff brushwork (hero_9s) inside an authored ragged silhouette, re-coloured
+   onto the ramp and lightened for distance; the mist = six sheets of paper-cream wash from y -7 to -3, so
+   whatever stands in it thins into the paper. kit_mid_cliff, kit_far_peak and kit_cloud_band are no longer placed.
+3. **A hero asset class** (`tools/assets/build.mjs`, `budgets.json` `classes.hero`, `assets/src/hero.json`):
+   what `hero.json` names is imported from assets/hero as delivered: unlit, base colour only, chroma capped,
+   1024 px KTX2, Draco; always collider none; drawn on the paint layer. Shipped: lantern, cliff, boulder (29,400
+   triangles each) and torii (9,510 after simplify, no texture).
+4. **The torii** is kit_torii's SKIN: a kit_torii placement keeps kit_torii's own triangles as its collider and is
+   drawn as the hero torii, fitted at load to kit_torii's bounding box, in the accent as a flat material (so
+   `?accent=` and the accent gates keep working). No level file changed for it.
+5. **The player** is `assets/char/warrior_rigged.glb` (`src/loaders/character.ts`,
+   `src/entities/character-model.ts`): scaled to the capsule's 1.9 u, feet on the ground, turned to face -Z, on
+   the paint layer. The twelve player states are unchanged and map onto the rig's two clips: stride on the ground
+   (walk below half the run speed, else run, the run keeping pace with the ground), the rest pose for idle and
+   land, a held frame for everything else. The capsule stays the collider.
+6. **The gate.** The 17 D-018/D-019 `post` checks now judge the INK PASS ALONE, with the paint layer switched
+   off, and `POST_GATE` is untouched. Six new checks judge the frame the player sees (`PAINT_GATE`): the layer is
+   on as the game ships; the figure on every level and a painted far field on a dressed level only; the void is
+   bare paper; no hue; static; no accent pixel hidden. Each was seen red (MEASUREMENTS "D-020 paint gate").
+7. **Colliders did not change.** `tools/geometry-fingerprint.mjs --against` a dump taken before any edit:
+   IDENTICAL on all five levels. The nine kit .glb files rebuild byte-identical. Replay passes against the
+   committed, un-re-recorded traces.
+
+**Measurement** (`docs/build-log/d020/sheet-ch1-cam2.png`: seed | D-019 | D-020, the camera and seed frame every
+sheet since D-018 has used). Share of non-accent pixels nearest each ramp step:
+
+| ch1 cam2 | paper | mist-pale | wash-light | stone-mid | wash-mid | ink-grey | ink-deep | ink-black |
+|---|---|---|---|---|---|---|---|---|
+| seed hero_7s | 37.2% | 9.5% | 16.1% | 5.8% | 8.4% | 9.6% | 8.0% | 5.4% |
+| D-019 | 28.3% | 18.0% | 7.0% | 5.9% | 17.3% | 12.9% | 6.2% | 4.4% |
+| D-020 | 40.4% | 7.1% | 6.0% | 6.4% | 17.5% | 12.8% | 6.3% | 3.6% |
+
+cam2 pitches 28 degrees down with its horizon at row 13 and does not contain the player, so this sheet shows only
+the void turning to paper. The far field, the figure and the torii are in `docs/build-log/d020/`
+`art-pass-1-5120x1440-rig.png` (the player's own camera at spawn, real GPU). On an Apple M4 Max chapter 1 holds
+144.9 fps at 2560x1440 and at 5120x1440; a frame costs 4.39 ms at 5120x1440 (1.4-1.7 ms before, INK-HIRES).
+
+**STYLE-BIBLE amended in place, marked D-020:** §3 (a painted thing is not snapped to a band's steps; it must sit
+in the band's range by construction and carry no hue the ramp lacks), §4 (the cloud sea is bare paper), §6
+(painted things take the grain and nothing else).
+
+**Still off the seed, and known limits (OQ-070):** the near rock is still kit slabs (B-46). The figure has two
+clips; every other state holds a frame (B-45). A painted thing gets no ink edge, and its grain is per device
+pixel where INK-HIRES draws the ink pass's grain in 360-line space (B-48). The depth-only pass draws the ink
+geometry a second time. The delivered warrior differs from §7 (a pale hat, both gourds on one hip, trousers).
+
+implemented_by: 611d70c (the paint layer, the seed ridge and the bare-paper mist, the paint checks), 19bbb8d (painted mid cliffs, the paint thresholds from measurement, backdrop budgets, the frame and sheet tools), bb5de28 (the hero asset class and its import path)

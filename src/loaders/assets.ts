@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { paintMaterial } from '../engine/paint-layer';
+import heroJson from '../../assets/src/hero.json';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
@@ -25,6 +26,24 @@ export interface LoadedAsset {
   collision: { positions: Float32Array; indices: Uint32Array };
   /** D-020: a hero asset. It carries its own painted texture and is drawn on the paint layer, never collided with. */
   painted: boolean;
+  /**
+   * What a level placement DRAWS. The asset's own parts, unless assets/src/hero.json gives it a skin: then a
+   * hero model fitted to this asset's bounding box. The collision above is this asset's own triangles either
+   * way, so a skin changes what is seen and nothing a player can touch.
+   */
+  drawn: { geometry: THREE.BufferGeometry; material: THREE.Material }[];
+}
+
+/** kit asset -> the hero model it is drawn as (D-020). */
+const SKINS: Record<string, { hero: string; yaw: number; fill: string } | undefined> = heroJson.skins;
+/** The accent as a flat material, for a skin whose fill is "accent": follows ?accent= and the live switch. */
+const accentFill = new THREE.MeshBasicMaterial({ toneMapped: false });
+const syncAccentFill = (): void => { accentFill.color.set(ACCENT_HEX[accentChoice]!); };
+
+/** The configured glTF loader (Draco + KTX2), for loaders that keep a scene graph (characters). */
+export function assetLoader(): GLTFLoader {
+  if (!loader) throw new Error('[assets] configureAssetLoaders(renderer) was not called at boot');
+  return loader;
 }
 
 /** What KTX2Loader.detectSupport found on this renderer — the transcode target depends on it. */
@@ -64,6 +83,7 @@ export function setAccent(name: string): void {
   if (!(name in ACCENT_HEX)) throw new Error(`[assets] ?accent=${name}: not in assets/src/accent.json (${Object.keys(ACCENT_HEX).join(', ')})`);
   if (cache.size && name !== accentChoice) throw new Error('[assets] setAccent after assets decoded — call it at boot');
   accentChoice = name;
+  syncAccentFill();
 }
 export function getAccent(): string {
   return accentChoice;
@@ -79,6 +99,7 @@ export function switchAccent(name: string): string {
   if (name === accentChoice) return name;
   for (const asset of cache.values()) if (!asset.painted) for (const part of asset.parts) remapCells(part.geometry, accentChoice, name);
   accentChoice = name;
+  syncAccentFill();
   return name;
 }
 export const ACCENT_CANDIDATES: string[] = Object.keys(accentJson.candidates);
@@ -181,7 +202,35 @@ async function decode(name: string, file: string, painted: boolean): Promise<Loa
     else for (let i = 0; i < p.count; i++) idx.push(base + i);
   });
   if (parts.length === 0) throw new Error(`[assets] ${name}: no renderable meshes`);
-  const asset: LoadedAsset = { name, parts, collision: { positions: new Float32Array(pos), indices: new Uint32Array(idx) }, painted };
+  const asset: LoadedAsset = { name, parts, collision: { positions: new Float32Array(pos), indices: new Uint32Array(idx) }, painted, drawn: parts };
+  const skin = SKINS[name];
+  if (skin) asset.drawn = await skinFor(asset, skin);
   cache.set(name, asset);
   return asset;
+}
+
+/**
+ * The hero model that stands in for a kit asset, fitted to the kit asset's own bounding box: turned by yaw,
+ * then scaled so its height and its wide side match the kit's (the narrow side takes the wide side's factor,
+ * so a post stays round), then moved so the two boxes share a centre and a foot. Every number comes from the
+ * two shipped files; nothing is typed here.
+ */
+async function skinFor(kit: LoadedAsset, skin: { hero: string; yaw: number; fill: string }): Promise<LoadedAsset['drawn']> {
+  if (skin.fill !== 'accent') throw new Error(`[assets] ${kit.name}: skin fill "${skin.fill}" is not supported (accent)`);
+  const hero = await load(skin.hero, `${skin.hero}.glb`, false);
+  const kitBox = new THREE.Box3();
+  for (const p of kit.parts) { p.geometry.computeBoundingBox(); kitBox.union(p.geometry.boundingBox!); }
+  const k = kitBox.getSize(new THREE.Vector3());
+  syncAccentFill();
+  return hero.parts.map((part) => {
+    const g = part.geometry.clone().rotateY((skin.yaw * Math.PI) / 180);
+    g.computeBoundingBox();
+    const h = g.boundingBox!.getSize(new THREE.Vector3());
+    const wide = k.z >= k.x ? k.z / h.z : k.x / h.x;
+    g.scale(wide, k.y / h.y, wide);
+    g.computeBoundingBox();
+    const c = g.boundingBox!.getCenter(new THREE.Vector3()), kc = kitBox.getCenter(new THREE.Vector3());
+    g.translate(kc.x - c.x, kitBox.min.y - g.boundingBox!.min.y, kc.z - c.z);
+    return { geometry: g, material: accentFill };
+  });
 }

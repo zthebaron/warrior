@@ -102,6 +102,7 @@ export async function post(ctx: Ctx): Promise<StageResult> {
     const g = await openGame(ctx);
     try {
       // D-020: from here to the paint-layer checks, the frame judged is the ink pass alone
+      const shipped = await g.page.evaluate(() => window.__HARNESS__!.paintLayer()); // as the game starts, before this stage switches anything
       const paintStatus = await g.page.evaluate(() => window.__HARNESS__!.paintLayer(false));
       let compN = 0, compPaper = 0, compChanged = 0, compHue = 0, compStill = 0, compMoved = 0, accentLost = 0;
       const compHueAt: string[] = [];
@@ -160,7 +161,15 @@ export async function post(ctx: Ctx): Promise<StageResult> {
             if (Math.abs(v - (ir + ig + ib) / 3) > PAINT_GATE.changed) {
               compChanged++;
               // judged where nothing in the ink pass can have moved: paint over the sky, one tick later
-              if (D2[i]! >= far * 0.999 && D3[i]! >= far * 0.999) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
+              // sky here AND all round it, in both frames: the canvas is multisampled, so a moving ink edge one pixel
+              // away blends into this one
+              const xx = i % shot.width, yy = (i - xx) / shot.width;
+              let clear = xx > 0 && yy > 0 && xx < shot.width - 1 && yy < shot.height - 1;
+              for (let dy = -1; clear && dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+                const j = i + dy * shot.width + dx;
+                if (D2[j]! < far * 0.999 || D3[j]! < far * 0.999) { clear = false; break; }
+              }
+              if (clear) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
             }
           }
         }
@@ -296,15 +305,16 @@ export async function post(ctx: Ctx): Promise<StageResult> {
         corner.length && centre.length ? `corner ${avg(corner).toFixed(2)} vs centre ${avg(centre).toFixed(2)}` : 'no sky in both regions: not judged');
       // ---- D-020: the paint layer, judged on the frame the player sees
       const P = PAINT_GATE;
-      st.check('D-020 paint layer: drawn on a dressed level, absent from an undressed one',
-        dressed ? paintStatus.painted > 0 && compN > 0 && compChanged / compN >= P.minPaintedShare : paintStatus.painted === 0,
-        dressed ? `${paintStatus.painted} painted meshes; ${pc(compChanged, compN)} of the frame differs from the ink pass alone (need >= ${P.minPaintedShare * 100}%)` : `${paintStatus.painted} painted meshes (undressed: none allowed)`);
+      st.check('D-020 paint layer: on as the game ships (not only when this stage switches it on)', shipped.drawn, shipped.drawn ? `drawing ${shipped.painted} painted meshes` : `${shipped.painted} painted meshes in the scene, and the layer is NOT drawing them`);
+      st.check('D-020 paint layer: the figure on every level; a painted far field on a dressed level and on no other',
+        paintStatus.painted > 0 && (dressed ? paintStatus.backdrop > 0 && compN > 0 && compChanged / compN >= P.minPaintedShare : paintStatus.backdrop === 0),
+        dressed ? `${paintStatus.painted} painted meshes, ${paintStatus.backdrop} of them the far field; ${pc(compChanged, compN)} of the frame differs from the ink pass alone (need >= ${P.minPaintedShare * 100}%)` : `${paintStatus.painted} painted meshes, ${paintStatus.backdrop} of them a far field (undressed: none allowed); ${pc(compChanged, compN)} of the frame is painted`);
       if (paintStatus.painted > 0) {
-        st.check('D-020 mist: the void is bare paper, not grey shapes', compN > 0 && compPaper / compN >= P.minPaperShare,
+        if (dressed) st.check('D-020 mist: the void is bare paper, not grey shapes', compN > 0 && compPaper / compN >= P.minPaperShare,
           `paper is ${pc(compPaper, compN)} of the painted frame (need >= ${P.minPaperShare * 100}%)`);
         st.check('D-020 paint layer: no hue (the painted frame stays on the ramp\'s chroma)', compHue === 0,
           `${compHue} of ${compN} px above the ramp's chroma ${chromaMax}${compHueAt.length ? `: ${compHueAt.join('; ')}` : ''}`);
-        st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', compStill > 0 && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed`);
+        st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', (dressed ? compStill > 0 : true) && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed`);
         st.check('D-020 paint layer: hides no accent pixel', accentLost === 0, `${accentLost} px that are accent in the ink pass are not in the painted frame`);
       }
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');

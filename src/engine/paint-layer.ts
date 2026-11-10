@@ -65,6 +65,7 @@ export class PaintLayer {
   /** Harness: false draws the ink pass alone, which is the frame the D-018/D-019 gate judges. */
   enabled = true;
   private painted = 0;
+  private backdrop = 0;
   private readonly depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false });
 
   constructor(
@@ -75,17 +76,20 @@ export class PaintLayer {
 
   /** Count the painted meshes in the scene. Call when the scene's contents change (a level is installed). */
   refresh(): number {
-    let n = 0;
+    let n = 0, b = 0;
     this.scene.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh && o.layers.isEnabled(PAINT_LAYER)) n++;
+      if (!(o as THREE.Mesh).isMesh || !o.layers.isEnabled(PAINT_LAYER)) return;
+      n++;
+      if (o.name.startsWith('backdrop:')) b++;
     });
     this.painted = n;
+    this.backdrop = b;
     return n;
   }
 
-  /** Painted meshes in the scene at the last refresh(), and whether they are being drawn. */
-  status(): { painted: number; drawn: boolean } {
-    return { painted: this.painted, drawn: this.enabled && this.painted > 0 };
+  /** Painted meshes in the scene at the last refresh() (backdrop: how many of them are the far field), and whether they are being drawn. */
+  status(): { painted: number; backdrop: number; drawn: boolean } {
+    return { painted: this.painted, backdrop: this.backdrop, drawn: this.enabled && this.painted > 0 };
   }
 
   /** Call right after the ink pass has drawn the frame to the canvas. */

@@ -8,6 +8,8 @@ import { InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
 import { PAINT_LAYER, PaintLayer } from './engine/paint-layer';
+import { getCharacter } from './loaders/character';
+import { CHARACTER } from './entities/character-model';
 import { SpringArmCamera, CAMERA_TUNING, allowedArm, type AssistProbe } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
@@ -100,7 +102,7 @@ interface HarnessApi {
   /** D-018: the STYLE §6 passes the running post stack was compiled with, in order. */
   postPasses(): string[];
   /** D-020: the paint layer's state; pass false to draw the ink pass alone (the frame the D-018/D-019 gate judges). */
-  paintLayer(on?: boolean): { painted: number; drawn: boolean };
+  paintLayer(on?: boolean): { painted: number; backdrop: number; drawn: boolean };
   /** Draw the CURRENT tick again: no simulation step, so two frames can differ only in what was drawn. */
   redraw(): void;
   /** D-018: per-pixel distance (u) from the camera of the last rendered frame, top row first (harness post stage). */
@@ -291,7 +293,7 @@ async function boot(): Promise<void> {
     const [x, y, z] = data.spawn.pos;
     const facing = data.spawn.facing * DEG2RAD;
     if (!player) {
-      player = new Player(physics, { x, y, z }, facing);
+      player = new Player(physics, { x, y, z }, facing, getCharacter(CHARACTER.asset));
       player.mesh.userData['translates'] = 'player';
       renderer.scene.add(player.mesh);
     }
@@ -778,7 +780,7 @@ async function boot(): Promise<void> {
         }
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(bg);
-        for (const part of getLoadedAsset('kit_torii')!.parts) scene.add(new THREE.Mesh(part.geometry, part.material));
+        for (const part of getLoadedAsset('kit_torii')!.drawn) scene.add(new THREE.Mesh(part.geometry, part.material)); // as a level draws it (D-020)
         const c = renderer.camera;
         const view = new THREE.PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
         view.position.set(...cam);

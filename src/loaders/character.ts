@@ -2,28 +2,24 @@
 // (src/loaders/assets.ts) bakes every node transform into cloned geometry, which is right for static dressing
 // and destroys a skin; this keeps the scene graph, the skeleton and gltf.animations.
 //
-// A character GLB carries no colour the game trusts. Its materials are NAMES, and each name is replaced at
-// load by an unlit fill from the palette (§1: zero lit materials; §2: nothing off the ramp but the robe and
-// the accent). A material name that is not in FILLS is an error, not a default.
+// A character is a painted thing: it keeps its own texture, takes the paint material (unlit, §1; the paper's
+// grain, §6) and is drawn on the paint layer, after the ink pass. Its file is assets/char/<name>.glb, imported
+// from assets/hero by `npm run assets:build` (unlit, base colour only, chroma capped, KTX2; skin and clips as
+// delivered) and held by assets:budget.
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import { ROBE, ramp } from '../engine/palette';
-
-/** Material name in the GLB -> the fill it is drawn with. */
-const FILLS: Record<string, () => number> = {
-  robe: () => ROBE,                 // §2: the one named colour that is neither ramp nor accent
-  ink: () => ramp('ink-black'),     // hat, sword, hair
-  wash: () => ramp('wash-mid'),     // wraps, belt, the hat's underside
-  paper: () => ramp('paper-cream'), // hands, face, feet
-};
+import { PAINT_LAYER, paintMaterial } from '../engine/paint-layer';
+import { assetLoader } from './assets';
 
 export interface CharacterAsset {
   name: string;
-  /** Feet at the origin, facing -Z, 1 unit = 1 m. Not in any scene: one character, one instance. */
+  /** As delivered: its own scale, origin and facing. CharacterModel fits it to the player. One instance. */
   scene: THREE.Group;
+  /** The delivered clips by name, plus `rest`: the bind pose, held. */
   clips: ReadonlyMap<string, THREE.AnimationClip>;
+  /** The rest pose's bounds in the scene's own units, skin applied. */
+  bounds: THREE.Box3;
   triangles: number;
 }
 
@@ -35,7 +31,7 @@ export function getCharacter(name: string): CharacterAsset | undefined {
   return cache.get(name);
 }
 
-/** Decode a character. Awaited before the first level is installed, so the player is never built without it. */
+/** Decode a character. Awaited with every level (prepareLevel), so the player is never built without it. */
 export function preloadCharacter(name: string): Promise<CharacterAsset> {
   const hit = cache.get(name);
   if (hit) return Promise.resolve(hit);
@@ -49,27 +45,39 @@ export function preloadCharacter(name: string): Promise<CharacterAsset> {
 
 async function decode(name: string): Promise<CharacterAsset> {
   const url = Object.entries(URLS).find(([path]) => path.endsWith(`/${name}.glb`))?.[1];
-  if (!url) throw new Error(`[character] assets/char/${name}.glb is not in the bundle`);
-  const gltf = await new GLTFLoader().loadAsync(url);
-  const fills = new Map<string, THREE.MeshBasicMaterial>();
+  if (!url) throw new Error(`[character] assets/char/${name}.glb is not in the bundle: run npm run assets:build`);
+  const gltf = await assetLoader().loadAsync(url);
   let triangles = 0;
+  const rest: THREE.KeyframeTrack[] = [];
+  gltf.scene.updateMatrixWorld(true);
+  const bounds = new THREE.Box3();
   gltf.scene.traverse((o) => {
-    const mesh = o as THREE.Mesh;
+    if ((o as THREE.Bone).isBone) {
+      // the pose the file was delivered in, as a clip: what `idle` holds until an idle clip exists
+      rest.push(
+        new THREE.VectorKeyframeTrack(`${o.name}.position`, [0], o.position.toArray()),
+        new THREE.QuaternionKeyframeTrack(`${o.name}.quaternion`, [0], o.quaternion.toArray()),
+        new THREE.VectorKeyframeTrack(`${o.name}.scale`, [0], o.scale.toArray()),
+      );
+    }
+    const mesh = o as THREE.SkinnedMesh;
     if (!mesh.isMesh) return;
     if (Array.isArray(mesh.material)) throw new Error(`[character] ${name}: "${mesh.name}" has several materials on one primitive`);
-    const key = mesh.material.name;
-    const fill = FILLS[key];
-    if (!fill) throw new Error(`[character] ${name}: material "${key}" is not one of ${Object.keys(FILLS).join(', ')}`);
-    let m = fills.get(key);
-    if (!m) fills.set(key, (m = new THREE.MeshBasicMaterial({ color: fill(), name: key })));
+    const map = (mesh.material as THREE.MeshBasicMaterial).map;
+    if (!map) throw new Error(`[character] ${name}: "${mesh.name}" has no base colour texture`);
     mesh.material.dispose();
-    mesh.material = m;
+    mesh.material = paintMaterial({ map });
+    mesh.layers.set(PAINT_LAYER);
     mesh.frustumCulled = false; // a skinned mesh's bounds are its rest pose; the figure is always near the camera
     const g = mesh.geometry;
     triangles += (g.index ? g.index.count : g.getAttribute('position').count) / 3;
+    if (mesh.isSkinnedMesh) mesh.skeleton.update();
+    bounds.union(new THREE.Box3().setFromObject(mesh, true));
   });
-  if (!gltf.animations.length) throw new Error(`[character] ${name}: no animation clips`);
-  const asset: CharacterAsset = { name, scene: gltf.scene, clips: new Map(gltf.animations.map((c) => [c.name, c])), triangles };
+  if (!rest.length) throw new Error(`[character] ${name}: no skeleton`);
+  const clips = new Map(gltf.animations.map((c) => [c.name, c]));
+  clips.set('rest', new THREE.AnimationClip('rest', 1, rest));
+  const asset: CharacterAsset = { name, scene: gltf.scene, clips, bounds, triangles };
   cache.set(name, asset);
   return asset;
 }

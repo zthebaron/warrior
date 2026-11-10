@@ -1,0 +1,16 @@
+{
+  "basis": "D-020. What the asset build imports from assets/hero/ (delivered by ART-GEN; that directory is theirs and is only read). Nothing in assets/hero ships unless it is named here. Every number is recorded in 00-start-here/MEASUREMENTS.md, section 'D-020 hero assets'.",
+  "chroma_cap": 26,
+  "static": {
+    "torii": { "texture": false, "simplify": 0.1 },
+    "lantern": {},
+    "cliff": {},
+    "boulder": {}
+  },
+  "characters": {
+    "warrior_rigged": {}
+  },
+  "skins": {
+    "kit_torii": { "hero": "torii", "yaw": 90, "fill": "accent" }
+  }
+}

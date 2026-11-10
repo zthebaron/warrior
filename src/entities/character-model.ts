@@ -1,9 +1,13 @@
-// The player's figure (D-020, B-33): a rigged character posed from the player's state.
+// The player's figure (D-020, B-33): the rigged warrior, posed from the player's state.
 //
-// The twelve player states stay exactly as they are (the nav bot reads them); they MAP onto eight clips.
-// The pose is a pure function of the states the player has been through and the time spent in each: no
-// wall clock, no frame count. In the harness that makes a frame's pose a function of the world tick, so a
-// golden cannot depend on how often a frame was drawn.
+// The twelve player states stay exactly as they are (the nav bot reads them). The delivered rig has two clips,
+// `walk` and `run`. On the ground the figure strides, walk or run by speed. Everything else HOLDS a frame until
+// its own clip exists: idle and land the rest pose, the airborne states a frame of the run, the wall and the
+// ledge a frame of the walk.
+//
+// Time comes only from the player's own state clock (seconds in the current state), never from a wall clock or
+// a frame count. In the harness the pose is therefore a function of the world tick, so a golden cannot depend
+// on how often a frame was drawn.
 //
 // Every number is in MEASUREMENTS.md "D-020 character".
 
@@ -12,102 +16,113 @@ import * as THREE from 'three';
 import type { CharacterAsset } from '../loaders/character';
 import type { PlayerState } from './player';
 
-export type ClipName = 'idle' | 'run' | 'jump' | 'fall' | 'land' | 'dash' | 'wall' | 'climb';
+type Pose = { clip: 'rest' | 'walk' | 'run'; hold: number } | 'stride';
+
+const AIR_UP: Pose = { clip: 'run', hold: 0.17 };   // the trailing leg kicked up: reads as leaving the ground
+const LEDGE: Pose = { clip: 'walk', hold: 0.53 };   // one leg forward and up: reads as stepping over
+const REST: Pose = { clip: 'rest', hold: 0 };
 
 export const CHARACTER = {
-  asset: 'char_warrior',
-  /** state -> clip, and how the clip's time runs in that state. */
-  clipOf: {
-    idle: 'idle',
-    run: 'run',
-    sprint: 'run',        // the same stride, faster: by sprintSpeed / runSpeed, so it keeps pace with the ground
-    jump: 'jump',
-    double_jump: 'jump',
-    wall_jump: 'jump',
-    fall: 'fall',
-    wall_slide: 'wall',
-    ledge_grab: 'climb',  // the hang: the first frame of the climb, held
-    ledge_climb: 'climb',
-    dash: 'dash',
-    land: 'land',
-  } satisfies Record<PlayerState, ClipName>,
-  once: ['jump', 'land', 'climb'] as readonly ClipName[], // play through and hold the last frame
-  held: ['ledge_grab'] as readonly PlayerState[],          // time does not run: the clip's first frame
-  blendSec: 0.1,        // a pose change is blended over this long (6 ticks)
+  asset: 'warrior_rigged',
+  /** The delivered model looks down +Z (assets/hero/HANDOFF.md); the player's forward is -Z. */
+  faceTurn: Math.PI,
+  poseOf: {
+    idle: REST,
+    land: REST,
+    run: 'stride',
+    sprint: 'stride',
+    jump: AIR_UP,
+    double_jump: AIR_UP,
+    wall_jump: AIR_UP,
+    fall: { clip: 'run', hold: 0.5 },        // the widest split, arms out
+    dash: { clip: 'run', hold: 0.33 },       // the lunge
+    wall_slide: { clip: 'walk', hold: 0 },   // upright, feet together
+    ledge_grab: LEDGE,
+    ledge_climb: LEDGE,
+  } satisfies Record<PlayerState, Pose>,
+  walkBelow: 0.5,   // of the player's run speed: slower than this the figure walks
+  blendSec: 0.1,    // a pose change is blended over this long (6 ticks)
 };
 
 const C = CHARACTER;
 
 export class CharacterModel {
-  /** Feet at the origin. Parent it under the player's mesh, lowered by the player's feetOffset(). */
-  readonly root: THREE.Group;
+  /** Feet at the origin, facing -Z, `height` tall. Parent it under the player's mesh, lowered by feetOffset(). */
+  readonly root = new THREE.Group();
   readonly triangles: number;
   private readonly mixer: THREE.AnimationMixer;
-  private readonly actions = new Map<ClipName, THREE.AnimationAction>();
+  private readonly actions = new Map<string, THREE.AnimationAction>();
+  private key = '';
+  private time = 0;          // seconds into the current pose's clip
   private state: PlayerState | null = null;
-  private clip: ClipName = 'idle';
-  private clipTime = 0;        // seconds of the current clip already played before this state began
   private lastStateTime = 0;
-  private sinceSwitch = 0;     // seconds since the clip last changed, carried across same-clip state changes
-  private prevClip: ClipName | null = null;
-  private prevClipAt = 0;      // the time the previous clip was frozen at
+  private since = 0;         // seconds since the pose last changed
+  private prevKey: string | null = null;
+  private prevAt = 0;
 
-  /** sprintRate: how much faster the run clip plays in `sprint` (the player's sprint speed over its run speed). */
-  constructor(asset: CharacterAsset, private readonly sprintRate: number) {
-    this.root = asset.scene;
+  /** height: how tall the figure stands (the player's capsule). runSpeed: the player's run speed, m/s. */
+  constructor(asset: CharacterAsset, height: number, private readonly runSpeed: number) {
     this.triangles = asset.triangles;
-    this.mixer = new THREE.AnimationMixer(this.root);
-    for (const name of new Set(Object.values(C.clipOf))) {
-      const clip = asset.clips.get(name);
-      if (!clip) throw new Error(`[character] ${asset.name} has no "${name}" clip (it has: ${[...asset.clips.keys()].join(', ')})`);
-      const a = this.mixer.clipAction(clip);
-      a.setLoop(C.once.includes(name) ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
-      a.clampWhenFinished = true;
+    const size = asset.bounds.getSize(new THREE.Vector3());
+    const k = height / size.y; // the delivered scale is whatever the generator used; the capsule decides
+    asset.scene.scale.multiplyScalar(k);
+    asset.scene.position.y -= asset.bounds.min.y * k; // feet on the ground
+    this.root.rotation.y = C.faceTurn;
+    this.root.add(asset.scene);
+    this.mixer = new THREE.AnimationMixer(asset.scene);
+    const add = (key: string, clipName: string): void => {
+      if (this.actions.has(key)) return;
+      const clip = asset.clips.get(clipName);
+      if (!clip) throw new Error(`[character] ${asset.name} has no "${clipName}" clip (it has: ${[...asset.clips.keys()].join(', ')})`);
+      // one action per pose, so two held frames of the same clip can be blended: each needs its own copy
+      const a = this.mixer.clipAction(clip.clone());
+      a.setLoop(THREE.LoopRepeat, Infinity);
       a.enabled = true;
       a.setEffectiveWeight(0);
       a.play();
-      this.actions.set(name, a);
-    }
-    this.pose('idle', 0);
+      this.actions.set(key, a);
+    };
+    add('stride:walk', 'walk');
+    add('stride:run', 'run');
+    for (const p of Object.values(C.poseOf)) if (p !== 'stride') add(`${p.clip}@${p.hold}`, p.clip);
+    this.pose('idle', 0, 0);
   }
 
-  private rate(state: PlayerState): number {
-    return C.held.includes(state) ? 0 : state === 'sprint' ? this.sprintRate : 1;
-  }
-
-  /** Pose the figure for the player's state and the seconds spent in it. Call once per drawn or simulated frame. */
-  pose(state: PlayerState, stateTime: number): void {
-    const clip: ClipName = C.clipOf[state];
-    if (state !== this.state || stateTime < this.lastStateTime) {
-      // a new state (or the same state re-entered): bank what the old one played
-      const played = this.state ? this.lastStateTime * this.rate(this.state) : 0;
-      if (clip !== this.clip || this.state === null) {
-        this.prevClip = this.state === null ? null : this.clip;
-        this.prevClipAt = this.clipTime + played;
-        this.clip = clip;
-        this.clipTime = 0;
-        this.sinceSwitch = 0;
-      } else {
-        this.clipTime += played;
-        this.sinceSwitch += this.lastStateTime;
-      }
-      this.state = state;
-    }
+  /** Pose the figure for the player's state, the seconds spent in it and its ground speed (m/s). */
+  pose(state: PlayerState, stateTime: number, speed: number): void {
+    const p: Pose = C.poseOf[state];
+    const walking = speed < C.walkBelow * this.runSpeed;
+    const key = p === 'stride' ? (walking ? 'stride:walk' : 'stride:run') : `${p.clip}@${p.hold}`;
+    const dt = state === this.state && stateTime >= this.lastStateTime ? stateTime - this.lastStateTime : stateTime;
+    this.state = state;
     this.lastStateTime = stateTime;
-    const w = this.prevClip ? Math.min(1, (this.sinceSwitch + stateTime) / C.blendSec) : 1;
-    for (const [name, a] of this.actions) {
-      const isCur = name === this.clip, isPrev = name === this.prevClip && w < 1;
-      a.setEffectiveWeight(isCur ? w : isPrev ? 1 - w : 0);
-      if (isCur) a.time = this.at(a, this.clipTime + stateTime * this.rate(state));
-      else if (isPrev) a.time = this.at(a, this.prevClipAt);
+    if (key !== this.key) {
+      const from = this.actions.get(this.key), to = this.actions.get(key)!;
+      this.prevKey = this.key || null;
+      this.prevAt = this.time;
+      // walk <-> run keeps its place in the stride; anything else starts its clip
+      this.time = from && this.key.startsWith('stride:') && key.startsWith('stride:') ? (this.time / from.getClip().duration) * to.getClip().duration : 0;
+      this.key = key;
+      this.since = 0;
+    } else {
+      // the run keeps pace with the ground (a sprint strides faster); the walk plays as delivered
+      this.time += dt * (key === 'stride:run' ? speed / this.runSpeed : 1);
+      this.since += dt;
+    }
+    const w = this.prevKey ? Math.min(1, this.since / C.blendSec) : 1;
+    for (const [k, a] of this.actions) {
+      const cur = k === this.key, prev = k === this.prevKey && w < 1;
+      a.setEffectiveWeight(cur ? w : prev ? 1 - w : 0);
+      if (cur) a.time = this.at(k, a, this.time);
+      else if (prev) a.time = this.at(k, a, this.prevAt);
     }
     this.mixer.update(0); // evaluate at the times just set; the mixer's own clock never runs
   }
 
-  /** A clip time inside the clip: wrapped for a loop, held just short of the end for a one-shot. */
-  private at(a: THREE.AnimationAction, t: number): number {
+  /** The clip time a pose is shown at: its held frame, or the stride's time wrapped into the clip. */
+  private at(key: string, a: THREE.AnimationAction, t: number): number {
+    if (!key.startsWith('stride:')) return Number(key.slice(key.indexOf('@') + 1));
     const d = a.getClip().duration;
-    if (d <= 0) return 0;
-    return a.loop === THREE.LoopOnce ? Math.min(t, d * (1 - 1e-6)) : t % d;
+    return d > 0 ? t % d : 0;
   }
 }

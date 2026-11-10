@@ -14,6 +14,8 @@ import { ramp } from '../engine/palette';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
 import { getLoadedAsset, preloadAssets } from './assets';
 import { buildBackdrop, preloadBackdrop } from './backdrop';
+import { preloadCharacter } from './character';
+import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
 import { patrolFraction, patrolPosition } from '../systems/patrol';
 
@@ -236,7 +238,12 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
     if ((data.hazards ?? []).some((h) => h.type === 'patroller' && h.crow)) names.add(INK.crow);
   }
   const meshes = [...names].map((n) => MANIFEST.get(n)).filter((a): a is MeshAsset => a?.kind === 'mesh');
-  await Promise.all([preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file, painted: a.class === 'hero' }))), isInk(data) ? preloadBackdrop() : null]);
+  // D-020: the player's figure is decoded with the level, so no level is ever installed without it
+  await Promise.all([
+    preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file, painted: a.class === 'hero' }))),
+    isInk(data) ? preloadBackdrop() : null,
+    preloadCharacter(CHARACTER.asset),
+  ]);
   return data as PreparedLevel;
 }
 
@@ -479,7 +486,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     const loaded = getLoadedAsset(a.name);
     if (!loaded) throw new Error(`[level] ${where}: asset "${a.name}" not decoded — buildLevel needs await prepareLevel(data) first`);
     const scale = scaleOf(p.scale);
-    for (const part of loaded.parts) {
+    for (const part of loaded.drawn) { // D-020: what the asset is drawn as (itself, or its skin); collision below is always its own
       const mesh = new THREE.Mesh(part.geometry, part.material);
       mesh.name = a.name;
       mesh.userData['sharedAsset'] = true; // owned by the asset cache: never dispose with the level

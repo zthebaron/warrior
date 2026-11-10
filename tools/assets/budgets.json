@@ -1,6 +1,38 @@
 {
   "basis": "Tier-1 per-asset ceilings, each set AT the value measured from the shipped .glb on 2026-11-08 (H4). A ratchet: raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'H4 asset budgets'.",
   "assets": {
+    "boulder": {
+      "triangles": 29400,
+      "bytes": 1044784,
+      "textures": 1,
+      "texture_px": 1024,
+      "materials": 1,
+      "draw_calls": 1
+    },
+    "cliff": {
+      "triangles": 29400,
+      "bytes": 1004212,
+      "textures": 1,
+      "texture_px": 1024,
+      "materials": 1,
+      "draw_calls": 1
+    },
+    "lantern": {
+      "triangles": 29400,
+      "bytes": 1164268,
+      "textures": 1,
+      "texture_px": 1024,
+      "materials": 1,
+      "draw_calls": 1
+    },
+    "torii": {
+      "triangles": 9510,
+      "bytes": 21824,
+      "textures": 0,
+      "texture_px": 0,
+      "materials": 1,
+      "draw_calls": 1
+    },
     "kit_cloud_band": {
       "triangles": 22,
       "bytes": 2124,
@@ -77,24 +109,24 @@
   "scenes_basis": "Per-level scene ratchet (OQ-040): peak renderer.info over the harness counters trace, set AT the measured value. Asserted by the harness `counters` stage. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'Scene budgets'. The Tier-1 ceilings (300 calls, 500k triangles) still apply on top.",
   "scenes": {
     "00-gym": {
-      "draw_calls": 33,
-      "triangles": 1102
+      "draw_calls": 62,
+      "triangles": 68562
     },
     "01-lower-stair": {
-      "draw_calls": 75,
-      "triangles": 6502
+      "draw_calls": 140,
+      "triangles": 381066
     },
     "02-cliff-seam": {
-      "draw_calls": 49,
-      "triangles": 5050
+      "draw_calls": 94,
+      "triangles": 132870
     },
     "03-drifting-stones": {
-      "draw_calls": 49,
-      "triangles": 5662
+      "draw_calls": 94,
+      "triangles": 134094
     },
     "04-summit-ridge": {
-      "draw_calls": 48,
-      "triangles": 5038
+      "draw_calls": 92,
+      "triangles": 132846
     }
   },
   "classes_basis": "D-020 (Tim): a hero asset is an externally authored or generated model with its own painted texture. These are CEILINGS for the class, ruled, not measured: about 30k triangles and a 1024 px texture per asset. One texture, one material, one draw call are the kit's own rule, kept (PROVISIONAL, OQ-070). Every hero asset still has its own line in assets, set AT its measured value, and that line may not pass these. There is no bytes ceiling: none has been measured yet.",
@@ -120,6 +152,18 @@
     "mid_cliff_b": {
       "px": 512,
       "bytes": 256423
+    }
+  },
+  "characters_basis": "D-020 rigged characters (assets/char/*.glb, imported from assets/hero by npm run assets:build: unlit, base colour only, chroma cap, 1024 px KTX2, skin and clips as delivered). Each set AT its measured value and checked by tools/assets/paint-budget.mjs inside npm run assets:budget; the clip list must match exactly. A character is held to the hero class ceilings as well. Record a raise in 00-start-here/MEASUREMENTS.md, section 'D-020 hero assets'.",
+  "characters": {
+    "warrior_rigged": {
+      "triangles": 29400,
+      "bytes": 2694032,
+      "materials": 1,
+      "draw_calls": 1,
+      "bones": 24,
+      "textures": 1,
+      "clips": ["run", "walk"]
     }
   }
 }
