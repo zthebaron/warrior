@@ -8,6 +8,8 @@
 //   4. ACCENT_CONTRAST: every accent candidate separates from the palette (tools/assets/accent.mjs)
 //   3. checks the measurement against tools/assets/budgets.json: triangles, compressed bytes,
 //      texture count and max dimension, material count, draw calls when placed once
+//   5. D-020: the painted backdrop textures and rigged characters, each against its own measured line
+//      (tools/assets/paint-budget.mjs)
 //
 // Budgets are set AT the measured value (MOVE-table discipline: MEASUREMENTS.md, "H4 asset
 // budgets"). A budget is a ratchet: an asset that grows fails until someone raises its line in
@@ -22,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import AjvMod from 'ajv';
 import { measure } from './measure.mjs';
 import { checkAccents, printAccents } from './accent.mjs';
+import { checkPaintBudgets, printPaintBudget } from './paint-budget.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const Ajv = AjvMod.default ?? AjvMod;
@@ -110,7 +113,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const acc = checkAccents();
   console.log('accent (D-001, ACCENT_CONTRAST)');
   printAccents(acc);
-  const ok = res.ok && acc.ok;
+  const paint = await checkPaintBudgets(ROOT);
+  console.log('painted backdrop and characters (D-020) — assets/backdrop/, assets/char/');
+  printPaintBudget(paint);
+  const ok = res.ok && acc.ok && paint.ok;
   console.log(ok ? 'BUDGET PASS' : 'BUDGET FAIL');
   process.exit(ok ? 0 : 1);
 }

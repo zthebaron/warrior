@@ -96,5 +96,20 @@
       "draw_calls": 48,
       "triangles": 5038
     }
+  },
+  "backdrop_basis": "D-020 painted backdrop textures (assets/backdrop/*.png, made from the seed by tools/art/backdrop-textures.mjs), each set AT its measured longest side and file size. Checked by tools/assets/paint-budget.mjs inside npm run assets:budget, which also requires each PNG to be exactly what the script gives. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'D-020 painted backdrop'.",
+  "backdrop": {
+    "far_ridge": {
+      "px": 1024,
+      "bytes": 26607
+    },
+    "mid_cliff_a": {
+      "px": 512,
+      "bytes": 257146
+    },
+    "mid_cliff_b": {
+      "px": 512,
+      "bytes": 256423
+    }
   }
 }

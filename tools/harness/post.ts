@@ -83,8 +83,9 @@ export const POST_GATE = {
 // player sees. MEASUREMENTS "D-020 paint gate" has each number's wrong value and shipped value.
 export const PAINT_GATE = {
   changed: 8,            // levels (2 x tol): a pixel this far from the ink-only frame is one the paint layer drew
-  minPaintedShare: 0,    // SET BELOW FROM MEASUREMENT
-  minPaperShare: 0,      // SET BELOW FROM MEASUREMENT
+  minPaintedShare: 0.03, // of the six cameras' pixels: 0% with the layer off, 6.9% shipped (chapter 1)
+  minPaperShare: 0.41,   // of the six cameras' pixels: 17.2% with the mist drawn mist-pale, 35.3% on D-019
+                         // (cloud-band strips, no mist), 46.9% shipped
 };
 
 export async function post(ctx: Ctx): Promise<StageResult> {
@@ -145,6 +146,7 @@ export async function post(ctx: Ctx): Promise<StageResult> {
           if (process.env['POST_DEBUG_DIR']) writeFileSync(join(process.env['POST_DEBUG_DIR'], `${ctx.levelId}-${cam.name}-painted.png`), PNG.sync.write(comp));
           await g.page.evaluate(() => window.__HARNESS__!.advance(1));
           const comp2 = PNG.sync.read(await g.page.locator('canvas').screenshot());
+          const D3 = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist; // the ink depth under comp2
           await g.page.evaluate(() => window.__HARNESS__!.paintLayer(false));
           for (let i = 0; i < shot.width * shot.height; i++) {
             const o = i * 4, r = comp.data[o]!, gg = comp.data[o + 1]!, b = comp.data[o + 2]!, v = (r + gg + b) / 3;
@@ -158,7 +160,7 @@ export async function post(ctx: Ctx): Promise<StageResult> {
             if (Math.abs(v - (ir + ig + ib) / 3) > PAINT_GATE.changed) {
               compChanged++;
               // judged where nothing in the ink pass can have moved: paint over the sky, one tick later
-              if (D2[i]! >= far * 0.999) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
+              if (D2[i]! >= far * 0.999 && D3[i]! >= far * 0.999) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
             }
           }
         }
