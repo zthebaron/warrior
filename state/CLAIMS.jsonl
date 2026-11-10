@@ -220,3 +220,5 @@
 {"id":"INK-REFINE","agent":"ink-refine","ts":"2026-11-10T15:16:38.047Z","ttl_min":90}
 {"id":"INK-REFINE","agent":"ink-refine","ts":"2026-11-10T16:50:14.103Z","ttl_min":90}
 {"id":"INK-HIRES","agent":"ink-hires","ts":"2026-11-10T18:00:51.690Z","ttl_min":480}
+{"id":"INK-REFINE","agent":"ink-refine","ts":"2026-11-10T18:19:34.898Z","released":true}
+{"id":"ART-PASS-1","agent":"art-pass-1","ts":"2026-11-10T18:19:49.920Z","ttl_min":480}
