@@ -227,3 +227,6 @@
 {"id":"ART-GEN","agent":"art-gen","ts":"2026-11-10T19:40:49.524Z","released":true}
 {"id":"ART-PASS-1","agent":"art-pass-1","ts":"2026-11-10T20:43:32.568Z","released":true}
 {"id":"ART-PASS-2","agent":"art-pass-2","ts":"2026-11-10T20:43:32.598Z","ttl_min":480}
+{"id":"B-45","agent":"art-pass-2","ts":"2026-11-10T20:55:03.823Z","ttl_min":480}
+{"id":"B-46","agent":"art-pass-2","ts":"2026-11-10T20:55:03.855Z","ttl_min":480}
+{"id":"B-49","agent":"art-pass-2","ts":"2026-11-10T20:55:03.884Z","ttl_min":480}
