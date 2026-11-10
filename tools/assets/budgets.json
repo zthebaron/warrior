@@ -162,16 +162,75 @@
       "bytes": 256423
     }
   },
+  "cards_basis": "D-021 painted cards (assets/backdrop/cards/*.png, made from ART-GEN's paintings in assets/backdrop/gen by tools/art/backdrop-cards.mjs: resized, nothing lighter than paper, nothing more coloured than the ramp, colour bled under the cut). Each set AT its measured longest side and file size. Checked by tools/assets/paint-budget.mjs inside npm run assets:budget, which also requires each card to be exactly what the script gives. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'D-021 painted cards'.",
+  "cards": {
+    "cliff_a": {
+      "px": 2048,
+      "bytes": 2240316
+    },
+    "cliff_b": {
+      "px": 2048,
+      "bytes": 2621155
+    },
+    "cliff_c": {
+      "px": 2048,
+      "bytes": 3031151
+    },
+    "mist_a": {
+      "px": 1024,
+      "bytes": 78503
+    },
+    "mist_b": {
+      "px": 1024,
+      "bytes": 56765
+    },
+    "path_wash": {
+      "px": 1024,
+      "bytes": 12163
+    },
+    "peaks_a": {
+      "px": 1024,
+      "bytes": 79066
+    },
+    "peaks_b": {
+      "px": 1024,
+      "bytes": 50666
+    },
+    "peaks_c": {
+      "px": 1024,
+      "bytes": 94719
+    },
+    "pine_a": {
+      "px": 1024,
+      "bytes": 531645
+    },
+    "pine_b": {
+      "px": 1024,
+      "bytes": 613732
+    },
+    "pine_c": {
+      "px": 1024,
+      "bytes": 634204
+    },
+    "wide_a": {
+      "px": 1024,
+      "bytes": 28359
+    },
+    "wide_b": {
+      "px": 1024,
+      "bytes": 38744
+    }
+  },
   "characters_basis": "D-020 rigged characters (assets/char/*.glb, imported from assets/hero by npm run assets:build: unlit, base colour only, chroma cap, 1024 px KTX2, skin and clips as delivered). Each set AT its measured value and checked by tools/assets/paint-budget.mjs inside npm run assets:budget; the clip list must match exactly. A character is held to the hero class ceilings as well. Record a raise in 00-start-here/MEASUREMENTS.md, section 'D-020 hero assets'.",
   "characters": {
-    "warrior_rigged": {
+    "warrior_anim": {
       "triangles": 29400,
-      "bytes": 2694032,
+      "bytes": 2842004,
       "materials": 1,
       "draw_calls": 1,
       "bones": 24,
       "textures": 1,
-      "clips": ["run", "walk"]
+      "clips": ["climb", "dash", "fall", "idle", "jump", "land", "run", "walk", "wall"]
     }
   }
 }

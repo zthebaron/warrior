@@ -145,6 +145,9 @@ interface HarnessApi {
   levelSources(): Promise<Record<string, string>>;
   /** Harness-only: move the player (PR 4's hazards stage). */
   teleportPlayer(pos: Vec3): void;
+  /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
+  figureClips(): { name: string; duration: number }[];
+  showFigure(clip: string | null, time?: number): void;
   /**
    * Every visible renderable in the scene with its world position and the nearest `userData.translates`
    * tag on it or an ancestor (player, platform, hazard), or null. B-15 / NOT #18 (Q2a): nothing
@@ -865,6 +868,8 @@ async function boot(): Promise<void> {
       teleportPlayer: (pos) => {
         player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
       },
+      figureClips: () => player?.figureClips() ?? [],
+      showFigure: (clip, time) => player?.showFigure(clip, time),
       translators: () => {
         const out: { id: string; name: string; tag: string | null; pos: Vec3 }[] = [];
         const w = new THREE.Vector3();

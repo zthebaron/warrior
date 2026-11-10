@@ -9,7 +9,7 @@
 
 import * as THREE from 'three';
 
-import { PAINT_LAYER, paintMaterial } from '../engine/paint-layer';
+import { PAINT_LAYER, paintLast, paintMaterial } from '../engine/paint-layer';
 import { assetLoader } from './assets';
 
 export interface CharacterAsset {
@@ -67,6 +67,7 @@ async function decode(name: string): Promise<CharacterAsset> {
     if (!map) throw new Error(`[character] ${name}: "${mesh.name}" has no base colour texture`);
     mesh.material.dispose();
     mesh.material = paintMaterial({ map });
+    paintLast(mesh); // D-021: no painted card may hide the player
     mesh.layers.set(PAINT_LAYER);
     mesh.frustumCulled = false; // a skinned mesh's bounds are its rest pose; the figure is always near the camera
     const g = mesh.geometry;

@@ -5,11 +5,14 @@
 //
 // It also proves the backdrop PNGs are what the seed gives: tools/art/backdrop-textures.mjs is re-run in
 // memory and each committed PNG must match it pixel for pixel. A hand-painted or stale texture fails.
+// The painted cards (D-021, assets/backdrop/cards/*.png) are held the same way against
+// tools/art/backdrop-cards.mjs and ART-GEN's sources in assets/backdrop/gen.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { io, measure } from './measure.mjs';
 import { LAYERS, buildLayer } from '../art/backdrop-textures.mjs';
+import { BUILDERS } from '../art/backdrop-cards.mjs';
 
 const { PNG } = createRequire(import.meta.url)('pngjs');
 const list = (dir, ext) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(ext)).sort() : []);
@@ -44,6 +47,26 @@ export async function checkPaintBudgets(root) {
     rows.push({ name: `backdrop/${name}`, checks: [over(name, 'px', Math.max(png.width, png.height), b.px), over(name, 'bytes', statSync(file).size, b.bytes)] });
   }
   for (const l of LAYERS) if (!files.includes(l.out)) errors.push(`${l.out}: tools/art/backdrop-textures.mjs makes it but assets/backdrop/ does not have it`);
+
+  // ---- painted cards (D-021): assets/backdrop/cards/*.png, each exactly what tools/art/backdrop-cards.mjs gives
+  const kLines = budgets.cards ?? {};
+  const cards = list(join(root, 'assets/backdrop/cards'), '.png');
+  for (const name of Object.keys(kLines)) if (!cards.includes(`${name}.png`)) errors.push(`budgets.json cards has "${name}" but assets/backdrop/cards/${name}.png does not exist: stale budget line`);
+  for (const f of cards) {
+    const name = f.slice(0, -4);
+    const file = join(root, 'assets/backdrop/cards', f);
+    const png = PNG.sync.read(readFileSync(file));
+    const build = BUILDERS[name];
+    if (!build) errors.push(`${name}: assets/backdrop/cards/${f} is not made by tools/art/backdrop-cards.mjs (no card of that name)`);
+    else {
+      const want = build().png;
+      if (want.width !== png.width || want.height !== png.height || Buffer.compare(want.data, png.data) !== 0) errors.push(`${name}: the committed card is not what its source gives. Run: node tools/art/backdrop-cards.mjs`);
+    }
+    const b = kLines[name];
+    if (!b) { errors.push(`${name}: no cards budget in tools/assets/budgets.json (measured ${Math.max(png.width, png.height)} px, ${statSync(file).size} B)`); continue; }
+    rows.push({ name: `cards/${name}`, checks: [over(name, 'px', Math.max(png.width, png.height), b.px), over(name, 'bytes', statSync(file).size, b.bytes)] });
+  }
+  for (const name of Object.keys(BUILDERS)) if (!cards.includes(`${name}.png`)) errors.push(`${name}.png: tools/art/backdrop-cards.mjs makes it but assets/backdrop/cards/ does not have it`);
 
   // ---- rigged characters
   const cLines = budgets.characters ?? {};

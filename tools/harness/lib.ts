@@ -292,6 +292,9 @@ declare global {
         pixels: { covered: number; nearPalette: number; maxError: number };
       }>;
       teleportPlayer(pos: Vec3): void;
+      /** D-021: the figure's clips, and one shown at a time in place of the state's pose (null clears it). */
+      figureClips(): { name: string; duration: number }[];
+      showFigure(clip: string | null, time?: number): void;
       translators(): { id: string; name: string; tag: string | null; pos: Vec3 }[];
     };
   }
