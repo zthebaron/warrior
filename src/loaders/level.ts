@@ -14,6 +14,8 @@ import { ramp } from '../engine/palette';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
 import { getLoadedAsset, preloadAssets } from './assets';
 import { buildBackdrop, preloadBackdrop } from './backdrop';
+import { buildCliffWall, type RockMass } from './cliff-wall';
+import { buildPathWash, type WalkTop } from './path-wash';
 import { preloadCharacter } from './character';
 import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
@@ -168,7 +170,12 @@ export const INK = {
   patroller: 'kit_slide_stone',
   crow: 'kit_crow',
   background: 'paper-cream',
+  // D-021 (B-46): collides exactly as placed and is NOT drawn. The painted cliff wall (cliff-wall.ts) is
+  // built from these same placements and stands in front of them.
+  collideOnly: ['kit_rock_mass'],
 } as const;
+/** Name prefix of the hidden mesh an undrawn collider keeps (D-021). */
+export const UNDRAWN = 'undrawn:';
 const isInk = (data: Pick<LevelData, 'palette'>): boolean => data.palette === INK.palette;
 const inkBackground = (): number => {
   const c = paletteJson.colors.find((x) => x.name === INK.background);
@@ -480,13 +487,45 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   // static geometry: one fixed body, one collider per placement
   const fixed = physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
 
+  const rockMasses: RockMass[] = []; // D-021: ink levels' undrawn rock, for the painted wall
+  const walkTops: WalkTop[] = [];    // D-021: ink levels' box tops, for the path's dry-brush
   // mesh placement: one THREE.Mesh per part (the kit is one part = one draw call) sharing the cached
   // geometry/material, and one trimesh collider built from the asset's own triangles
   const placeMesh = (a: MeshAsset, p: Placement, q: THREE.Quaternion, where: string): void => {
     const loaded = getLoadedAsset(a.name);
     if (!loaded) throw new Error(`[level] ${where}: asset "${a.name}" not decoded — buildLevel needs await prepareLevel(data) first`);
     const scale = scaleOf(p.scale);
-    for (const part of loaded.drawn) { // D-020: what the asset is drawn as (itself, or its skin); collision below is always its own
+    const undrawn = ink && (INK.collideOnly as readonly string[]).includes(a.name);
+    if (undrawn) {
+      // where the collision stands, for the painted wall: the soup's own bounds, placed (rotation about y only)
+      const src = loaded.collision.positions;
+      let frontZ = -Infinity, baseY = Infinity, topY = -Infinity, minX = Infinity, maxX = -Infinity;
+      const v = new THREE.Vector3();
+      for (let j = 0; j < src.length; j += 3) {
+        v.set(src[j]! * scale.x, src[j + 1]! * scale.y, src[j + 2]! * scale.z).applyQuaternion(q);
+        frontZ = Math.max(frontZ, v.z + p.pos[2]);
+        baseY = Math.min(baseY, v.y + p.pos[1]);
+        topY = Math.max(topY, v.y + p.pos[1]);
+        minX = Math.min(minX, v.x + p.pos[0]);
+        maxX = Math.max(maxX, v.x + p.pos[0]);
+      }
+      rockMasses.push({ x: p.pos[0], baseY, topY, frontZ, minX, maxX });
+    }
+    if (undrawn) {
+      // Kept in the scene, never visible in the game: the harness shows it for the frame that tests the ink
+      // pass alone (tools/harness/post.ts), and to ask whether the paint covers it (B-46).
+      for (const part of loaded.drawn) {
+        const mesh = new THREE.Mesh(part.geometry, part.material);
+        mesh.name = `${UNDRAWN}${a.name}`;
+        mesh.userData['sharedAsset'] = true;
+        mesh.position.set(...p.pos);
+        mesh.quaternion.copy(q);
+        mesh.scale.copy(scale);
+        mesh.visible = false;
+        root.add(mesh);
+      }
+    }
+    for (const part of undrawn ? [] : loaded.drawn) { // D-020: what the asset is drawn as (itself, or its skin); collision below is always its own
       const mesh = new THREE.Mesh(part.geometry, part.material);
       mesh.name = a.name;
       mesh.userData['sharedAsset'] = true; // owned by the asset cache: never dispose with the level
@@ -533,6 +572,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
 
     const kind = p.collider ?? a.collider;
     if (kind === 'none') return;
+    // D-021: a top a player can stand on is brushed (an unturned box only: a turned one has no level top)
+    if (ink && !(p.rot ?? []).some((v) => v !== 0)) {
+      walkTops.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2, y: p.pos[1] + size.y / 2 });
+    }
     const desc = colliderDesc(kind, size, `geometry[${i}]`);
     desc.setTranslation(...p.pos).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
     physics.world.createCollider(desc, fixed);
@@ -636,6 +679,11 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   // D-020: an ink level's far field is painted (paint layer), under root so it leaves with the level
   const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1]))) : null;
   if (backdrop) root.add(backdrop.root);
+  // D-021: the near rock is painted too, from the placements that collide and are not drawn
+  const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses) : null;
+  if (cliffWall) root.add(cliffWall.root);
+  const pathWash = ink && walkTops.length ? buildPathWash(walkTops) : null;
+  if (pathWash) root.add(pathWash.root);
 
   return {
     data,
@@ -705,6 +753,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       walkMat.dispose();
       for (const m of matCache.values()) m.dispose();
       backdrop?.dispose();
+      cliffWall?.dispose();
+      pathWash?.dispose();
     },
   };
 }

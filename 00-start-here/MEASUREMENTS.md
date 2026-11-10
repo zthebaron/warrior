@@ -1187,3 +1187,129 @@ the time it took. The 20 s wait did not change. Local run after the fix: 0.4 s a
 before-D-020 hop count (main passed at 1280x720 on CI, so it was under 20 s there), and the frame time on a CI
 runner (read it from the check's detail line on the next run). On a real GPU the frame does not block and the
 load is not frame-bound.
+
+## D-021 painted cards (2026-11-10)
+
+`tools/art/backdrop-cards.mjs` makes `assets/backdrop/cards/*.png` from ART-GEN's paintings in
+`assets/backdrop/gen` (read only). `tools/assets/budgets.json` `cards` holds each AT its measured size and bytes;
+`assets:budget` re-runs the script and requires every committed card to match it pixel for pixel.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| cliff_a, cliff_b, cliff_c | 2048 px (their sources' own height); 1,847,913 / 2,144,122 / 2,472,500 B | measured | at 5120x1440 on the real GPU the nearest wall is magnified about 4x at 2048 px and its ink strokes keep their dry-brush edges; at 1024 px they would be magnified 8x |
+| pine_a/b/c, peaks_a/b/c, wide_a/b, mist_a/b | 1024 px | authored | pines stand 6 to 7.5 u wide; the others are soft washes 230 u or more from the path |
+| all 14 cards | 8,329,548 B | measured | 13 paintings and the path wash; with pngjs's own deflate strategy the same pixels were 10,111,188 B |
+| value clamp | no texel lighter than paper-cream (202,191,172) | measured | 324 to 3,632 texels a card were lighter in the sources |
+| chroma clamp | 30, the ramp's most coloured step | measured | the paint gate allows the ramp's chroma + 1; 291 to 1,484 texels a card were over it in the sources (largest 39) |
+| colour alpha | 8 of 255 | measured | the sources fade to black below alpha 4 and hold black under alpha 0 |
+| bleed | 16 px, then the card's mean colour | derived | the footprint of the fourth mipmap level; a nearest-colour fill of the whole sheet made the cliffs 25% larger |
+| cliff foot | the lowest 0.1 of the height fades out | authored | cliff_c stands on a rock that runs off its sheet: seen from above its card ended in a straight edge |
+| path wash | 1024x256; streak 96x2 px, patch 256x32 px, bristle 0.45, floor 0.72, ink 0.06, seed 11 | authored | two smooth noises multiplied, both repeating at the card's edges. A first version lifted from cliff_b's wash read as blotches; at floor 0.6 and ink 0.085 two critics read it as wood grain |
+
+## D-021 cliff wall (2026-11-10)
+
+`src/loaders/cliff-wall.ts` `CLIFF_WALL`. The wall is derived from the level's rock-mass placements. Chapter 1's
+collision, measured from the placed soups at heights a player on the path can touch (0.05 to 1.9 u above it): its
+front runs from z -3.58 to -5.58 against a path edge at z -3.5; pockets up to 2.0 u deep at the joins (x about
+10, 48, 66, 74); no rock at the path's height from x 36 to 40.5.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| frontBehind | 0.2 u | measured | a torii post's outer face is 0.02 behind the collision front: at 0.05 one post pixel blended with a card (accent and hue checks red, 1 px each). A sliding stone's front face is 0.42 behind it: at 0.45 the stone showed in front of the painting |
+| front row | 3 cards a mass at -2.9, 0, +2.9 u; 6.5 to 8 wide, 13 to 21 tall; foot 5 below the mass's base; cycle of 7 | authored | from the player's camera a card is seen at a grazing angle: at 9.5 to 11 wide and 24 to 30 tall (the first cut) the near wall was a few strokes blown up and no top was in frame |
+| bay row | one a join, 5 behind the front row, 10 to 14 wide, 20 to 40 tall, foot 9 below; none where two masses are more than 10 apart | authored | 2.2 behind (the first cut) read as one plane with the front row |
+| back row | one per second mass, 11 to 14 behind, 20 to 28 wide, 46 to 64 tall, foot 12 below | derived | the camera's arm is 7 long: 10 or more behind the wall is beyond it |
+| ink | front 1, bay 0.88, back 0.72 | authored | §3: nearer is darker; it is what separates the rows |
+| taper | front 0.85, 0.95; bay 0.55, 0.75, 0.9; back 0.5, 0.7, 0.88 | authored | the wall ended in a straight vertical edge. Tapering the front row to 0.5 exposed the thinner rows behind it at spawn |
+| pines | every second mass from the second; 6 to 7.5 wide; rooted on its tallest front card's ledge (cliff_a 0.2,0.58; cliff_b 0.7,0.65; cliff_c 0.4,0.46) | authored | 1 to 7 u above the path, inside the player's frame. Beside the spawn camera a pine was a smear across a third of the frame |
+| pine roots | where the root is in each pine's own image, from its left and its foot: pine_a 0.08,0.1; pine_b 0.84,0.08; pine_c 0.12,0.86 | measured | read off the three paintings: the rock clump the trunk grows from |
+| taper, by row | front and back by the mass's distance from the nearer end of the wall; bay by the join's (there is one join fewer than masses) | derived | a review found the bay row tapered by the mass index, so the far end never reached its lowest step |
+| draw order | back 100, bay 200, front 300, pines 400; the figure 1e9 | derived | after the whole backdrop (orders 0 to 21: ridge 0, peaks 1-6, mid cliffs 7-12, mist sheets 13-18, bands 19-21); the sheets would otherwise paper over the cards |
+| draw calls | 12 for the wall | measured | one mesh per painting per row; one a card was 39, and the scene peak 153 |
+| open sides | where no rock stands beside a mass (the wall's two ends; a neighbour more than 10 u away) no front card reaches past the rock's own extent | measured | chapter 1 has no rock at the path's height from x 36 to 40.5. With three front cards a mass the painting covered that gap: a player walked through painted cliff and fell (found in review). Now it is an open cleft: driven into it, the player runs off the path and falls in the open (`motion.ts --only=cleft`) |
+
+## D-021 painted backdrop (2026-11-10)
+
+`src/loaders/backdrop.ts` `BACKDROP`. The seed-crop mid cliffs (mid_cliff_a, mid_cliff_b) and two of the three
+ridge rings are gone; the rows of "D-020 painted backdrop" for them are history.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| horizon | the 460 u ridge ring alone, ink 0.6 | authored | the seed's own ridge, behind everything |
+| far peaks | 6 cards at 350 to 430 u, 230 to 260 wide, 0.6 of their painting's height, ink 0.4 to 1, feet at y -3.5 | authored | at full height and ink 0.5 to 0.8 they read as jagged alpine clusters 17 to 24 levels under paper; the seed's ridges are low humps about 40 under. Feet at y -10 were cut along one straight line by the mist. The sawtooth card is laid at 0.4: its ridge stroke was darker than §3's far band |
+| mid cliffs | 6 of the painted cliff cards, 36 to 72 tall, ink 0.5 to 0.6, feet at y -4 | authored | at ink 0.6 the darkest texel (ink-black, 31) laid over paper (188) lands at 94, lighter than ink-grey (79): §3's mid band |
+| mist bands | 3 cards at 210 to 280 u on the void side, ink 0.3 to 0.4, drawn after the sheets | authored | Tim: use mist_a/b where they beat the seed crops. Thin and at the horizon only (OQ-071 item 6) |
+| peak placements | card, bearing (degrees from +x toward +z), radius: peaks_b 8, 400; peaks_a 62, 350 (mirrored); wide_b 118, 410; peaks_a 176, 370; peaks_c 236, 430 (mirrored); wide_a 312, 400. Widths 240, 250, 260, 240, 230, 250. Ink 0.9, 1, 0.8, 0.9, 0.4, 0.75 | authored | about 55 degrees apart, so one or two are in any view; the rounded paintings on the void side (8 to 176), the sawtooth behind the wall |
+| mid cliff placements | card, x, z, height, yaw, ink: cliff_b 36, -62, 70, -6, 0.5; cliff_a 84, -56, 62, 10, 0.55 (mirrored); cliff_c 128, -60, 72, -12, 0.5; cliff_c -34, -30, 46, 40, 0.55 (mirrored); cliff_a 150, -22, 44, -70, 0.6; cliff_b 166, 8, 36, -95, 0.5 (mirrored) | authored | three behind the wall, 52 to 58 u from the path; one behind the start and two past the goal (x 101), turned to face back down the path |
+| mist band placements | card, bearing, radius, width, foot y, ink: mist_b 40, 250, 170, -5, 0.4; mist_a 105, 210, 150, -6, 0.3 (mirrored); mist_b 160, 280, 190, -5, 0.35 (mirrored) | authored | on the void side only (bearings 40 to 160); feet under the mist's top |
+
+## D-021 path wash (2026-11-10)
+
+`src/loaders/path-wash.ts`: one mesh on the paint layer, a quad over every unturned prim_box top of an ink level,
+`polygonOffset` -1, -1 (the landing mark's own), world-space UVs.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| repeat | 24 u along x, 6 u along z | authored | 43 px a unit; a bristle mark is 2.25 u long |
+
+## D-021 character (2026-11-10)
+
+`src/entities/character-model.ts` `CHARACTER`, on `assets/char/warrior_anim.glb` (2,842,004 B, 29,400 triangles,
+24 bones, one 1024 px texture, nine clips). How each was judged (`node tools/harness/motion.ts <dir>`: real input
+through the real player, a strip of frames; `--clips`: every clip at eight even times on the still figure):
+in motion in the game AND frame by frame: idle, run, jump, fall, land, dash, climb (the last in the gym, against
+a real ledge). Frame by frame only: walk (it plays below half the run speed, which the strips did not reach) and
+wall (it was replaced before a wall slide was captured with it). idle, walk, run, land, dash and climb read
+right. jump and fall, in motion, tip the figure over and curl it up; all three of jump, fall and wall pitch the
+head and the rigid hat over in every one of their frames, so no frame of them is used.
+
+| State | Shown | Kind | Basis |
+|---|---|---|---|
+| idle | idle, looped | delivered | |
+| run, sprint | walk below 0.5 of the run speed, else run at speed / run speed | D-020 | unchanged |
+| jump, wall_jump | run held at 0.106 s | authored | the run's widest airborne stride: reads as a leap |
+| double_jump | run held at 0.422 s | authored | the same stride on the other leg: the second jump kicks |
+| fall | land held at 0 s | authored | arms out, knees bent, looking down; land then plays on from it |
+| land | land, once | delivered | the state lasts 0.08 s; the clip keeps playing while it fades |
+| dash | dash, looped | delivered | 0.16 s of it is seen |
+| wall_slide, ledge_grab | climb held at 0 s | authored | arms up on the wall. In the gym the hands sit just over the ledge top |
+| ledge_climb | climb, once | delivered | 0.4 s against a 0.35 s state |
+| blendSec | 0.1 s | D-020 | now eased per clip and normalised: an interrupted fade carries on from where it is |
+
+## D-021 paint gate (2026-11-10)
+
+`tools/harness/post.ts`. `POST_GATE` is untouched. The 17 ink-only checks test the ink PASS and still judge it on
+the level's whole geometry: the rock an ink level collides with and does not draw is shown for that frame only.
+Without it (the first run on this build) two of them went red on a frame nobody sees: near dark mass 8.7% against
+its floor of 10% (23.4% with the rock), creases outlined 57.1% against its ceiling of 45% (38.6% with it).
+
+| Check | Wrong value, and how it was made | Shipped (ch1) | Gate |
+|---|---|---|---|
+| the rock collides and is not drawn, as the game ships | `INK.collideOnly` emptied: 13 drawn, 0 kept hidden | 0 drawn, 13 kept hidden | 0 drawn, all kept |
+| where the rock stands, the player's frame reaches the dark end as mass | the wall lifted away (every run): 0.1% | 8.6% | >= 4% |
+| where the rock would be seen, the frame is drawn over (POOLED over all 13 masses and six cameras) | the wall lifted away (every run): 11.8% (the mid cliffs behind it) | 99.9% | >= 90% |
+| a painted far field on a dressed level (D-020's check, same floor), judged with the wall lifted away | layer off: 0%, D-020's figure, NOT re-measured on this build. With the wall counted it read 37.7%, which the wall alone would satisfy | 8.4% | >= 3% |
+| the void is bare paper (D-020's check, same floor) | mist drawn mist-pale: 15.1% (D-020 measured 17.2%) | 47.4%, judged with the rock drawn in place of the painted wall; 41.5% of the frame the player sees | >= 41% |
+
+Two failures found on the way and fixed: a card level with a torii post (1 px of accent lost, 1 px of hue), and
+the front row tapered to half height at the wall's ends.
+
+## D-021 scene budgets and frame cost (2026-11-10)
+
+Chapter 1's line in `budgets.json` `scenes` is LOWERED to the new peak: 127 draw calls (was 140) and 287,036
+triangles (was 381,066). Thirteen rock masses and three boulders are no longer drawn; the wall is 12 meshes. The
+other four levels are unchanged (the figure is still 29,400 triangles).
+
+`tools/measure-display.mjs`, headed Chrome, ANGLE Metal on an Apple M4 Max, 360 frames a view
+(`docs/build-log/d021/art-pass-2.json`):
+
+| Size | View | Frame p50 / p95 | Rate | Cost p50 / p95 |
+|---|---|---|---|---|
+| 2560x1440 | rig at spawn | 6.90 / 8.00 ms | 144.9 fps, 0 frames over 10 ms | 2.53 / 2.63 ms |
+| 2560x1440 | cam2 | 6.90 / 8.00 ms | 144.9 fps | 2.61 / 2.66 ms |
+| 5120x1440 | rig at spawn | 6.90 / 8.00 ms | 144.9 fps | 2.81 / 2.84 ms |
+| 5120x1440 | cam2 | 6.90 / 8.00 ms | 144.9 fps | 2.93 / 2.96 ms |
+
+D-020 cost 4.39 ms at 5120x1440 from the rig. "D-020 production load", not measured there: on a CI runner the
+bare-URL load took 2.1 s at 640x360 (run 42896909133), against the 20 s wait; with this pass's cards and
+character, 1.8 s (run 42911617289).

@@ -55,6 +55,23 @@ export function paintMaterial(o: PaintMaterialOptions): THREE.MeshBasicMaterial 
   return m;
 }
 
+/**
+ * D-021: nothing painted may hide the player. A painted card has no surface a player can touch, so the figure
+ * can stand where a card is between it and the camera (the rock of an ink level collides and is not drawn, and
+ * its ledges can be climbed). The figure is therefore drawn LAST on the paint layer, after every card: still
+ * solid, still writing depth, and still hidden by ink geometry in front of it (the depth test is against the
+ * ink pass's depth, which cards do not write). It is the draw order of a transparent thing with no blending.
+ */
+export function paintLast(mesh: THREE.Mesh): void {
+  const m = mesh.material as THREE.Material;
+  m.transparent = true;            // sorts it after the opaque painted things, with the cards
+  m.blending = THREE.NoBlending;   // and draws it solid: its texture's alpha is not a cut
+  m.depthWrite = true;
+  mesh.renderOrder = PAINT_LAST;
+}
+/** renderOrder of what is drawn last on the paint layer. An order, not a tunable: above every card's. */
+export const PAINT_LAST = 1e9;
+
 /** Put a mesh (and its children) on the paint layer. */
 export function paint<T extends THREE.Object3D>(o: T): T {
   o.traverse((c) => c.layers.set(PAINT_LAYER));

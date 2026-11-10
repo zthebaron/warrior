@@ -43,17 +43,15 @@ const TILE_OVERLAP = 0.01; // u, each side of an INTERIOR seam (D-018): abutting
 // paint layer). Each model is 1 unit tall as delivered, so scale is its height in u. Tim's ruling: lanterns as
 // dressing; the cliff and the boulder SPARINGLY, each with its own rotation and scale so no two read as copies;
 // the painted backdrop stays the main cliff mass. Nothing stands on the walking line (z 0), and nothing that
-// looks like an obstacle stands where a player can walk: boulders sit on the rock masses, cliffs in the mist.
+// looks like an obstacle stands where a player can walk: the cliffs stand in the mist.
 const HERO = [
   // stone lanterns at the path's edge, a little taller than the figure (1.9)
   { asset: 'lantern', pos: [2.5, 0, -2.7], rot: [0, 15, 0], scale: 2.2 },
   { asset: 'lantern', pos: [24.5, 0, 2.8], rot: [0, 100, 0], scale: 2.2 },
   { asset: 'lantern', pos: [47, 5.5, -2.7], rot: [0, 190, 0], scale: 2.2 },
   { asset: 'lantern', pos: [104.5, 9, -2.7], rot: [0, 280, 0], scale: 2.2 },
-  // boulders on top of the rock masses (tops at y 10, 15.5, 19): they break the flat-topped stack
-  { asset: 'boulder', pos: [6.5, 10, -6.2], rot: [0, 20, 0], scale: [2.6, 2.2, 2.0] },
-  { asset: 'boulder', pos: [54, 15.5, -6], rot: [0, 115, 0], scale: [3.0, 3.0, 2.2] },
-  { asset: 'boulder', pos: [98, 19, -6.2], rot: [0, 250, 0], scale: [2.4, 1.8, 2.2] },
+  // D-021: the three boulders that sat on top of the rock masses are gone. The masses collide and are not
+  // drawn (the painted cliff wall stands there: src/loaders/cliff-wall.ts), so a boulder on one would float.
   // two cliff stacks far out in the void, feet in the mist (the mist is solid paper below y -7): two different models
   { asset: 'cliff', pos: [30, -9, 62], rot: [0, 35, 0], scale: [14, 24, 14] },
   { asset: 'cliff_b', pos: [92, -9, 78], rot: [0, 160, 0], scale: [18, 30, 17] },

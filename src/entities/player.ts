@@ -475,6 +475,14 @@ export class Player {
     }
   }
 
+  /** Harness only: the figure's clips, and one of them shown at a time in place of the state's pose (null: back to the state). */
+  figureClips(): { name: string; duration: number }[] {
+    return this.model?.clips() ?? [];
+  }
+  showFigure(clip: string | null, time = 0): void {
+    this.model?.show(clip, time);
+  }
+
   /** Interpolate the visual between the last two physics states. */
   render(alpha: number): void {
     this.mesh.position.lerpVectors(this.prevCenter, this.center, alpha);

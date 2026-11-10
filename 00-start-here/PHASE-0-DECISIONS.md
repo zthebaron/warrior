@@ -1332,3 +1332,72 @@ pixel where INK-HIRES draws the ink pass's grain in 360-line space (B-48). The d
 geometry a second time. The delivered warrior differs from §7 (a pale hat, both gourds on one hip, trousers).
 
 implemented_by: 611d70c (the paint layer, the seed ridge and the bare-paper mist, the paint checks), 19bbb8d (painted mid cliffs, the paint thresholds from measurement, backdrop budgets, the frame and sheet tools), bb5de28 (the hero asset class and its import path), f67d749 (the rigged warrior as the player, the torii skin, hero dressing, the shipped-state paint check, darwin goldens, scene ratchets)
+
+## D-021 — art pass 2: the near rock is painted cards, the far field ART-GEN's paintings, the figure animated, the path brushed. B-45, B-46, B-47, B-49. DECIDED
+
+**Ruled by Tim** (2026-11-10, after PR 31): "the left cliff wall in chapter 1 is still stacked dark slabs and is
+the most game-like thing left in the frame. Merge the art-gen branch and use the painted cliff cards in
+assets/backdrop/gen (cliff_a, cliff_b, cliff_c) as large painted planes standing along the cliff side,
+overlapping, varied in scale and mirrored, with pine_a, pine_b and pine_c growing out of them, and hide the slab
+visuals. Colliders do not change." "Use peaks_a/b/c, mist_a/b and wide_a/b in the backdrop layers wherever they
+beat the seed crops." "Switch the player to assets/hero/warrior_anim.glb: nine clips ... judge each in motion in
+the game and hold a good frame wherever a clip looks wrong; cross-fade between clips." "The path is flat blank
+paper: give walkable tops a faint dry-brush texture. Do not touch ink-post.ts or renderer.ts without telling me."
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-071):** every number below "Built", which frames are
+held, the three thin mist bands, the gate's test frame, and the rule that nothing painted hides the player.
+
+**The finding, as measured.** The rock is a straight wall 0.08 u from the path's edge, so a painting that stands
+where the rock is has to lie parallel to the way the player walks, and the player's camera sees it at a grazing
+angle. A first cut (large cards, three rows 2 u apart) read as a painted cliff from every fixed camera and as one
+smeared plane with no top from the player's: four independent critiques against the seed said so. What changed
+that was size and unevenness, not angle: small front cards, rows 5 and 11 to 14 u apart, heights from 13 to 64 u.
+
+**Built.**
+1. **The rock collides and is not drawn** (`src/loaders/level.ts` `INK.collideOnly`): in an ink level
+   kit_rock_mass goes to the physics exactly as before (the same code, untouched) and its draw loop is skipped. It
+   keeps a hidden mesh, shown only by the harness.
+2. **The painted wall** (`src/loaders/cliff-wall.ts`), derived from the rock placements: three small front cards
+   a mass just behind the collision front, a bay card at each join, a tall back card every second mass, pines
+   rooted on ledges of the front cards. Where the rock has a gap at the path's height (x 36 to 40.5) no front
+   or bay card stands, so it is an open cleft, not a painted cliff a player can walk through. All parallel to the path, front faces only, 12 draw calls. The three
+   boulders that sat on the slab tops are gone (`tools/levelgen/dress-01.mjs`).
+3. **Nothing painted hides the player** (`src/engine/paint-layer.ts` `paintLast`): the rock's ledges can be
+   climbed, as they always could, and a card has no surface; the figure is drawn after every card.
+4. **The cards** (`tools/art/backdrop-cards.mjs` -> `assets/backdrop/cards/`): ART-GEN's paintings resized,
+   clamped to the paper's value and the ramp's chroma, colour bled under the cut, cliff feet faded. Held by
+   `assets:budget` (`budgets.json` `cards`), pixel for pixel.
+5. **The far field** (`src/loaders/backdrop.ts`): one horizon ring of the seed's ridge, six painted peaks laid
+   low, six painted mid cliffs, three thin mist bands. The seed-crop mid cliffs are gone.
+6. **The figure** is `assets/char/warrior_anim.glb` (`src/entities/character-model.ts`): idle, walk, run, land,
+   dash and climb play; jump, fall and wall are held frames of the run, land and climb clips. Every change of
+   pose is an eased, normalised cross-fade, a function of the player's state clock alone.
+7. **The path** (`src/loaders/path-wash.ts`): one painted mesh over every walkable box top, a faint dry-brush
+   in world x and z.
+8. **The gate** (`tools/harness/post.ts`): `POST_GATE` untouched; the ink-only checks judge the ink pass with
+   the undrawn rock shown; three new checks judge the player's frame (MEASUREMENTS "D-021 paint gate").
+9. **Colliders did not change.** Replay passes against the committed, un-re-recorded traces on all five levels,
+   with nav, phase-sweep and chaos. `tools/geometry-fingerprint.mjs --against` a dump taken before any edit:
+   IDENTICAL on all five (it reads the level files and the kit, so it proves those, not the loader). The nine kit
+   .glb files rebuild byte-identical. `src/engine/ink-post.ts` and `src/engine/renderer.ts` are not edited.
+
+**Measurement** (`docs/build-log/d021/sheet-ch1-cam2.png`: seed | D-020 | D-021). Share of non-accent pixels
+nearest each ramp step:
+
+| ch1 cam2 | paper | mist-pale | wash-light | stone-mid | wash-mid | ink-grey | ink-deep | ink-black |
+|---|---|---|---|---|---|---|---|---|
+| seed hero_7s | 37.2% | 9.5% | 16.1% | 5.8% | 8.4% | 9.6% | 8.0% | 5.4% |
+| D-020 | 40.4% | 7.1% | 6.0% | 6.4% | 17.5% | 12.8% | 6.3% | 3.6% |
+| D-021 | 33.9% | 6.8% | 12.4% | 14.3% | 13.4% | 8.0% | 5.1% | 6.2% |
+
+The player's own camera at spawn, real GPU: `docs/build-log/d021/ch1-player-5120x1440.png`. On an Apple M4 Max
+chapter 1 holds 144.9 fps at 2560x1440 and 5120x1440; a frame costs 2.81 ms at 5120x1440 (4.39 ms on D-020).
+The scene peak fell from 140 draw calls and 381,066 triangles to 127 and 287,036. The download grew by 8.3 MB
+of cards and 0.15 MB of character, less 0.5 MB of seed mid cliffs.
+
+**STYLE-BIBLE:** not amended. What the new art strains is recorded in OQ-071, for Tim.
+
+**Still off the seed, and known limits (OQ-071):** from the player's camera the wall is still a wall beside the
+path, seen along its length. The rock's ledges are climbable and not painted as ledges. A painted thing still
+gets no ink edge (B-48). The two 3D cliff stacks in the void are now the most game-like things in the frame.
+
+implemented_by: d03247e (the first cut: rock undrawn, the wall, the cards, the animated figure, the path wash), 50d9d8f (the paint gate's three checks, the wall as 12 meshes, cards re-encoded), 0908710 (the wall from the player's camera, low ridges, darwin goldens, scene ratchet, real-GPU measurement)
