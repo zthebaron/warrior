@@ -329,11 +329,11 @@ draw calls, 500,000 triangles) still apply on top.
 
 | Level | Peak draw calls | Peak triangles |
 |---|---|---|
-| 00-gym | 33 / 33 | 1,102 / 1,102 |
-| 01-lower-stair | 75 / 75 | 6,502 / 6,502 |
-| 02-cliff-seam | 49 / 49 | 5,050 / 5,050 |
-| 03-drifting-stones | 49 / 49 | 5,662 / 5,662 |
-| 04-summit-ridge | 48 / 48 | 5,038 / 5,038 |
+| 00-gym | 62 / 62 | 68,562 / 68,562 |
+| 01-lower-stair | 140 / 140 | 381,066 / 381,066 |
+| 02-cliff-seam | 94 / 94 | 132,870 / 132,870 |
+| 03-drifting-stones | 94 / 94 | 134,094 / 134,094 |
+| 04-summit-ridge | 92 / 92 | 132,846 / 132,846 |
 
 D-018 (2026-11-09), every line re-set AT the measured peak (harness `counters`, Darwin SwiftShader). `renderer.info`
 now counts the WHOLE frame: the scene draw into the post target plus the §6 full-screen pass (1 call, 2 tris),
@@ -1048,3 +1048,142 @@ untouched (six runs: cam3 (606,91), cam4 (146,279), cam0 (450,93), cam5 (586,91)
 
 Not measured: any GPU but this one. The cap is this Mac's. A weaker GPU at a large drawing buffer pays up to 4x
 the pixels it paid before and nothing here lowers the scale when frames run long.
+
+## D-020 scene budgets and the whole-scene cap (2026-11-10)
+
+The "Scene budgets" table above is RAISED to these peaks (`tools/assets/budgets.json` `scenes`), measured by the
+harness `counters` stage on the D-020 build. Reason: the figure (29,400 triangles, was a 324-triangle capsule),
+the hero torii (9,510 triangles a gate, was 108), and the paint layer's depth-only pass, which draws the ink
+geometry a second time; chapter 1 also draws 9 hero dressing meshes and 14 backdrop meshes.
+
+| Level | Peak draw calls, D-019 -> D-020 | Peak triangles, D-019 -> D-020 |
+|---|---|---|
+| 00-gym | 33 -> 62 | 1,102 -> 68,562 |
+| 01-lower-stair | 75 -> 140 | 6,502 -> 381,066 |
+| 02-cliff-seam | 49 -> 94 | 5,050 -> 132,870 |
+| 03-drifting-stones | 49 -> 94 | 5,662 -> 134,094 |
+| 04-summit-ridge | 48 -> 92 | 5,038 -> 132,846 |
+
+The whole-scene cap for hero content is the heaviest scene that has been measured on a real GPU, which is chapter
+1's line above. `tools/measure-display.mjs`, headed Chrome, ANGLE Metal on an Apple M4 Max, 360 frames a view,
+one fixed tick and one full render a frame (`docs/build-log/d020/art-pass-1.json`):
+
+| Size | View | Frame p50 / p95 | Rate | Cost p50 / p95 |
+|---|---|---|---|---|
+| 2560x1440 | rig at spawn | 6.90 / 8.50 ms | 144.9 fps, 0 frames over 10 ms | 3.15 / 3.24 ms |
+| 2560x1440 | cam2 | 6.90 / 8.40 ms | 144.9 fps | 2.96 / 3.02 ms |
+| 5120x1440 | rig at spawn | 6.90 / 8.50 ms | 144.9 fps | 4.39 / 4.46 ms |
+| 5120x1440 | cam2 | 6.90 / 8.50 ms | 144.9 fps | 4.01 / 4.06 ms |
+
+Before the art pass the same views cost 1.4-1.7 ms at 5120x1440 (INK-HIRES). A scene heavier than 140 draw calls
+and 381,066 triangles has not been measured: raise chapter 1's line only with a new run of this tool. The Tier-1
+ceiling (500,000 triangles, 300 draw calls) still applies on top. Taken with the two cliff stacks at their first
+size; they were made smaller afterwards, which does not change a triangle count.
+
+## D-020 painted backdrop (2026-11-10)
+
+`tools/art/backdrop-textures.mjs` (the textures) and `src/loaders/backdrop.ts` `BACKDROP` (where they stand).
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| far ridge crop | hero_11s.png 740,245,1920,320 -> 1024x64 | measured | the one stretch of far ridge clear of the hat, the torii and the cliff in any hero frame; zero robe or accent pixels |
+| far ridge ink, floor | wash-mid; 0.05 | measured | density = (paper - L) / (paper - ink); the crop's darkest pixel (L 114) is lighter than wash-mid (100), so density stays under 1. Sky luminance sd is 1.6-2.3 levels of 88: under 0.05 is paper noise |
+| mid cliff crop | hero_9s.png 0,0,470,540 -> 512x512 | measured | the seed's wall clear of pines, torii and the figure (shares by step: 0.2 / 2.1 / 34.2 / 8.5 / 25.1 / 15.4 / 10.2 / 4.3%) |
+| mid cliff haze | 0.38 toward paper | derived | the crop's ink-black (31) lands at 91, between wash-mid and ink-grey: STYLE §3's mid band is never darker than ink-grey (79) |
+| mid cliff silhouette | top 5-16% down, sides 2-9% in, foot fades over the lowest 34%, edge 1.2% of the width; noise at 5, 17 and 7 cycles; seeds 7 and 19 | authored | the seed has no free-standing mid cliff: an uneven top and near-vertical uneven sides (§4), and no drawn foot (the seed's faces dissolve into pale wash by 0.85-0.93 of their height) |
+| ridge rings | radius 460 / 380 / 300 u, height 30 / 24 / 18 u, base y -13 / -12 / -11, 6 copies, turn 0.13 / 0.47 / 0.81, ink 0.6 / 0.8 / 1.0, 96 segments | authored | the ridge is 3.5 degrees tall in the seed; the farthest ring plus the farthest camera (75 u from the bounds' centre) stays inside the 600 u far clip. Copies are even because alternate copies are mirrored. Farther = paler |
+| mid cliffs | 5 planes at z -50 to -64 (and one past the goal at x 158), 44-58 u wide, 52-72 u tall, yaw -80 to 10 degrees, foot y -14 | authored | 45-60 u from a camera on the path: §3's mid band |
+| mist | 6 sheets, y -7 to -3, radius 520 u, opacity 1 at the base to 0.18 at the top, 48 segments | measured | the base is above every dressed wall's foot (lowest y -8) and solid; the top is 3 u under chapter 1's lowest landing (y 0). Six sheets show no terracing on the ledge walls in cam2 |
+| backdrop PNGs | far_ridge 1024 px / 26,607 B; mid_cliff_a 512 px / 257,146 B; mid_cliff_b 512 px / 256,423 B | measured | budgets.json `backdrop`, set AT these; assets:budget also requires each PNG to be exactly what the script gives |
+
+## D-020 paint gate (2026-11-10)
+
+`tools/harness/post.ts` `PAINT_GATE`, judged on the six visual cameras with the paint layer ON. The 17 older checks
+are judged with it OFF and `POST_GATE` did not change: chapter 1 passes them 17/17 on the ink pass alone (mid
+silhouette class 2,462 px against its floor of 300 with kit_mid_cliff gone).
+
+| Check | Wrong value, and how it was made | Shipped (ch1) | Gate |
+|---|---|---|---|
+| on as the game ships | the layer's `enabled` set false: 24 painted meshes, not drawn. The first cut of the stage switched the layer on itself and PASSED this mutation | drawn | must be drawing |
+| figure everywhere, far field on a dressed level only | layer off: 0% of the frame differs from the ink pass | 7.3% differs; 24 painted meshes, 14 of them the far field. Undressed levels: 1 painted mesh (the figure), 0 far field | >= 3% on a dressed level |
+| the void is bare paper | mist drawn mist-pale: 17.2%. D-019 (cloud-band strips, no mist): 35.3%. Restoring the strips UNDER the mist does not change it: the mist covers them | 46.7% paper | >= 41% |
+| no hue | mist drawn #c8a888: 22,004 px over the ramp's chroma | 0 px | 0 px |
+| static | (paint that changed between two ticks over clear sky) | 0 px | 0 px, judged where the sky is clear for a pixel all round in both frames |
+| hides no accent pixel | (a painted thing in front of a torii) | 0 px | 0 px |
+
+`changed` is 8 levels (twice the gate's tolerance): a pixel that far from the ink-only frame, at the same world tick
+(`__HARNESS__.redraw`), is one the paint layer drew.
+
+## D-020 hero assets (2026-11-10)
+
+`tools/assets/budgets.json` `classes.hero`: 30,000 triangles and a 1024 px texture are Tim's ruling ("about 30k
+triangles and a 1024 px texture per asset"); one texture, one material and one draw call are the kit's rule,
+kept (OQ-070 item 5). Every asset below also has its own line, set AT the measured value.
+
+| Asset | Delivered | Shipped triangles | Shipped bytes | Texture | Note |
+|---|---|---|---|---|---|
+| lantern | 29,400 tris, 2,572,592 B, 3 textures | 29,400 | 1,164,268 | 1024 px KTX2 UASTC, mipmaps | chroma as delivered 17 |
+| cliff | 29,400 tris, 2,095,440 B | 29,400 | 1,004,212 | 1024 px | chroma as delivered 17 |
+| cliff_b | 29,400 tris, 2,120,144 B | 29,400 | 1,079,720 | 1024 px | chroma as delivered 22. ART-GEN's second cliff, so the two stacks are two models |
+| boulder | 29,400 tris, 2,114,200 B | 29,400 | 1,044,784 | 1024 px | chroma as delivered 19 |
+| torii | 29,400 tris, 1,615,904 B | 9,510 | 21,824 | none | simplify --ratio 0.1 --error 0.001; drawn in the accent as a flat material |
+| warrior_rigged (character) | 29,400 tris, 4,700,800 B, 24 joints, clips walk 1.067 s and run 0.667 s | 29,400 | 2,694,032 | 1024 px | chroma as delivered up to 109 (the gourds); capped on 24.3% of texels. No Draco |
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| chroma_cap | 26 levels | derived | the ramp's largest chroma is 30 (paper-cream) and the gate fails a pixel over 31; 26 leaves room for texture compression. The robe (#7d8590) is 19 |
+| torii simplify | ratio 0.1, error 0.001 | measured | a gate stands 2-5 times on every level and is drawn twice a frame: 9,510 triangles each instead of 29,400 |
+| torii fit | to kit_torii's bounding box (7.2 wide, 5.35 tall), yaw 90 | derived | from the two shipped files at load; nothing typed. The drawn posts stand where the collision posts are |
+| hero dressing (ch1) | lanterns 2.2 u tall at z -2.7 / 2.8; boulders 1.8-3.0 u tall on rock masses at y 10, 15.5, 19; cliff stacks 24 and 30 u tall at z 62 and 78, foot y -9 | authored | a lantern a little taller than the figure (1.9). The stacks were first 30 and 40 u at z 46 and 58 and loomed at 5120x1440; Tim: sparingly |
+
+ART-GEN re-delivered after reading the class (main eeaacac: one base-colour texture a file, the rigged warrior under `assets/hero/rigged/`, the pine under `rejected/`). Rebuilt from those files, the four static assets and the character came out byte-identical to the first build: the import had already been dropping what they removed.
+
+Proof that nothing a player can touch changed: `node tools/geometry-fingerprint.mjs <level> assets/dist/manifest.json
+--against=<dump taken before any edit>` prints IDENTICAL for all five levels (hashes 3f8ace62, 03d7d47a, f656ed93,
+95c2a998, eba0e40e); the nine kit .glb sha256s are unchanged after two full rebuilds; replay passes against the
+committed traces. The fingerprint prefixes recorded under "H4 asset budgets" and "CH1-ASSETS dressing" for levels
+01-04 were already stale before this work (they predate PR #28's linter change).
+
+## D-020 character (2026-11-10)
+
+`src/entities/character-model.ts` `CHARACTER`. The rig has two clips; frames were chosen by eye from renders of
+each cycle at eight times (`tools/gen/render-glb.mjs --clip <name> --time <t>`).
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| height | the capsule's, 1.9 u | derived | the delivered scale (1.7 u, armature scale 0.01) is measured from the rest pose at load and replaced |
+| faceTurn | half a turn | measured | the delivered model looks down +Z; the player's forward is -Z. Seen in the engine: back to the follow camera, hilt over the right shoulder |
+| idle, land | the rest pose, held | Tim | "rest pose for idle" |
+| jump, double_jump, wall_jump | run at 0.17 s | authored | the trailing leg kicked up |
+| fall | run at 0.50 s | authored | the widest split, arms out |
+| dash | run at 0.33 s | authored | the lunge |
+| wall_slide | walk at 0.00 s | authored | upright, feet together |
+| ledge_grab, ledge_climb | walk at 0.53 s | authored | one leg forward and up |
+| walkBelow | 0.5 of the run speed (3.5 m/s) | authored | Tim: "walk and run by speed". The player reaches run speed in 0.1 s, so the walk shows on analog input and while slowing |
+| run rate | ground speed / run speed | derived | a sprint (10 m/s) strides 1.43x faster; the walk plays as delivered |
+| blendSec | 0.1 s (6 ticks) | authored | long enough to hide a cut between two held frames, shorter than the dash (0.16 s) |
+
+## D-020 production load (2026-11-10)
+
+Why the `game` job failed on PR 31 (`reachable` 12/13 on CI runs 42893283097 and 42894610485: the production
+bundle at the bare URL had not loaded the entry chapter 20 s after Enter; it passed locally). Measured on the
+production bundle of 72a254f, headless Chromium on SwiftShader, Apple M4 Max, Enter to `body[data-level]`:
+
+| Viewport | Enter to level | Frames rendered during the load | Frame interval |
+|---|---|---|---|
+| 640x360 | 232 ms | 10 | 17 ms |
+| 1280x720 | 1,765 ms | 25 | 67-83 ms |
+| 1920x1080 | 3,696 ms | 25 | 133-167 ms |
+
+Above 640x360 the load is 25 frames long at any size: it is a chain of about 25 async hops (the level chunk, the
+manifest chunks, each glb, both decoders, the torii skin after kit_torii, then the four other level chunks for the
+progression index) and each hop queues behind one rendered frame, which on SwiftShader blocks the main thread
+(`GPU stall due to ReadPixels` in the console). So on a software renderer the load takes 25 x the frame time. A CPU
+throttle of 8x on the page alone only brings 640x360 to 1.3 s: the cost is the rasteriser, not the decode.
+
+The bare-URL page was the one harness page opened at Playwright's default 1280x720; every other page uses the
+pinned `VIEWPORT` (640x360, `tools/harness/lib.ts`). Fix: that page now uses `VIEWPORT` too, and the check prints
+the time it took. The 20 s wait did not change. Local run after the fix: 0.4 s after Enter. Not measured: the
+before-D-020 hop count (main passed at 1280x720 on CI, so it was under 20 s there), and the frame time on a CI
+runner (read it from the check's detail line on the next run). On a real GPU the frame does not block and the
+load is not frame-bound.

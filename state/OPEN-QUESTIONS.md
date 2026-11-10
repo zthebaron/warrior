@@ -1381,3 +1381,62 @@ took, each PROVISIONAL:
    deleted, so GitHub did not retarget PR 29 by itself; the PR's timeline shows its base changed to main at
    17:48:08Z from Tim's account. An earlier draft of this entry said this session retargeted it. It did not: by
    the time it tried, the base was already main. PR #27 itself was not touched.
+
+## OQ-070 — D-020 (art pass 1): the builder's calls, and what the change still cannot do
+raised: 2026-11-10 by art-pass-1 (claim ART-PASS-1). Tim ruled the direction and the assets; everything below is
+the builder's.
+took, each PROVISIONAL:
+1. **Painted things are drawn AFTER the ink pass, not inside it.** Inside it a texture is posterised (D-020
+   finding) and `ink-post.ts` was not this session's to edit. The cost: a second, depth-only draw of the ink
+   geometry each frame, and a gate that must look at two frames. The 17 older checks judge the ink pass alone; six
+   new ones judge the painted frame. Those 17 now judge a frame the player never sees, and they will empty as near
+   forms move to the paint layer: when that starts, the near-field checks need a painted-frame counterpart.
+2. **A chroma cap of 26 on every painted texture, at import** (`assets/src/hero.json`). The delivered warrior's
+   gourds are chroma 109 and its hat a warm straw; D-003 keeps anything that reads as the accent off the character
+   and §2 allows no colour off the ramp but the accent and the robe. The cap pulls each texel's channels toward
+   their mean and keeps its value: 24.3% of the warrior's texels moved; lantern, cliff and boulder were already
+   under it (17-19). It also moves the gourds toward §7's "pale tan". Tim chose the model from a sheet that showed
+   the delivered colours: if he wants them, raise `chroma_cap` and the paint gate's hue check must then exempt the
+   figure, which is a D-003 question.
+3. **The torii is a skin of kit_torii, not a new placement.** That is what makes "colliders do not change" provable:
+   no level file changed and every fingerprint is IDENTICAL. The fit is to kit_torii's bounding box (height and the
+   wide side; the narrow side takes the wide side's factor), so the drawn posts stand where the collision posts
+   are; the drawn gate is 1.28x wider for its height than delivered. It is drawn in the ink pass, flat accent, so
+   it takes the silhouette stroke. It is simplified to 9,510 triangles: it stands on every level and is drawn
+   twice (the depth-only pass).
+4. **kit_mid_cliff is gone as well as the two assets Tim named.** Painted mid cliffs and slab mid cliffs in one
+   frame contradicted each other. The three kit assets are still built and budgeted; nothing places them.
+5. **Hero class ceilings beyond Tim's two numbers:** one texture, one material, one draw call (the kit's own
+   rule). No bytes ceiling: a 29,400-triangle hero asset ships at about 1.0-1.2 MB with a UASTC texture, which is
+   large (B-47).
+6. **The character ships KTX2 but not Draco,** so the skin weights and clips are exactly as delivered.
+7. **Held frames and thresholds** (MEASUREMENTS "D-020 character"): chosen by eye from renders of the two cycles.
+   Walk below half the run speed. A pose change blends over 0.1 s. `land` fires only on a hard landing (the
+   player's own rule); a soft landing has no pose of its own.
+8. **Where the dressing stands** (`tools/levelgen/dress-01.mjs`): four lanterns at the path's edge, three boulders
+   on top of rock masses, two cliff stacks far out in the void. Nothing that looks like an obstacle stands where a
+   player can walk, because none of it collides. pine.glb is not used (B-49).
+9. **The whole-scene cap is the measured scene.** Chapter 1's scene ratchet (140 draw calls, 381,066 triangles) is
+   the scene that was measured on this Mac (4.39 ms a frame at 5120x1440). A heavier scene needs a new
+   measurement before its line is raised. The Tier-1 ceiling (500,000 triangles) is 31% above it.
+10. **The mist may never reach a landing:** `buildBackdrop` throws if the mist's top (y -3) is at or above the
+    level's lowest waypoint. The painted far field is not a sightline occluder for the linter or the rig; a hero
+    mesh is (the rig's render ray now sees the paint layer).
+11. **STYLE-BIBLE amended in place under D-020** (§3, §4, §6). The seed's own cloud sea is not bare paper (45.6% paper
+    after the snap in hero_11s): bare paper is Tim's ruling, stricter than the seed.
+12. **KNOWN LIMIT: no ink edge and no depth-band treatment on a painted thing.** Distance is authored (a ring's ink,
+    a cliff's haze), not computed. The clean fix is a mask the ink pass reads (B-48).
+13. **KNOWN LIMIT: CI cost.** A level job is about 2x slower than before the art pass (triangles, on SwiftShader);
+    `chaos` is now the longest stage because it still draws every tick (B-44).
+14. **Not built: collision without drawing.** A hero overlay for kit_rock_mass needs the kit mesh to collide and
+    not be drawn; the skin mechanism does that for one model fitted to one kit asset, which suits a gate and not
+    thirteen rock masses (B-46).
+15. **The bare-URL check runs at the pinned 640x360, not Playwright's 1280x720** (the `game` job's failure on PR
+    31). The level load is frame-bound on SwiftShader, about 25 frames at any size (MEASUREMENTS "D-020 production
+    load"), and D-020 made the chain longer; at 1280x720 a CI runner needed more than the 20 s wait. The wait is
+    unchanged and the check now prints the seconds it took. What this does NOT fix: the game still renders every
+    frame while a level loads, and the load is still 25 serial hops; on a slow software renderer a player would
+    wait the same 25 frames. Not a problem on a GPU (the frame does not block). Seven Linux goldens (00-gym
+    cam0-2, 02 cam0 and cam4, 03 cam0, 04 cam0) are still D-019's: they pass at 0.13-0.35% from the darwin frame,
+    under the 0.5% limit, and CI writes no actual for a camera that passes.
+status: PROVISIONAL

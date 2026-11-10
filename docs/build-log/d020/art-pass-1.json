@@ -1,0 +1,77 @@
+{
+  "label": "art-pass-1",
+  "level": "01-lower-stair",
+  "when": "2026-11-10T19:46:47.314Z",
+  "frames": 360,
+  "gl": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)",
+  "sizes": [
+    {
+      "size": "2560x1440",
+      "buffer": "2560x1440",
+      "dpr": 1,
+      "views": [
+        {
+          "view": "rig",
+          "p50_ms": 6.9,
+          "p95_ms": 8.5,
+          "max_ms": 8.6,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 3.15,
+          "cost_p95_ms": 3.24
+        },
+        {
+          "view": "cam2",
+          "p50_ms": 6.9,
+          "p95_ms": 8.4,
+          "max_ms": 8.5,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 2.96,
+          "cost_p95_ms": 3.02
+        }
+      ],
+      "worst_view_p50_ms": 6.9,
+      "worst_view_p95_ms": 8.5,
+      "worst_view_cost_p50_ms": 3.15,
+      "worst_view_cost_p95_ms": 3.24,
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ]
+    },
+    {
+      "size": "5120x1440",
+      "buffer": "5120x1440",
+      "dpr": 1,
+      "views": [
+        {
+          "view": "rig",
+          "p50_ms": 6.9,
+          "p95_ms": 8.5,
+          "max_ms": 8.7,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 4.39,
+          "cost_p95_ms": 4.46
+        },
+        {
+          "view": "cam2",
+          "p50_ms": 6.9,
+          "p95_ms": 8.5,
+          "max_ms": 8.7,
+          "fps_p50": 144.93,
+          "over_10ms": 0,
+          "cost_p50_ms": 4.01,
+          "cost_p95_ms": 4.06
+        }
+      ],
+      "worst_view_p50_ms": 6.9,
+      "worst_view_p95_ms": 8.5,
+      "worst_view_cost_p50_ms": 4.39,
+      "worst_view_cost_p95_ms": 4.46,
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ]
+    }
+  ]
+}

@@ -23,7 +23,7 @@
 //   ledge   everything else (the seam ledges, the sweep slabs, the landings) -> kit_ledge, tiled
 //           along x into pieces of ~TILE_X so its fraction-sized strokes stay thin; alternate tiles
 //           turned 180deg so the pattern does not visibly repeat
-// Plus BACKDROP: the three depth bands of STYLE-BIBLE section 3 (near is the level itself).
+// Plus HERO: the hero dressing (D-020). The far field is painted, in src/loaders/backdrop.ts, not placed here.
 // Every constant here is recorded in MEASUREMENTS.md "CH1-ASSETS dressing".
 import fs from 'node:fs';
 
@@ -36,15 +36,27 @@ const TILE_OVERLAP = 0.01; // u, each side of an INTERIOR seam (D-018): abutting
                            // line. Overlapped coplanar tops are the same paper fill, so nothing z-fights.
                            // The box's own ends stay exact.
 
-// STYLE-BIBLE section 3, placed for a camera that walks z ~ 0 from x 0 to 108, looking +x (+z is
-// screen right: the void; -z is screen left: the dark wall, section 5).
-const BACKDROP = [
-  // MID band (25-80u): behind the rock masses, on the wall side
-  ...[[-10, -40, 0], [25, -44, 160], [60, -38, 25], [95, -46, 200], [130, -40, 70]].map(([x, z, r]) => ({ asset: 'kit_mid_cliff', pos: [x, -10, z], rot: [0, r, 0] })),
-  // FAR band (80u+): silhouettes beyond the mid cliffs, and ahead past the goal
-  ...[[0, -130, 1.0], [70, -140, 1.3], [140, -125, 1.1], [215, -150, 1.4], [240, -40, 1.2]].map(([x, z, s]) => ({ asset: 'kit_far_peak', pos: [x, -10, z], rot: [0, x === 240 ? 90 : 0, 0], scale: s })),
-  // the cloud sea, just above the fall plane: under the gaps and out across the void
-  ...[-20, 100, 220].flatMap((x) => [0, 80, 160].map((z) => ({ asset: 'kit_cloud_band', pos: [x, -9.5, z] }))),
+// D-020: the far field is PAINTED (src/loaders/backdrop.ts: paper sky, far ridges, bare-paper mist, mid cliffs),
+// not kit geometry. The kit_mid_cliff, kit_far_peak and kit_cloud_band placements that stood here are gone.
+//
+// What IS placed here is hero dressing (assets/hero, imported as class hero: collider none, drawn on the
+// paint layer). Each model is 1 unit tall as delivered, so scale is its height in u. Tim's ruling: lanterns as
+// dressing; the cliff and the boulder SPARINGLY, each with its own rotation and scale so no two read as copies;
+// the painted backdrop stays the main cliff mass. Nothing stands on the walking line (z 0), and nothing that
+// looks like an obstacle stands where a player can walk: boulders sit on the rock masses, cliffs in the mist.
+const HERO = [
+  // stone lanterns at the path's edge, a little taller than the figure (1.9)
+  { asset: 'lantern', pos: [2.5, 0, -2.7], rot: [0, 15, 0], scale: 2.2 },
+  { asset: 'lantern', pos: [24.5, 0, 2.8], rot: [0, 100, 0], scale: 2.2 },
+  { asset: 'lantern', pos: [47, 5.5, -2.7], rot: [0, 190, 0], scale: 2.2 },
+  { asset: 'lantern', pos: [104.5, 9, -2.7], rot: [0, 280, 0], scale: 2.2 },
+  // boulders on top of the rock masses (tops at y 10, 15.5, 19): they break the flat-topped stack
+  { asset: 'boulder', pos: [6.5, 10, -6.2], rot: [0, 20, 0], scale: [2.6, 2.2, 2.0] },
+  { asset: 'boulder', pos: [54, 15.5, -6], rot: [0, 115, 0], scale: [3.0, 3.0, 2.2] },
+  { asset: 'boulder', pos: [98, 19, -6.2], rot: [0, 250, 0], scale: [2.4, 1.8, 2.2] },
+  // two cliff stacks far out in the void, feet in the mist (the mist is solid paper below y -7): two different models
+  { asset: 'cliff', pos: [30, -9, 62], rot: [0, 35, 0], scale: [14, 24, 14] },
+  { asset: 'cliff_b', pos: [92, -9, 78], rot: [0, 160, 0], scale: [18, 30, 17] },
 ];
 
 const args = process.argv.slice(2);
@@ -93,7 +105,7 @@ for (const { g, gi } of boxes) {
     out.push({ asset: 'kit_ledge', pos: [r6((lo + hi) / 2), g.pos[1], g.pos[2]], ...(k % 2 ? { rot: [0, 180, 0] } : {}), scale: [r6(hi - lo), g.scale[1], g.scale[2]], collider: 'none', tag: n > 1 ? `${tag}.${k}` : tag });
   }
 }
-BACKDROP.forEach((b, k) => out.push({ ...b, collider: 'none', tag: `dress:backdrop.${k}` }));
+HERO.forEach((b, k) => out.push({ ...b, collider: 'none', tag: `dress:hero.${k}` }));
 
 // 4. one line per entry, key order fixed
 const line = (o) => '    {' + ['asset', 'pos', 'rot', 'scale', 'collider', 'tag'].filter((k) => o[k] !== undefined).map((k) => `"${k}": ${JSON.stringify(o[k]).replace(/,/g, ', ')}`).join(', ') + '}';

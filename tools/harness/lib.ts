@@ -262,6 +262,8 @@ declare global {
       rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       postPasses(): string[];
+      paintLayer(on?: boolean): { painted: number; backdrop: number; drawn: boolean };
+      redraw(): void;
       postProbe(): { width: number; height: number; dist: number[] };
       sceneAudit(): { lights: string[]; litMaterials: string[] };
       level(): { id: string } | null;

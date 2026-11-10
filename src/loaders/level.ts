@@ -13,6 +13,10 @@ import paletteJson from '../../reference/palette.json';
 import { ramp } from '../engine/palette';
 import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
 import { getLoadedAsset, preloadAssets } from './assets';
+import { buildBackdrop, preloadBackdrop } from './backdrop';
+import { preloadCharacter } from './character';
+import { CHARACTER } from '../entities/character-model';
+import { PAINT_LAYER } from '../engine/paint-layer';
 import { patrolFraction, patrolPosition } from '../systems/patrol';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
@@ -103,6 +107,8 @@ export interface PrimitiveAsset {
 export interface MeshAsset {
   name: string;
   kind: 'mesh';
+  /** D-020: absent = a kit asset; 'hero' = an imported painted model, always collider none, drawn on the paint layer */
+  class?: 'hero';
   file: string;
   collider: 'trimesh' | 'none';
   triangles: number;
@@ -232,7 +238,12 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
     if ((data.hazards ?? []).some((h) => h.type === 'patroller' && h.crow)) names.add(INK.crow);
   }
   const meshes = [...names].map((n) => MANIFEST.get(n)).filter((a): a is MeshAsset => a?.kind === 'mesh');
-  await preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file })));
+  // D-020: the player's figure is decoded with the level, so no level is ever installed without it
+  await Promise.all([
+    preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file, painted: a.class === 'hero' }))),
+    isInk(data) ? preloadBackdrop() : null,
+    preloadCharacter(CHARACTER.asset),
+  ]);
   return data as PreparedLevel;
 }
 
@@ -475,17 +486,19 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     const loaded = getLoadedAsset(a.name);
     if (!loaded) throw new Error(`[level] ${where}: asset "${a.name}" not decoded — buildLevel needs await prepareLevel(data) first`);
     const scale = scaleOf(p.scale);
-    for (const part of loaded.parts) {
+    for (const part of loaded.drawn) { // D-020: what the asset is drawn as (itself, or its skin); collision below is always its own
       const mesh = new THREE.Mesh(part.geometry, part.material);
       mesh.name = a.name;
       mesh.userData['sharedAsset'] = true; // owned by the asset cache: never dispose with the level
       mesh.position.set(...p.pos);
       mesh.quaternion.copy(q);
       mesh.scale.copy(scale);
+      if (loaded.painted) mesh.layers.set(PAINT_LAYER); // D-020: drawn after the ink pass, with its own texture
       root.add(mesh);
       pickables.push(mesh);
     }
     const kind = p.collider ?? a.collider;
+    if (a.class === 'hero' && kind !== 'none') throw new Error(`[level] ${where}: "${a.name}" is a hero asset and is placed with collider "${kind}": art never becomes collision`);
     if (kind === 'none') return;
     if (kind !== 'trimesh') throw new Error(`[level] ${where}: collider "${kind}" not supported (trimesh only)`);
     const src = loaded.collision.positions;
@@ -620,6 +633,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
 
   const byHandle = new Map<number, PlatformInstance>(platforms.map((p) => [p.collider.handle, p]));
 
+  // D-020: an ink level's far field is painted (paint layer), under root so it leaves with the level
+  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1]))) : null;
+  if (backdrop) root.add(backdrop.root);
+
   return {
     data,
     root,
@@ -687,6 +704,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       for (const geo of walkGeos.values()) geo.dispose();
       walkMat.dispose();
       for (const m of matCache.values()) m.dispose();
+      backdrop?.dispose();
     },
   };
 }

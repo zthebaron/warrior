@@ -7,6 +7,9 @@ import { GameLoop, LOOP_CONFIG } from './engine/loop';
 import { InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
+import { PAINT_LAYER, PaintLayer } from './engine/paint-layer';
+import { getCharacter } from './loaders/character';
+import { CHARACTER } from './entities/character-model';
 import { SpringArmCamera, CAMERA_TUNING, allowedArm, type AssistProbe } from './engine/camera';
 import { DebugOverlay, Profiler } from './engine/debug';
 import { DevTools, type AirSegment } from './engine/tools';
@@ -98,6 +101,10 @@ interface HarnessApi {
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   /** D-018: the STYLE §6 passes the running post stack was compiled with, in order. */
   postPasses(): string[];
+  /** D-020: the paint layer's state; pass false to draw the ink pass alone (the frame the D-018/D-019 gate judges). */
+  paintLayer(on?: boolean): { painted: number; backdrop: number; drawn: boolean };
+  /** Draw the CURRENT tick again: no simulation step, so two frames can differ only in what was drawn. */
+  redraw(): void;
   /** D-018: per-pixel distance (u) from the camera of the last rendered frame, top row first (harness post stage). */
   postProbe(): { width: number; height: number; dist: number[] };
   /** D-018 (STYLE §1): every light in the scene, and every material that is not unlit. Both must be empty. */
@@ -215,6 +222,7 @@ async function boot(): Promise<void> {
 
   const state = new StateMachine();
   const renderer = new Renderer(el('app'));
+  const paintLayer = new PaintLayer(renderer.renderer, renderer.scene, renderer.camera); // D-020: drawn after the ink pass
   configureAssetLoaders(renderer.renderer);
   // D-001 feel-test switch: ?accent=<candidate> (assets/src/accent.json). Default = accent.json `default`.
   const accentParam = new URLSearchParams(location.search).get('accent');
@@ -285,10 +293,11 @@ async function boot(): Promise<void> {
     const [x, y, z] = data.spawn.pos;
     const facing = data.spawn.facing * DEG2RAD;
     if (!player) {
-      player = new Player(physics, { x, y, z }, facing);
+      player = new Player(physics, { x, y, z }, facing, getCharacter(CHARACTER.asset));
       player.mesh.userData['translates'] = 'player';
       renderer.scene.add(player.mesh);
     }
+    paintLayer.refresh();
     const lvl = level;
     player.groundMotion = (c) => lvl.platformDelta(c);
     player.teleport({ x, y, z }, facing);
@@ -457,7 +466,10 @@ async function boot(): Promise<void> {
     if (level) level.debugRoot.visible = overlay.visible;
 
     profiler.begin('render');
-    if (!skipRender) renderer.render();
+    if (!skipRender) {
+      renderer.render();
+      paintLayer.render();
+    }
     profiler.end('render');
     overlay.update(frameDt);
     profiler.endFrame();
@@ -673,6 +685,11 @@ async function boot(): Promise<void> {
         fixedDt: loop.dt,
       },
       postPasses: () => [...renderer.post.passes],
+      paintLayer: (on) => {
+        if (on !== undefined) paintLayer.enabled = on;
+        return paintLayer.status();
+      },
+      redraw: () => onRender(0, loop.dt),
       sceneAudit: () => {
         // Unlit: shading ignores every light. Anything else (Standard, Lambert, Phong, Toon, Physical...) is lit.
         const UNLIT = new Set(['MeshBasicMaterial', 'LineBasicMaterial', 'LineDashedMaterial', 'PointsMaterial', 'SpriteMaterial', 'ShaderMaterial', 'RawShaderMaterial']);
@@ -729,8 +746,11 @@ async function boot(): Promise<void> {
         if (!level) return null;
         level.root.updateMatrixWorld(true);
         const meshes: THREE.Object3D[] = [];
-        level.root.traverseVisible(o => { if (o instanceof THREE.Mesh) meshes.push(o); });
+        // The backdrop is far field and mist, below and beyond every landing by construction (backdrop.ts):
+        // it is not a sightline occluder. A painted hero mesh IS one, so the ray sees the paint layer too.
+        level.root.traverseVisible(o => { if (o instanceof THREE.Mesh && !o.name.startsWith('backdrop:')) meshes.push(o); });
         const ray = new THREE.Raycaster(new THREE.Vector3(...origin), new THREE.Vector3(...dir), 0, max);
+        ray.layers.enable(PAINT_LAYER);
         const h = ray.intersectObjects(meshes, false).find(h => {
           const mesh = h.object as THREE.Mesh;
           const material = Array.isArray(mesh.material) ? mesh.material[h.face?.materialIndex ?? 0] : mesh.material;
@@ -760,7 +780,7 @@ async function boot(): Promise<void> {
         }
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(bg);
-        for (const part of getLoadedAsset('kit_torii')!.parts) scene.add(new THREE.Mesh(part.geometry, part.material));
+        for (const part of getLoadedAsset('kit_torii')!.drawn) scene.add(new THREE.Mesh(part.geometry, part.material)); // as a level draws it (D-020)
         const c = renderer.camera;
         const view = new THREE.PerspectiveCamera(c.fov, c.aspect, c.near, c.far);
         view.position.set(...cam);
