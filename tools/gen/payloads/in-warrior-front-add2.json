@@ -1,0 +1,7 @@
+{
+  "prompt": "Edit this painting by adding exactly two small things and changing nothing else. (1) Two tan calabash gourds tied on a short cord, hanging from the belt at his left hip (the viewer's right), beside the thigh. (2) Behind his right shoulder (the viewer's left), the top of a sword carried on his back: only a short wrapped hilt with a small round guard, poking up diagonally from BEHIND the shoulder, partly hidden by the shoulder and the hat brim. The rest of the sword is completely hidden behind his body. Do NOT draw any scabbard, blade, strap or cord in front of the robe; the chest and the front of the robe stay exactly as they are. Keep everything else identical: pose, arms away from the body, hat, face, robe, belt, leg wraps, sandals, line quality, flat ink-wash fill, plain empty aged-paper background, no shadow.",
+  "image_urls": ["file:assets/build/gen/in/warrior_front_v2.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

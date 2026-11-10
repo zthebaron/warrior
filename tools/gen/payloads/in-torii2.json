@@ -1,0 +1,9 @@
+{
+  "prompt": "Edit this painting, changing only the colour of three areas: repaint the black top of the lintel and the two black feet at the bottom of the posts in the same flat vermilion red as the rest of the gate. After the edit every part of the gate is one single flat vermilion red (#e34234) with a dark brush outline, and there is no black or grey area anywhere on it. Keep the shape, the outline, the beams, the plain empty aged-paper background and everything else identical. No shadow.",
+  "image_urls": [
+    "file:assets/build/gen/in/torii_v1.png"
+  ],
+  "aspect_ratio": "1:1",
+  "output_format": "png",
+  "num_images": 1
+}

@@ -1,0 +1,6 @@
+{
+  "input_image_url": "file:assets/hero/input/warrior.png",
+  "back_image_url": "file:assets/hero/input/warrior_back.png",
+  "generate_type": "Normal",
+  "enable_pbr": true
+}

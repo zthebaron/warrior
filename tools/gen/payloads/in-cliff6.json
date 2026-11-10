@@ -1,0 +1,7 @@
+{
+  "prompt": "Repaint this rock as a tall cliff crag. Keep everything about how it is painted: the same solid faceted block of stone with big flat broken facets and sharp edges, the same three-quarter view from slightly above so the top and two side faces show, the same flat grey ink wash and dark brush outline, the same plain empty aged-paper background. Change only its proportions and top: make it a single tall pillar about two and a quarter times as tall as it is wide, broadest at its flat base, narrowing a little toward a jagged, notched, broken top, with two or three deep vertical cracks running down its faces. It stays one single solid block: no stacked slabs, no thin plates or sheets, no nested outlines, no horizontal bands, no small marks or dots around the edge. Whole rock in frame with a paper margin all round, no shadow.",
+  "image_urls": ["file:assets/hero/input/boulder.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

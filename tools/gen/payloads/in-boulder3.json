@@ -1,0 +1,9 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: one large angular boulder resting on its own flat base, like the dark rock mass in the reference image, redrawn alone and seen from a three-quarter angle slightly above, so the top and two sides show. A single solid heavy block of stone, clearly wider than it is tall, broad at the bottom, with a few big flat broken facets, sharp edges and a jagged outline. Dark grey ink wash, every facet close to the same tone, tone changing only in the cracks between facets. Clean outline: no grass, no moss, no tufts, no dots or small marks around the edge. It is one rock, not a pile, and it has no stem or stalk under it.\n\nPlain empty paper background and nothing else in the picture: no ground line, no cliff wall, no mist, no clouds, no shadow, no text, no seal. Whole subject in frame with a paper margin all round.",
+  "image_urls": [
+    "file:assets/build/gen/refs/ref_boulder.png"
+  ],
+  "aspect_ratio": "1:1",
+  "output_format": "png",
+  "num_images": 1
+}

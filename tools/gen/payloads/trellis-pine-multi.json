@@ -1,0 +1,4 @@
+{
+  "image_urls": ["file:assets/hero/input/pine.png", "file:assets/hero/input/pine_side.png"],
+  "texture_size": 1024
+}
