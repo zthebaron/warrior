@@ -1331,4 +1331,4 @@ clips; every other state holds a frame (B-45). A painted thing gets no ink edge,
 pixel where INK-HIRES draws the ink pass's grain in 360-line space (B-48). The depth-only pass draws the ink
 geometry a second time. The delivered warrior differs from §7 (a pale hat, both gourds on one hip, trousers).
 
-implemented_by: 611d70c (the paint layer, the seed ridge and the bare-paper mist, the paint checks), 19bbb8d (painted mid cliffs, the paint thresholds from measurement, backdrop budgets, the frame and sheet tools), bb5de28 (the hero asset class and its import path)
+implemented_by: 611d70c (the paint layer, the seed ridge and the bare-paper mist, the paint checks), 19bbb8d (painted mid cliffs, the paint thresholds from measurement, backdrop budgets, the frame and sheet tools), bb5de28 (the hero asset class and its import path), f67d749 (the rigged warrior as the player, the torii skin, hero dressing, the shipped-state paint check, darwin goldens, scene ratchets)
