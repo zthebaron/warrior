@@ -11,18 +11,24 @@ Written against your `art-pass-1` at `bb5de28` (the D-020 hero class, the `.glb`
 
 1. **Budget lines are missing, and I may not add them.** Your import path reads every
    `assets/hero/*.glb`, and D-020 says each hero asset has its own line in `budgets.json` `assets`
-   set at its measured value. This branch adds six such files and no lines (the brief forbids me
+   set at its measured value. Round 1 added six such files and round 2 adds two more
+   (`boulder_b.glb`, `spire.glb`), with no lines (the brief forbids me
    editing `tools/assets/budgets.json`). On `main` today nothing reads `assets/hero/`, so this
    branch passes `assets:budget`. **Once both branches are on `main`, expect `assets:build` to pick
-   these six up and `assets:budget` to want six lines.** The values as delivered are in the table
+   these eight up and `assets:budget` to want eight lines.** The values as delivered are in the table
    below; your build re-welds and compresses, so measure after it.
-2. **The six static files are built to your class ceilings:** 29,400 triangles (ceiling 30,000),
+2. **The eight static files are built to your class ceilings:** 29,400 triangles (ceiling 30,000),
    one 1024 px texture, one material, one primitive, lower_snake_case names, none colliding with a
    kit asset name.
 3. **The rigged warrior does not fit `src/loaders/character.ts` as it stands**, so it is in
    `assets/hero/rigged/`, not `assets/char/`. Details under "The animated warrior".
 4. **Round 2 added the clips you were missing.** `rigged/warrior_anim.glb` has all nine, cut to
    your state map. See "The animated warrior (round 2)".
+5. **Round 2 added painted backdrop cards for your layered backdrop:** thirteen PNGs with alpha in
+   `assets/backdrop/gen/` (three cliff faces, three cliff pines, three far peaks, two mist, two wide
+   views). They are one folder down so that your loader's glob and `paint-budget.mjs` do not see
+   them. `assets/backdrop/MANIFEST.md` says how each is cut and how to draw it;
+   `docs/build-log/art-gen/backdrop-sheet.png` shows them.
 
 ## Files
 
@@ -34,6 +40,8 @@ Written against your `art-pass-1` at `bb5de28` (the D-020 hero class, the `.glb`
 | `cliff_b.glb` | yes | 29,400 | 0.530 x 1.0 x 0.546 | 2,120,144 |
 | `cliff.glb` | yes, alongside `cliff_b` | 29,400 | 0.502 x 1.0 x 0.537 | 1,924,468 |
 | `boulder.glb` | yes | 29,400 | 2.130 x 1.0 x 2.016 | 1,971,444 |
+| `boulder_b.glb` | yes (round 2) | 29,400 | 0.633 x 1.0 x 0.635 | 2,050,884 |
+| `spire.glb` | yes as a rock; it is a wedge, not a spire (round 2) | 29,400 | 0.547 x 1.0 x 1.126 | 1,950,636 |
 | `rigged/warrior_anim.glb` | **yes, skinned, nine clips; needs loader work** | 29,400 | 1.075 x 1.7 x 0.669 at rest | 3,846,332 |
 | `rigged/warrior_rigged.glb` | no: superseded by `warrior_anim.glb` (kept as the paint tool's reference) | 29,400 | 1.075 x 1.7 x 0.669 at rest | 3,905,320 |
 | `rejected/pine.glb` | no (flat canopy) | 29,400 | 1.201 x 1.0 x 0.478 | 1,976,892 |

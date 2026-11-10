@@ -70,3 +70,9 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 58 | 2026-11-10T20:07:16Z | fal-ai/nano-banana-2/edit | backdrop card: mist_b, native 2K | $0.1200 | $0.1200 | 01a1c712-71a7-7b32-abbb-fb89adbc990e | done | $10.1904 |
 | 59 | 2026-11-10T20:07:40Z | fal-ai/nano-banana-2/edit | backdrop card: wide_a, native 2K | $0.1200 | $0.1200 | 01a1c712-ceb7-7a13-b483-170951e8c56c | done | $10.3104 |
 | 60 | 2026-11-10T20:08:04Z | fal-ai/nano-banana-2/edit | backdrop card: wide_b, native 2K | $0.1200 | $0.1200 | 01a1c713-2bc6-7410-bd47-48e5c6186c31 | done | $10.4304 |
+| 61 | 2026-11-10T20:16:42Z | fal-ai/nano-banana/edit | input image: rock variant boulder-b (round 2, priority 3) | $0.0398 | $0.0398 | 01a1c71b-122f-70f2-8539-3a5d6917a21b | done | $10.4702 |
+| 62 | 2026-11-10T20:17:22Z | fal-ai/nano-banana/edit | input image: rock variant spire (round 2, priority 3) | $0.0398 | $0.0398 | 01a1c71b-b072-7ff1-9c70-e03aef1d716c | done | $10.5100 |
+| 63 | 2026-11-10T20:17:52Z | fal-ai/trellis | trellis test: boulder_b | $0.0200 | $0.0200 | 01a1c71c-261f-7923-91c3-22bb3e56617c | done | $10.5300 |
+| 64 | 2026-11-10T20:18:49Z | fal-ai/trellis | trellis test: spire | $0.0200 | $0.0200 | 01a1c71d-029a-70c1-bd5a-462e0469cd85 | done | $10.5500 |
+| 65 | 2026-11-10T20:19:48Z | fal-ai/hunyuan3d-v3/image-to-3d | final: boulder_b (Normal + PBR) | $0.5250 | $0.5250 | 01a1c71d-e7f9-7ee3-bfef-00be51509ba9 | done | $11.0750 |
+| 66 | 2026-11-10T20:22:38Z | fal-ai/hunyuan3d-v3/image-to-3d | final: spire (Normal + PBR) | $0.5250 | $0.5250 | 01a1c720-81ea-7753-997e-d30ed1981934 | done | $11.6000 |
