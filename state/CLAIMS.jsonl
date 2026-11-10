@@ -219,3 +219,4 @@
 {"id":"RB003-RB004-FIX","agent":"codex","ts":"2026-11-10T03:41:37.056Z","released":true}
 {"id":"INK-REFINE","agent":"ink-refine","ts":"2026-11-10T15:16:38.047Z","ttl_min":90}
 {"id":"INK-REFINE","agent":"ink-refine","ts":"2026-11-10T16:50:14.103Z","ttl_min":90}
+{"id":"INK-HIRES","agent":"ink-hires","ts":"2026-11-10T18:00:51.690Z","ttl_min":480}
