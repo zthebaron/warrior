@@ -247,10 +247,11 @@ async function styleCharacter(src, out, name) {
   await nio.write(out, doc);
 }
 
-const heroSource = (name) => {
+// static models are delivered at assets/hero/<name>.glb, rigged ones at assets/hero/rigged/<name>.glb (ART-GEN)
+const heroSource = (name, sub = '') => {
   if (!/^[a-z][a-z0-9_]*$/.test(name)) die(1, `hero asset "${name}" is not lower_snake_case`);
-  const file = P(C.heroDir, `${name}.glb`);
-  if (!existsSync(file)) die(1, `assets/src/hero.json names "${name}" but ${C.heroDir}/${name}.glb does not exist`);
+  const file = P(C.heroDir, sub, `${name}.glb`);
+  if (!existsSync(file)) die(1, `assets/src/hero.json names "${name}" but ${join(C.heroDir, sub)}/${name}.glb does not exist`);
   return file;
 };
 
@@ -309,7 +310,7 @@ for (const name of Object.keys(heroCfg.characters ?? {})) {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   const st = ['0-source', '1-style', '2-resize', '3-ktx2'].map((n) => join(dir, `${n}.glb`));
-  copyFileSync(heroSource(name), st[0]);
+  copyFileSync(heroSource(name, 'rigged'), st[0]);
   await styleCharacter(st[0], st[1], name);
   for (const [label, args] of [
     ['resize', ['resize', st[1], st[2], '--width', String(heroClass.texture_px), '--height', String(heroClass.texture_px)]],

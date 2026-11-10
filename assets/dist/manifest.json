@@ -366,7 +366,7 @@
       "collider": "none",
       "triangles": 9510,
       "bytes": 21824,
-      "bytes_export": 1615904,
+      "bytes_export": 1498284,
       "bbox": {
         "min": [
           -0.52577,
@@ -397,7 +397,7 @@
       "collider": "none",
       "triangles": 29400,
       "bytes": 1164268,
-      "bytes_export": 2572592,
+      "bytes_export": 2317256,
       "bbox": {
         "min": [
           -0.2058,
@@ -435,7 +435,7 @@
       "collider": "none",
       "triangles": 29400,
       "bytes": 1004212,
-      "bytes_export": 2095440,
+      "bytes_export": 1924468,
       "bbox": {
         "min": [
           -0.25098,
@@ -464,6 +464,44 @@
       }
     },
     {
+      "name": "cliff_b",
+      "kind": "mesh",
+      "class": "hero",
+      "file": "cliff_b.glb",
+      "source": "assets/hero/cliff_b.glb",
+      "sha256": "37283bfa78501fceac311ae9ebf3e4424cf1e3e52080bf0a21ba5b27c997fee4",
+      "collider": "none",
+      "triangles": 29400,
+      "bytes": 1079720,
+      "bytes_export": 2120144,
+      "bbox": {
+        "min": [
+          -0.26511,
+          0,
+          -0.27275
+        ],
+        "max": [
+          0.26513,
+          1,
+          0.27275
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "texture_pbr_20250901",
+          "mime": "image/ktx2",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --jobs 1 (resize cap 1024px, chroma cap 26)"
+      }
+    },
+    {
       "name": "boulder",
       "kind": "mesh",
       "class": "hero",
@@ -473,7 +511,7 @@
       "collider": "none",
       "triangles": 29400,
       "bytes": 1044784,
-      "bytes_export": 2114200,
+      "bytes_export": 1971444,
       "bbox": {
         "min": [
           -1.06487,

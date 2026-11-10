@@ -17,6 +17,14 @@
       "materials": 1,
       "draw_calls": 1
     },
+    "cliff_b": {
+      "triangles": 29400,
+      "bytes": 1079720,
+      "textures": 1,
+      "texture_px": 1024,
+      "materials": 1,
+      "draw_calls": 1
+    },
     "lantern": {
       "triangles": 29400,
       "bytes": 1164268,

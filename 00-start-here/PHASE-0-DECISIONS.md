@@ -1290,8 +1290,8 @@ mist-pale was kit_cloud_band's strips (7.0% of the frame) and the kit's lower fa
    whatever stands in it thins into the paper. kit_mid_cliff, kit_far_peak and kit_cloud_band are no longer placed.
 3. **A hero asset class** (`tools/assets/build.mjs`, `budgets.json` `classes.hero`, `assets/src/hero.json`):
    what `hero.json` names is imported from assets/hero as delivered: unlit, base colour only, chroma capped,
-   1024 px KTX2, Draco; always collider none; drawn on the paint layer. Shipped: lantern, cliff, boulder (29,400
-   triangles each) and torii (9,510 after simplify, no texture).
+   1024 px KTX2, Draco; always collider none; drawn on the paint layer. Shipped: lantern, cliff, cliff_b, boulder
+   (29,400 triangles each) and torii (9,510 after simplify, no texture).
 4. **The torii** is kit_torii's SKIN: a kit_torii placement keeps kit_torii's own triangles as its collider and is
    drawn as the hero torii, fitted at load to kit_torii's bounding box, in the accent as a flat material (so
    `?accent=` and the accent gates keep working). No level file changed for it.

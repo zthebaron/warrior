@@ -5,6 +5,7 @@
     "torii": { "texture": false, "simplify": 0.1 },
     "lantern": {},
     "cliff": {},
+    "cliff_b": {},
     "boulder": {}
   },
   "characters": {

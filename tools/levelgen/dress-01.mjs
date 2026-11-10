@@ -54,9 +54,9 @@ const HERO = [
   { asset: 'boulder', pos: [6.5, 10, -6.2], rot: [0, 20, 0], scale: [2.6, 2.2, 2.0] },
   { asset: 'boulder', pos: [54, 15.5, -6], rot: [0, 115, 0], scale: [3.0, 3.0, 2.2] },
   { asset: 'boulder', pos: [98, 19, -6.2], rot: [0, 250, 0], scale: [2.4, 1.8, 2.2] },
-  // two cliff stacks far out in the void, feet in the mist (the mist is solid paper below y -7)
+  // two cliff stacks far out in the void, feet in the mist (the mist is solid paper below y -7): two different models
   { asset: 'cliff', pos: [30, -9, 62], rot: [0, 35, 0], scale: [14, 24, 14] },
-  { asset: 'cliff', pos: [92, -9, 78], rot: [0, 160, 0], scale: [18, 30, 17] },
+  { asset: 'cliff_b', pos: [92, -9, 78], rot: [0, 160, 0], scale: [18, 30, 17] },
 ];
 
 const args = process.argv.slice(2);

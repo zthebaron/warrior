@@ -448,7 +448,7 @@
     {"asset": "boulder", "pos": [54, 15.5, -6], "rot": [0, 115, 0], "scale": [3, 3, 2.2], "collider": "none", "tag": "dress:hero.5"},
     {"asset": "boulder", "pos": [98, 19, -6.2], "rot": [0, 250, 0], "scale": [2.4, 1.8, 2.2], "collider": "none", "tag": "dress:hero.6"},
     {"asset": "cliff", "pos": [30, -9, 62], "rot": [0, 35, 0], "scale": [14, 24, 14], "collider": "none", "tag": "dress:hero.7"},
-    {"asset": "cliff", "pos": [92, -9, 78], "rot": [0, 160, 0], "scale": [18, 30, 17], "collider": "none", "tag": "dress:hero.8"}
+    {"asset": "cliff_b", "pos": [92, -9, 78], "rot": [0, 160, 0], "scale": [18, 30, 17], "collider": "none", "tag": "dress:hero.8"}
   ],
   "hazards": [
     {

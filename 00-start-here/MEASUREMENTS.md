@@ -1124,6 +1124,7 @@ kept (OQ-070 item 5). Every asset below also has its own line, set AT the measur
 |---|---|---|---|---|---|
 | lantern | 29,400 tris, 2,572,592 B, 3 textures | 29,400 | 1,164,268 | 1024 px KTX2 UASTC, mipmaps | chroma as delivered 17 |
 | cliff | 29,400 tris, 2,095,440 B | 29,400 | 1,004,212 | 1024 px | chroma as delivered 17 |
+| cliff_b | 29,400 tris, 2,120,144 B | 29,400 | 1,079,720 | 1024 px | chroma as delivered 22. ART-GEN's second cliff, so the two stacks are two models |
 | boulder | 29,400 tris, 2,114,200 B | 29,400 | 1,044,784 | 1024 px | chroma as delivered 19 |
 | torii | 29,400 tris, 1,615,904 B | 9,510 | 21,824 | none | simplify --ratio 0.1 --error 0.001; drawn in the accent as a flat material |
 | warrior_rigged (character) | 29,400 tris, 4,700,800 B, 24 joints, clips walk 1.067 s and run 0.667 s | 29,400 | 2,694,032 | 1024 px | chroma as delivered up to 109 (the gourds); capped on 24.3% of texels. No Draco |
@@ -1134,6 +1135,8 @@ kept (OQ-070 item 5). Every asset below also has its own line, set AT the measur
 | torii simplify | ratio 0.1, error 0.001 | measured | a gate stands 2-5 times on every level and is drawn twice a frame: 9,510 triangles each instead of 29,400 |
 | torii fit | to kit_torii's bounding box (7.2 wide, 5.35 tall), yaw 90 | derived | from the two shipped files at load; nothing typed. The drawn posts stand where the collision posts are |
 | hero dressing (ch1) | lanterns 2.2 u tall at z -2.7 / 2.8; boulders 1.8-3.0 u tall on rock masses at y 10, 15.5, 19; cliff stacks 24 and 30 u tall at z 62 and 78, foot y -9 | authored | a lantern a little taller than the figure (1.9). The stacks were first 30 and 40 u at z 46 and 58 and loomed at 5120x1440; Tim: sparingly |
+
+ART-GEN re-delivered after reading the class (main eeaacac: one base-colour texture a file, the rigged warrior under `assets/hero/rigged/`, the pine under `rejected/`). Rebuilt from those files, the four static assets and the character came out byte-identical to the first build: the import had already been dropping what they removed.
 
 Proof that nothing a player can touch changed: `node tools/geometry-fingerprint.mjs <level> assets/dist/manifest.json
 --against=<dump taken before any edit>` prints IDENTICAL for all five levels (hashes 3f8ace62, 03d7d47a, f656ed93,
