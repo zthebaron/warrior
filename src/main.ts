@@ -615,10 +615,14 @@ async function boot(): Promise<void> {
     });
     // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
     // Mirrors GameLoop.frame's gate: ticks run while the world runs (play AND death, D-004), not in pause.
-    const advance = (n: number, renderEvery = 1): HarnessSnapshot => {
+    // renderLast: a batch always draws its final frame, so the canvas and renderer.info a caller reads next
+    // are that frame's (counters, visual, accent and post rely on it). step() passes its own `render` flag
+    // instead: with n = 1 the final frame is EVERY frame, so step(frame, false) used to draw each tick and
+    // the bot's renderEvery had no effect (found on PR 29: phase-sweep 70-84% of a level job, all of it drawing).
+    const advance = (n: number, renderEvery = 1, renderLast = true): HarnessSnapshot => {
       for (let i = 0; i < n; i++) {
         if (state.worldRunning()) loop.stepOnce();
-        skipRender = !(i === n - 1 || (renderEvery > 0 && loop.frameCount % renderEvery === 0));
+        skipRender = !((renderLast && i === n - 1) || (renderEvery > 0 && loop.frameCount % renderEvery === 0));
         onRender(0, loop.dt);
         loop.frameCount++;
       }
@@ -632,10 +636,10 @@ async function boot(): Promise<void> {
         await startLevel();
         return { ok: state.is('play'), error: errorBanner.style.display === 'block' ? errorBanner.textContent : null };
       },
-      advance,
+      advance: (n, renderEvery) => advance(n, renderEvery),
       step: (frame, render) => {
         input.setOverride(frame);
-        return advance(1, render ? 1 : 0);
+        return advance(1, render ? 1 : 0, render);
       },
       setInput: (frame) => input.setOverride(frame),
       respawnAt: (pos, facing, tick) => {

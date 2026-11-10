@@ -1184,3 +1184,70 @@ Tim's call (Q2b: on measured evidence only; the evidence is the first render and
 outline lowers ACCENT_AREA (ch1 0.103-0.243%, floor 0.0204%). To be re-judged with grain and edge in place.
 
 implemented_by: 57c8c3c (§1 material/light purge, ink-post.ts, harness `post` stage, kit re-valuing, dress-01 --check in lint:levels, darwin goldens)
+
+
+## D-019 — outlining everything is outlining nothing: the ink edge belongs to true silhouettes, and the near field goes dark. B-40, B-41. DECIDED
+
+**Ruled by Tim** (2026-11-10), on `docs/build-log/d018/sheet-ch1-cam2.png`, seed left and D-018 right: the
+shipped look "reads as a basic 3D paint stroke, not a painting". Four gaps, in order of cost. ONE: the ink edge
+fires on every discontinuity, so every box edge and tile seam gets the same uniform line; in the seed almost
+nothing is outlined, form comes from value masses and contour appears at a few silhouette boundaries only.
+Suppress it on interior and coplanar seams and on distant forms, keep it on true silhouette boundaries, vary its
+weight along the stroke. TWO: no value range: the frame uses the middle of the ramp and never the ends. Push
+the near field dark, keep the far field pale, widen the spread. THREE (bare paper, ~40% of the seed frame) and
+FOUR (slab silhouettes, B-37/B-38) are NOT in this entry: ONE and TWO first, no other post work until they land.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-068):** every number and threshold below "Built",
+the never-break exception, and the top/face values of undressed boxes.
+
+**The finding, as measured** (PR #27's shader under this entry's gate, all five levels): 100.0% of near
+silhouette pixels inked and 56-70% of interior convex creases an ink line, at a constant 2px (1px share 0.0%);
+69-82% of mid-distance silhouettes drawn; dark MASS 1.1-1.2% of the near field. In ch1 cam2, ink-deep was 0.0%
+and ink-grey 1.8% of the frame, and its 10.9% ink-black was all line. Seed hero_7s: ink-grey 9.6%, ink-deep
+8.0%, ink-black 5.4%, as mass.
+
+**Built** (as it stands after an independent review, four lenses with every finding adversarially verified:
+15 confirmed, 1 refuted; what it found is in OQ-068).
+1. `ink_edge`: a line only on a TRUE SILHOUETTE, defined geometrically: each side of a pixel boundary is
+   continued from its own two depth samples (1/z is linear across a plane), and a line is drawn only if the
+   two surfaces stay 2% apart, on the near one. One plane at any grazing angle gives exactly 0; a crease's
+   planes meet; a step-down between two tops is a gap. (The first cut, "a neighbour 1.2x farther", inked flat
+   ground at a grazing angle and lost the gym's stair treads from above: review.) Near band only. Weight =
+   base(distance: 3/2/1 px) x noise anchored in WORLD space, 0 (the brush lifts) to 4px.
+2. `value_compression`: steps 2-7 in the near band are pushed dark with nearness (+3 inside 12 u at most, +2 to
+   20 u, +1 to 24.9 u); paper and mist never. Each boundary is pulled inward by three octaves of world-anchored
+   noise, so the push ends inside the band by construction. Mid and far unchanged (they only lighten, D-018).
+   **Known limit (OQ-068 item 4, B-43):** it is per pixel by camera distance, so on one long flat wall its
+   steps are still camera-relative bands. A push per form is the fix that respects flat fill.
+3. **The exception to the break, mine and PROVISIONAL.** Where the form and what is behind it are shown at the
+   SAME value (one platform top against the next one down), the line is the only thing that marks where the
+   ground ends, so it holds a hairline: 96.4-100% of such pixels inked. The seed lets even that line break.
+4. **Forced by ONE, mine and PROVISIONAL.** An undressed box of one flat value has no top once creases are not
+   outlined. Its top is mist-pale (one step off the paper sky at any distance), its faces stone-mid; a tagged
+   pad and a moving platform get a paper top. No walkable top is ever pushed. One unlit material, vertex
+   colours; draw calls unchanged.
+5. The gate: harness `post` gains eight D-019 checks and a grazing camera, each threshold between a measured
+   wrong value and the shipped one. Ten mutations of the shader source turn it red; an eleventh (the first-cut
+   ratio test) is NOT caught at the grazing pose and is recorded as a gate limit (MEASUREMENTS "D-019 ink edge
+   and value range").
+
+**Measurement: the same sheet, re-taken** (`docs/build-log/d019/sheet-ch1-cam2.png`: [seed hero_7s | D-018 |
+D-019], same camera, same seed frame).
+
+| | Seed hero_7s | ch1 cam2, D-018 | ch1 cam2, D-019 |
+|---|---|---|---|
+| ink-grey / ink-deep / ink-black, share of frame | 9.6 / 8.0 / 5.4% | 1.8 / 0.0 / 10.9% (line) | 12.9 / 6.2 / 4.4% |
+| paper-cream | 37.2% | 26.1% | 28.3% |
+| near silhouette px inked where value separates the forms (ch1) | | 100.0% | 65.9% (breaks) |
+| interior creases that are an ink line | | 64.4% | 35.0% (the kit's own lips, B-38) |
+| mid-distance silhouettes carrying a line | | 69.3% | 3.0% |
+| near field that is dark mass | | 1.2% (ink-deep or darker) | 23.3% (ink-grey or darker; 1.0% with the push removed) |
+
+**STYLE-BIBLE amended in place, marked D-019:** §1 (what "outline" means), §3's outline column (near:
+silhouette boundaries only, weight varying; mid: none, was "grey, thin") and §6's ink-edge sentence (was "on depth
+and normal discontinuity"; the never-break exception is marked there as the builder's, PROVISIONAL).
+
+**Still off the seed, recorded not tuned away:** wash-mid 17.3% against 8.4% and the slab silhouettes (B-37,
+B-38); paper 28.3% against 37.2% (B-42, gap THREE, not started). **Unchanged:** no level, asset or linter file;
+every geometry fingerprint is PR #27's; replay passes against the committed traces; every scene ratchet holds.
+
+implemented_by: 6474469 (first cut: silhouette-only ink_edge with world-anchored weight, the near value push, the D-019 gate checks, STYLE §3/§6, darwin goldens), c917b0f (review fixes: the two-surfaces silhouette test, whole-pixel steps, same-value never-break, mist tops, inward ragged push, grazing camera and the gate's added checks)

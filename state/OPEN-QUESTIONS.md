@@ -1078,6 +1078,40 @@ Disclosed weaknesses:
      "player has 3 lives" in the playbook passes, as it would in the pack (OQ-053).
 status: PROVISIONAL
 
+## OQ-068 — D-019 (ink edge, value range): the builder's calls, and what the change still cannot do
+raised: 2026-11-10 by ink-refine (claim INK-REFINE). Tim ruled gaps ONE and TWO; everything below is the builder's.
+An independent review (four lenses, each finding adversarially verified: 15 confirmed, 1 refuted) ran before the
+push; items 4-7 are what it found that is NOT fixed.
+took, each PROVISIONAL:
+1. **A silhouette is "two surfaces that do not meet", not "a big depth jump".** The first cut (a neighbour 1.2x
+   farther) inked a flat top seen at a grazing angle and missed small step-downs between tops (gym stair treads
+   merged into one sheet from above): both found by the review. Built instead: each side of a pixel boundary is
+   continued from its own two depth samples (1/z is linear across a plane); a line is drawn only if they stay
+   apart by 2% between the pixels. One plane at any angle gives 0, a crease's planes meet, a step-down is a gap.
+2. **The stroke never breaks where the two forms are shown at the SAME value** (one platform top against the next
+   one down). The seed lets its line break anywhere; here that edge is the only sign of where the ground ends.
+   Adjacent values (a mist top against paper sky) may break: value still separates them.
+3. **An undressed box has a mist-pale top and stone-mid faces; a tagged pad or a moving platform has a paper top.**
+   Forced by ONE: with creases no longer outlined, a one-value box has no top. Only paper and mist are exempt
+   from the near push, and a walkable top must never be pushed. Cost: beyond 25 u a paper pad or platform top
+   against paper sky has no edge at all (no line on distant forms, by ruling; no value difference). Static
+   ground is mist, so it keeps one step against the sky at any distance.
+4. **KNOWN LIMIT, not fixed: the near push is per pixel by camera distance.** On one long flat wall its three
+   steps are camera-relative bands that slide as the camera moves. Three octaves of world-anchored noise rag
+   their edges; they are still bands. STYLE §9 item 9 forbids a gradient within a single form, and this is a
+   stepped one. The fix that respects flat fill is a push per FORM (one value per mesh, from its distance): B-43.
+   Tim to judge in motion whether the per-pixel push is acceptable meanwhile.
+5. **KNOWN GATE LIMIT: stroke weight is judged on a pooled histogram** (a 1px hairline share and a 2px+ share).
+   A line of constant weight per distance tier that still breaks would pass. Judging one tier alone was tried:
+   the harness cameras sit ~15 u out and leave 5-86 measurable px per level.
+6. **KNOWN GATE LIMIT: the grazing-ground check is judged on dressed levels only.** An undressed level can have
+   dark material lying on the ground (a hazard pad), which the check cannot tell from a drawn line; it is
+   reported there (0.0-1.6%).
+7. **Not addressed:** on some steep silhouettes the hairline is dotted at a one-pixel period (review, low).
+8. **STYLE-BIBLE amended in place under D-019** (§1, §3, §6). The never-break exception (item 2) is in §6's text
+   and is the builder's, not the seed's: marked PROVISIONAL there.
+status: PROVISIONAL
+
 ## OQ-067 — CH1-ASSETS: chapter 1's real asset set. Where the brief, the level and the Style Bible disagree
 raised: 2026-11-09 by ch1-assets (claim CH1-ASSETS). Tim chose pipeline-first over concept-art-first (2026-11-09).
 took, each PROVISIONAL:
@@ -1306,3 +1340,44 @@ obstaclesOf filters them and the harness uses physics.castRay. This is within Ti
 authorization to fix confirmed issues. Promote to the existing backlog item: separate
 visual geometry from arm collision and test render-only rear-beam rejection. Publication
 remains conditional on an independently clean review.
+
+## OQ-069 — PR 29 could not go green on goldens alone: the level jobs time out, and the cause is a harness defect
+raised: 2026-11-10 by ink-refine (claim INK-REFINE), resuming from state/HANDOFF-INK.md.
+status: PROVISIONAL
+The handoff said PR 29 needed only its Linux goldens, and that 02-cliff-seam and 03-drifting-stones were
+"cancelled by the runner". They were not. Run 42861208215, both attempts: 02-cliff-seam was cut at the level
+job's own `timeout-minutes: 20` (started 17:26:44Z, cancelled 17:47:00Z, mid phase-sweep segment 4 of 5), so it
+never uploaded actuals, and a third rerun would end the same way. Every other level passed everything except
+`visual`, but took 9.6-17.1 min where PR #27's last run (42844946239) took 7.5-10.5.
+found:
+- `__HARNESS__.step(frame, render)` called `advance(1, render ? 1 : 0)`, and `advance` always draws the last
+  frame of a batch. With n = 1 the last frame is every frame, so `step(frame, false)` drew every tick and the
+  bot's `renderEvery: 30` ("render a frame every N ticks") never took effect. This is on main and predates D-019.
+- That is why phase-sweep was 70-84% of a level job (B-26), and why D-019's heavier fragment shader (8 directions
+  x up to 6 depth reads, four value-noise lookups per near pixel) multiplied it under SwiftShader: phase-sweep
+  334.8 -> 429.7 s on 00-gym (1.3x), 385.7 -> 788.4 s on 03-drifting-stones (2.0x), 331.8 s -> over 1036 s on
+  02-cliff-seam (over 3.1x, unfinished).
+took, each PROVISIONAL:
+1. **Fix the defect in PR 29, in `src/main.ts` only.** `step()` now passes its `render` flag through, so a tick
+   the bot did not ask to see is not drawn. PR 29 cannot be made green without it or something like it, and it is
+   the only option that needs no new number. `advance()` keeps its draw-the-final-frame rule for every other
+   caller: `counters`, `visual`, `accent` and `post` read the frame it leaves.
+2. **Proof that the simulation did not move:** 02-cliff-seam and 03-drifting-stones (moving hazards and
+   platforms) played before and after; the two harness reports differ in durations and in nothing else (every
+   check, arrival tick and position, sweep cell and replay result identical), and the darwin goldens pass
+   unchanged. No trace was re-recorded. Full playtest after: PASS, 229 s (the handoff gives about 12 min before).
+3. **Not taken: raising the 20-minute timeout.** There is no measured time for 02-cliff-seam at D-019 to set it
+   from (it never finished), and it would have hidden a 2-3x CI regression instead of removing its cause.
+4. **Not taken: making the D-019 shader cheaper.** `src/engine/ink-post.ts` and `src/engine/renderer.ts` are
+   owned by session a1 (Tim, 2026-11-10: blocky low-resolution output and frame rate at real display sizes).
+   What this run adds to that work: the pass's cost has never been measured on a GPU; MEASUREMENTS has no
+   frame time for D-018 or D-019. Under SwiftShader at 640x360, with a frame drawn per tick, D-019 made a walk
+   1.3x (00-gym) to 2.0x slower than D-018, and over 3.1x on 02-cliff-seam.
+5. **Left as it was: `replay.ts:58` and `chaos.ts:87`** (`advance(1, 60)`, same defect, small): B-44.
+6. **Linux goldens come from two runs:** 00, 01, 03, 04 from 42861208215's actuals (24 cameras, worst 0.010%
+   against darwin at pixelmatch 0.1); 02-cliff-seam from the first run after this fix, which is the first run
+   in which that level finishes.
+7. **PR 29's base: nothing for this session to do.** PR #27 merged at 17:45:01Z and `ch1-assets` was not
+   deleted, so GitHub did not retarget PR 29 by itself; the PR's timeline shows its base changed to main at
+   17:48:08Z from Tim's account. An earlier draft of this entry said this session retargeted it. It did not: by
+   the time it tried, the base was already main. PR #27 itself was not touched.
