@@ -1183,4 +1183,4 @@ Tim's call (Q2b: on measured evidence only; the evidence is the first render and
 (this one has constant weight), the §7 figure (B-33). **Accent:** the hue is untouched, as instructed; the ink
 outline lowers ACCENT_AREA (ch1 0.103-0.243%, floor 0.0204%). To be re-judged with grain and edge in place.
 
-implemented_by: 32e6ca5 (§1 material/light purge, ink-post.ts, harness `post` stage, kit re-valuing, dress-01 --check in lint:levels, darwin goldens)
+implemented_by: 57c8c3c (§1 material/light purge, ink-post.ts, harness `post` stage, kit re-valuing, dress-01 --check in lint:levels, darwin goldens)
