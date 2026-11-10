@@ -23,5 +23,9 @@ case "$n" in
   pine)    set -- --match "assets/hero/input/$n.png" --elev 40 --tint 383838 --pin-median ;;
   *)       set -- --match "assets/hero/input/$n.png" --elev 25 --tint 827d76 --pin-median ;;
 esac
-node tools/gen/process.mjs "$raw/$n.glb" "assets/hero/$n.glb" "$@" --stats "assets/build/gen/out/$n.stats.json" || exit 1
-node tools/gen/render-glb.mjs "assets/hero/$n.glb" "assets/build/gen/out/$n.views.png" --size 420 --views 0,35,90,215
+# a2's importer (D-020) reads every assets/hero/*.glb as a shippable static hero asset, so a model
+# that should not ship is kept one level down, out of its glob.
+out="assets/hero/$n.glb"
+[ "$n" = pine ] && { mkdir -p assets/hero/rejected; out="assets/hero/rejected/$n.glb"; }
+node tools/gen/process.mjs "$raw/$n.glb" "$out" "$@" --stats "assets/build/gen/out/$n.stats.json" || exit 1
+node tools/gen/render-glb.mjs "$out" "assets/build/gen/out/$n.views.png" --size 420 --views 0,35,90,215

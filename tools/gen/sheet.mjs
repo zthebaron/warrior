@@ -33,8 +33,23 @@ for (const [r, a] of assets.entries()) {
   const strip = join(tmp, `${a.name}.png`), clay = join(tmp, `${a.name}.clay.png`);
   for (const [dst, extra] of [[strip, ['--views', '35,215,90', '--modes', 'unlit']], [clay, ['--views', '35', '--modes', 'clay']]]) {
     const pose = a.clip ? ['--clip', a.clip, '--time', String(a.time ?? 0)] : []; // a rigged model is shown mid-clip
-    const res = spawnSync(process.execPath, [join(HERE, 'render-glb.mjs'), glb, dst, '--size', String(CELL), '--elev', '12', ...extra, ...pose], { encoding: 'utf8' });
-    if (res.status !== 0) { console.error(`ERROR rendering ${a.name}: ${res.stderr}`); process.exit(1); }
+    // The software renderer has once returned an empty frame for a model that renders fine on the
+    // next try, so a cell that is nothing but paper is retried, and is an error if it stays empty.
+    let drawn = false;
+    for (let attempt = 0; attempt < 3 && !drawn; attempt++) {
+      const res = spawnSync(process.execPath, [join(HERE, 'render-glb.mjs'), glb, dst, '--size', String(CELL), '--elev', '12', ...extra, ...pose], { encoding: 'utf8' });
+      if (res.status !== 0) { console.error(`ERROR rendering ${a.name}: ${res.stderr}`); process.exit(1); }
+      const cells = extra[1].split(',').length;
+      drawn = true;
+      for (let c = 0; c < cells; c++) {
+        // (sharp's stats() reads the whole input and ignores extract, so the cell is read out raw)
+        const px = await sharp(dst).extract({ left: c * CELL, top: 0, width: CELL, height: CELL }).removeAlpha().raw().toBuffer();
+        let lo = 255, hi = 0;
+        for (let i = 0; i < px.length; i += 3) { if (px[i] < lo) lo = px[i]; if (px[i] > hi) hi = px[i]; }
+        if (hi - lo < 8) drawn = false;
+      }
+    }
+    if (!drawn) { console.error(`ERROR ${a.name}: a rendered cell is empty after 3 tries`); process.exit(1); }
   }
   layers.push({ input: text(W, LABEL, `${a.name}   ${a.triangles_after.toLocaleString()} tris   ${a.verdict}`, 24, 700), left: 0, top });
   layers.push({ input: await sharp(join(ROOT, 'assets/hero', a.input)).resize({ width: CELL, height: CELL, fit: 'contain', background: PAPER }).flatten({ background: PAPER }).png().toBuffer(), left: 0, top: top + LABEL });

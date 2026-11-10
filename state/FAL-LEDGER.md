@@ -51,3 +51,6 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 40 | 2026-11-10T19:16:01Z | fal-ai/meshy/rigging | auto-rig: warrior (Meshy; page lists 0.20, pricing API 0.80, booked at 0.80) | $0.8000 | $0.8000 | 01a1c6e3-846c-70d1-9cfa-a6a4bdf42a32 | done | $6.1860 |
 | 41 | 2026-11-10T19:18:40Z | fal-ai/nano-banana | input image: pine v7 (chunky dome pads, seen from above) | $0.0398 | $0.0398 | 01a1c6e5-f0e8-70c3-8fae-f17e7562d4e0 | done | $6.2258 |
 | 42 | 2026-11-10T19:19:11Z | fal-ai/trellis | trellis test: pine7 | $0.0200 | $0.0200 | 01a1c6e6-694f-70d2-b702-5eab4aebcc43 | done | $6.2458 |
+| 43 | 2026-11-10T19:27:00Z | fal-ai/nano-banana/edit | input image: cliff variant b (optional asset) | $0.0398 | $0.0398 | 01a1c6ed-921e-7581-b639-eec41ae1baa6 | done | $6.2856 |
+| 44 | 2026-11-10T19:27:33Z | fal-ai/trellis | trellis test: cliff_b | $0.0200 | $0.0200 | 01a1c6ee-11fa-7a61-9a8c-eaec4046aa87 | done | $6.3056 |
+| 45 | 2026-11-10T19:28:23Z | fal-ai/hunyuan3d-v3/image-to-3d | final: cliff_b (Normal + PBR) | $0.5250 | $0.5250 | 01a1c6ee-d88e-7683-a2a2-b61b3d9b93c7 | done | $6.8306 |
