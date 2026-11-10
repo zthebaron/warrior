@@ -1377,6 +1377,7 @@ took, each PROVISIONAL:
 6. **Linux goldens come from two runs:** 00, 01, 03, 04 from 42861208215's actuals (24 cameras, worst 0.010%
    against darwin at pixelmatch 0.1); 02-cliff-seam from the first run after this fix, which is the first run
    in which that level finishes.
-7. **PR 29's base.** PR #27 merged at 17:45Z but `ch1-assets` was not deleted, so GitHub did not retarget
-   PR 29. Retargeted by hand to main (`gh pr edit 29 --base main`): its old base is a merged branch that
-   nothing will ever merge again. PR #27 itself was not touched.
+7. **PR 29's base: nothing for this session to do.** PR #27 merged at 17:45:01Z and `ch1-assets` was not
+   deleted, so GitHub did not retarget PR 29 by itself; the PR's timeline shows its base changed to main at
+   17:48:08Z from Tim's account. An earlier draft of this entry said this session retargeted it. It did not: by
+   the time it tried, the base was already main. PR #27 itself was not touched.

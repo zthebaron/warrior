@@ -923,6 +923,19 @@ CI, Linux SwiftShader, 640x360, seconds per stage. PR #27 head 164c9fb is D-018 
 | 03-drifting-stones | 52.6 | 104.7 | 385.7 | 788.4 | 17.1 min |
 | 04-summit-ridge | 45.4 | 87.0 | 379.0 | 746.2 | 15.6 min |
 
+CI after the fix, same D-019 shader, head 5b7b11f (run 42872162141). Every stage passed on every level; the
+only failure was 02-cliff-seam's `visual`, against Linux goldens it had never been able to produce:
+
+| Level | nav | phase-sweep | chaos | level job |
+|---|---|---|---|---|
+| 00-gym | 7.5 | 47.9 | 25.1 | 2.8 min |
+| 01-lower-stair | 4.1 | 37.1 | 18.6 | 2.3 min |
+| 02-cliff-seam | 7.8 | 61.0 | 22.7 | 3.1 min |
+| 03-drifting-stones | 5.8 | 29.8 | 31.4 | 2.3 min |
+| 04-summit-ridge | 7.0 | 51.8 | 22.4 | 2.9 min |
+
+chaos is now the same order as phase-sweep: it still draws every tick (B-44).
+
 Local, darwin SwiftShader, D-019 head, the same commit before and after the fix:
 
 | | nav before | nav after | phase-sweep before | phase-sweep after | level before | level after |
