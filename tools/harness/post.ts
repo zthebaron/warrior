@@ -99,9 +99,9 @@ export const PAINT_GATE = {
   undrawn: 'undrawn:',   // name prefix of the hidden mesh an undrawn collider keeps (src/loaders/level.ts UNDRAWN)
   wall: 'cliff:',        // name prefix of the painted wall's cards (src/loaders/cliff-wall.ts)
   minDarkShare: 0.04,    // of the pixels where the undrawn rock would be seen, dark MASS in the player's frame:
-                         // 0.1% with the wall lifted away, 8.6% shipped
-  minRockCovered: 0.9,   // of the pixels where the undrawn rock would be seen, drawn over by something: 13.6%
-                         // with the wall lifted away (the mid cliffs behind it), 100% shipped
+                         // 0.1% with the wall lifted away, 8.5% shipped
+  minRockCovered: 0.9,   // of the pixels where the undrawn rock would be seen, drawn over by something: 11.8%
+                         // with the wall lifted away (the mid cliffs behind it), 99.9% shipped
 };
 
 export async function post(ctx: Ctx): Promise<StageResult> {

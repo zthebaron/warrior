@@ -15,6 +15,7 @@
 //            The sources hold black under alpha 0; a texture filter or a mipmap averages colour across the
 //            cut, and black there would draw a dark fringe round every pale wash
 //   wash     a wash card is ONE flat colour (ink-black) with the ink's density in alpha, as its source is cut
+//   foot     a cliff card's lowest tenth fades out, so it never ends in a straight edge
 //
 // Which source ships, and at what size, is CARDS. Every number is in MEASUREMENTS.md "D-021 painted cards".
 import { createRequire } from 'node:module';
@@ -62,13 +63,18 @@ export const CARDS = {
 export const PATH_WASH = {
   out: 'path_wash',
   size: [1024, 256],   // px: along the stroke, across it
-  streak: [128, 2],    // px: the length and the thickness of one bristle's mark
+  streak: [96, 2],     // px: the length and the thickness of one bristle's mark
   patch: [256, 32],    // px: the patches where the brush still held ink
   bristle: 0.45,       // how much less ink the driest row of bristles holds than the wettest
-  floor: 0.6,          // this share of the texels, the lightest, stay bare paper
-  ink: 0.085,          // alpha of the strongest streak: about 15 of 255 below the paper
+  floor: 0.72,         // this share of the texels, the lightest, stay bare paper
+  ink: 0.06,           // alpha of the strongest streak: about 10 of 255 below the paper
   seed: 11,
 };
+
+// The lowest share of a cliff card's height fades out to nothing. The paintings' own feet fade as painted, but
+// not everywhere (cliff_c stands on a rock that runs off the sheet), and a card that ends in a straight edge
+// shows it wherever its foot is seen from above. With this no cliff card has a bottom edge.
+const FOOT = { cliff_a: 0.1, cliff_b: 0.1, cliff_c: 0.1 };
 
 /** A texel below this alpha (of 255) carries no colour worth keeping: the sources fade to black there. */
 const COLOUR_ALPHA = 8;
@@ -155,6 +161,14 @@ export function buildCard(name) {
     px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2];
   }
   if (meta.cut !== 'wash') bleed(px, w, h);
+  const foot = FOOT[name];
+  if (foot) {
+    const rows = Math.round(h * foot);
+    for (let y = h - rows; y < h; y++) {
+      const t = (h - 1 - y) / rows, k = t * t * (3 - 2 * t); // 0 at the bottom row, 1 where the fade starts
+      for (let x = 0; x < w; x++) px[(y * w + x) * 4 + 3] *= k;
+    }
+  }
   const png = new PNG({ width: w, height: h });
   for (let i = 0; i < px.length; i++) png.data[i] = Math.max(0, Math.min(255, Math.round(px[i])));
   return { png, stats };

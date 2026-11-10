@@ -6,14 +6,20 @@
 // Three rows of cards, all parallel to the path and facing it, at three depths, so they slide against each
 // other as the camera walks (Q2a: parallax is perspective, nothing translates):
 //
-//   front   one buttress per mass, a capsule's radius behind the most forward point of its collision: a figure
-//           standing against the rock never crosses the card, and the rock is never more than that in front of
-//           the painting. Narrow enough that the bays show between them.
-//   bay     one per join between two masses, behind the deepest point of the pocket there. Where the masses
-//           stand further apart than a bay card is wide there is no rock at the path's height (chapter 1 has
-//           one such gap): no bay card stands there, and the cleft is left open to the back row.
-//   back    one per second mass, taller, further out: the skyline. Beyond the camera's reach behind the wall.
-//   pine    on every second front card, rooted on its face and reaching past its edge. Drawn after its row.
+//   front   three small buttresses per mass, just behind the most forward point of its collision: the rock is
+//           never in front of the painting. Small and uneven in height: from the player's camera, which looks ALONG the
+//           wall, a card is seen at a grazing angle, so a large one is a few strokes blown up into a smear and a
+//           tall one has no top in the frame. These have a crest the camera can see. They overlap by more than
+//           half, so the row is closed at the path's height: a hazard that slides into a pocket of the rock
+//           (chapter 1's sliding stones turn inside it) goes behind the painting, as it went behind the slab.
+//   bay     one per join between two masses, behind the deepest point of the pocket there, rising over the
+//           front row. Where the masses stand further apart than a bay card is wide there is no rock at the
+//           path's height (chapter 1 has one such gap): no bay card stands there.
+//   back    one per second mass, the tallest, furthest out: the skyline. Beyond the camera's reach behind the wall.
+//   pine    on every second mass, rooted on a ledge of its tallest front card, a few u above the path.
+//
+// Each row further back is laid down a little thinner (§3: nearer is darker), which is what tells the rows
+// apart, and the wall's two ends stand lower, so it falls away to the path instead of stopping at a cut.
 //
 // Every card is a plane on the paint layer (unlit, drawn after the ink pass). Cards are blended and write no
 // depth, so the draw order is explicit and fixed: back row, bay row, front row, pines, all after the mist
@@ -43,49 +49,72 @@ export interface RockMass {
 
 interface CardStyle { card: string; width: number; height: number; mirror: boolean }
 interface BackStyle extends CardStyle { dx: number; dz: number }
-/** root: where the pine's root is in its own image; at: where that root sits on the host card (both 0..1 from the left and the foot, before mirroring) */
-interface PineStyle { card: string; width: number; mirror: boolean; root: [number, number]; at: [number, number] }
+/** root: where the pine's root is in its own image (0..1 from the left and the foot, before mirroring) */
+interface PineStyle { card: string; width: number; mirror: boolean; root: [number, number] }
 
 export const CLIFF_WALL = {
-  /** u behind the collision's most forward point: the player's capsule radius (0.35) plus 0.1 */
-  frontBehind: 0.45,
+  // u behind the collision's most forward point (z -3.58 in chapter 1). Between two things: a torii's post
+  // stands with its outer face 0.02 behind that point, and a card level with it bleeds into the post's edge
+  // (the paint gate's accent check went red at 0.05); a sliding stone turns inside the rock with its front
+  // face 0.42 behind it, and must go behind the painting as it went behind the slab. A figure pressed into
+  // the rock can cross a card this close; it is drawn over every card (paint-layer.ts paintLast).
+  frontBehind: 0.2,
   /** u below a mass's base where a front card's foot stands; the painted foot fades out under the path */
-  frontFoot: 7,
-  // Front cards, cycled by mass index. width, height: u (a mass is 8.6 wide, its path 2 above its base).
-  // The cycle is 5 long against 3 paintings, so a painting meets itself at the same size and the same way
-  // round only every 15 masses.
+  frontFoot: 5,
+  /** u along the path from a mass's centre where its three front cards stand (a mass is 8.6 wide, the next 8.5 to 9 on) */
+  frontAt: [-2.9, 0, 2.9],
+  // Front cards, cycled card by card. width, height: u (the path is 2 above a mass's base, so these stand 6 to
+  // 14 above it). The cycle is 7 long against 3 paintings and 3 cards a mass: no two neighbours are the same
+  // painting at the same size the same way round.
   front: [
-    { card: 'cliff_b', width: 10.5, height: 26, mirror: false },
-    { card: 'cliff_a', width: 9.5, height: 30, mirror: true },
-    { card: 'cliff_c', width: 11, height: 24, mirror: false },
-    { card: 'cliff_b', width: 10, height: 29, mirror: true },
-    { card: 'cliff_a', width: 10.5, height: 25, mirror: false },
+    { card: 'cliff_b', width: 7, height: 15, mirror: false },
+    { card: 'cliff_a', width: 6.5, height: 19, mirror: true },
+    { card: 'cliff_c', width: 8, height: 14, mirror: false },
+    { card: 'cliff_a', width: 7, height: 21, mirror: false },
+    { card: 'cliff_b', width: 7.5, height: 17, mirror: true },
+    { card: 'cliff_c', width: 7.5, height: 20, mirror: true },
+    { card: 'cliff_b', width: 6.5, height: 13, mirror: false },
   ] as CardStyle[],
-  /** u behind the front cards: past the deepest pocket between two masses (2.0 behind the forward point) */
-  bayBehind: 2.2,
+  /** u behind the front cards: well past the deepest pocket between two masses (2.0 behind the forward point),
+   *  far enough that the bay row slides visibly against the front row from the player's camera */
+  bayBehind: 5,
   bayFoot: 9,
   /** masses further apart than this (centre to centre, u) have no rock between them at the path's height */
   bayMaxGap: 10,
+  // Bay cards. Uneven on purpose: the low ones stand 9 to 13 above the path, so from the player's camera the
+  // wall has a top, and paper shows over it between the tall ones.
   bay: [
-    { card: 'cliff_c', width: 15, height: 40, mirror: true },
-    { card: 'cliff_a', width: 14, height: 46, mirror: false },
-    { card: 'cliff_b', width: 16, height: 38, mirror: true },
+    { card: 'cliff_c', width: 12, height: 24, mirror: true },
+    { card: 'cliff_a', width: 14, height: 40, mirror: false },
+    { card: 'cliff_b', width: 10, height: 20, mirror: true },
+    { card: 'cliff_a', width: 12, height: 32, mirror: true },
   ] as CardStyle[],
-  // Back cards, one per second mass. dx: u along the path from the mass; dz: u behind the front cards
-  // (the camera's arm is 7 long, so 8 or more behind the wall is beyond it).
+  // Back cards, one per second mass: towers with paper between their tops, the skyline. dx: u along the path
+  // from the mass; dz: u behind the front cards (the camera's arm is 7 long, so 10 or more is beyond it).
   backEvery: 2,
   backFoot: 12,
   back: [
-    { card: 'cliff_c', width: 30, height: 60, mirror: true, dx: 5, dz: 8 },
-    { card: 'cliff_a', width: 28, height: 68, mirror: false, dx: 4, dz: 11 },
-    { card: 'cliff_b', width: 29, height: 58, mirror: true, dx: 5, dz: 9 },
+    { card: 'cliff_c', width: 26, height: 56, mirror: true, dx: 5, dz: 11 },
+    { card: 'cliff_a', width: 20, height: 46, mirror: false, dx: 4, dz: 14 },
+    { card: 'cliff_b', width: 28, height: 64, mirror: true, dx: 5, dz: 12 },
   ] as BackStyle[],
-  // Pines, on every second front card.
+  /** how much of the painting's ink each row lays down: the front in full, each row behind it thinner */
+  ink: { front: 1, bay: 0.88, back: 0.72, pine: 1 },
+  // The height of the cards on the wall's first and last masses, from the end inward, as a share of their own:
+  // the rows behind fall away to the path; the front row hardly, or the thinner rows behind show over it.
+  taper: { front: [0.85, 0.95], bay: [0.55, 0.75, 0.9], back: [0.5, 0.7, 0.88] },
+  // Where a pine roots on each cliff painting: a ledge of that painting (0..1 from its left and its foot),
+  // mirrored with the card. On the mass's tallest front card this is 1 to 7 above the path.
+  ledge: { cliff_a: [0.2, 0.58], cliff_b: [0.7, 0.65], cliff_c: [0.4, 0.46] } as Record<string, [number, number]>,
+  // Pines, on every second mass from the second (the first stands beside the spawn camera, where a card is
+  // seen so nearly edge-on that a pine on it is a smear), rooted on the ledge of its tallest front card.
   pineEvery: 2,
+  pineFrom: 1,
   pines: [
-    { card: 'pine_a', width: 7, mirror: false, root: [0.08, 0.1], at: [0.86, 0.5] },
-    { card: 'pine_c', width: 6, mirror: true, root: [0.12, 0.86], at: [0.16, 0.62] },
-    { card: 'pine_b', width: 6.5, mirror: false, root: [0.84, 0.08], at: [0.55, 0.44] },
+    { card: 'pine_a', width: 7, mirror: false, root: [0.08, 0.1] },
+    { card: 'pine_b', width: 6.5, mirror: false, root: [0.84, 0.08] },
+    { card: 'pine_c', width: 6, mirror: true, root: [0.12, 0.86] },
+    { card: 'pine_a', width: 7.5, mirror: true, root: [0.08, 0.1] },
   ] as PineStyle[],
   /** draw order: the first mesh of each row; each further mesh of the row adds one. All after the backdrop's mist sheets. */
   order: { back: 100, bay: 200, front: 300, pine: 400 },
@@ -117,25 +146,34 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
   };
 
   const sorted = [...masses].sort((a, b) => a.x - b.x);
+  let fi = 0; // front cards placed so far: the front cycle runs card by card
   sorted.forEach((m, i) => {
     const frontZ = m.frontZ - W.frontBehind;
-    const f = W.front[i % W.front.length]!;
-    plane('front', f, m.x, m.baseY - W.frontFoot, frontZ, 0.5, 0);
+    const end = Math.min(i, sorted.length - 1 - i); // how far this mass is from the nearer end of the wall
+    const tall = <T extends { height: number }>(s: T, row: keyof typeof W.taper): T => ({ ...s, height: s.height * (W.taper[row][end] ?? 1) });
+
+    let host: { x: number; s: CardStyle } | null = null;
+    for (const dx of W.frontAt) {
+      const f = tall(W.front[fi++ % W.front.length]!, 'front');
+      plane('front', f, m.x + dx, m.baseY - W.frontFoot, frontZ, 0.5, 0);
+      if (!host || f.height > host.s.height) host = { x: m.x + dx, s: f };
+    }
 
     const n = sorted[i + 1];
     if (n && n.x - m.x <= W.bayMaxGap) {
-      const b = W.bay[i % W.bay.length]!;
+      const b = tall(W.bay[i % W.bay.length]!, 'bay');
       plane('bay', b, (m.x + n.x) / 2, Math.min(m.baseY, n.baseY) - W.bayFoot, Math.min(m.frontZ, n.frontZ) - W.frontBehind - W.bayBehind, 0.5, 0);
     }
     if (i % W.backEvery === 0) {
-      const b = W.back[(i / W.backEvery) % W.back.length]!;
+      const b = tall(W.back[(i / W.backEvery) % W.back.length]!, 'back');
       plane('back', b, m.x + b.dx, m.baseY - W.backFoot, frontZ - b.dz, 0.5, 0);
     }
-    if (i % W.pineEvery === 0) {
-      const p = W.pines[(i / W.pineEvery) % W.pines.length]!;
+    if (i >= W.pineFrom && (i - W.pineFrom) % W.pineEvery === 0 && host) {
+      const p = W.pines[((i - W.pineFrom) / W.pineEvery) % W.pines.length]!;
       const height = p.width / cardAspect(p.card);
-      // the host card's point `at`, in the world; the pine's own root goes there
-      const hx = m.x + (p.at[0] - 0.5) * f.width, hy = m.baseY - W.frontFoot + p.at[1] * f.height;
+      // the host painting's ledge, in the world (mirrored with the card); the pine's own root goes there
+      const [lu, lv] = W.ledge[host.s.card] ?? [0.5, 0.6];
+      const hx = host.x + ((host.s.mirror ? 1 - lu : lu) - 0.5) * host.s.width, hy = m.baseY - W.frontFoot + lv * host.s.height;
       const rx = p.mirror ? 1 - p.root[0] : p.root[0];
       plane('pine', { card: p.card, width: p.width, height, mirror: p.mirror }, hx, hy, frontZ, rx, p.root[1]);
     }
@@ -150,7 +188,7 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
     geo.setIndex(b.idx);
     geo.computeVertexNormals();
-    const mat = paintMaterial({ map: cardTexture(b.card), wash: true });
+    const mat = paintMaterial({ map: cardTexture(b.card), opacity: W.ink[b.row], wash: true });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.name = `cliff:${b.row}`;
     mesh.renderOrder = next[b.row]++;

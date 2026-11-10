@@ -25,8 +25,8 @@ export interface WalkTop {
 
 export const PATH_WASH = {
   card: 'path_wash',
-  /** u of world the card covers before it repeats: along the path (x), across it (z). 64 px a unit both ways. */
-  repeat: [16, 4],
+  /** u of world the card covers before it repeats: along the path (x), across it (z). 43 px a unit both ways. */
+  repeat: [24, 6],
 } as const;
 
 /** The wash over these tops. Static: built once, never moved. */

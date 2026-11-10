@@ -121,8 +121,8 @@
       "triangles": 68562
     },
     "01-lower-stair": {
-      "draw_calls": 140,
-      "triangles": 381066
+      "draw_calls": 127,
+      "triangles": 287036
     },
     "02-cliff-seam": {
       "draw_calls": 94,
@@ -158,15 +158,15 @@
   "cards": {
     "cliff_a": {
       "px": 2048,
-      "bytes": 1850260
+      "bytes": 1847913
     },
     "cliff_b": {
       "px": 2048,
-      "bytes": 2144587
+      "bytes": 2144122
     },
     "cliff_c": {
       "px": 2048,
-      "bytes": 2474109
+      "bytes": 2472500
     },
     "mist_a": {
       "px": 1024,
@@ -178,7 +178,7 @@
     },
     "path_wash": {
       "px": 1024,
-      "bytes": 10368
+      "bytes": 9234
     },
     "peaks_a": {
       "px": 1024,
