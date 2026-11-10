@@ -1078,6 +1078,40 @@ Disclosed weaknesses:
      "player has 3 lives" in the playbook passes, as it would in the pack (OQ-053).
 status: PROVISIONAL
 
+## OQ-068 — D-019 (ink edge, value range): the builder's calls, and what the change still cannot do
+raised: 2026-11-10 by ink-refine (claim INK-REFINE). Tim ruled gaps ONE and TWO; everything below is the builder's.
+An independent review (four lenses, each finding adversarially verified: 15 confirmed, 1 refuted) ran before the
+push; items 4-7 are what it found that is NOT fixed.
+took, each PROVISIONAL:
+1. **A silhouette is "two surfaces that do not meet", not "a big depth jump".** The first cut (a neighbour 1.2x
+   farther) inked a flat top seen at a grazing angle and missed small step-downs between tops (gym stair treads
+   merged into one sheet from above): both found by the review. Built instead: each side of a pixel boundary is
+   continued from its own two depth samples (1/z is linear across a plane); a line is drawn only if they stay
+   apart by 2% between the pixels. One plane at any angle gives 0, a crease's planes meet, a step-down is a gap.
+2. **The stroke never breaks where the two forms are shown at the SAME value** (one platform top against the next
+   one down). The seed lets its line break anywhere; here that edge is the only sign of where the ground ends.
+   Adjacent values (a mist top against paper sky) may break: value still separates them.
+3. **An undressed box has a mist-pale top and stone-mid faces; a tagged pad or a moving platform has a paper top.**
+   Forced by ONE: with creases no longer outlined, a one-value box has no top. Only paper and mist are exempt
+   from the near push, and a walkable top must never be pushed. Cost: beyond 25 u a paper pad or platform top
+   against paper sky has no edge at all (no line on distant forms, by ruling; no value difference). Static
+   ground is mist, so it keeps one step against the sky at any distance.
+4. **KNOWN LIMIT, not fixed: the near push is per pixel by camera distance.** On one long flat wall its three
+   steps are camera-relative bands that slide as the camera moves. Three octaves of world-anchored noise rag
+   their edges; they are still bands. STYLE §9 item 9 forbids a gradient within a single form, and this is a
+   stepped one. The fix that respects flat fill is a push per FORM (one value per mesh, from its distance): B-43.
+   Tim to judge in motion whether the per-pixel push is acceptable meanwhile.
+5. **KNOWN GATE LIMIT: stroke weight is judged on a pooled histogram** (a 1px hairline share and a 2px+ share).
+   A line of constant weight per distance tier that still breaks would pass. Judging one tier alone was tried:
+   the harness cameras sit ~15 u out and leave 5-86 measurable px per level.
+6. **KNOWN GATE LIMIT: the grazing-ground check is judged on dressed levels only.** An undressed level can have
+   dark material lying on the ground (a hazard pad), which the check cannot tell from a drawn line; it is
+   reported there (0.0-1.6%).
+7. **Not addressed:** on some steep silhouettes the hairline is dotted at a one-pixel period (review, low).
+8. **STYLE-BIBLE amended in place under D-019** (§1, §3, §6). The never-break exception (item 2) is in §6's text
+   and is the builder's, not the seed's: marked PROVISIONAL there.
+status: PROVISIONAL
+
 ## OQ-067 — CH1-ASSETS: chapter 1's real asset set. Where the brief, the level and the Style Bible disagree
 raised: 2026-11-09 by ch1-assets (claim CH1-ASSETS). Tim chose pipeline-first over concept-art-first (2026-11-09).
 took, each PROVISIONAL:

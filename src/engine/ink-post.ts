@@ -5,12 +5,14 @@
 //                      camera: near < 25u, mid 25-80u, far 80u+), so a band holds its range wherever the
 //                      camera walks (OQ-067 item 2 is why this cannot be baked into assets). Every non-accent,
 //                      non-robe pixel is snapped to a §2 ramp step on the way: the frame stays on the palette.
-//                        near: PUSHED DARK with nearness (D-019): every step but paper moves up to +3 steps
-//                              darker inside ~7u, +2 to ~13u, +1 to ~19u, 0 beyond. The seed drives its
-//                              nearest cliff to ink-black as MASS; a render that keeps the near field in the
-//                              middle of the ramp has no value range. The three boundaries are ragged by
-//                              world-anchored noise, so they read as wash edges, not rings round the camera.
-//                              Paper is never touched: the path top is bare paper at any distance.
+//                        near: PUSHED DARK with nearness (D-019): steps 2..7 move up to +3 steps darker inside
+//                              12u at most, +2 to 20u, +1 to 24.9u, 0 beyond. The seed drives its nearest cliff
+//                              to ink-black as MASS; a render that keeps the near field in the middle of the
+//                              ramp has no value range. Each boundary is pulled inward by three octaves of
+//                              world-anchored noise, so its edge is ragged at brush scale. KNOWN LIMIT
+//                              (OQ-068): the push is per pixel by distance, so on one long flat wall the
+//                              bands are still camera-relative and slide as the camera moves.
+//                              Paper and mist are never pushed: a path top and the cloud keep their value.
 //                        mid:  i <= 2 ? i : 2 + floor(3(i-2)/5)   never darker than it was, never darker
 //                              than ink-grey: ink-black -> ink-grey, ink-deep -> wash-mid, the lights stay
 //                        far:  paper stays paper, everything else ONE flat mist-pale: silhouette only
@@ -20,13 +22,13 @@
 //   ink_edge           §6, as ruled in D-019: "outlining everything is the same as outlining nothing". In the
 //                      seed almost nothing is outlined; contour appears at a few silhouette boundaries, as a
 //                      brush stroke that swells, thins and breaks. So the line is drawn ONLY on the near side
-//                      of a real depth jump (a neighbour >= 1.2x farther: a true silhouette). A crease, a
-//                      coplanar seam and a detail floating a hair off its face have no jump and get NO line
+//                      of a true silhouette: two surfaces that do not meet (see silhouetteWithin). A crease,
+//                      a coplanar seam and one plane at any grazing angle are not that and get NO line
 //                      (D-018 inked all of them, at one weight). Near band only: distant forms carry none.
 //                      Its weight is base(distance) x world-anchored noise: 0 (the brush lifts: a break) to
 //                      4px, and because the noise lives on the form, the stroke does not swim when the
 //                      camera moves. ONE exception to the break: where the form and what is behind it are shown
-//                      at the same or an adjacent value (a paper top against paper sky), the line is the only
+//                      at the SAME value (one platform top against the next one down), the line is the only
 //                      thing marking where the ground ends, so it never lifts below a hairline.
 //   paper_grain        §6: static grain over the whole frame, hashed from the pixel coordinate and a constant
 //                      seed. It never scrolls or animates (that is film grain, §9 item 7), so goldens hold.
@@ -51,17 +53,18 @@ export const INK_POST = {
   nearBandM: 25,            // STYLE §3 table
   midBandM: 80,             // STYLE §3 table
   // ink_edge (D-019). MEASUREMENTS "D-019 post constants".
-  silhouetteRatio: 1.2,     // a neighbour this many times farther = a true silhouette (a crease has no jump)
+  silhouetteGap: 0.02,      // relative gap (in 1/z) between two surfaces that do not meet = a true silhouette
   strokeBasePx: [[8, 3], [16, 2], [25, 1]] as const, // [within u, base weight px at 360p]: falls with distance
   strokeMaxPx: 4,
   strokeFreq: 0.6,          // 1/u: the stroke's weight changes over ~1.5-2u of the form
   strokeGap: 0.36,          // noise below this = the brush lifts (a break)
   strokeGain: 2.2,
-  lowContrast: 0.1,         // shown values closer than this (same or adjacent ramp step): the stroke never breaks
+  lowContrast: 0.04,        // shown values closer than this (the SAME ramp step): the stroke never breaks
   // near value push (D-019), inside value_compression
-  pushSteps: [[10, 3], [17, 2], [23, 1]] as const,    // [within u (before jitter), steps darker]
-  washFreq: 0.12,           // 1/u: the ragged edge of a wash
-  washJitter: 0.3,          // +-30% on the distance a boundary sits at
+  pushSteps: [[12, 3], [20, 2], [24.9, 1]] as const,    // [within u at most, steps darker]; steps 0 and 1 never pushed
+  washFreq: 0.12,           // 1/u: the lowest of three octaves (x1, x3.7, x11) that rag a wash boundary
+  washJitter: 0.35,         // a boundary is pulled INWARD by up to this fraction, never outward: the push
+                            // provably ends inside pushSteps' last distance, short of the 25u band edge
   grainAmp: 3 / 255,        // < ACCENT_AREA's 6/255 match tolerance, so grain never hides a gate
   grainSeed: 20261109,      // constant: grain is static and deterministic
   accentChroma: 0.2,        // max-min of sRGB channels; the ramp's largest is 0.047, every accent candidate > 0.5
@@ -73,7 +76,7 @@ const hex3 = (v: number): THREE.Vector3 => new THREE.Vector3(((v >> 16) & 255) /
 const f1 = (v: number): string => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 const P = INK_POST;
 const DEFINES: Record<string, string> = {
-  SIL_RATIO: f1(P.silhouetteRatio),
+  SIL_GAP: f1(P.silhouetteGap),
   STROKE_D0: f1(P.strokeBasePx[0][0]), STROKE_W0: f1(P.strokeBasePx[0][1]),
   STROKE_D1: f1(P.strokeBasePx[1][0]), STROKE_W1: f1(P.strokeBasePx[1][1]),
   STROKE_W2: f1(P.strokeBasePx[2][1]),
@@ -95,8 +98,8 @@ const CHUNK: Record<Section6Pass, string> = {
       int w = int(min(STROKE_MAX, floor(base * STROKE_GAIN * max(0.0, n - STROKE_GAP) / (1.0 - STROKE_GAP) + 0.5)));
       vec2 farUv;
       // The brush may lift ONLY where value already separates the two forms. Where this form and what is
-      // behind it are SHOWN at the same or an adjacent step (a paper platform top against paper sky), the line
-      // is the only thing that says where the ground ends, so it always holds at least a hairline.
+      // behind it are SHOWN at the same step (one platform top against the next one down), the line is the
+      // only thing that says where the ground ends, so it always holds at least a hairline.
       if (w == 0 && !keepHue && silhouetteWithin(1, farUv)) {
         float fv = shownValue(farUv);
         if (fv >= 0.0 && abs(fv - (c.r + c.g + c.b) / 3.0) < LOW_CONTRAST) w = 1;
@@ -133,17 +136,33 @@ ${Object.entries(DEFINES).map(([k, v]) => `    #define ${k} ${v}`).join('\n')}
       return best;
     }
     float iz0;
-    // true silhouette: within w px (8 directions) there is a pixel at least SIL_RATIO times farther. This pixel
-    // is on the NEAR side by construction, so the line sits on the form, never on what is behind it.
+    // TRUE SILHOUETTE = a depth discontinuity: two surfaces that do not meet. Walking outward from this pixel
+    // along a direction, take the boundary between sample k=r-1 (near) and k=r (far). 1/z is linear across a
+    // plane in screen space, so each side can be continued exactly from two samples. If the near surface
+    // continued forward is nearer than the far pixel by SIL_GAP, AND the far surface continued back is farther
+    // than the near pixel by SIL_GAP, the surfaces cannot intersect between the two pixels: an occlusion edge.
+    //   one plane, at ANY grazing angle: both differences are exactly 0            -> no line
+    //   a crease (two planes meeting on the edge): the differences have opposite signs -> no line
+    //   a step-down between two parallel tops, however small: both equal the gap   -> a line
+    // The walk stops at the first sample that leaves this pixel's own plane, so a line is only ever drawn on
+    // the NEAR surface of its own silhouette.
     bool silhouetteWithin(int w, out vec2 farUv) {
       vec2 o[8];
       o[0] = vec2(1.0, 0.0); o[1] = vec2(-1.0, 0.0); o[2] = vec2(0.0, 1.0); o[3] = vec2(0.0, -1.0);
-      o[4] = vec2(0.7071, 0.7071); o[5] = vec2(-0.7071, 0.7071); o[6] = vec2(0.7071, -0.7071); o[7] = vec2(-0.7071, -0.7071);
-      float limit = iz0 / SIL_RATIO;
-      for (int r = 1; r <= w; r++) {
-        for (int k = 0; k < 8; k++) {
-          farUv = vUv + o[k] * uTexel * (float(r) * uPx);
-          if (invZ(farUv) < limit) return true;
+      // WHOLE-pixel steps, diagonals included. The depth texture is sampled NEAREST, so a 0.7071px step lands on
+      // unevenly spaced texels, the extrapolation stops being exact, and a steeply receding plane reads as a gap
+      // (found by the grazing camera: a band of ink across flat ground). uPx is an integer for the same reason.
+      o[4] = vec2(1.0, 1.0); o[5] = vec2(-1.0, 1.0); o[6] = vec2(1.0, -1.0); o[7] = vec2(-1.0, -1.0);
+      for (int k = 0; k < 8; k++) {
+        vec2 st = o[k] * uTexel * uPx;
+        float prev = invZ(vUv - st), cur = iz0, nxt = invZ(vUv + st);
+        for (int r = 1; r <= w; r++) {
+          float nxt2 = invZ(vUv + st * float(r + 1));
+          float ahead = cur + (cur - prev) - nxt;   // near surface continued to the far sample, minus the far sample
+          float back = cur - (nxt - (nxt2 - nxt));  // near sample minus the far surface continued back to it
+          if (min(ahead, back) > SIL_GAP * cur) { farUv = vUv + st * float(r); return true; }
+          if (abs(ahead) > SIL_GAP * cur) break;    // left this pixel's plane without a silhouette: a crease, or we are the far side
+          prev = cur; cur = nxt; nxt = nxt2;
         }
       }
       return false;
@@ -164,8 +183,10 @@ ${Object.entries(DEFINES).map(([k, v]) => `    #define ${k} ${v}`).join('\n')}
     // value_compression's map: the step a pixel is SHOWN at, from its own step, its distance and where it is
     int mapStep(int i, float dist, vec3 world) {
       if (dist < ${INK_POST.nearBandM.toFixed(1)}) {
-        float dp = dist * (1.0 - WASH_JITTER + 2.0 * WASH_JITTER * vnoise(world * WASH_FREQ));
-        int push = i == 0 ? 0 : (dp < PUSH_D0 ? PUSH_S0 : (dp < PUSH_D1 ? PUSH_S1 : (dp < PUSH_D2 ? PUSH_S2 : 0)));
+        if (i < 2 || dist >= PUSH_D2) return i; // paper and mist (path tops, the cloud) are never pushed
+        float n = 0.55 * vnoise(world * WASH_FREQ) + 0.3 * vnoise(world * (WASH_FREQ * 3.7)) + 0.15 * vnoise(world * (WASH_FREQ * 11.0));
+        float dp = dist * (1.0 + WASH_JITTER * n); // >= dist: jitter only moves a boundary toward the camera
+        int push = dp < PUSH_D0 ? PUSH_S0 : (dp < PUSH_D1 ? PUSH_S1 : (dp < PUSH_D2 ? PUSH_S2 : 0));
         return min(7, i + push);
       }
       if (dist < ${INK_POST.midBandM.toFixed(1)}) return i <= 2 ? i : 2 + (3 * (i - 2)) / 5;
@@ -257,7 +278,7 @@ export class InkPost {
   setSize(width: number, height: number): void {
     this.target.setSize(width, height);
     (this.material.uniforms['uTexel']!.value as THREE.Vector2).set(1 / width, 1 / height);
-    this.material.uniforms['uPx']!.value = Math.max(1, height / 360);
+    this.material.uniforms['uPx']!.value = Math.max(1, Math.round(height / 360)); // integer: see silhouetteWithin
   }
 
   private syncCamera(camera: THREE.PerspectiveCamera): void {

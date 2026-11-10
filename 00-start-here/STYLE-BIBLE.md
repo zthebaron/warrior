@@ -15,7 +15,8 @@ Flat sumi-e ink wash on aged paper. It is a **painting**, not a render of a pain
 
 **Required:**
 - Forms are defined by outline plus flat fill. A shape has an edge and an interior; it
-  does not have a gradient from a light source.
+  does not have a gradient from a light source. *(D-019: "outline" is the silhouette contour, drawn
+  sparingly; form comes first from value mass. Not every edge of a form is outlined: see §6.)*
 - Brush character is visible at form edges — strokes taper and vary in weight.
 - Paper tone shows through everywhere. Nothing is pure white.
 
@@ -166,8 +167,9 @@ be seeded from a constant so visual regression stays deterministic.
 
 **Ink edge** *(amended on evidence, D-019: outlining everything is outlining nothing)* — a dark stroke on **true
 silhouette boundaries only** (a real depth jump), never on an interior crease or a coplanar seam, and never on
-distant forms. Its weight **varies along the stroke** and it may break, except where the two forms it separates
-are the same value: there it is the only edge the ground has, and it holds. *(Was: "a dark outline pass on depth
+distant forms. Its weight **varies along the stroke** and it may break. *(Builder's exception, PROVISIONAL,
+OQ-068 item 2: it does not break where the two forms it separates are shown at the same value; there it is the
+only edge the ground has. The seed has no such rule.)* *(Was: "a dark outline pass on depth
 and normal discontinuity.")* Weight scales DOWN
 with distance (see §3) so far geometry does not turn noisy.
 
@@ -261,4 +263,4 @@ In order. Any failure is a failure.
 *Derived from the locked seed. If the seed changes, this document is void and must be
 re-derived — do not patch it. Amendments made on MEASUREMENT under a recorded decision are
 the one exception, and each is marked in place (section 2: D-001, D-003, D-006; sections 1, 9, 10:
-D-010, the landing mark; sections 3 and 6: D-019, the ink edge and the near value range).*
+D-010, the landing mark; sections 1, 3 and 6: D-019, the ink edge and the near value range).*
