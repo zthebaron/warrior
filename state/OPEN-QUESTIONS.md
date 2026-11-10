@@ -1078,6 +1078,44 @@ Disclosed weaknesses:
      "player has 3 lives" in the playbook passes, as it would in the pack (OQ-053).
 status: PROVISIONAL
 
+## OQ-067 — CH1-ASSETS: chapter 1's real asset set. Where the brief, the level and the Style Bible disagree
+raised: 2026-11-09 by ch1-assets (claim CH1-ASSETS). Tim chose pipeline-first over concept-art-first (2026-11-09).
+took, each PROVISIONAL:
+1. **kit_torii and kit_rock_mass keep `collider: trimesh`.** The brief says "every collider stays exactly as it is"
+   AND "visual assets carry collider none". For these two, the instructions conflict: both are already collision
+   (34 collider placements in chapter 1 = 17 prim_box + 4 torii + 13 rock masses; the torii soup is in the
+   READABLE_RISE arm cast). Flipping them to none would move chapter 1's fingerprint and 02-04's too. The
+   higher-stakes rule (collision identical, proven) wins: they are unchanged, byte for byte. Every NEW asset is
+   collider none, enforced by DRESS_COLLIDES. If Tim wants the kits to stop colliding, that is a separate,
+   measured change, with re-recorded traces for every level.
+2. **STYLE-BIBLE §3 and §6 cannot be built as written with static assets. Not departed from quietly; stated
+   here.** §3 assigns value ranges by WORLD DISTANCE FROM THE CAMERA (near 0-25, mid 25-80, far 80+) and says
+   "no element may span two bands". §6 says value compression by depth is "a post pass, not baked into
+   materials". The post pass does not exist (nor does §6's ink-edge pass). The camera walks 108 u, so baked
+   asset values cannot hold a band: a kit_mid_cliff 40 u abeam is mid-band at x=60 and is 100+ u away (far
+   band) from spawn while still on screen. What was built: band values baked per asset, with placements chosen
+   so each sits in its band for most of the walk (mid cliffs at |z| 38-46 on the wall side, far peaks at
+   |z| >= 125 or past the goal). §3's "grey, thin" mid outlines and §6's distance-scaled ink edge are absent,
+   and no asset fakes them. The fix is the §6 post pass. Until it exists, §10 test 4 ("three distinguishable
+   depth bands") is met by placement, not by rule.
+3. **Scope as found, not as briefed.** The brief says torii x3 and a "5 x 0.4 stair". The level has 4 kit_torii
+   (x = 34, 55, 77, 99) and a 6 x 0.333 stair (5 treads of 0.6 plus the landing: B-19). The level was dressed
+   as it is; nothing in it was changed to match the brief.
+4. **The accent renders as `vermilion_a #e34234`**, accent.json's default candidate. It passes ACCENT_CONTRAST
+   (dE2000 27.6, C* 75.5, L* 52.4). Still PROVISIONAL until the H2.5 feel test chooses it. No new hue was
+   introduced: the accent cell is unchanged.
+5. **`palette: "ink"` is the switch, chapter 1 only.** No schema change: `palette` was already a free string.
+   Under "ink", prim_box, the sun, the checkpoint pads and the fall plane are not DRAWN (their colliders and the
+   kill plane are untouched), the patroller and crow draw their kits, and the background is paper-cream. 00-gym
+   and 02-04 stay greybox, with goldens unchanged.
+6. **Out of this scope, and still off the ramp in chapter 1's frames:** the player (a greybox capsule in
+   `VISUAL.stateColors`, not STYLE §7's robed figure near #7d8590). It is the next asset, and a hero asset
+   (.blend), not kit. Recorded as B-33.
+7. **Tile seams.** kit_ledge is tiled every ~4.5 u; where tiles abut, a faint dashed line shows across the top
+   (the neighbour's lip through the raster seam). It reads as a slab joint and was kept. It is a raster detail,
+   so expect it to differ between darwin and linux goldens; that is why each platform has its own.
+status: PROVISIONAL
+
 ## OQ-065 — Audit of the #18 split CI: does the per-level coverage gate hold?
 raised: 2026-11-09 by ci-gate-audit (claim CI-GATE-AUDIT), verified independently of the session that wrote B-22
 took, each PROVISIONAL:
