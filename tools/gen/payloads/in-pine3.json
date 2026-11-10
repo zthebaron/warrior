@@ -1,0 +1,9 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: one gnarled old cliff pine like the one in the reference image, redrawn alone as a solid three-dimensional tree seen from a three-quarter angle and from slightly above. A very thick, stout, twisted near-black trunk grows out sideways from a chunky lump of grey rock at its base and bends upward in crooked elbows. Four thick crooked branches spread out in different directions around the trunk, some toward the viewer and some away. Each branch carries one thick flat-topped cushion of dark needle foliage, like a round disc seen from above, so that the oval top of every cushion is visible; five cushions in all at different heights, overlapping in depth. Thick, heavy forms throughout, nothing thin or wispy, no loose needles. Keep the brush quality and ink values of the reference.\n\nPlain empty paper background and nothing else in the picture: no ground line, no cliff wall, no mist, no clouds, no shadow, no text, no seal. Whole subject in frame with a paper margin all round.",
+  "image_urls": [
+    "file:assets/build/gen/refs/ref_pine.png"
+  ],
+  "aspect_ratio": "1:1",
+  "output_format": "png",
+  "num_images": 1
+}

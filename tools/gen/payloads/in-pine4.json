@@ -1,0 +1,7 @@
+{
+  "prompt": "Repaint this exact pine tree as the same solid three-dimensional tree seen from a higher viewpoint: a three-quarter view looking down on it from about 35 degrees above. Because we look down, the top surface of every foliage pad is visible as a wide dark oval disc, the pads sit at clearly different depths (some nearer the viewer, some farther), and the branches visibly reach toward and away from the viewer rather than lying in one flat plane. Make the trunk and branches about twice as thick as in the original, and make each foliage pad a thick solid dark cushion with a clean outline and no loose needles or wispy strokes. Keep the same tree: the same twisted near-black trunk growing sideways out of the small grey rock, the same number of pads, the same monochrome warm-grey ink palette with no brown and no green, the same flat ink-wash fill with dark brush outline, no light source, no cast shadow. Plain empty aged-paper background, whole tree in frame with a margin, nothing else in the picture.",
+  "image_urls": ["file:assets/build/gen/in/pine_v1.png"],
+  "aspect_ratio": "1:1",
+  "output_format": "png",
+  "num_images": 1
+}

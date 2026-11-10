@@ -170,8 +170,17 @@ const readLedger = () => {
 
 const fmtRow = (r, running) => `| ${r.n} | ${r.time} | ${r.endpoint} | ${r.purpose} | ${usd(r.listedT)} | ${usd(r.countedT)} | ${r.requestId} | ${r.status} | ${usd(running)} |`;
 
-/** Rewrite one row in place (request id / status). Re-derives every running total. */
+/** Rewrite one row in place (request id / status). Re-derives every running total.
+ *  Takes the same lock as the append: a rewrite racing an append would drop the appended row. */
 const updateRow = (n, patch) => {
+  let fd = null;
+  for (let i = 0; i < 100 && fd === null; i++) {
+    try { fd = openSync(LOCK, 'wx'); } catch { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100); }
+  }
+  if (fd === null) throw new Error(`could not take ${LOCK} to update row ${n}; the row is still in the ledger and still counted`);
+  try { updateRowLocked(n, patch); } finally { closeSync(fd); unlinkSync(LOCK); }
+};
+const updateRowLocked = (n, patch) => {
   const { lines, rows } = readLedger();
   const row = rows.find((r) => r.n === n);
   if (!row) throw new Error(`ledger row ${n} not found`);

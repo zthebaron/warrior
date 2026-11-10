@@ -1,0 +1,7 @@
+{
+  "prompt": "Edit this painting, changing only one thing: remove the second sword worn at the front of the waist (the wrapped hilt lying over the chest strap near the belt, and the dark scabbard end sticking out behind the gourds at his left hip). He carries exactly ONE sword: the one slung across his back whose hilt shows above his right shoulder. Leave the thin diagonal chest strap as a plain strap. Paint the robe and belt where the removed sword was, in the same flat blue-grey wash. Keep everything else identical: pose, hat, face, robe, gourds, leg wraps, sandals, line quality, flat ink-wash fill, plain empty aged-paper background, no shadow.",
+  "image_urls": ["file:assets/build/gen/in/warrior_front_v1.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}
