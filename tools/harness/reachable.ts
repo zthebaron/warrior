@@ -238,7 +238,7 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       letGameLoad();
       const helpOpened = await earlyHelp.waitForFunction(() => document.getElementById('help')?.hidden === false, null, { timeout: 20000 }).then(() => true).catch(() => false);
       const chapterHeads = (): Promise<number> => earlyHelp.evaluate(() => document.querySelectorAll('#help-content h3').length);
-      await earlyHelp.waitForFunction(() => document.querySelectorAll('#help-content h3').length > 0, null, { timeout: 5000 }).catch(() => null);
+      await earlyHelp.waitForFunction(() => document.querySelectorAll('#help-content h3').length > 0, null, { timeout: 20000 }).catch(() => null); // a cold load on a slow runner
       const listedEarly = await chapterHeads();
       await earlyHelp.keyboard.press('Escape'); // and what the same page lists when it is opened again, the game long since ready
       await earlyHelp.keyboard.press('KeyH');
@@ -358,12 +358,17 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       // B-61 (OQ-074): back at the title the mouse is free too. Paused, then M: the title's buttons could not be
       // clicked while the canvas still held the lock. The same faked lock as check 4.
       await inGame.evaluate(() => { window.__lock!.exits = 0; window.__lock!.held = true; });
-      await inGame.keyboard.press('KeyP');
-      await inGame.waitForFunction(() => /^PAUSED/.test(document.getElementById('hud')?.textContent ?? ''), null, { timeout: 5000 }).catch(() => null);
+      // P pauses only a game that is being played: pressed again until it has (a warrior that fell just now is
+      // back within a second), so a failure below says whether the game was ever paused
+      let pausedForTitle = false;
+      for (let i = 0; i < 10 && !pausedForTitle; i++) {
+        await inGame.keyboard.press('KeyP');
+        pausedForTitle = await inGame.waitForFunction(() => /^PAUSED/.test(document.getElementById('hud')?.textContent ?? ''), null, { timeout: 1500 }).then(() => true).catch(() => false);
+      }
       await inGame.keyboard.press('KeyM');
       const backAtTitle = await inGame.waitForFunction(() => (document.getElementById('title')?.getClientRects().length ?? 0) > 0, null, { timeout: 5000 }).then(() => true).catch(() => false);
       const lockAtTitle = await inGame.evaluate(() => ({ ...window.__lock! }));
-      st.check('back at the title the mouse is released (a faked pointer lock)', backAtTitle && lockAtTitle.exits === 1 && !lockAtTitle.held, `the title is ${backAtTitle ? 'shown' : 'NOT shown'}; the lock was released ${lockAtTitle.exits} time(s) and is ${lockAtTitle.held ? 'STILL HELD' : 'free'}`);
+      st.check('back at the title the mouse is released (a faked pointer lock)', pausedForTitle && backAtTitle && lockAtTitle.exits === 1 && !lockAtTitle.held, `the game ${pausedForTitle ? 'paused' : 'was NEVER paused'}; the title is ${backAtTitle ? 'shown' : 'NOT shown'}; the lock was released ${lockAtTitle.exits} time(s) and is ${lockAtTitle.held ? 'STILL HELD' : 'free'}`);
       await inGame.close();
 
       // with a test or tool parameter the page is bare: no title screen, no how-to-play page, no sound
