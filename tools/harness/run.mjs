@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual,
+// Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual -> post -> camera-room,
 // then once per run: reachable (D-014: the game's own front door, as a player), pitch-assist (B-18: the real rig), run-metric (B-15: no run metric on screen),
 // ambient-motion (B-15: nothing translates but the player and hazards), fight (D-023: the four rules of the fight, on a fixture)
 //
@@ -23,6 +23,7 @@ import { lintLevel, segmentsOf, withColliders, RESPAWN_RULES } from '../lint-lev
 import { BROWSER_STAGES, EXIT_CODE, FAILURE, ONCE_STAGES, Stage, levelIds } from './lib.ts';
 import { launchBrowser, preflight, probeWebgl } from './preflight.ts';
 import { nav } from './nav.ts';
+import { cameraRoom } from './camera-room.ts';
 import { phaseSweep } from './sweep.ts';
 import { replay, writeTrace } from './replay.ts';
 import { chaos } from './chaos.ts';
@@ -199,7 +200,9 @@ for (const L of statics) {
     else if (name === 'assets') r = await assets(ctx);
     else if (name === 'accent') r = await accent(ctx);
     else if (name === 'post') r = await post(ctx);
-    else r = await visual(ctx);
+    else if (name === 'camera-room') r = await cameraRoom(ctx);
+    else if (name === 'visual') r = await visual(ctx);
+    else throw new Error(`run.mjs has no stage "${name}": BROWSER_STAGES (lib.ts) names one this file does not run`);
     stages.push(r);
     if (r.failureClass === FAILURE.ENVIRONMENT) break;
   }

@@ -1737,3 +1737,103 @@ Three figures of 14,700 triangles and three katanas of 120 are 44,460 triangles 
 four draw calls are the ink of a fight on screen (a burst, a splat, a stroke). Geometries peak at 47 (was 36) and
 textures at 29 (was 23). Tier 1 is 300 draw calls and 500,000 triangles. The other four levels' lines are
 unchanged: the swordsman is decoded only for a level that places one.
+
+## CAMERA-WALL-ZOOM the pivot, and the camera-room stage (2026-11-11)
+
+Tim, from play: "On level 2, when I arrive at the first tall wall, I can run all the way to the hat. It needs to
+zoom out." Measured on main (`8ca066c`) with `tools/harness/camera-log.ts`, which replays a run and reads the
+real rig every tick.
+
+**The cause is the pivot, not the arm.** The rig's pivot is not over the warrior: it leads him by his
+velocity x `lookAheadTime` 0.25 s, up to `lookAheadMax` 2.0 u. Running at 7 u/s it leads by 1.75 u, so one
+unit short of a wall the pivot is inside the wall. The arm's ray then starts inside rock, meets the face from
+behind 0.03 to 0.11 u along, and `allowedArm` returns the 0.8 floor. The camera sits 0.8 u behind a pivot that
+is inside the rock, which puts it in front of the warrior. Nothing behind him is involved.
+
+Chapter 2's first climb face (geometry[1], x = 12, +4.5), a player's arrival: the recorded run to tick 90, then
+forward held into the wall for 2.5 s (`camera-log.ts 02-cliff-seam --script=wall12`):
+
+| tick | what the warrior is doing | arm before (u) | what the frame shows before | arm now |
+|---|---|---|---|---|
+| 97 | running, 1.1 u from the face | 7.00 | the wall, its top edge, the warrior | 7.00 |
+| 98 | running, 1.0 u from the face; pivot at x = 12.09 | 0.80 | | 7.00 |
+| 105 | against the face (reached at tick 104), velocity 0 | 0.80 | | 7.00 |
+| 110 | standing | 0.80 | the camera is inside the rock: blank paper | 7.00 |
+| 140 | standing | 0.80 | the hat fills the frame | 7.00 |
+| 144 | standing | 1.57 | his back; feet and the wall's top are out of frame | 7.00 |
+| 151 | standing | 3.60 | the first tick back over half the rest arm | 7.00 |
+| 209 | standing | 6.93 | 99% of rest, 1.8 s after he stopped | 7.00 |
+
+Before: 53 ticks under half the rest arm, 50 of them with the warrior cut by the frame or behind the camera.
+The look-ahead decays at `lookAheadDamping` 3 /s, so the pivot stays in the rock for about half a second after
+he stops. Now: 0 and 0. Frames: `docs/build-log/camera-wall/`. The same arrival at the wall-jump corridor
+(`--script=corridor`: run at the 3.25 wall, hold, let go, wall jump) had the pivot in that wall and then in the
+backstop over the shelf, arm 0.80 both times; now 0 ticks under the floor and 0 cut.
+
+**Proof it is the look-ahead.** With `lookAheadTime` set to 0 (not committed) every such stretch on chapter 2
+disappears, in the recorded run and in the scripted arrival.
+
+**The fix adds no number.** `SpringArmCamera.holdPivotInTheOpen` casts one ray from the point over his feet at
+`pivotHeight` (inside his own capsule, so never inside the level) to the pivot, and stops the pivot
+`collisionPadding` 0.3 short of anything it meets. Standing still the pivot is that point, so no standing pose
+changes: READABLE_RISE, `armAt` and `allowedArm` are untouched. `?pivothold=off` is the rig as it was.
+
+**Why B-18 and B-23 did not catch it.** The `pitch-assist` stage and READABLE_RISE stand the warrior still (the
+stage places him with `respawnAt`, which snaps the rig and zeroes the look-ahead) and measure whether a landing's
+top is in view. The linter's `armAt` casts from over the feet. Neither has the look-ahead in it, and neither
+measures the arm.
+
+### The stage: `camera-room`
+
+Per level, on the level's recorded trace, the camera at the yaw the game gave it at spawn. Constants
+(`CAMERA_ROOM`, `tools/harness/camera-room.ts`):
+
+| constant | value | basis |
+|---|---|---|
+| `minArmShare` | 0.5 (3.5 of 7 u) | Between what a run does now and what a cut-off warrior looks like. Now, outside the listed blocks, the shortest arm on any level's run is 3.72 u (53%, gym), then 4.20 (60%, chapter 3), 4.40 (63%, chapter 1), 6.11 (87%, chapter 4), 6.24 (89%, chapter 2). The longest arm at which the warrior was still cut by the frame is 3.57 u (51%, chapter 3 leaving the first lintel, pivot leading him by 1 u) |
+| `momentSec` | 0.25 s (15 ticks) | The arm snaps in and eases out at `armReturnDamping` 4 /s. From the 0.8 floor back over 3.5 u takes ln(6.2 / 3.5) / 4 = 0.14 s, 9 ticks (measured: 0.80 at tick 142, 3.60 at tick 151, above). So one passing thing costs about 10 ticks under the floor however brief it was; 15 allows one, not two |
+| the warrior is cut | no grace: 0 ticks | His box, feet to 1.9 u up and `capsuleRadius` 0.35 wide, projected by the real camera: any corner outside the frame or nearer than the near plane 0.1 |
+| `turnDegPerSec` | 360 | `camera-log.ts --yaw=follow` only, not the stage: how fast the mouse turns the camera behind his facing. A guess at a player, which is why that view is not gated |
+
+The stage on the rig as it was (`?pivothold=off`, the same as main) and now. A stretch is consecutive ticks
+under the floor or with the warrior cut. `npm run playtest -- --only=camera-room`:
+
+| level | rig as it was | now |
+|---|---|---|
+| 00-gym | FAIL: 2 stretches. t66..83 arm 0.80 at geometry[19]; t165..212 arm 0.80, 48 ticks, at geometry[20] | PASS: only the listed block (below) |
+| 01-lower-stair | FAIL on the cut rule: t383..392 and t1098..1107, arm 0.80 for 10 ticks each, jumping up at geometry[10] and geometry[15] | PASS: 0 stretches, shortest arm 4.40 |
+| 02-cliff-seam | FAIL: 3 stretches. t98..130 arm 0.80 at geometry[1], the first climb face; t402..423 arm 1.85 at geometry[36], the backstop over the wall-jump shelf; t1371..1402 arm 0.80 at geometry[9], the second climb face | PASS: 0 stretches, shortest arm 6.24 |
+| 03-drifting-stones | PASS: only the two listed lintels, the same before and now | PASS, the same |
+| 04-summit-ridge | FAIL on the cut rule: t1109..1118 arm 0.80 for 10 ticks at geometry[13] | PASS: 0 stretches, shortest arm 6.11 |
+
+Chapters 1 and 4 fail only through the cut rule: their stretches are 10 ticks, inside a moment.
+
+**Listed blocks (B-82).** Three places where the arm is blocked for real, with the pivot in the open. The pivot
+hold does not answer them and they are the same before and now. The stage names each by the level box the arm's
+own ray meets, fails on any box not listed, and fails if a listed box stops blocking:
+
+| level | box | what happens | arm | ticks under the floor / cut |
+|---|---|---|---|---|
+| 03-drifting-stones | geometry[8], the first lintel, underside 2.0 u above the floor | the arm rises behind him at 18 deg and meets the underside 1.58 u from the pivot | 1.28 (18%) | 25 / 28 |
+| 03-drifting-stones | geometry[9], the second lintel | the same | 1.28 (18%) | 25 / 28 |
+| 00-gym | geometry[22], the test block | he drops down its far side and its face is 2 u behind him | 2.09 (30%) | 19 / 14 |
+
+**Not gated: the camera turned behind his facing** (`camera-log.ts <level> --yaw=follow`), after the fix.
+Chapters 1, 3 and 4 read the same as at the spawn yaw. Chapter 2's wall-jump corridor is 3.5 u wide:
+
+| where | arm | ticks under the floor / cut |
+|---|---|---|
+| chapter 2, t352..369, jumping at the wall: the shelf face (geometry[4]) is behind him | 2.61 (37%) | 18 / 5 |
+| chapter 2, t418..434, running off the shelf while the camera comes round past the backstop (geometry[36]) | 1.62 (23%) | 16 / 17 |
+| chapter 2, standing at the corridor wall's foot facing it (`--script=corridor`): the shelf face (geometry[4]) 3.1 u behind him | 3.34 (48%), the whole warrior in frame; 3.04 as he jumps | for as long as he stands there (165 ticks in the script) / 7, at the jump |
+| gym, t182..204, in the pit behind the test block: the face ahead of the pit (geometry[20]) 0.78 u from the pivot | 0.80 (11%) | 23 / 20 |
+
+**Two numbers in the tools, neither a budget.** `boxAt` names the level box an arm ray's hit point lies on to
+within 0.02 u: wide of float error in a hit point, far under the thinnest box on any path (the 0.5 u lintels).
+The scripted arrivals in `camera-log.ts` hold forward into the wall for 150 ticks (wall12) or 90 (corridor) and
+then let go for 60: long enough for the arm to go to its floor and come all the way back (99% by tick 209).
+
+**Cost and what else moved.** The stage takes 0.6 to 1.2 s per level (two replays where it must be seen to fail).
+Full playtest on the fix, darwin: PASS, 1,060 checks; `pitch-assist` 115 of 115, so every READABLE_CASE,
+ASSIST_CASE and B-23 proof reads as before. No golden was rewritten: the visual stage's six cameras per level
+are fixed cameras that never run the follow rig.
