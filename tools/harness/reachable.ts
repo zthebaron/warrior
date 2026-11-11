@@ -6,8 +6,13 @@
 // "can a person who loads the game with no query string reach the first chapter and finish it?"
 //
 //   1. PRODUCTION bundle (dist/, its own preview server), the bare URL, no query string at all:
-//      menu -> Enter -> which level loaded (body[data-level], set on install, never rendered).
+//      the title screen (D-022) -> Enter -> which level loaded (body[data-level], set on install, never rendered).
 //      It must be the entry chapter: the lowest-numbered chapter >= 1 in levels/ (a chapter, never the gym).
+//      D-022 put the title screen at this door, so this step is also where it is held to its brief: the
+//      painting, the two buttons and the two credit lines are shown, nothing sets the name again in HTML,
+//      Enter passes it, a press made before the game is ready is not lost, and a page with a test or tool
+//      parameter has none of it. The wait is on <html data-shell="ready">, which the game sets when the
+//      title can start it: the painting is in the page long before that, so its being there proves nothing.
 //   2. FINISH it: the harness bundle with ?harness=1 and NO level param, so the game picks the level by
 //      its own default exactly as for a player; the nav bot plays it; the run must end in `results` on
 //      that same level.
@@ -24,6 +29,14 @@ import { chapterChain, entryLevel as entryOf, type LevelRef } from '../../src/sy
 import { NAV_CONFIG, walk } from './nav.ts';
 
 const PROD_PORT = 4318; // beside preflight's 4317 (dist-harness)
+
+/** D-022: what the title screen must show (the brief's own words), and the parameters that must leave a page bare. */
+const TITLE = {
+  name: 'Karasu: Flight of the Exile',
+  buttons: ['Play', 'How to play'],
+  credits: ['Designed by Tim de Vallée', 'Dedicated to Remi'],
+  bare: ['harness=1', 'playtest=1', 'replay=1', 'instrument=on', 'level=01-lower-stair'],
+};
 
 function levelRefs(root: string): LevelRef[] {
   return readdirSync(join(root, 'levels'))
@@ -72,14 +85,62 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); }); // showError logs, it does not throw
       await page.goto(`${prod.url}/`);
-      await page.waitForFunction(() => /Enter: start/.test(document.body.innerText), null, { timeout: 20000 });
+      const ready = await page.waitForFunction(() => document.documentElement.dataset['shell'] === 'ready', null, { timeout: 20000 }).then(() => true).catch(() => false);
+      const seen = await page.evaluate(() => {
+        const t = document.getElementById('title');
+        const art = t?.querySelector('img');
+        const shown = (e: Element | null | undefined): boolean => !!e && (e as HTMLElement).getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+        return {
+          title: document.title,
+          description: document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null,
+          shown: shown(t),
+          art: art ? `${art.naturalWidth}x${art.naturalHeight} ${art.currentSrc.split('/').pop() ?? ''}` : 'no image',
+          buttons: [...(t?.querySelectorAll('button') ?? [])].filter((b) => shown(b)).map((b) => b.textContent ?? ''),
+          credits: [...(t?.querySelectorAll('.credits span') ?? [])].filter((c) => shown(c)).map((c) => c.textContent ?? ''),
+          headings: [...(t?.querySelectorAll('h1, h2, h3') ?? [])].length,
+          text: (t as HTMLElement | null)?.innerText ?? '',
+        };
+      }).catch(() => null);
+      st.check('bare URL shows the title screen, and the game is ready behind it', ready && !!seen?.shown, ready ? `title ${seen?.shown ? 'shown' : 'NOT shown'}; art ${seen?.art}` : 'the game never marked the shell ready (20 s)');
+      st.check('page title and description are the game\'s name', seen?.title === TITLE.name && seen?.description === TITLE.name, `title ${JSON.stringify(seen?.title)}, description ${JSON.stringify(seen?.description)}`);
+      st.check('the title painting is drawn (1376x768)', /^1376x768 /.test(seen?.art ?? ''), seen?.art ?? 'no page');
+      st.check('the title has Play and How to play', TITLE.buttons.every((b) => seen?.buttons.includes(b)), `buttons: ${JSON.stringify(seen?.buttons ?? [])}`);
+      st.check('the two credit lines, exactly', JSON.stringify(seen?.credits) === JSON.stringify(TITLE.credits), JSON.stringify(seen?.credits ?? []));
+      st.check('the name is not set again in HTML over the painting', seen?.headings === 0 && !/karasu|exile/i.test(seen?.text ?? 'karasu'), `headings ${seen?.headings}; text ${JSON.stringify((seen?.text ?? '').slice(0, 120))}`);
       const pressed = Date.now();
       await page.keyboard.press('Enter');
       const got = await page.waitForFunction(() => document.body.dataset['level'] ?? null, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
       const took = `${((Date.now() - pressed) / 1000).toFixed(1)}s after Enter`;
       const shown = got ? '' : `; page shows: ${JSON.stringify((await page.evaluate(() => document.body.innerText).catch(() => '')).slice(0, 160))}`;
+      const after = await page.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).then(() => 'gone').catch(() => 'STILL SHOWN');
+      st.check('the title screen leaves when the level starts', after === 'gone', after);
       st.check('bare URL reaches the entry chapter (production bundle)', got === want!.id, `loaded "${got ?? '(nothing)'}", expected "${want!.id}", ${took}${shown}${errors.length ? `; page errors: ${errors.slice(0, 3).join(' | ')}` : ''}`);
       await page.close();
+
+      // a press made the moment the title is in the page, before the game has loaded, must not be lost
+      const early = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+      await early.goto(`${prod.url}/`, { waitUntil: 'commit' });
+      await early.waitForFunction(() => !!document.getElementById('title-play'), null, { timeout: 20000 });
+      const wasReady = await early.evaluate(() => document.documentElement.dataset['shell'] === 'ready');
+      await early.keyboard.press('Enter');
+      const earlyGot = await early.waitForFunction(() => document.body.dataset['level'] ?? null, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
+      st.check('Enter pressed as soon as the title is in the page still starts the game', earlyGot === want!.id, `loaded "${earlyGot ?? '(nothing)'}"; the game was ${wasReady ? 'already ready' : 'not yet ready'} at the press`);
+      await early.close();
+
+      // with a test or tool parameter the page is bare: no title screen, no how-to-play page, no sound
+      for (const q of TITLE.bare.map((p) => `?${p}`)) {
+        const bare = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+        await bare.goto(`${prod.url}/${q}`);
+        await bare.waitForFunction(() => /Enter: start/.test(document.body.innerText), null, { timeout: 20000 }).catch(() => null);
+        const dom = await bare.evaluate(() => ({
+          cls: document.documentElement.className,
+          ids: [...document.querySelectorAll('[id]')].map((e) => e.id).sort().join(' '),
+          media: document.querySelectorAll('audio, video, img, picture, template').length,
+          text: document.body.innerText,
+        }));
+        st.check(`${q}: a bare page (no title, no how-to-play, the old menu text)`, dom.cls === 'bare' && dom.ids === 'app hud' && dom.media === 0 && /Enter: start/.test(dom.text), `class ${dom.cls}; ids: ${dom.ids}; media elements ${dom.media}; text ${JSON.stringify(dom.text.slice(0, 60))}`);
+        await bare.close();
+      }
     } finally {
       prod.proc.kill();
     }
@@ -93,6 +154,8 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
     const g = await openGame({ ...ctx, levelId: want!.id } as Ctx, { query: '?harness=1' });
     try {
       const loaded = await g.page.evaluate(() => window.__HARNESS__!.level()?.id ?? null);
+      const harnessIds = await g.page.evaluate(() => `${document.documentElement.className}: ${[...document.querySelectorAll('[id]')].map((e) => e.id).sort().join(' ')}`);
+      st.check('the harness page is bare (D-022: it sees no title, no how-to-play, no sound)', harnessIds === 'bare: app hud', harnessIds);
       st.check('default level (no ?level=) is the entry chapter', loaded === want!.id, `game default loaded "${loaded}"`);
       for (const [i, ref] of chain.entries()) {
         const level = JSON.parse(readFileSync(join(ctx.root, 'levels', `${ref.id}.json`), 'utf8'));

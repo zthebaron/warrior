@@ -25,6 +25,7 @@ import AjvMod from 'ajv';
 import { measure } from './measure.mjs';
 import { checkAccents, printAccents } from './accent.mjs';
 import { checkPaintBudgets, printPaintBudget } from './paint-budget.mjs';
+import { checkShellBudgets } from './shell-budget.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const Ajv = AjvMod.default ?? AjvMod;
@@ -124,7 +125,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const paint = await checkPaintBudgets(ROOT);
   console.log('painted backdrop and characters (D-020) — assets/backdrop/, assets/char/');
   printPaintBudget(paint);
-  const ok = res.ok && acc.ok && paint.ok;
+  const shell = checkShellBudgets(ROOT);
+  console.log('title, how-to-play and sound (D-022) — assets/ui/, assets/audio/');
+  printPaintBudget(shell);
+  const ok = res.ok && acc.ok && paint.ok && shell.ok;
   console.log(ok ? 'BUDGET PASS' : 'BUDGET FAIL');
   process.exit(ok ? 0 : 1);
 }

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { StateMachine, type GameState } from './engine/state';
 import { GameLoop, LOOP_CONFIG } from './engine/loop';
-import { InputSystem, type InputFrame } from './engine/input';
+import { INPUT_CONFIG, InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
 import { PAINT_LAYER, PaintLayer } from './engine/paint-layer';
@@ -21,6 +21,8 @@ import { buildLevel, bundledLevelSources, fetchLevelFresh, levelIndex, loadLevel
 import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
 import { ramp } from './engine/palette';
+import { Shell, SHELL, shellEnabled } from './ui/shell';
+import { buildHowto, chaptersFrom, keyName, type HowtoChapter } from './ui/howto';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -535,11 +537,46 @@ async function boot(): Promise<void> {
     ].join('\n');
   });
 
+  // ---------- the shell: title screen and how-to-play page (D-022) ----------
+  // Only at the game's front door (index.html decides, from the URL) and never in a harness build's test mode.
+  // A bare page builds none of it: `shell` is null and every line below that names it does nothing.
+  let chapters: HowtoChapter[] = [];
+  const shell = !HARNESS_MODE && shellEnabled()
+    ? new Shell({
+        state: () => state.get(),
+        start: () => {
+          if (!state.is('menu')) return;
+          input.holdOff('jump'); // Space is Play here and jump there: the press that starts the game is not a jump
+          void startLevel();
+        },
+        pause: () => { if (state.is('play')) state.transition('pause'); },
+        resume: () => { if (state.is('pause')) state.transition('play'); },
+        helpContent: () => buildHowto({
+          chapters,
+          bindings: INPUT_CONFIG.bindings,
+          keys: [
+            ['Pause', GAME_RULES.keys.pause],
+            ['Back to the title (while paused)', [GAME_RULES.keys.menu]],
+            ['Start, and the next chapter', [GAME_RULES.keys.start]],
+            ['How to play', [SHELL.keys.help]],
+          ],
+          pad: null,
+          respawnDelaySec: GAME_RULES.respawnDelaySec,
+        }),
+        hint: () => `${keyName(SHELL.keys.help)}  how to play`,
+        sound: null,
+      })
+    : null;
+  if (shell) {
+    errorBanner.style.zIndex = '50'; // above the title: a level that fails to load must be seen
+    void bundledLevelSources().then((s) => { chapters = chaptersFrom(s); });
+  }
+
   // ---------- HUD + UI keys ----------
   const hudText = (s: GameState): string => {
     switch (s) {
       case 'boot': return 'booting…';
-      case 'menu': return 'WARRIOR\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
+      case 'menu': return shell ? '' : 'WARRIOR\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
       case 'loading': return 'loading…';
       case 'play': return '';
       case 'pause': return 'PAUSED\nP / Esc: resume   M: menu';
@@ -551,10 +588,12 @@ async function boot(): Promise<void> {
   };
   state.onChange((to) => {
     hud.textContent = hudText(to);
+    shell?.onState(to);
   });
 
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
+    if (shell?.onKey(e, k.start)) return;
     if (e.code === k.start && state.is('menu')) void startLevel();
     else if (e.code === k.start && state.is('results')) {
       // D-014 fix 3: finishing a chapter loads the next; after the last one, back to the menu, which
@@ -903,6 +942,8 @@ async function boot(): Promise<void> {
 
   state.transition('menu');
   loop.start();
+  // D-022: the title is up and the game is ready behind it. Decode the first chapter now, so Play is short.
+  if (shell) queueMicrotask(() => { if (state.is('menu')) void loadLevel(currentId).then(prepareLevel).catch(() => { /* startLevel reports it when Play is pressed */ }); });
 }
 
 boot().catch((err: unknown) => {

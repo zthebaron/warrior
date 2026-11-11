@@ -37,6 +37,8 @@ export class InputSystem {
   private playbackQueue: InputFrame[] = [];
   private playbackIndex = 0;
   private override: InputFrame | null = null;
+  /** Actions the keyboard is not believed about until their key has been seen up (holdOff). */
+  private readonly heldOff = new Set<Action>();
 
   constructor(target: Window) {
     target.addEventListener('keydown', (e) => this.down.add(e.code));
@@ -51,6 +53,22 @@ export class InputSystem {
 
   private held(action: Action): boolean {
     return INPUT_CONFIG.bindings[action].some((c) => this.down.has(c));
+  }
+
+  /**
+   * Do not report `action` from the keyboard until its key has been released once. For a key that has just
+   * meant something else: Space starts the game from the title screen (D-022) and is also jump, so without
+   * this the player would leap on the first tick. Live keyboard only: playback and the override never see it.
+   */
+  holdOff(action: Action): void {
+    if (this.held(action)) this.heldOff.add(action);
+  }
+
+  private pressed(action: Action): boolean {
+    const down = this.held(action);
+    if (!this.heldOff.has(action)) return down;
+    if (!down) this.heldOff.delete(action);
+    return false;
   }
 
   /**
@@ -93,9 +111,9 @@ export class InputSystem {
     return {
       x: c * nx - s * ny,
       y: -s * nx - c * ny,
-      jump: this.held('jump'),
-      dash: this.held('dash'),
-      sprint: this.held('sprint'),
+      jump: this.pressed('jump'),
+      dash: this.pressed('dash'),
+      sprint: this.pressed('sprint'),
     };
   }
 
