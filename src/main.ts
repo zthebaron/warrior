@@ -659,14 +659,15 @@ async function boot(): Promise<void> {
   function padFrame(p: Gamepad, frameDt: number): void {
     p.poll();
     if (shell?.helpOpen) {
-      if (p.pressed('back') || p.pressed('help')) shell.closeHelp();
+      // B closes the page and is also dash: the press that closes it is not a dash (as Play's A is not a jump)
+      if (p.pressed('back') || p.pressed('help')) { p.holdOff('dash'); shell.closeHelp(); }
       return;
     }
-    if (shell && p.pressed('help') && !state.is('loading') && !state.is('boot')) return shell.openHelp();
+    if (shell && p.pressed('help')) return shell.openHelp(); // which refuses where the page could not pause the game
     if (state.is('menu')) {
       if (p.pressed('start')) startGame();
     } else if (state.is('results')) {
-      if (p.pressed('start')) afterResults();
+      if (p.pressed('start')) { p.holdOff('jump'); afterResults(); } // A is "next chapter" here and jump there
     } else if (state.is('pause')) {
       if (p.pressed('pause')) state.transition('play');
     } else if (state.is('play')) {
@@ -698,7 +699,7 @@ async function boot(): Promise<void> {
   if (audio) window.addEventListener('pointerdown', () => audio.nudge());
   // the left button is the sword once the mouse is the camera's (the click that captures it is not a slash)
   renderer.canvas.addEventListener('mousedown', (e) => {
-    if (e.button === 0 && document.pointerLockElement === renderer.canvas) slash();
+    if (INPUT_CONFIG.bindings.slash.includes(`Mouse${e.button}`) && document.pointerLockElement === renderer.canvas) slash();
   });
   renderer.canvas.addEventListener('click', () => {
     if (state.is('play') && !overlay.visible) void renderer.canvas.requestPointerLock();
@@ -1045,6 +1046,10 @@ async function boot(): Promise<void> {
 boot().catch((err: unknown) => {
   const msg = err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err);
   console.error('[boot] FAILED', msg);
+  // D-022: the title painting is in the page before this module loads and is drawn over the HUD. A boot that
+  // failed has no game behind it, so take the shell off the screen and let the message be read (OQ-073). On a
+  // bare page neither element exists.
+  for (const id of ['title', 'help']) document.getElementById(id)?.setAttribute('hidden', '');
   const hud = document.getElementById('hud');
   if (hud) hud.textContent = `BOOT FAILED\n${msg}`;
 });

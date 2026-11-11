@@ -123,13 +123,16 @@ export class Shell {
    * `startKey` is the game's own start key (Enter): on the title it and Space both mean Play.
    */
   onKey(e: KeyboardEvent, startKey: string): boolean {
-    if (e.repeat) return this.helpOpen;
+    // A held key's repeats belong to whatever its first press was for. On the title that press was the shell's
+    // (Play, or another button's own click), so a repeat must not reach the game's start key behind it: that
+    // route starts the level without the Play press, and so without sound (OQ-073).
+    if (e.repeat) return this.helpOpen || this.host.state() === 'menu';
     if (this.helpOpen) {
       if (e.code === SHELL.keys.back || e.code === SHELL.keys.help) this.closeHelp();
       return true; // the page has the keyboard: Enter and Space press its focused button, the arrows scroll it
     }
-    if (e.code === SHELL.keys.help && this.host.state() !== 'loading' && this.host.state() !== 'boot') {
-      this.openHelp();
+    if (e.code === SHELL.keys.help) {
+      this.openHelp(); // which refuses where the page could not pause the game
       return true;
     }
     if (this.host.state() === 'menu' && (e.code === startKey || SHELL.keys.start.includes(e.code))) {
@@ -141,13 +144,24 @@ export class Shell {
     return false;
   }
 
+  /**
+   * Open the how-to-play page. Refused while the game cannot be paused under it (OQ-073): a level that is
+   * loading starts when it is ready, and a fallen warrior respawns, and either would then run behind the page
+   * with the page's own keys (the arrows that scroll it) walking the warrior. Every way in comes through here:
+   * the key, the pad, the title's button and a press made before the game was ready.
+   */
   openHelp(): void {
-    if (this.helpOpen) return;
+    const s = this.host.state();
+    if (this.helpOpen || s === 'loading' || s === 'death' || s === 'boot') return;
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (this.host.state() === 'play') {
       this.host.pause();
       this.owesResume = true;
     }
+    // Give the mouse back: while the canvas holds the pointer lock there is no cursor to press Back or move the
+    // slider with, and the camera keeps turning behind the page. The game is paused by now, so its own
+    // listener for the lock ending (which pauses a running game) has nothing to do.
+    if (document.pointerLockElement) document.exitPointerLock();
     this.helpBody.replaceChildren(this.host.helpContent());
     this.help.hidden = false;
     this.help.scrollTop = 0;

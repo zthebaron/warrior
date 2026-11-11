@@ -26,7 +26,8 @@ export const INPUT_CONFIG = {
     sprint: ['ShiftLeft', 'ShiftRight'],
     // D-022: the sword slash. It is in this table so the how-to-play page shows it with the rest, and it is NOT
     // in InputFrame: a slash is drawn, never simulated, so no trace, replay or bot ever carries it.
-    slash: ['KeyJ'],
+    // Mouse0 is the left button, read in src/main.ts only while the mouse is the camera's; no key has that code.
+    slash: ['KeyJ', 'Mouse0'],
   },
   maxRecordedFrames: 60 * 60 * 30, // 30 minutes at 60Hz; past this, recording stops (warned once)
 };

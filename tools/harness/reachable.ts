@@ -31,6 +31,7 @@ import { join } from 'node:path';
 import { FIXED_HZ, Stage, VIEWPORT, guard, openGame, type Ctx, type StageResult } from './lib.ts';
 import { chapterChain, entryLevel as entryOf, type LevelRef } from '../../src/systems/progression.ts';
 import { NAV_CONFIG, walk } from './nav.ts';
+import type { Page } from '@playwright/test';
 
 const PROD_PORT = 4318; // beside preflight's 4317 (dist-harness)
 
@@ -53,7 +54,20 @@ const AUDIO_PROBE = `(() => {
   };
 })()`;
 interface AudioProbe { contexts: number; ctx: AudioContext | null; decoded: number[]; starts: { seconds: number; loop: boolean; rate: number }[] }
-declare global { interface Window { __audioProbe?: AudioProbe } }
+declare global { interface Window { __audioProbe?: AudioProbe; __pad?: { on: boolean; down: number[] }; __lock?: { exits: number; held: boolean } } }
+
+/** Runs in the page before any of its scripts: a standard-layout gamepad the test holds buttons down on. No real pad is involved (B-57). */
+const PAD_FAKE = `(() => {
+  const pad = (window.__pad = { on: false, down: [] });
+  const buttons = Array.from({ length: 17 }, (_, i) => ({ get pressed() { return pad.down.includes(i); }, get value() { return pad.down.includes(i) ? 1 : 0; } }));
+  navigator.getGamepads = () => (pad.on ? [{ connected: true, mapping: 'standard', id: 'faked', index: 0, axes: [0, 0, 0, 0], buttons }] : []);
+})()`;
+
+/** Runs in the page before any of its scripts: no WebGL, so the game's boot fails where a player's old machine would fail it. */
+const NO_WEBGL = `(() => {
+  const real = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (type, ...rest) { return /webgl/i.test(String(type)) ? null : real.call(this, type, ...rest); };
+})()`;
 
 /** D-022: what the title screen must show (the brief's own words), and the parameters that must leave a page bare. */
 const TITLE = {
@@ -197,6 +211,115 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       const earlyGot = await early.waitForFunction(() => document.body.dataset['level'] ?? null, null, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
       st.check('Enter pressed as soon as the title is in the page still starts the game', earlyGot === want!.id, `loaded "${earlyGot ?? '(nothing)'}"; the game was ${wasReady ? 'already ready' : 'not yet ready'} at the press`);
       await early.close();
+
+      // ---- OQ-073: five things the review of D-022 found that a player hits, one check each. Every page here is
+      // its own, so the cookie, the probe's counts and the warrior's place in the checks above are untouched.
+      const fresh = async (...scripts: string[]): Promise<Page> => {
+        const p = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+        for (const s of scripts) await p.addInitScript(s);
+        await p.goto(`${prod.url}/`);
+        return p;
+      };
+      const shellReady = (p: Page): Promise<boolean> => p.waitForFunction(() => document.documentElement.dataset['shell'] === 'ready', null, { timeout: 20000 }).then(() => true).catch(() => false);
+      const levelOf = (p: Page, ms: number): Promise<string | null> => p.waitForFunction(() => document.body.dataset['level'] ?? null, null, { timeout: ms }).then((h) => h.jsonValue()).catch(() => null);
+      /** What is on screen: the two shell layers, and the HUD's text (which names the state: PAUSED, fell, COMPLETE, BOOT FAILED). */
+      const screen = (p: Page): Promise<{ title: boolean; help: boolean; hudShown: boolean; hud: string }> => p.evaluate(() => {
+        const on = (id: string): boolean => (document.getElementById(id)?.getClientRects().length ?? 0) > 0;
+        return { title: on('title'), help: on('help'), hudShown: on('hud'), hud: document.getElementById('hud')?.textContent ?? '' };
+      });
+
+      // 1. a boot that fails says so on screen (the title painting used to cover the message, with Play dead)
+      const broken = await fresh(NO_WEBGL);
+      const failed = await broken.waitForFunction(() => /^BOOT FAILED/.test(document.getElementById('hud')?.textContent ?? ''), null, { timeout: 20000 }).then(() => true).catch(() => false);
+      const wreck = await screen(broken);
+      st.check('a boot failure is on screen, not under the title painting (WebGL refused)', failed && wreck.hudShown && !wreck.title && !wreck.help, failed ? `message ${wreck.hudShown ? 'shown' : 'NOT shown'}; title ${wreck.title ? 'STILL OVER IT' : 'gone'}; how-to-play ${wreck.help ? 'STILL OVER IT' : 'gone'}` : `the boot did not fail in 20 s: HUD ${JSON.stringify(wreck.hud.slice(0, 60))}`);
+      await broken.close();
+
+      // 2. Enter held on another of the title's buttons is not Play (the key's repeats started the game past the
+      //    Play press, so with no sound for the whole visit)
+      const heldPage = await fresh(AUDIO_PROBE);
+      const heldReady = await shellReady(heldPage);
+      await heldPage.focus('#title-sound');
+      for (let i = 0; i < 4; i++) {
+        await heldPage.keyboard.down('Enter'); // a key already down goes down again as a repeat
+        await heldPage.waitForTimeout(120);
+      }
+      const startedByRepeat = await heldPage.waitForFunction(() => (document.body.dataset['level'] || (document.getElementById('title-play') as HTMLButtonElement | null)?.disabled ? 'started' : null), null, { timeout: 3000 }).then(() => true).catch(() => false);
+      await heldPage.keyboard.up('Enter');
+      const heldSeen = await screen(heldPage);
+      st.check('Enter held on the title\'s Sound button does not start the game', heldReady && !startedByRepeat && heldSeen.title, heldReady ? `${startedByRepeat ? 'the game STARTED' : 'no start in 3 s'}; title ${heldSeen.title ? 'shown' : 'gone'}` : 'the game never marked the shell ready (20 s)');
+      await heldPage.close();
+
+      // 3. the how-to-play page never sits over a game that is running. Death and loading are the two states it
+      //    could be opened in without pausing; both are refused by the one guard. Loading is the one a test can
+      //    hold open: the level's meshes are kept back until How to play has been clicked.
+      const under = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+      let letMeshesThrough!: () => void;
+      const meshGate = new Promise<void>((r) => { letMeshesThrough = r; });
+      await under.route(/\.glb(\?|$)/, async (route) => { await meshGate; await route.continue().catch(() => {}); });
+      await under.goto(`${prod.url}/`);
+      const underReady = await shellReady(under);
+      await under.keyboard.press('Enter');
+      const wasLoading = await under.waitForFunction(() => (document.getElementById('title-play') as HTMLButtonElement | null)?.disabled === true && !document.body.dataset['level'], null, { timeout: 5000 }).then(() => true).catch(() => false);
+      await under.click('#title-help', { timeout: 5000 }).catch(() => {});
+      const openedWhileLoading = (await screen(under)).help;
+      letMeshesThrough();
+      const underLevel = await levelOf(under, 20000);
+      await under.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).catch(() => null);
+      const over = await screen(under);
+      st.check('How to play clicked while the level loads is not left over a running game', underReady && wasLoading && underLevel !== null && (!over.help || /^PAUSED/.test(over.hud)), `${wasLoading ? 'clicked during loading' : 'the click was NOT during loading'}; the page ${openedWhileLoading ? 'opened' : 'stayed shut'}; then level ${underLevel ?? 'NOT LOADED'}, how-to-play ${over.help ? 'shown' : 'not shown'}, HUD ${JSON.stringify(over.hud.slice(0, 20))}`);
+      await under.close();
+
+      // 4 and 5 share a page in the game: the mouse, then a pad
+      const inGame = await fresh(AUDIO_PROBE, PAD_FAKE);
+      await shellReady(inGame);
+      await inGame.keyboard.press('Enter');
+      const inLevel = await levelOf(inGame, 20000);
+      await inGame.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).catch(() => null);
+      // let the warrior land and every sound of the start finish starting: nothing new for a second
+      for (let i = 0, n = -1; i < 10; i++) {
+        const now = await inGame.evaluate(() => window.__audioProbe?.starts.length ?? 0);
+        if (now === n) break;
+        n = now;
+        await inGame.waitForTimeout(1000);
+      }
+      // 4. opening How to play gives the mouse back. Headless Chromium grants no real pointer lock, so the lock is
+      //    faked the way the hidden tab is above: the page is told the canvas holds it, and its release is counted.
+      await inGame.evaluate(() => {
+        const lock: { exits: number; held: boolean } = (window.__lock = { exits: 0, held: true });
+        const canvas = document.querySelector('canvas');
+        Object.defineProperty(document, 'pointerLockElement', { get: () => (lock.held ? canvas : null), configurable: true });
+        document.exitPointerLock = () => { lock.exits++; lock.held = false; document.dispatchEvent(new Event('pointerlockchange')); };
+      });
+      await inGame.keyboard.press('KeyH');
+      await inGame.waitForTimeout(300);
+      const lock = await inGame.evaluate(() => ({ ...window.__lock! }));
+      const lockSeen = await screen(inGame);
+      st.check('opening How to play in the game releases the mouse (a faked pointer lock)', inLevel !== null && lockSeen.help && /^PAUSED/.test(lockSeen.hud) && lock.exits === 1 && !lock.held, `level ${inLevel ?? 'NOT LOADED'}; how-to-play ${lockSeen.help ? 'shown' : 'NOT shown'}, HUD ${JSON.stringify(lockSeen.hud.slice(0, 6))}; the lock was released ${lock.exits} time(s) and is ${lock.held ? 'STILL HELD' : 'free'}`);
+      await inGame.evaluate(() => { window.__lock!.held = false; });
+      // 5. B closes the page on a pad and is also dash: the press that closes it must not be a dash. Then B again,
+      //    in the game, must be one, or the first half proves nothing.
+      const dashSec = want9.effects['dash']!.seconds;
+      const startsFrom = (n: number): Promise<number[]> => inGame.evaluate((k) => (window.__audioProbe?.starts ?? []).slice(k).filter((s) => !s.loop).map((s) => s.seconds), n);
+      const count = (): Promise<number> => inGame.evaluate(() => window.__audioProbe?.starts.length ?? 0);
+      await inGame.evaluate(() => { window.__pad!.on = true; });
+      await inGame.waitForTimeout(200);
+      const beforeClose = await count();
+      await inGame.evaluate(() => { window.__pad!.down = [1]; });
+      const padClosed = await inGame.waitForFunction(() => document.getElementById('help')?.hidden === true, null, { timeout: 5000 }).then(() => true).catch(() => false);
+      await inGame.waitForTimeout(800); // B is still down: many ticks in which a held dash would be read
+      const leaked = await startsFrom(beforeClose);
+      await inGame.evaluate(() => { window.__pad!.down = []; });
+      await inGame.waitForTimeout(400);
+      const beforeDash = await count();
+      await inGame.evaluate(() => { window.__pad!.down = [1]; });
+      await inGame.waitForTimeout(600);
+      await inGame.evaluate(() => { window.__pad!.down = []; });
+      await inGame.waitForTimeout(300);
+      const control = await startsFrom(beforeDash);
+      const dashed = control.some((s) => Math.abs(s - dashSec) < 0.05);
+      st.check('B on a pad closes How to play and is not also a dash (a faked pad)', padClosed && leaked.length === 0 && dashed, `the page ${padClosed ? 'closed' : 'did NOT close'}; with B still held ${leaked.length ? `sounds STARTED (${leaked.join(', ')} s)` : 'no sound started'}; B pressed again ${dashed ? `started the dash sound (${control.join(', ')} s; dash.mp3 is ${dashSec} s)` : `started NO dash sound (${control.join(', ') || 'nothing'})`}`);
+      await inGame.close();
 
       // with a test or tool parameter the page is bare: no title screen, no how-to-play page, no sound
       for (const q of TITLE.bare.map((p) => `?${p}`)) {
