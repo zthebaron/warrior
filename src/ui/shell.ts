@@ -90,6 +90,10 @@ export class Shell {
   onState(to: GameState): void {
     window.clearTimeout(this.leaveTimer);
     if (to === 'menu') {
+      // Back from the game (the last chapter's results, or M while paused): give the mouse back, as openHelp
+      // does, or the title's buttons cannot be clicked until Esc (B-61). The state is `menu` by now, so the
+      // game's own listener for the lock ending has nothing to do.
+      if (document.pointerLockElement) document.exitPointerLock();
       this.title.hidden = false;
       this.title.classList.remove('leaving');
       this.setPlay(false);
@@ -168,6 +172,15 @@ export class Shell {
     this.syncSound();
     this.syncHint(this.host.state());
     need<HTMLButtonElement>('help-back').focus({ preventScroll: true });
+  }
+
+  /**
+   * What the page is built from has changed: build its body again if it is open. The chapters are read after
+   * the game is ready, and a How to play press made before then opens the page at once, so without this the
+   * page showed "The moves" with nothing under it until it was closed and opened again (B-60).
+   */
+  refreshHelp(): void {
+    if (this.helpOpen) this.helpBody.replaceChildren(this.host.helpContent());
   }
 
   closeHelp(): void {

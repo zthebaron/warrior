@@ -32,6 +32,7 @@ import { FIXED_HZ, Stage, VIEWPORT, guard, openGame, type Ctx, type StageResult 
 import { chapterChain, entryLevel as entryOf, type LevelRef } from '../../src/systems/progression.ts';
 import { NAV_CONFIG, walk } from './nav.ts';
 import type { Page } from '@playwright/test';
+import { keepZone, titleFit } from './title-fit.ts';
 
 const PROD_PORT = 4318; // beside preflight's 4317 (dist-harness)
 
@@ -212,6 +213,39 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       st.check('Enter pressed as soon as the title is in the page still starts the game', earlyGot === want!.id, `loaded "${earlyGot ?? '(nothing)'}"; the game was ${wasReady ? 'already ready' : 'not yet ready'} at the press`);
       await early.close();
 
+      // ---- B-59, B-60 (OQ-074). The title fits a window that is neither a phone nor a monitor: in the tall layout
+      // the buttons and the credit lines stand under the painting, and in a near-square window or on a tablet held
+      // upright there was no room under it, so they were off the screen.
+      for (const [width, height] of [[1000, 900], [810, 1010]] as const) {
+        const shaped = await ctx.browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+        await shaped.goto(`${prod.url}/`);
+        await shaped.waitForFunction(() => document.documentElement.dataset['shell'] === 'ready', null, { timeout: 20000 }).catch(() => null);
+        const fit = await titleFit(shaped, keepZone(ctx.root));
+        st.check(`the title at ${width}x${height}: every button and credit line on screen, the painting's keep zone whole`, fit.whole && fit.cut.length === 0, `keep zone x ${fit.keepLeft.toFixed(0)}..${fit.keepRight.toFixed(0)}, painting y ${fit.top.toFixed(0)}..${fit.bottom.toFixed(0)} in a box y ${fit.box.top.toFixed(0)}..${fit.box.bottom.toFixed(0)}: ${fit.whole ? 'whole' : 'CROPPED'}; ${fit.cut.length ? `CUT OFF: ${fit.cut.join(', ')}` : 'nothing cut off'}`);
+        await shaped.close();
+      }
+      // How to play pressed before the game has loaded lists the moves. The page was built once, at the moment
+      // the game became ready, when the chapters had not yet been read; it showed "The moves" and nothing under
+      // it. The game's scripts are held back until the button has been clicked, so the press is always early.
+      const earlyHelp = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+      let letGameLoad!: () => void;
+      const gameGate = new Promise<void>((r) => { letGameLoad = r; });
+      await earlyHelp.route(/\.js(\?|$)/, async (route) => { await gameGate; await route.continue().catch(() => {}); });
+      await earlyHelp.goto(`${prod.url}/`, { waitUntil: 'commit' });
+      await earlyHelp.waitForFunction(() => !!document.getElementById('title-help'), null, { timeout: 20000 });
+      await earlyHelp.click('#title-help');
+      const pressedEarly = await earlyHelp.evaluate(() => document.documentElement.dataset['shell'] !== 'ready');
+      letGameLoad();
+      const helpOpened = await earlyHelp.waitForFunction(() => document.getElementById('help')?.hidden === false, null, { timeout: 20000 }).then(() => true).catch(() => false);
+      const chapterHeads = (): Promise<number> => earlyHelp.evaluate(() => document.querySelectorAll('#help-content h3').length);
+      await earlyHelp.waitForFunction(() => document.querySelectorAll('#help-content h3').length > 0, null, { timeout: 5000 }).catch(() => null);
+      const listedEarly = await chapterHeads();
+      await earlyHelp.keyboard.press('Escape'); // and what the same page lists when it is opened again, the game long since ready
+      await earlyHelp.keyboard.press('KeyH');
+      const listedAgain = await chapterHeads();
+      st.check('How to play pressed before the game has loaded lists the moves', pressedEarly && helpOpened && listedEarly > 0 && listedEarly === listedAgain, `pressed ${pressedEarly ? 'before the game was ready' : 'AFTER the game was ready'}; the page ${helpOpened ? 'opened' : 'did NOT open'} with ${listedEarly} chapter(s) of moves; opened again it lists ${listedAgain}`);
+      await earlyHelp.close();
+
       // ---- OQ-073: five things the review of D-022 found that a player hits, one check each. Every page here is
       // its own, so the cookie, the probe's counts and the warrior's place in the checks above are untouched.
       const fresh = async (...scripts: string[]): Promise<Page> => {
@@ -321,6 +355,15 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       const control = await startsFrom(beforeDash);
       const dashed = control.some((s) => Math.abs(s - dashSec) < 0.05);
       st.check('B on a pad closes How to play and is not also a dash (a faked pad)', padClosed && leaked.length === 0 && dashed, `the page ${padClosed ? 'closed' : 'did NOT close'}; with B still held ${leaked.length ? `sounds STARTED (${leaked.join(', ')} s)` : 'no sound started'}; B pressed again ${dashed ? `started the dash sound (${control.join(', ')} s; dash.mp3 is ${dashSec} s)` : `started NO dash sound (${control.join(', ') || 'nothing'})`}`);
+      // B-61 (OQ-074): back at the title the mouse is free too. Paused, then M: the title's buttons could not be
+      // clicked while the canvas still held the lock. The same faked lock as check 4.
+      await inGame.evaluate(() => { window.__lock!.exits = 0; window.__lock!.held = true; });
+      await inGame.keyboard.press('KeyP');
+      await inGame.waitForFunction(() => /^PAUSED/.test(document.getElementById('hud')?.textContent ?? ''), null, { timeout: 5000 }).catch(() => null);
+      await inGame.keyboard.press('KeyM');
+      const backAtTitle = await inGame.waitForFunction(() => (document.getElementById('title')?.getClientRects().length ?? 0) > 0, null, { timeout: 5000 }).then(() => true).catch(() => false);
+      const lockAtTitle = await inGame.evaluate(() => ({ ...window.__lock! }));
+      st.check('back at the title the mouse is released (a faked pointer lock)', backAtTitle && lockAtTitle.exits === 1 && !lockAtTitle.held, `the title is ${backAtTitle ? 'shown' : 'NOT shown'}; the lock was released ${lockAtTitle.exits} time(s) and is ${lockAtTitle.held ? 'STILL HELD' : 'free'}`);
       await inGame.close();
 
       // with a test or tool parameter the page is bare: no title screen, no how-to-play page, no sound
