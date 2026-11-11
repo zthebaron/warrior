@@ -23,6 +23,8 @@ import paletteJson from '../reference/palette.json';
 import { ramp } from './engine/palette';
 import { Shell, SHELL, shellEnabled } from './ui/shell';
 import { buildHowto, chaptersFrom, keyName, type HowtoChapter } from './ui/howto';
+import { AUDIO, GameAudio } from './audio/audio';
+import { SoundTap } from './audio/tap';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -270,6 +272,11 @@ async function boot(): Promise<void> {
   let cameraOverride: { pos: Vec3; target: Vec3 } | null = null;
   let skipRender = false;
 
+  // D-022: sound, only at the front door (the same test as the shell, below). On a bare page both are null and
+  // every line that names them does nothing: no context is opened and no file is fetched.
+  const audio = !HARNESS_MODE && shellEnabled() ? new GameAudio() : null;
+  const tap = audio ? new SoundTap(audio) : null;
+
   const landingMark = new LandingMark(physics);
   landingMark.mesh.userData['translates'] = 'player'; // follows the player's ground point (D-010)
   renderer.scene.add(landingMark.mesh);
@@ -320,6 +327,7 @@ async function boot(): Promise<void> {
     instrument = INSTRUMENT ? new Instrument(data, GAME_RULES.checkpointRadius) : null;
     instrumentEmitted = false;
     lastDeath = null;
+    tap?.reset();
     clearError();
   };
 
@@ -415,6 +423,7 @@ async function boot(): Promise<void> {
         player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
         camRig.snap(player.feet(tmpFeet), player.facing);
         state.transition('play');
+        tap?.respawned(checkpointLog.length);
       }
       instrumentTick();
       return;
@@ -430,6 +439,7 @@ async function boot(): Promise<void> {
     profiler.end('physics');
     tools.probe.sample(player.feet(tmpFeet), player.grounded);
     rulesTick();
+    tap?.afterTick(player, checkpointLog.length); // D-022: reads the tick, writes nothing
     instrumentTick();
   };
 
@@ -545,6 +555,7 @@ async function boot(): Promise<void> {
     ? new Shell({
         state: () => state.get(),
         start: () => {
+          audio?.wake(); // the Play press is the gesture a browser needs before a page may make sound
           if (!state.is('menu')) return;
           input.holdOff('jump'); // Space is Play here and jump there: the press that starts the game is not a jump
           void startLevel();
@@ -559,12 +570,15 @@ async function boot(): Promise<void> {
             ['Back to the title (while paused)', [GAME_RULES.keys.menu]],
             ['Start, and the next chapter', [GAME_RULES.keys.start]],
             ['How to play', [SHELL.keys.help]],
+            ...(audio ? [['Sound on and off', [AUDIO.keys.mute]], ['Quieter, louder', [AUDIO.keys.quieter, AUDIO.keys.louder]]] as const : []),
           ],
           pad: null,
           respawnDelaySec: GAME_RULES.respawnDelaySec,
         }),
-        hint: () => `${keyName(SHELL.keys.help)}  how to play`,
-        sound: null,
+        hint: () => `${keyName(SHELL.keys.help)}  how to play` + (audio ? `     ${keyName(AUDIO.keys.mute)}  sound: ${audio.muted ? 'off' : 'on'}` : ''),
+        sound: audio
+          ? { muted: () => audio.muted, setMuted: (m) => audio.setMuted(m), volume: () => audio.volume, setVolume: (v) => audio.setVolume(v) }
+          : null,
       })
     : null;
   if (shell) {
@@ -589,10 +603,20 @@ async function boot(): Promise<void> {
   state.onChange((to) => {
     hud.textContent = hudText(to);
     shell?.onState(to);
+    // the music is at full in the game and quieter under the title and while paused
+    audio?.setScene(to === 'play' || to === 'death' || to === 'results' ? 'game' : 'title');
+    if (to === 'results') tap?.goal();
   });
 
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
+    if (audio) {
+      audio.nudge();
+      if (!e.repeat && e.code === AUDIO.keys.mute) audio.setMuted(!audio.muted);
+      else if (e.code === AUDIO.keys.quieter) audio.setVolume(audio.volume - AUDIO.volumeStep);
+      else if (e.code === AUDIO.keys.louder) audio.setVolume(audio.volume + AUDIO.volumeStep);
+      if (e.code === AUDIO.keys.mute || e.code === AUDIO.keys.quieter || e.code === AUDIO.keys.louder) shell?.syncSound();
+    }
     if (shell?.onKey(e, k.start)) return;
     if (e.code === k.start && state.is('menu')) void startLevel();
     else if (e.code === k.start && state.is('results')) {
@@ -609,6 +633,7 @@ async function boot(): Promise<void> {
     else if (e.code === k.menu && state.is('pause')) state.transition('menu');
   });
 
+  if (audio) window.addEventListener('pointerdown', () => audio.nudge());
   renderer.canvas.addEventListener('click', () => {
     if (state.is('play') && !overlay.visible) void renderer.canvas.requestPointerLock();
   });

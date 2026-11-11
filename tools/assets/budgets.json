@@ -233,5 +233,17 @@
     "title-tall.webp": { "bytes": 5930 },
     "courtyard.webp": { "bytes": 164778 },
     "courtyard.jpg": { "bytes": 168571 }
+  },
+  "audio_basis": "D-022 sound (assets/audio/*.mp3, cut from fal takes by tools/gen/build-audio.mjs; assets/audio/MANIFEST.md lists each file, its take and its cost). Byte ceilings, the brief's own: the music loop \"at most about 1.5 MB\", each effect \"at most about 50 KB\". Checked by tools/assets/shell-budget.mjs. MEASUREMENTS.md \"D-022 sound\".",
+  "audio": {
+    "music.mp3": { "bytes": 1500000 },
+    "jump.mp3": { "bytes": 50000 },
+    "land_soft.mp3": { "bytes": 50000 },
+    "land_hard.mp3": { "bytes": 50000 },
+    "slash.mp3": { "bytes": 50000 },
+    "dash.mp3": { "bytes": 50000 },
+    "wall_grab.mp3": { "bytes": 50000 },
+    "checkpoint.mp3": { "bytes": 50000 },
+    "respawn.mp3": { "bytes": 50000 }
   }
 }

@@ -9,6 +9,10 @@
 //   node tools/gen/fal-call.mjs call  <endpoint> --input <payload.json> --for "<purpose>" --out <dir> [--name <stem>]
 //   node tools/gen/fal-call.mjs fetch <request_id> --out <dir> [--name <stem>]    re-download, never re-pay
 //
+//   call ... --max-total <dollars>   a LOWER ceiling for one task: refuse if committed + price would pass it.
+//                                    It can only tighten the cap, never raise it (D-022: TITLE-AUDIO-SWORD may
+//                                    spend $4.00, so every call of that task passes --max-total 15.60).
+//
 // How the cap holds:
 //   * The price is computed HERE from the payload, against a table of prices read off fal's model
 //     pages. The caller cannot supply a price. An endpoint that is not in the table is refused.
@@ -17,6 +21,7 @@
 //     refused: an unreadable ledger is treated as a full one.
 //   * committed + price > CAP          -> refused.
 //   * committed >= STOP (the $19.50 line) -> refused, whatever the price.
+//   * committed + price > --max-total  -> refused (a task's own, lower, ceiling; optional).
 //   * The ledger row is appended as `pending` BEFORE the submit request leaves, under a lock, so a
 //     crash at any later point still shows the charge. The request id is filled in after submit.
 //   * A row is only ever zero-rated if fal answered the submit with a non-2xx status (it never
@@ -131,6 +136,24 @@ const PRICES = {
     if (r !== '1K' && r !== '2K') throw new Error('resolution must be 1K or 2K');
     return r === '2K' ? 1200 : 800;
   },
+  // ---- audio (D-022). Read off each model page on 2026-11-10. ----
+  // "$0.002 per seconds". duration_seconds is 0.5 to 30 and, left out, "optimal duration will be determined
+  // from prompt": the model would choose how much is charged, up to 30 s. So a payload with no explicit
+  // duration is refused. The page gives no rounding rule; a started second is charged as a whole one, which
+  // is the larger reading.
+  'fal-ai/elevenlabs/sound-effects/v3': (p) => {
+    only(p, ['text', 'duration_seconds', 'prompt_influence', 'output_format', 'loop']);
+    const d = p.duration_seconds;
+    if (typeof d !== 'number' || !(d >= 0.5 && d <= 30)) throw new Error('duration_seconds must be given, a number from 0.5 to 30');
+    return 20 * Math.ceil(d);
+  },
+  // "$0.2 per audios": one clip a call, any length up to 190 s. The length is still required, so that what
+  // was asked for is on record in the payload.
+  'fal-ai/stable-audio-25/text-to-audio': (p) => {
+    only(p, ['prompt', 'seconds_total', 'num_inference_steps', 'guidance_scale', 'seed']);
+    if (!Number.isInteger(p.seconds_total) || p.seconds_total < 1 || p.seconds_total > 190) throw new Error('seconds_total must be given, an integer from 1 to 190');
+    return 2000;
+  },
 };
 
 // ---- small helpers -----------------------------------------------------------------------------
@@ -138,6 +161,13 @@ const usd = (t) => '$' + (t / TICKS).toFixed(4);
 const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1]; };
 const LEDGER = resolve(flag('--ledger') ?? join(ROOT, 'state/FAL-LEDGER.md'));
+// A task's own ceiling on the committed total, in ticks; null when the call names none. Never above CAP.
+const MAX_TOTAL = (() => {
+  const v = flag('--max-total');
+  if (v === null) return null;
+  if (!/^\d+(\.\d{1,4})?$/.test(v ?? '')) { console.error('ERROR    --max-total takes dollars, for example 15.60'); process.exit(2); }
+  return Math.min(CAP, Math.round(Number(v) * TICKS));
+})();
 const LOCK = LEDGER + '.lock';
 
 let KEY = null;
@@ -291,7 +321,7 @@ const collectFiles = (v, path = [], out = []) => {
   else if (v && typeof v === 'object') {
     if (typeof v.url === 'string' && /^https:\/\//.test(v.url)) out.push({ key: path.join('.'), url: v.url, name: v.file_name });
     else for (const [k, x] of Object.entries(v)) collectFiles(x, [...path, k], out);
-  } else if (typeof v === 'string' && /^https:\/\/.+\.(glb|fbx|obj|png|jpe?g|webp|zip|usdz)(\?|$)/i.test(v)) out.push({ key: path.join('.'), url: v });
+  } else if (typeof v === 'string' && /^https:\/\/.+\.(glb|fbx|obj|png|jpe?g|webp|zip|usdz|wav|mp3|flac|ogg|m4a|aac|opus)(\?|$)/i.test(v)) out.push({ key: path.join('.'), url: v });
   return out;
 };
 const saveResult = async (result, requestId, outDir, stem) => {
@@ -363,6 +393,7 @@ if (cmd === 'call') {
   const check = (total) => {
     if (total >= STOP) refuse(`committed ${usd(total)} is at or past the stop line ${usd(STOP)}. No further calls.`);
     if (total + price > CAP) refuse(`${endpoint} costs ${usd(price)}; committed ${usd(total)} + that = ${usd(total + price)} exceeds the cap ${usd(CAP)}.`);
+    if (MAX_TOTAL !== null && total + price > MAX_TOTAL) refuse(`${endpoint} costs ${usd(price)}; committed ${usd(total)} + that = ${usd(total + price)} exceeds this task's ceiling ${usd(MAX_TOTAL)} (--max-total).`);
   };
   check(before.total);
 

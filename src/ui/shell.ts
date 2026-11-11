@@ -190,6 +190,7 @@ export class Shell {
       b.setAttribute('aria-pressed', String(!s.muted()));
     }
     this.volume.value = String(Math.round(s.volume() * Number(this.volume.max)));
+    this.syncHint(this.host.state());
   }
 
   private syncHint(state: GameState): void {

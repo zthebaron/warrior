@@ -76,3 +76,17 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 64 | 2026-11-10T20:18:49Z | fal-ai/trellis | trellis test: spire | $0.0200 | $0.0200 | 01a1c71d-029a-70c1-bd5a-462e0469cd85 | done | $10.5500 |
 | 65 | 2026-11-10T20:19:48Z | fal-ai/hunyuan3d-v3/image-to-3d | final: boulder_b (Normal + PBR) | $0.5250 | $0.5250 | 01a1c71d-e7f9-7ee3-bfef-00be51509ba9 | done | $11.0750 |
 | 66 | 2026-11-10T20:22:38Z | fal-ai/hunyuan3d-v3/image-to-3d | final: spire (Normal + PBR) | $0.5250 | $0.5250 | 01a1c720-81ea-7753-997e-d30ed1981934 | done | $11.6000 |
+| 67 | 2026-11-11T00:21:39Z | fal-ai/elevenlabs/sound-effects/v3 | audio: jump | $0.0020 | $0.0020 | 01a1c7fb-562c-7a30-9d2d-5403ae54812d | done | $11.6020 |
+| 68 | 2026-11-11T00:21:53Z | fal-ai/elevenlabs/sound-effects/v3 | audio: double_jump | $0.0020 | $0.0020 | 01a1c7fb-8a7d-7091-8ad1-571cf8875eed | done | $11.6040 |
+| 69 | 2026-11-11T00:22:00Z | fal-ai/elevenlabs/sound-effects/v3 | audio: land_soft | $0.0020 | $0.0020 | 01a1c7fb-a7c1-7082-95b1-7fb84bf13fe3 | done | $11.6060 |
+| 70 | 2026-11-11T00:22:06Z | fal-ai/elevenlabs/sound-effects/v3 | audio: land_hard | $0.0020 | $0.0020 | 01a1c7fb-be55-7770-886d-0def4854035e | done | $11.6080 |
+| 71 | 2026-11-11T00:22:12Z | fal-ai/elevenlabs/sound-effects/v3 | audio: slash | $0.0020 | $0.0020 | 01a1c7fb-d4c9-74a1-a980-13d5807bc6cd | done | $11.6100 |
+| 72 | 2026-11-11T00:22:17Z | fal-ai/elevenlabs/sound-effects/v3 | audio: dash | $0.0020 | $0.0020 | 01a1c7fb-ea8e-7901-bdb5-684201a7c7ee | done | $11.6120 |
+| 73 | 2026-11-11T00:22:23Z | fal-ai/elevenlabs/sound-effects/v3 | audio: wall_grab | $0.0020 | $0.0020 | 01a1c7fc-00cd-7f93-956e-efe88b6a15d1 | done | $11.6140 |
+| 74 | 2026-11-11T00:22:29Z | fal-ai/elevenlabs/sound-effects/v3 | audio: checkpoint | $0.0040 | $0.0040 | 01a1c7fc-177e-7b73-819a-2275d218db29 | done | $11.6180 |
+| 75 | 2026-11-11T00:22:34Z | fal-ai/elevenlabs/sound-effects/v3 | audio: respawn | $0.0040 | $0.0040 | 01a1c7fc-2db7-7243-877f-379b4a21a0c1 | done | $11.6220 |
+| 76 | 2026-11-11T00:22:40Z | fal-ai/stable-audio-25/text-to-audio | audio: music-s11 | $0.2000 | $0.2000 | 01a1c7fc-4455-74e3-a8cd-bc04683effe4 | done | $11.8220 |
+| 77 | 2026-11-11T00:22:47Z | fal-ai/stable-audio-25/text-to-audio | audio: music-s29 | $0.2000 | $0.2000 | 01a1c7fc-600d-7062-aecc-e3f8c53fcd47 | done | $12.0220 |
+| 78 | 2026-11-11T00:24:57Z | fal-ai/elevenlabs/sound-effects/v3 | audio: jump-b | $0.0020 | $0.0020 | 01a1c7fe-58a3-7c23-8f82-f7a59f323609 | done | $12.0240 |
+| 79 | 2026-11-11T00:25:02Z | fal-ai/elevenlabs/sound-effects/v3 | audio: land_soft-b | $0.0020 | $0.0020 | 01a1c7fe-6eca-73f0-b03a-037160a8ad11 | done | $12.0260 |
+| 80 | 2026-11-11T00:25:08Z | fal-ai/elevenlabs/sound-effects/v3 | audio: rain_wind | $0.0600 | $0.0600 | 01a1c7fe-84cc-7720-af21-29a2f9a82bca | done | $12.0860 |
