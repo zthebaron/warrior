@@ -1327,6 +1327,17 @@ computes, from the image's real box and `object-fit`, where the painting's keep 
 | 400x800 | x -106 to 519, y 0 to 349 | x 0 to 400 | whole; no button or credit line cut off |
 | 1920x1080 | x -7 to 1927, y 0 to 1080 | x 322 to 1560 | whole |
 | 5120x1440 | x 1270 to 3850, y 0 to 1440 | x 1709 to 3360 | whole; the painting is whole too |
+| 1000x900 (B-59) | x 42 to 958, y 0 to 511 | x 198 to 784 | whole; no button or credit line cut off |
+| 810x1010 (B-59) | x -156 to 985, y 0 to 637 | x 38 to 768 | whole; no button or credit line cut off |
+
+**B-59 (2026-11-11, f98e55a).** Before the fix the same measurement gave, at 1000x900, the painting y 0 to 872 and
+Play, How to play, Sound and both credit lines off the screen; at 810x1010, the painting y 0 to 706 and both
+credit lines off the screen. In the tall layout the painting's box now takes the height the panel leaves, and
+the image is never wider than the painting is at that height. Measured after the fix at twelve shapes, every one
+whole with nothing cut off: 320x480, 360x640, 400x800, 430x932, 600x900, 768x1024, 810x1010, 1024x1366, 1000x873
+(the squarest shape the tall layout is given), 1000x900, 1920x1080 and 5120x1440. The title and the first
+how-to-play screen at 400x800, 1920x1080 and 5120x1440 are byte-identical to the screenshots committed before
+the fix. `reachable` holds 1000x900 and 810x1010 in CI (`tools/harness/title-fit.ts`).
 
 The first run of that measurement found two faults, both fixed: the focal point was 49% (the zone's centre), which
 cropped 4 px of the zone at 400 px wide, where the right figure is 47.2%; and the stage's `max-width: 100%`
@@ -1357,6 +1368,9 @@ is ready, so the decode has barely begun. D-021 measured 1.8 to 2.5 s on CI with
 | `SHELL.leaveMs` | 350 ms | authored | the title's fade when a level starts; the same number as the CSS transition |
 | panel type | `clamp(12px, 1.55cqw, 30px)`; tall `clamp(15px, 4.4cqw, 24px)` | authored | sized from the painting's own width, so the buttons keep their place on it at any size |
 | button `min-height` | 44 px | authored | a finger's target on a phone |
+| tall layout: the painting's box | `flex: 0 1 calc(100cqw / 1.1467)` | derived | as tall as the keep zone needs at the screen's width (the keep zone aspect, above), shrinking when the panel under it needs the room (B-59). The image's width is its height times the painting's own aspect, at most the screen's width |
+| tall layout: panel padding | `5cqw 6cqw 3cqw` | authored | the top and sides are D-022's; the 3cqw under the credit lines is B-59's, so they do not sit on the screen's edge when the panel reaches it |
+| tall layout: the squarer band | from `min-aspect-ratio: 2/3` | measured | squarer than 2:3 the panel carries the paper extension from where the painting ends. Narrower, the panel fits under the keep zone to within a few pixels (measured at 400 wide: the panel is 261 px tall and the zone 349, so a 400x600 window, exactly 2:3, is 10 px short and the painting gives them up: y 0 to 339, whole, nothing cut off), and the phone layout is left byte-identical |
 | z-index | title 30, how-to-play 40, error banner 50, hint 5 | authored | a level that fails to load is shown above the title |
 
 ## D-022 sound (2026-11-10)

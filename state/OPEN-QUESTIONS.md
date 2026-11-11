@@ -1595,3 +1595,26 @@ took, each PROVISIONAL:
 proof the harness still sees none of it: `frame-hashes` on 10991df against main's baseline differs only in the
 page `<title>` (and chapter 1 cam3, whose hash is the other of main's own two values: B-58).
 status: PROVISIONAL
+
+## OQ-074 — B-59, B-60, B-61: the builder's calls
+raised: 2026-11-11 by title-fixes (claims B-59, B-60, B-61). Tim asked for the three in one PR, one targeted check
+each, no golden changes. Fixed in f98e55a.
+took, each PROVISIONAL:
+1. **B-59: the painting gets shorter; nothing scrolls and nothing is cropped.** Options: A let the title scroll
+   (the buttons are still under the fold on arrival) | B cap the painting's height at full width (the box is
+   then wider than the painting and `object-fit: cover` crops its top and bottom) | C let the painting's box
+   take the height the panel leaves, and keep the image no wider than the painting is at that height. Took C:
+   the keep zone and the painting's full height are always whole, and every button and credit line is on
+   screen. Its cost: in the squarest windows the painting is narrower than the screen (916 of 1000 px at
+   1000x900), with the blurred extension beside it.
+2. **The phone layout is left byte-identical.** Carrying the extension in the panel moved the 400x800 title by
+   a sub-pixel resample, so that rule applies only squarer than 2:3, where it is needed. Narrower, the panel
+   fits under the keep zone to within a few pixels (MEASUREMENTS "D-022 title screen").
+3. **`shell-shots.ts` draws five sizes by default,** the three D-022 names and the two B-59 was found at, and
+   the measurement moved to `tools/harness/title-fit.ts` so `reachable` holds the title to it in CI.
+   `shell-shots.ts` itself is still not run in CI.
+4. **B-61's check fakes the pointer lock,** as OQ-073's did, and goes by M while paused. A real lock was not
+   tried.
+proof the harness sees none of it: `frame-hashes` on f98e55a is identical to main's build (191 values, 5
+levels). No golden changed.
+status: PROVISIONAL
