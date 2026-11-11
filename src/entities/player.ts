@@ -123,6 +123,8 @@ export class Player {
   readonly vel = new THREE.Vector3();
   readonly center = new THREE.Vector3();
   groundMotion: GroundMotion = () => null;
+  /** D-022: seconds into a sword slash, or null. Drawn, never simulated: fixedUpdate does not read it (src/entities/slash.ts). */
+  slashTime: number | null = null;
 
   private readonly ctrl: KinematicCharacterController;
   private readonly material: THREE.MeshBasicMaterial;
@@ -487,6 +489,7 @@ export class Player {
   render(alpha: number): void {
     this.mesh.position.lerpVectors(this.prevCenter, this.center, alpha);
     this.mesh.rotation.y = this.facing;
+    this.model?.slash(this.slashTime);
     this.model?.pose(this.state, this.stateTime, Math.hypot(this.vel.x, this.vel.z));
   }
 }

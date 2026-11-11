@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { StateMachine, type GameState } from './engine/state';
 import { GameLoop, LOOP_CONFIG } from './engine/loop';
-import { InputSystem, type InputFrame } from './engine/input';
+import { INPUT_CONFIG, InputSystem, type InputFrame } from './engine/input';
 import { Physics } from './engine/physics';
 import { Renderer, RENDER_CONFIG } from './engine/renderer';
 import { PAINT_LAYER, PaintLayer } from './engine/paint-layer';
@@ -21,6 +21,12 @@ import { buildLevel, bundledLevelSources, fetchLevelFresh, levelIndex, loadLevel
 import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx2Support, getLoadedAsset, preloadAssets, setAccent, switchAccent, type Ktx2Support } from './loaders/assets';
 import paletteJson from '../reference/palette.json';
 import { ramp } from './engine/palette';
+import { Shell, SHELL, shellEnabled } from './ui/shell';
+import { buildHowto, chaptersFrom, keyName, type HowtoChapter } from './ui/howto';
+import { AUDIO, GameAudio } from './audio/audio';
+import { SoundTap } from './audio/tap';
+import { Gamepad, GAMEPAD } from './engine/gamepad';
+import { SlashArc, SlashClock } from './entities/slash';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -150,6 +156,8 @@ interface HarnessApi {
   /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
   figureClips(): { name: string; duration: number }[];
   showFigure(clip: string | null, time?: number): void;
+  /** D-022: show the sword slash `time` seconds into it over whatever the figure is doing; null clears it (tools/harness/motion.ts --slash). */
+  showSlash(time: number | null): void;
   /**
    * Every visible renderable in the scene with its world position and the nearest `userData.translates`
    * tag on it or an ancestor (player, platform, hazard), or null. B-15 / NOT #18 (Q2a): nothing
@@ -268,6 +276,32 @@ async function boot(): Promise<void> {
   let cameraOverride: { pos: Vec3; target: Vec3 } | null = null;
   let skipRender = false;
 
+  // D-022: sound, only at the front door (the same test as the shell, below). On a bare page both are null and
+  // every line that names them does nothing: no context is opened and no file is fetched.
+  const audio = !HARNESS_MODE && shellEnabled() ? new GameAudio() : null;
+  const tap = audio ? new SoundTap(audio) : null;
+
+  // D-022: a gamepad, and the sword slash's clock. Neither exists in the harness's test mode.
+  const pad = HARNESS_MODE ? null : new Gamepad();
+  if (pad) input.setPad({ move: () => pad.move(), held: (a) => pad.held(a) });
+  const slashClock = HARNESS_MODE ? null : new SlashClock();
+  let slashArc: SlashArc | null = null;
+  /** The ink stroke, made the first time it is wanted: a page that never slashes has no such mesh. */
+  const strokeOf = (p: Player): SlashArc => {
+    if (!slashArc) {
+      slashArc = new SlashArc();
+      p.mesh.add(slashArc.mesh);
+      paintLayer.refresh();
+    }
+    return slashArc;
+  };
+  const slash = (): void => {
+    if (!slashClock || !player || !state.is('play') || shell?.helpOpen) return;
+    if (!slashClock.trigger()) return;
+    strokeOf(player);
+    audio?.play('slash');
+  };
+
   const landingMark = new LandingMark(physics);
   landingMark.mesh.userData['translates'] = 'player'; // follows the player's ground point (D-010)
   renderer.scene.add(landingMark.mesh);
@@ -318,6 +352,7 @@ async function boot(): Promise<void> {
     instrument = INSTRUMENT ? new Instrument(data, GAME_RULES.checkpointRadius) : null;
     instrumentEmitted = false;
     lastDeath = null;
+    tap?.reset();
     clearError();
   };
 
@@ -413,6 +448,7 @@ async function boot(): Promise<void> {
         player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
         camRig.snap(player.feet(tmpFeet), player.facing);
         state.transition('play');
+        tap?.respawned(checkpointLog.length);
       }
       instrumentTick();
       return;
@@ -428,6 +464,7 @@ async function boot(): Promise<void> {
     profiler.end('physics');
     tools.probe.sample(player.feet(tmpFeet), player.grounded);
     rulesTick();
+    tap?.afterTick(player, checkpointLog.length); // D-022: reads the tick, writes nothing
     instrumentTick();
   };
 
@@ -453,6 +490,13 @@ async function boot(): Promise<void> {
   }
 
   const onRender = (alpha: number, frameDt: number): void => {
+    if (pad) padFrame(pad, frameDt);
+    if (slashClock && player) {
+      // render time, and only while the game runs: paused, the slash waits; anywhere else it is dropped
+      if (state.is('play')) slashClock.update(frameDt);
+      else if (!state.is('pause')) slashClock.cancel();
+      player.slashTime = slashClock.time;
+    }
     profiler.begin('animation');
     level?.render(alpha);
     player?.render(alpha);
@@ -469,6 +513,8 @@ async function boot(): Promise<void> {
     }
     tools.update(frameDt);
     if (level) level.debugRoot.visible = overlay.visible;
+    // D-022: the slash's ink stroke faces the camera, so it is placed once the camera is. No stroke exists until a first slash.
+    slashArc?.update(player?.slashTime ?? null, renderer.camera);
 
     profiler.begin('render');
     if (!skipRender) {
@@ -535,11 +581,53 @@ async function boot(): Promise<void> {
     ].join('\n');
   });
 
+  // ---------- the shell: title screen and how-to-play page (D-022) ----------
+  // Only at the game's front door (index.html decides, from the URL) and never in a harness build's test mode.
+  // A bare page builds none of it: `shell` is null and every line below that names it does nothing.
+  let chapters: HowtoChapter[] = [];
+  /** Play: from the title's button, its keys, or a pad. */
+  const startGame = (): void => {
+    audio?.wake(); // the Play press is the gesture a browser needs before a page may make sound
+    if (!state.is('menu')) return;
+    input.holdOff('jump'); // Space and the pad's A are Play here and jump there: the press that starts the game is not a jump
+    pad?.holdOff('jump');
+    void startLevel();
+  };
+  const shell: Shell | null = !HARNESS_MODE && shellEnabled()
+    ? new Shell({
+        state: () => state.get(),
+        start: startGame,
+        pause: () => { if (state.is('play')) state.transition('pause'); },
+        resume: () => { if (state.is('pause')) state.transition('play'); },
+        helpContent: () => buildHowto({
+          chapters,
+          bindings: INPUT_CONFIG.bindings,
+          keys: [
+            ['Pause', GAME_RULES.keys.pause],
+            ['Back to the title (while paused)', [GAME_RULES.keys.menu]],
+            ['Start, and the next chapter', [GAME_RULES.keys.start]],
+            ['How to play', [SHELL.keys.help]],
+            ...(audio ? [['Sound on and off', [AUDIO.keys.mute]], ['Quieter, louder', [AUDIO.keys.quieter, AUDIO.keys.louder]]] as const : []),
+          ],
+          pad: GAMEPAD.labels,
+          respawnDelaySec: GAME_RULES.respawnDelaySec,
+        }),
+        hint: () => `${keyName(SHELL.keys.help)}  how to play` + (audio ? `     ${keyName(AUDIO.keys.mute)}  sound: ${audio.muted ? 'off' : 'on'}` : ''),
+        sound: audio
+          ? { muted: () => audio.muted, setMuted: (m) => audio.setMuted(m), volume: () => audio.volume, setVolume: (v) => audio.setVolume(v) }
+          : null,
+      })
+    : null;
+  if (shell) {
+    errorBanner.style.zIndex = '50'; // above the title: a level that fails to load must be seen
+    void bundledLevelSources().then((s) => { chapters = chaptersFrom(s); });
+  }
+
   // ---------- HUD + UI keys ----------
   const hudText = (s: GameState): string => {
     switch (s) {
       case 'boot': return 'booting…';
-      case 'menu': return 'WARRIOR\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
+      case 'menu': return shell ? '' : 'WARRIOR\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
       case 'loading': return 'loading…';
       case 'play': return '';
       case 'pause': return 'PAUSED\nP / Esc: resume   M: menu';
@@ -551,25 +639,68 @@ async function boot(): Promise<void> {
   };
   state.onChange((to) => {
     hud.textContent = hudText(to);
+    shell?.onState(to);
+    // the music is at full in the game and quieter under the title and while paused
+    audio?.setScene(to === 'play' || to === 'death' || to === 'results' ? 'game' : 'title');
+    if (to === 'results') tap?.goal();
   });
+
+  // D-014 fix 3: finishing a chapter loads the next; after the last one, back to the menu, which
+  // then starts the game from the front door again.
+  const afterResults = (): void => {
+    if (nextId) void startLevel(nextId);
+    else {
+      currentId = levelId;
+      state.transition('menu');
+    }
+  };
+
+  // D-022: the pad's buttons that are not moves, once a render frame. The moves go through the input system.
+  function padFrame(p: Gamepad, frameDt: number): void {
+    p.poll();
+    if (shell?.helpOpen) {
+      // B closes the page and is also dash: the press that closes it is not a dash (as Play's A is not a jump)
+      if (p.pressed('back') || p.pressed('help')) { p.holdOff('dash'); shell.closeHelp(); }
+      return;
+    }
+    if (shell && p.pressed('help')) return shell.openHelp(); // which refuses where the page could not pause the game
+    if (state.is('menu')) {
+      if (p.pressed('start')) startGame();
+    } else if (state.is('results')) {
+      if (p.pressed('start')) { p.holdOff('jump'); afterResults(); } // A is "next chapter" here and jump there
+    } else if (state.is('pause')) {
+      if (p.pressed('pause')) state.transition('play');
+    } else if (state.is('play')) {
+      if (p.pressed('pause')) return state.transition('pause');
+      if (p.pressed('slash')) slash();
+      const look = p.look(frameDt);
+      if ((look.x || look.y) && !tools.freeCamActive) camRig.addLook(look.x, look.y);
+    }
+  }
 
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
-    if (e.code === k.start && state.is('menu')) void startLevel();
-    else if (e.code === k.start && state.is('results')) {
-      // D-014 fix 3: finishing a chapter loads the next; after the last one, back to the menu, which
-      // then starts the game from the front door again.
-      if (nextId) void startLevel(nextId);
-      else {
-        currentId = levelId;
-        state.transition('menu');
-      }
+    if (audio) {
+      audio.nudge();
+      if (!e.repeat && e.code === AUDIO.keys.mute) audio.setMuted(!audio.muted);
+      else if (e.code === AUDIO.keys.quieter) audio.setVolume(audio.volume - AUDIO.volumeStep);
+      else if (e.code === AUDIO.keys.louder) audio.setVolume(audio.volume + AUDIO.volumeStep);
+      if (e.code === AUDIO.keys.mute || e.code === AUDIO.keys.quieter || e.code === AUDIO.keys.louder) shell?.syncSound();
     }
+    if (shell?.onKey(e, k.start)) return;
+    if (!e.repeat && INPUT_CONFIG.bindings.slash.includes(e.code)) slash();
+    if (e.code === k.start && state.is('menu')) void startLevel();
+    else if (e.code === k.start && state.is('results')) afterResults();
     else if (k.pause.includes(e.code) && state.is('play')) state.transition('pause');
     else if (k.pause.includes(e.code) && state.is('pause')) state.transition('play');
     else if (e.code === k.menu && state.is('pause')) state.transition('menu');
   });
 
+  if (audio) window.addEventListener('pointerdown', () => audio.nudge());
+  // the left button is the sword once the mouse is the camera's (the click that captures it is not a slash)
+  renderer.canvas.addEventListener('mousedown', (e) => {
+    if (INPUT_CONFIG.bindings.slash.includes(`Mouse${e.button}`) && document.pointerLockElement === renderer.canvas) slash();
+  });
   renderer.canvas.addEventListener('click', () => {
     if (state.is('play') && !overlay.visible) void renderer.canvas.requestPointerLock();
   });
@@ -879,6 +1010,11 @@ async function boot(): Promise<void> {
       },
       figureClips: () => player?.figureClips() ?? [],
       showFigure: (clip, time) => player?.showFigure(clip, time),
+      showSlash: (time) => {
+        if (!player) return;
+        player.slashTime = time;
+        strokeOf(player);
+      },
       translators: () => {
         const out: { id: string; name: string; tag: string | null; pos: Vec3 }[] = [];
         const w = new THREE.Vector3();
@@ -903,11 +1039,17 @@ async function boot(): Promise<void> {
 
   state.transition('menu');
   loop.start();
+  // D-022: the title is up and the game is ready behind it. Decode the first chapter now, so Play is short.
+  if (shell) queueMicrotask(() => { if (state.is('menu')) void loadLevel(currentId).then(prepareLevel).catch(() => { /* startLevel reports it when Play is pressed */ }); });
 }
 
 boot().catch((err: unknown) => {
   const msg = err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err);
   console.error('[boot] FAILED', msg);
+  // D-022: the title painting is in the page before this module loads and is drawn over the HUD. A boot that
+  // failed has no game behind it, so take the shell off the screen and let the message be read (OQ-073). On a
+  // bare page neither element exists.
+  for (const id of ['title', 'help']) document.getElementById(id)?.setAttribute('hidden', '');
   const hud = document.getElementById('hud');
   if (hud) hud.textContent = `BOOT FAILED\n${msg}`;
 });

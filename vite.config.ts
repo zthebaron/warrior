@@ -62,8 +62,19 @@ function buildInputs(): Plugin {
     name: 'warrior-build-inputs',
     apply: 'build',
     configResolved(c) { root = c.root; },
-    generateBundle() {
+    generateBundle(_options, bundle) {
       const files: Record<string, string> = {};
+      // D-022: what index.html and its CSS point at (the title paintings) is not a module, so it is listed from
+      // the emitted assets' own source paths. Without this a repainted title would pass on an old bundle.
+      for (const o of Object.values(bundle)) {
+        if (o.type !== 'asset') continue;
+        for (const src of o.originalFileNames ?? []) {
+          const file = isAbsolute(src) ? src : `${root}/${src}`;
+          const rel = relative(root, file).replace(/\\/g, '/');
+          if (rel.startsWith('..') || rel.includes('node_modules/') || !existsSync(file) || !statSync(file).isFile()) continue;
+          files[rel] = createHash('sha256').update(readFileSync(file)).digest('hex');
+        }
+      }
       for (const id of this.getModuleIds()) {
         if (id.startsWith('\0')) continue;
         const file = id.split('?')[0]!;

@@ -122,7 +122,7 @@ what *does* exist.
 | # | Refused | Decision | Kind | Check | Status |
 |---|---|---|---|---|---|
 | 1 | Enemies that fight or pursue: charger, ranged, blocker, `hp`, `aggroRadius`. The patroller lives in `hazards`. | Q1, Q7 | schema | `enemies=[]` | enforced |
-| 2 | Combat verbs and input | Q1 | src | `attack` `strike` `combo` `parry` `hitstop` | enforced |
+| 2 | Combat verbs and input. One exception, D-022: the sword slash, which is drawn and never simulated, and is named `slash` | Q1, D-022 | src | `attack` `strike` `combo` `parry` `hitstop` | enforced |
 | 3 | Pursuit AI | Q1 | src | `aggro*` `pathfind*` `navmesh` `chase*` | enforced |
 | 4 | A ninth move | Q2 | schema | `critical_path[1].via="glide"` | enforced |
 | 5 | A ninth move, in code | Q2 | src | `glide*` | enforced |

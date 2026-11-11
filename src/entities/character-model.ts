@@ -25,6 +25,7 @@ import * as THREE from 'three';
 
 import type { CharacterAsset } from '../loaders/character';
 import type { PlayerState } from './player';
+import { SLASH, slashClip, slashShare } from './slash';
 
 type Clip = 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land' | 'dash' | 'wall' | 'climb';
 type Shown = { clip: Clip; play: 'loop' | 'once' } | { clip: Clip; hold: number };
@@ -85,6 +86,9 @@ export class CharacterModel {
   private lastStateTime = 0;
   /** Harness: a clip shown at a time, in place of the state's pose, until cleared (tools/harness/motion.ts --clips). */
   private preview: { key: string; time: number } | null = null;
+  /** D-022: the sword slash, laid over the upper body. No action exists until the first slash is asked for. */
+  private slashAction: THREE.AnimationAction | null = null;
+  private slashTime: number | null = null;
 
   /** height: how tall the figure stands (the player's capsule). runSpeed: the player's run speed, m/s. */
   constructor(asset: CharacterAsset, height: number, private readonly runSpeed: number) {
@@ -140,6 +144,15 @@ export class CharacterModel {
     this.apply();
   }
 
+  /**
+   * D-022: the sword slash, `time` seconds into it, or null for none. It is laid over the spine, the neck and
+   * the arms of whatever pose() shows; the hips and legs are the pose's own, so it works running and in the
+   * air. The time is SET here, not advanced: drawing the same frame twice still changes nothing.
+   */
+  slash(time: number | null): void {
+    this.slashTime = time;
+  }
+
   /** Pose the figure for the player's state, the seconds spent in it and its ground speed (m/s). */
   pose(state: PlayerState, stateTime: number, speed: number): void {
     const p: Pose = C.poseOf[state];
@@ -185,6 +198,20 @@ export class CharacterModel {
       }
       t.action.setEffectiveWeight(w);
       if (w > 0) t.action.time = time;
+    }
+    if (this.slashTime !== null || this.slashAction) {
+      // Built on the first slash and never before: a figure that has not slashed has exactly the actions it
+      // always had, so a page that never slashes (every harness page) is posed by the same mixer as before.
+      if (!this.slashAction) {
+        this.slashAction = this.mixer.clipAction(slashClip(this.asset));
+        this.slashAction.setLoop(THREE.LoopRepeat, Infinity);
+        this.slashAction.enabled = true;
+        this.slashAction.play();
+      }
+      const share = this.slashTime === null ? 0 : slashShare(this.slashTime);
+      // the pose tracks' weights sum to 1, so a weight of s / (1 - s) is a share s of each bone the slash moves
+      this.slashAction.setEffectiveWeight(share / (1 - share));
+      if (share > 0) this.slashAction.time = Math.min(this.slashTime!, SLASH.seconds - SLASH.lastFrameShy);
     }
     this.mixer.update(0); // evaluate at the times just set; the mixer's own clock never runs
   }

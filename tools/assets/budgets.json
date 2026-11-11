@@ -224,5 +224,26 @@
       "textures": 1,
       "clips": ["climb", "dash", "fall", "idle", "jump", "land", "run", "walk", "wall"]
     }
+  },
+  "ui_basis": "D-022 title and how-to-play paintings (assets/ui/, made from Tim's two paintings in assets/ui/src by tools/art/ui-art.mjs). Byte ceilings. title.webp and title.jpg are the brief's own limit (\"at most about 350 KB\"); the rest are each file's measured size. Checked by tools/assets/shell-budget.mjs. MEASUREMENTS.md \"D-022 title screen\".",
+  "ui": {
+    "title.webp": { "bytes": 350000 },
+    "title.jpg": { "bytes": 350000 },
+    "title-wide.webp": { "bytes": 7858 },
+    "title-tall.webp": { "bytes": 5930 },
+    "courtyard.webp": { "bytes": 164778 },
+    "courtyard.jpg": { "bytes": 168571 }
+  },
+  "audio_basis": "D-022 sound (assets/audio/*.mp3, cut from fal takes by tools/gen/build-audio.mjs; assets/audio/MANIFEST.md lists each file, its take and its cost). Byte ceilings, the brief's own: the music loop \"at most about 1.5 MB\", each effect \"at most about 50 KB\". Checked by tools/assets/shell-budget.mjs. MEASUREMENTS.md \"D-022 sound\".",
+  "audio": {
+    "music.mp3": { "bytes": 1500000 },
+    "jump.mp3": { "bytes": 50000 },
+    "land_soft.mp3": { "bytes": 50000 },
+    "land_hard.mp3": { "bytes": 50000 },
+    "slash.mp3": { "bytes": 50000 },
+    "dash.mp3": { "bytes": 50000 },
+    "wall_grab.mp3": { "bytes": 50000 },
+    "checkpoint.mp3": { "bytes": 50000 },
+    "respawn.mp3": { "bytes": 50000 }
   }
 }

@@ -1401,3 +1401,76 @@ path, seen along its length. The rock's ledges are climbable and not painted as 
 gets no ink edge (B-48). The two 3D cliff stacks in the void are now the most game-like things in the frame.
 
 implemented_by: d03247e (the first cut: rock undrawn, the wall, the cards, the animated figure, the path wash), 50d9d8f (the paint gate's three checks, the wall as 12 meshes, cards re-encoded), 0908710 (the wall from the player's camera, low ridges, darwin goldens, scene ratchet, real-GPU measurement)
+
+## D-022 — a title screen, a how-to-play page, sound, and a sword slash that cuts nothing. Narrows Q1 and NOT row 2 by one drawn move; Q7 stands. DECIDED
+
+**Ruled by Tim** (2026-11-10, `PROMPT-TITLE-AUDIO-SWORD.md`): "create a landing page with these graphics designed
+by Tim de Vallée dedicated to Remi"; "add an instructions page and a sound track with sounds when jumping,
+landing, fighting". The brief sets the fence for "fighting": an input and a slash on the warrior, with its sound
+and one ink stroke, and "no enemies, nothing cuttable, no change to the level schema, no effect on movement. The
+slash never touches velocity or the MOVE budgets. Decision Q7 stands." The game's public name is the one painted
+on the art: Karasu: Flight of the Exile.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-072):** every key chosen, the cookie, the gamepad,
+that the slash is animated in code, every number in MEASUREMENTS "D-022 ...", and the mix, which nobody has heard.
+
+**What this narrows, and what it does not.** Q1 ("not combat, not a chase") and SPEC §7 row 2 ("combat verbs and
+input") refused a sword input. Tim has now asked for one, fenced. So row 2 reads: combat verbs and input, except
+the D-022 slash, which is drawn and never simulated. The five refused words stay refused in `src/`
+(`lint:not-list` is unchanged, 22 rows enforced), which is why the move is a "slash" everywhere and never the
+other word. Row 1 (no enemies), row 9 (the only win is arriving), row 14 (no health, no damage) and Q7 itself
+are untouched. D-009 still holds: if enemies are ever wanted, that is a second bot tier and a new decision, not
+something to grow out of this.
+
+**Built.**
+1. **The gate.** `index.html` decides once, from the URL: with a `harness`, `playtest`, `replay`, `instrument` or
+   `level` parameter the page is `<html class="bare">` and the shell's template is dropped before anything in it
+   exists. `src/` builds the shell and the sound only on a `shell` page that is not in the harness's test mode.
+   (The harness's real marker is `harness=1`; `playtest` and `replay` are the brief's names and are honoured too.)
+2. **The title screen.** Static markup, so the painting is on screen before the game's module has loaded; the
+   first chapter decodes behind it. The painting is whole at every shape of screen down to its keep zone (the
+   lettering, the seal, the boat), and on a screen wider than it stands between paper-toned extensions of
+   itself. Play, Enter, Space and the pad's A start the game. A press made before the game is ready is kept and
+   honoured. Nothing sets the name again in HTML. The two credit lines are the brief's, to the letter.
+3. **The how-to-play page.** H, from the title or from the game (which it pauses); Esc, H or Back closes it. Its
+   controls are read from `INPUT_CONFIG.bindings`, `GAME_RULES.keys`, `SHELL.keys`, `AUDIO.keys` and
+   `GAMEPAD.labels`; its moves from each level file's `moves_allowed`, in chapter order. One line per move and
+   three short paragraphs of rules are written by hand (`src/ui/howto.ts`).
+4. **Sound.** `src/audio/audio.ts`: events in, sound out. `src/audio/tap.ts` reads the player after each tick
+   and writes nothing; `player.ts` gained no event. Music (one 83.9 s loop) and eight effects, generated on fal
+   through `tools/gen/fal-call.mjs` and cut by `tools/gen/build-audio.mjs`. The Play press opens the audio
+   context. N mutes, - and = change the volume, and the how-to-play page has a slider. A hidden tab is silent.
+5. **Mute and volume are remembered in one cookie** (`karasu_sound`, two values). SPEC §7 row 15 refuses the
+   storage APIs in `src/`, to keep saves out; the brief asks that these two settings be remembered. A cookie
+   holding only them does both: the lint and row 15 are unchanged, and nothing about a run is kept.
+6. **The sword slash.** J, the pad's X, or the left button once the mouse is the camera's. It is not in
+   `InputFrame`, is not a player state, and `fixedUpdate` does not read it: a render-time clock, an upper-body
+   clip laid over whatever the legs are doing, one ink stroke on the paint layer, and its sound. It works on
+   the ground and in the air.
+7. **A gamepad**, on the standard mapping. The game had none and the brief asks for two pad buttons; a pad that
+   could start the game and swing the sword but not walk would be no use. A stick past its dead zone is a
+   direction at full deflection, so the simulation is never given a part speed.
+
+**The clip was not bought.** The brief says to make the slash clip the way the nine were made, and to animate in
+code if that fails. It fails three ways before any money is spent: (a) the nine came from one
+`fal-ai/meshy/rigging/multi-animation` call, which rigs the model afresh, so buying the set again changes the
+nine clips' bytes and the held frames chosen on them; (b) buying one clip on a new rig and copying its tracks
+across is the mixing of rigs `tools/gen/build-anim.mjs` refuses (rest joints differ by up to 0.021 of the figure's
+height between rig runs); (c) no library id for a slash is on record, and the wrapper makes one submit with no
+retry, charged in full if it is wrong. So the slash is a clip made in code against the rig's bone names, as
+`src/loaders/character.ts` makes `rest`.
+
+**Proof the harness sees none of it** (MEASUREMENTS "D-022 the harness sees none of it"): `frame-hashes` gives the
+same sha256 for all 30 frames, the same counters, the same renderables and the same element ids as main's build;
+the one difference is the page's title. No golden was updated. `reachable` meets the title at the bare URL, holds
+it and the sound to the brief by what the page does, and was mutated to show it fails when the title swallows
+Enter.
+
+**Known limits (OQ-072).** Nothing was judged by ear. The rig's sword is part of the body mesh and has no bone,
+so it stays on the figure's back: the hand goes to the hilt and cuts, and the stroke is what reads as the blade
+(B-45). The gamepad was not tried with a pad. The game has no touch controls: the title reads on a phone and the
+how-to-play page says a keyboard or a pad is needed.
+
+**STYLE-BIBLE:** not amended. §2 says the accent is never on UI: the buttons and text are ink and paper only. The
+red seal is in Tim's painting, not in the UI drawn over it.
+
+implemented_by: b483f1d (the gate, the title screen, the how-to-play page, reachable at the bare URL), 0c40975 (sound: the audio module, the tap, the files, the cookie, fal-call's audio endpoints and task ceiling), db5d964 (the sword slash and the gamepad), 10991df (five review findings a player hits, each with a reachable check, and the left click in the bindings table: OQ-073)

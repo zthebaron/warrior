@@ -1,0 +1,11 @@
+{
+  "_doc": "D-022. The title painting and the part of it that may never be cropped (the lettering, the seal, the boat and its oar), as fractions of its width. Read by tools/art/ui-art.mjs and tools/harness/shell-shots.ts; index.html uses the same numbers in CSS. MEASUREMENTS.md \"D-022 title screen\".",
+  "title": {
+    "width": 1376,
+    "height": 768
+  },
+  "keep": {
+    "x0": 0.17,
+    "x1": 0.81
+  }
+}

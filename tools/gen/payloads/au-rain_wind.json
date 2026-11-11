@@ -1,0 +1,7 @@
+{
+  "text": "Steady light rain falling on stone with a low mountain wind. Even and continuous. No thunder, no birds, no voices, no music.",
+  "duration_seconds": 30,
+  "prompt_influence": 0.6,
+  "output_format": "mp3_44100_192",
+  "loop": true
+}

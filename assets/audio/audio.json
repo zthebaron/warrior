@@ -1,0 +1,42 @@
+{
+  "_doc": "D-022. Written by tools/gen/build-audio.mjs: what src/audio/audio.ts loads. music.loopStart and loopSeconds are the window the music loops over (the file carries the loop continued on both sides). Not typed by hand.",
+  "music": {
+    "file": "music.mp3",
+    "loopStart": 0.5,
+    "loopSeconds": 83.9
+  },
+  "effects": {
+    "jump": {
+      "file": "jump.mp3",
+      "seconds": 0.4
+    },
+    "land_soft": {
+      "file": "land_soft.mp3",
+      "seconds": 0.4
+    },
+    "land_hard": {
+      "file": "land_hard.mp3",
+      "seconds": 0.6
+    },
+    "slash": {
+      "file": "slash.mp3",
+      "seconds": 0.58
+    },
+    "dash": {
+      "file": "dash.mp3",
+      "seconds": 0.371
+    },
+    "wall_grab": {
+      "file": "wall_grab.mp3",
+      "seconds": 0.18
+    },
+    "checkpoint": {
+      "file": "checkpoint.mp3",
+      "seconds": 1.9
+    },
+    "respawn": {
+      "file": "respawn.mp3",
+      "seconds": 1.2
+    }
+  }
+}

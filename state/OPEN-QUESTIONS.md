@@ -1502,3 +1502,96 @@ took, each PROVISIONAL:
     Re-taking it costs one deliberately red run (the harness writes an actual only on a failure or a missing
     golden, `tools/harness/visual.ts`). Not done here: the camera is within tolerance.
 status: PROVISIONAL
+
+## OQ-072 — D-022 (title, how to play, sound, slash): the builder's calls, and what nobody has yet judged
+raised: 2026-11-10 by title-audio-sword (claim TITLE-AUDIO-SWORD). Tim ruled the four things; everything below is
+the builder's.
+took, each PROVISIONAL:
+1. **Keys.** Slash J (beside dash on K), the pad's X, and the left button once the mouse is the camera's. Mute N
+   (M is already "back to the title" while paused). Volume - and =. How to play H. None collides with a key the
+   game or its dev tools already use (`src/engine/input.ts`, `GAME_RULES.keys`, `debug.ts`, `tools.ts`).
+2. **The conflict with SPEC §7 row 15, and the cookie.** Row 15 refuses `localStorage`, `sessionStorage` and
+   `indexedDB` in `src/` ("saves, unlocks, chapter select"). The brief says mute and volume are "remembered
+   between visits". Options: A keep nothing (breaks the brief) | B exempt one file from the lint (weakens a
+   linter) | C one cookie holding only the two values. Took C: the lint and the table are unchanged, and row
+   15's purpose (no progress is kept; a reload restarts the game) is untouched. If Tim would sooner keep
+   nothing, `src/audio/prefs.ts` is the only file to change.
+3. **The conflict with row 2, as D-022 records it.** The refused words stay refused; the move is a "slash".
+4. **The slash is animated in code, and no money was spent on it.** D-022 says why a bought clip fails. The rig
+   has no sword bone, so the sword stays on the back; the stroke is the blade. A bought or hand-made clip with a
+   sword in the hand needs the sword cut from the body mesh and given a bone first (B-45).
+5. **A gamepad for the whole game, not two buttons.** The brief names two pad buttons (start, slash). A stick
+   past its dead zone gives the simulation a full-length move intent, as a key does, so no move is made at a
+   part speed. It was not tried with a pad: none was connected.
+6. **The gate is index.html's.** It honours the brief's names (`playtest`, `replay`, `instrument`, `level`) and
+   the harness's real one (`harness`). So `?level=02-cliff-seam`, a dev affordance (D-014), has no title and no
+   sound, as the brief says; the slash and the gamepad still work there.
+7. **The music's weather was added.** The music model made flute, plucked strings and low drum and left out the
+   wind and rain the brief names (the spectrogram has no noise bed). A looping rain-and-wind take was bought
+   ($0.06) and laid 10 dB under it.
+8. **The jump's sound is the take bought as the double jump.** Both takes bought as "jump" were a low thump (91%
+   of their energy under 200 Hz). The double jump plays the same file 1.3 times as fast.
+9. **Two landing sounds, by speed.** Under 18 m/s the scuff; from 18 m/s the thud; louder with speed from 3 to
+   30 m/s. A jump on flat ground lands at 15.3 m/s, so an ordinary jump is the scuff.
+10. **Sound while paused is the title's level,** not silence. The music carries on, at half.
+11. **KNOWN LIMIT: nothing was judged by ear.** Whether the music is pleasant, whether it sounds like the
+    instruments named, whether each effect suits its move, and the whole mix (`AUDIO.gain`,
+    `AUDIO.music.level`) are Tim's to judge. Every number that would be set by ear is marked so in MEASUREMENTS.
+12. **KNOWN LIMIT: no touch controls.** The title reads and starts on a phone; the game then needs a keyboard or
+    a pad, and the how-to-play page says so on a touch-only device.
+13. **FINDING about main, not this change: chapter 1 cam3 has one pixel that is not repeatable.** Pixel (606, 91)
+    flips between two values from run to run of the same build (3 of each in 6 runs on d9fad33), 1 px of 230,400.
+    The visual stage's 0.5% tolerance hides it. Not investigated.
+14. **The page's title changed in harness pages too** ("Warrior — H2 spike" to the game's name): `index.html` has
+    one `<title>`. `run-metric` compares runs with each other, not with a fixture, and passes.
+15. **The HUD's typeface on the front door** is the title's serif, in ink with a paper halo. A bare page keeps the
+    old white system type, so no golden or text check moved.
+status: PROVISIONAL
+
+## OQ-073 — the independent review of D-022: what it found, what was fixed, what waits
+raised: 2026-11-11 by title-audio-sword (claim TITLE-AUDIO-SWORD), on PR 35.
+context: five reviewers read db5d964 (the gate and harness, the simulation's edge, the slash and the pad, the
+tests and tools, the shell), and every finding was re-checked by a second agent told to refute it. 27 findings;
+26 held, 1 was refuted (the records the code cites did not exist at db5d964: they landed in aa0c96c). Merged
+across reviewers that is 19 distinct problems. One was already fixed (the jump-sound check's bare key press,
+256390d). A review is a proposal: each of the five acted on below was read against the code first, and each
+check was run against the unfixed build and seen to fail.
+the scope call (the reviewer's, 2026-11-10): fix the five a player hits, each with one targeted check; put every
+other finding in the backlog as a row; do not run another review.
+fixed in 10991df, each with one check in `reachable` (40 checks became 45):
+1. **How to play opened in the game did not release the pointer lock.** No cursor for Back or the slider, and
+   the camera turned behind the page. `Shell.openHelp` now releases it. Check: a faked lock (headless Chromium
+   grants none), released once, with the game paused.
+2. **A boot failure was hidden under the title painting,** with Play stuck on "Loading…". The boot catch now
+   takes `#title` and `#help` off the screen. Check: a page refused WebGL shows BOOT FAILED and no title.
+3. **Enter held on another title button started the game without sound.** The key's repeats reached the old
+   start line past the Play press, so no audio context was ever opened. `Shell.onKey` now keeps repeats in
+   `menu`. Check: Enter held on the Sound button starts nothing.
+4. **How to play did not pause the game** when opened while the warrior was dead or while the level loaded:
+   neither state can be paused, so the game ran behind the page and the arrow keys that scroll it walked the
+   warrior. `openHelp`, the one way in, now refuses in `death`, `loading` and `boot`. Check: through
+   loading (the level's meshes are held back until How to play has been clicked). A test cannot make the
+   warrior fall on a production page; death is refused by the same line.
+5. **A pad press that means something in the menus leaked into the game as a move.** B closing the page was a
+   dash; A at results was a jump in the next chapter. Both are now held off until released, as the title's A
+   was. Check: a faked pad's B closes the page with no dash sound, and B again is a dash. The A half has no
+   check (a test cannot finish a chapter on a production page). No real pad was used: B-57 stays open.
+not fixed, each a backlog row (items 6 to 20 are B-59 to B-73 in order):
+6. the title in a near-square window loses its buttons (B-59). 7. an early How to play shows no moves (B-60).
+8. the pointer lock on return to the title (B-61). 9. focus left on a clicked title button (B-62).
+10. the sound keys ignore modifiers (B-63). 11. Quieter un-mutes (B-64). 12. a context made in a hidden tab
+(B-65). 13. the silent second wall kick (B-66). 14. keys and stick together give a part-length intent (B-67).
+15. A as jump and "next chapter" in the air (B-68). 16. the slash's share is misstated for Spine (B-69).
+17. the jump check cannot tell the jump from a soft landing (B-70). 18. the bare-page sound checks do not
+require the level (B-71). 19. fal-call's `--max-total=` form (B-72). 20. the ui budget's extension list (B-73).
+took, each PROVISIONAL:
+- **Item 8 was split from fix 1 and not fixed.** The review's pointer-lock finding names two places; the scope
+  call names "when how-to-play opens". Options: A fix both (one more line, outside the named scope) | B fix the
+  named one and row the other. Took B.
+- **The left click is in the bindings table.** `'Mouse0'` in `INPUT_CONFIG.bindings.slash`, read by the
+  mousedown listener, so the how-to-play table shows "J or Left click" from the table the game reads. No key
+  has that code, so the keyboard path is unchanged.
+- **Two of the five checks use a fake** (the lock, the pad) and say so in their names.
+proof the harness still sees none of it: `frame-hashes` on 10991df against main's baseline differs only in the
+page `<title>` (and chapter 1 cam3, whose hash is the other of main's own two values: B-58).
+status: PROVISIONAL
