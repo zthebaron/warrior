@@ -244,3 +244,4 @@
 {"id":"B-61","agent":"title-fixes","ts":"2026-11-11T02:30:56.947Z","released":true}
 {"id":"ENEMIES","agent":"enemies","ts":"2026-11-11T02:47:11.630Z","ttl_min":600}
 {"id":"CAMERA-WALL-ZOOM","agent":"camera-wall-zoom","ts":"2026-11-11T13:34:11.964Z","ttl_min":480}
+{"id":"CAMERA-WALL-ZOOM","agent":"camera-wall-zoom","ts":"2026-11-11T15:48:13.396Z","released":true}
