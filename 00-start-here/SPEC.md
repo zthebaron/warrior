@@ -23,7 +23,9 @@ No story systems hang off it. It is framing, not a mechanic.*
 
 ## 2. Core verb: leap / traversal (Q1)
 
-Not combat, not a chase. Every level's test stays a deterministic, replayable path. The moveset is
+Not a chase, and not combat beyond one fenced exception (D-023, ruled by Tim): the swordsman, fought with the
+sword slash in the fixed tick, on his own ground, with no route to choose and no random number. Every level's
+test stays a deterministic, replayable path, the fight included. The moveset is
 frozen at the eight measured moves (Q2):
 `ground · jump · double · dash · dashjump · wall · climb · platform`.
 

@@ -124,8 +124,8 @@ currently held up by you. **If you believe you need engine work, stop that task,
 ## 6. Never
 
 The game-design refusals are the **NOT list in SPEC §7**. That table is machine-checked by
-`npm run lint:not-list` and is not repeated here, so it can't drift. In short: no combat, no
-pursuit, no ninth move, no pickups, no puzzles or interactables, no win but arriving, no score,
+`npm run lint:not-list` and is not repeated here, so it can't drift. In short: no combat but the
+swordsman and the slash (D-023), no pursuit, no ninth move, no pickups, no puzzles or interactables, no win but arriving, no score,
 no health/lives/damage, no saves or unlocks, no directional light, no multiplayer.
 
 The process refusals:

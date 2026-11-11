@@ -1,5 +1,11 @@
 # HANDOFF-ENEMIES (written 2026-11-11 ~03:35Z by session `enemies`, for a fresh session with zero memory)
 
+**COMPLETE (2026-11-11, second session).** Everything in section 2 is done on this branch from fdd96f1 on: the
+trace, the scene budget, the goldens, the other stages, the four checks, how to play, the records (D-023,
+MEASUREMENTS "D-023 ...", OQ-075, B-74 to B-80), the screenshots and the self-review. What follows is the first
+session's handoff as it was written, kept as a record: its section 2 is no longer a to-do list, and where it
+differs from OQ-075 or MEASUREMENTS, they are right.
+
 The task is `/Users/timdevallee/Code/warrior/00-start-here/PROMPT-ENEMIES.md` (untracked in the main checkout:
 read it first, all of it). Tim asked for all of it in one PR. The reviewer merges. Do not deploy. The brief says
 usage is tight and no multi-agent review workflow: work solo, one focused self-review of the combat code at the end.
