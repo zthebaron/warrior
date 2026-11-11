@@ -39,6 +39,9 @@ export class SpringArmCamera {
   /** Radians currently added to `pitch` by the assist (blended; 0 when released). */
   assistOffset = 0;
   lastProbe: AssistProbe | null = null;
+  /** CAMERA-WALL-ZOOM: the pivot is held in the open. `?pivothold=off` clears it: the rig as it was, kept as the
+   *  comparison the camera-room stage must see FAIL (as ?pitchassist=off is for the assist). */
+  pivotHold = true;
   private readonly pivot = new THREE.Vector3();
   private readonly lookAhead = new THREE.Vector3();
   private armLength = CAMERA_TUNING.distance;
@@ -140,6 +143,7 @@ export class SpringArmCamera {
     this.tmpTarget.copy(target).add(this.lookAhead);
     this.tmpTarget.y += t.pivotHeight;
     this.pivot.lerp(this.tmpTarget, damp(t.followDamping, dt));
+    if (this.pivotHold) this.holdPivotInTheOpen(target);
 
     // raycast pushback: snap IN immediately (never clip), ease back OUT
     this.armDirection(this.tmpDir);
@@ -147,6 +151,27 @@ export class SpringArmCamera {
     const allowed = allowedArm(hit);
     this.armLength = allowed < this.armLength ? allowed : this.armLength + (allowed - this.armLength) * damp(t.armReturnDamping, dt);
     this.apply();
+  }
+
+  /**
+   * CAMERA-WALL-ZOOM. The pivot leads the warrior by his velocity and trails him by the follow lag, so it is
+   * not where he is: run at a wall and it went INTO the wall. The arm's ray then began inside rock, met the
+   * face from behind within a hand's width, and allowedArm gave the 0.8 floor: the camera sat inside the
+   * rock and came back out through his hat (MEASUREMENTS "CAMERA-WALL-ZOOM"). So the pivot may lead or trail
+   * only as far as there is open room: one ray from the point over his feet at pivot height (inside his own
+   * body, so never inside the level) to the pivot, and the pivot stops collisionPadding short of what it meets.
+   * Standing still the pivot IS that point, so nothing a standing pose shows changes (READABLE_RISE, the assist).
+   */
+  private holdPivotInTheOpen(feet: THREE.Vector3): void {
+    const t = CAMERA_TUNING;
+    const head = this.tmpO.copy(feet);
+    head.y += t.pivotHeight;
+    const reach = this.tmpF.copy(this.pivot).sub(head);
+    const len = reach.length();
+    if (len < 1e-6) return;
+    reach.divideScalar(len);
+    const hit = this.raycast(head, reach, len + t.collisionPadding);
+    if (hit !== null) this.pivot.copy(head).addScaledVector(reach, Math.max(0, hit - t.collisionPadding));
   }
 
   private armDirection(out: THREE.Vector3): THREE.Vector3 {

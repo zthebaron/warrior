@@ -333,6 +333,8 @@ async function boot(): Promise<void> {
   const camRig = new SpringArmCamera(renderer.camera, (o, d, max) => physics.castRay(o, d, max, player?.collider)?.distance ?? null);
   // D-015d pitch assist ships ON (B-18); ?pitchassist=off is the comparison, as ?landingmark=off is.
   camRig.assistEnabled = new URLSearchParams(location.search).get('pitchassist') !== 'off';
+  // CAMERA-WALL-ZOOM: the pivot is held in the open; ?pivothold=off is the comparison the camera-room stage must see fail.
+  camRig.pivotHold = new URLSearchParams(location.search).get('pivothold') !== 'off';
 
   const showError = (err: unknown): void => {
     const msg = err instanceof Error ? err.message : String(err);

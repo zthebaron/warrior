@@ -1683,3 +1683,38 @@ not done, and why:
 fal: $2.5140 of this task's $6.00 (ledger rows 81 to 93); the ledger stands at $14.6000 of $20.00. Row 84 bought a
 blank sheet and row 83 an input that was not used.
 status: PROVISIONAL
+
+## OQ-076 — CAMERA-WALL-ZOOM: the cause was not the one guessed, and the builder's calls
+raised: 2026-11-11 by camera-wall-zoom (claim CAMERA-WALL-ZOOM). Tim reported the bug from play
+(`PROMPT-CAMERA-WALL-ZOOM.md`); what follows is what the brief left to the builder, or got wrong.
+took, each PROVISIONAL:
+1. **The cause is the pivot being led into the wall in front, not the arm being blocked from behind.** The brief
+   said "most likely the camera arm is being shortened by collision with the ground or rock behind the warrior".
+   Measured: the pivot leads him by velocity x 0.25 s, enters the wall he runs at, and the arm's ray starts
+   inside rock (MEASUREMENTS "CAMERA-WALL-ZOOM"). It is still the camera closing in, so the task went on.
+2. **"The first tall wall" was read as chapter 2's first climb face** (x = 12, +4.5), the first tall wall a
+   player meets, not the wall-jump corridor at x = 37 the brief's B-23 wording points to. Both were measured. The
+   same defect is at both, at the second climb, and on all five levels.
+3. **The fix is at the pivot, and the blocked arm's rule is unchanged.** Step 3 asks that a blocked arm find
+   room or see through. Options: A hold the pivot in the open (one ray, no new number, no standing pose changes)
+   | B also make a blocked arm rise or swing | C see through what blocks it. Took A alone. B and C change the eye
+   on standing poses, where the linter's `armAt` and the `pitch-assist` stage's fixtures must agree with the rig,
+   and the brief says those checks still pass. A makes Tim's wall read: the whole warrior, the wall face and its
+   top edge are in frame from 7 u. The places where the arm is blocked for real are B-82. **Tim may want B.**
+4. **The check gates the recorded run with the camera at the yaw the game spawned it with.** A real player turns
+   the camera. Turning it behind his facing at 360 deg/s is a model of a player, and it adds two short stretches
+   in chapter 2's 3.5 u corridor that no pivot fix answers. Gated: the game's own yaw. Reported, not gated: the
+   turned camera (`camera-log.ts --yaw=follow`, B-82).
+5. **Three real blocks are listed in the stage instead of failing it** (chapter 3's two lintels, the gym's test
+   block): `CAMERA_ROOM.blocks`. The alternative was a red stage on main or a level change, and the brief rules
+   out the level. The stage fails on any block not listed and on a listed one that stops blocking. This is an
+   exception inside a new gate, with its evidence in MEASUREMENTS and its work in B-82.
+6. **The floor is half the rest arm, a moment is 0.25 s, and a cut-off warrior gets no grace.** Basis in
+   MEASUREMENTS. The brief gave "a set fraction" and "a moment".
+7. **`?pivothold=off` ships in the game**, as `?pitchassist=off` and `?landingmark=off` do: the rig as it was.
+   The stage replays with it and must see the run break a rule, on the four levels where it did.
+8. **The 5120x1440 frames, and the 1920x1080 ones, were drawn on this machine's GPU** in a headed Chrome window
+   (B-81: SwiftShader draws the ink pass black at that size).
+what nobody has judged: whether the wall now reads to Tim in play; whether the pivot stopping short of a wall
+(it no longer leads him into it) feels different when running along or past rock.
+status: PROVISIONAL
