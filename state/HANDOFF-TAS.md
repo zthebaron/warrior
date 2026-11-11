@@ -1,5 +1,8 @@
 # HANDOFF-TAS (written 2026-11-11 ~00:55Z by session title-audio-sword, for a fresh session with zero memory)
 
+**CLOSED 2026-11-11.** A fresh session did section 2: the review is recorded in OQ-073, five findings are fixed in
+10991df, the rest are B-59 to B-73, and the left click is in the how-to-play table. What follows is history.
+
 The task is `/Users/timdevallee/Code/warrior/00-start-here/PROMPT-TITLE-AUDIO-SWORD.md` (71 lines, untracked in the
 main checkout: read it first). Tim asked for all of it in one PR. The reviewer merges. Do not deploy.
 

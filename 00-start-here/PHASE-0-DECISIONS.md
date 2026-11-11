@@ -1473,4 +1473,4 @@ how-to-play page says a keyboard or a pad is needed.
 **STYLE-BIBLE:** not amended. §2 says the accent is never on UI: the buttons and text are ink and paper only. The
 red seal is in Tim's painting, not in the UI drawn over it.
 
-implemented_by: b483f1d (the gate, the title screen, the how-to-play page, reachable at the bare URL), 0c40975 (sound: the audio module, the tap, the files, the cookie, fal-call's audio endpoints and task ceiling), db5d964 (the sword slash and the gamepad)
+implemented_by: b483f1d (the gate, the title screen, the how-to-play page, reachable at the bare URL), 0c40975 (sound: the audio module, the tap, the files, the cookie, fal-call's audio endpoints and task ceiling), db5d964 (the sword slash and the gamepad), 10991df (five review findings a player hits, each with a reachable check, and the left click in the bindings table: OQ-073)
