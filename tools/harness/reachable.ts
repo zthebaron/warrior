@@ -156,16 +156,26 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       // an MP3 decodes a few hundredths of a second long or short of what was encoded
       st.check('after Play: every sound in audio.json is decoded, and nothing else', decoded.length === lengths.length && decoded.every((d, i) => Math.abs(d - lengths[i]!) < 0.08) && sounds.length <= lengths.length, `decoded ${decoded.length} of ${lengths.length} (${decoded.join(', ')} s); ${sounds.length} requested`);
       st.check('the music starts as a loop', !!music && Math.abs(music.seconds - want9.music.loopSeconds) < 2, music ? `a looping source of ${music.seconds} s (the loop is ${want9.music.loopSeconds} s)` : 'no looping source was started in 20 s');
-      await page.waitForTimeout(600); // the player is put down by the level and lands
-      const before = await page.evaluate(() => window.__audioProbe?.starts.length ?? 0);
-      await page.keyboard.press('Space');
-      const jump = await page.waitForFunction((n) => window.__audioProbe?.starts.slice(n).find((s) => !s.loop) ?? null, before, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => null);
-      st.check('a jump starts the jump sound', !!jump && jump.seconds === want9.effects['jump']!.seconds, jump ? `a ${jump.seconds} s source at rate ${jump.rate} (jump.mp3 is ${want9.effects['jump']!.seconds} s)` : 'Space started no sound in 5 s');
-      await page.waitForTimeout(900); // the jump lands
-      const beforeSlash = await page.evaluate(() => window.__audioProbe?.starts.length ?? 0);
-      await page.keyboard.press('KeyJ');
-      const cut = await page.waitForFunction(([n, sec]) => window.__audioProbe?.starts.slice(n).find((x) => x.seconds === sec) ?? null, [beforeSlash, want9.effects['slash']!.seconds] as const, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => null);
-      st.check('the slash key starts the slash sound', !!cut, cut ? `a ${cut.seconds} s source (slash.mp3 is ${want9.effects['slash']!.seconds} s)` : 'J started no slash sound in 5 s');
+      // A move key is SAMPLED once a fixed tick, so a tap shorter than a frame is never seen: on a CI runner a
+      // frame of SwiftShader is tens of milliseconds, and the first cut of this check (a bare press) failed
+      // there. The key is held for several frames, and pressed again until the sound starts or 15 s pass (the
+      // player may still be in the air from the level's start on the first press).
+      const soundAfter = async (code: string, seconds: number): Promise<{ seconds: number; loop: boolean; rate: number } | null> => {
+        const from = await page.evaluate(() => window.__audioProbe?.starts.length ?? 0);
+        for (let i = 0; i < 20; i++) {
+          await page.keyboard.down(code);
+          await page.waitForTimeout(350);
+          await page.keyboard.up(code);
+          await page.waitForTimeout(400);
+          const hit = await page.evaluate(([n, sec]) => window.__audioProbe?.starts.slice(n).find((x) => !x.loop && x.seconds === sec) ?? null, [from, seconds] as const);
+          if (hit) return hit;
+        }
+        return null;
+      };
+      const jump = await soundAfter('Space', want9.effects['jump']!.seconds);
+      st.check('a jump starts the jump sound', !!jump, jump ? `a ${jump.seconds} s source at rate ${jump.rate} (jump.mp3 is ${want9.effects['jump']!.seconds} s)` : 'Space, held and repeated for 15 s, started no jump sound');
+      const cut = await soundAfter('KeyJ', want9.effects['slash']!.seconds);
+      st.check('the slash key starts the slash sound', !!cut, cut ? `a ${cut.seconds} s source (slash.mp3 is ${want9.effects['slash']!.seconds} s)` : 'J, held and repeated for 15 s, started no slash sound');
       await page.keyboard.press('KeyN');
       const muted = await page.evaluate(() => `${document.cookie} | ${document.getElementById('hint')?.textContent ?? ''}`);
       st.check('the mute key is remembered in one cookie and shown in the hint', /^karasu_sound=1\.\d+ \| .*sound: off/.test(muted), muted);
@@ -204,8 +214,10 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
         }));
         await bare.keyboard.press('Enter'); // start the level as that page's player would, then jump
         await bare.waitForFunction(() => document.body.dataset['level'] ?? null, null, { timeout: 20000 }).catch(() => null);
-        await bare.waitForTimeout(400);
-        await bare.keyboard.press('Space');
+        await bare.waitForTimeout(600);
+        await bare.keyboard.down('Space');
+        await bare.waitForTimeout(500);
+        await bare.keyboard.up('Space');
         await bare.waitForTimeout(300);
         const bareAudio = await bare.evaluate(() => `${window.__audioProbe?.contexts ?? -1} contexts, ${window.__audioProbe?.starts.length ?? -1} sources started`);
         st.check(`${q}: a bare page (no title, no how-to-play, the old menu text)`, dom.cls === 'bare' && dom.ids === 'app hud' && dom.media === 0 && /Enter: start/.test(dom.text), `class ${dom.cls}; ids: ${dom.ids}; media elements ${dom.media}; text ${JSON.stringify(dom.text.slice(0, 60))}`);
