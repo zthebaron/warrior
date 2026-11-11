@@ -1,4 +1,4 @@
-// chaos — 60s of seeded random input. Not per-tick noise (that averages to neutral jitter): random
+// chaos — 60s of seeded random input (since D-023 the sword too, so a level's swordsmen are fought at random). Not per-tick noise (that averages to neutral jitter): random
 // action sets HELD for 5-40 ticks, like a player mashing. The seed is logged; rerun any failure
 // with --seed=<n>. ASSERTS: in bounds, not stuck, zero console errors, velocity under cap x2,
 // no NaN transforms.
@@ -13,7 +13,7 @@ export const CHAOS_CONFIG = {
   stuckMinMove: 0.5,        // m: must move at least this far within every window...
   stuckActiveFraction: 0.5, // ...in which at least this fraction of ticks had movement input
   capMultiplier: 2,
-  p: { move: 0.85, jump: 0.35, dash: 0.12, sprint: 0.3 },
+  p: { move: 0.85, jump: 0.35, dash: 0.12, sprint: 0.3, slash: 0.3 },
 };
 
 function mulberry32(seed: number): () => number {
@@ -42,11 +42,13 @@ export function chaosFrames(seed: number, ticks: number): InputFrame[] {
       dash: r() < C.p.dash,
       sprint: r() < C.p.sprint,
     };
-    r(); // was the attack draw (cut by Q1/Q7); still consumed so a fixed seed replays the same chaos stream
+    // D-023: the sword. This is the draw the old attack input took (cut by Q1/Q7, and consumed unused since, so
+    // that a fixed seed kept its stream): every other field of every frame is what it was before the sword.
+    const slash = r() < C.p.slash;
     // jump/dash held for the whole segment would only fire once; release halfway for a second edge
     for (let k = 0; k < hold && out.length < ticks; k++) {
       const half = k === Math.floor(hold / 2);
-      out.push({ ...f, jump: f.jump && !half, dash: f.dash && !half });
+      out.push({ ...f, jump: f.jump && !half, dash: f.dash && !half, slash: slash && !half });
     }
   }
   return out;

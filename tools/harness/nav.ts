@@ -129,6 +129,8 @@ export interface NavOutcome {
   ticks: number;
   frames: InputFrame[];
   final: Snapshot;
+  /** D-023: every change of a swordsman's mode over the run (WalkResult.fightLog) */
+  fight: [number, string, string][];
 }
 
 export async function nav(ctx: Ctx): Promise<StageResult & { outcome?: NavOutcome }> {
@@ -183,6 +185,8 @@ export interface WalkResult {
   /** D-023: ticks spent fighting, and how many times the sword was pressed */
   fightTicks: number;
   slashes: number;
+  /** D-023: every change of a swordsman's mode, as [ticks since the walk began, id, mode] (the trace keeps it: replay.ts) */
+  fightLog: [number, string, string][];
 }
 
 /**
@@ -202,6 +206,8 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
   const rules: FightRules = await page.evaluate(() => ({ reach: window.__HARNESS__!.fight.warrior['reach']!, againSec: window.__HARNESS__!.fight.warrior['againSec']! }));
   let lastSlash = false, fightTicks = 0, slashes = 0;
   const t0 = snap.tick;
+  const modes = new Map((snap.enemies ?? []).map((e) => [e.id, e.mode]));
+  const fightLog: [number, string, string][] = [];
   let i = opts.startIndex; // waypoint index being sought
   const cueOf = (k: number): number | undefined => (opts.ignoreCues ? undefined : path[k]?.cue);
   let seg = newSeg(cueOf(i) !== undefined);
@@ -254,6 +260,11 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
     lastJump = frame.jump;
     const prevDeaths = snap.deaths;
     snap = await step(frame, (snap.tick - t0) % C.renderEvery === 0);
+    for (const e of snap.enemies ?? []) {
+      if (modes.get(e.id) === e.mode) continue;
+      modes.set(e.id, e.mode);
+      fightLog.push([snap.tick - t0, e.id, e.mode]);
+    }
     minYSeen = Math.min(minYSeen, snap.feet[1]);
     if (traceSeg === i) {
       ctx.log(`      [seg ${i} t${snap.tick - segStartTick}] in(${frame.x.toFixed(2)},${frame.y.toFixed(2)})${frame.jump ? ' J' : ''}${frame.dash ? ' D' : ''} feet ${fmt(snap.feet)} vel ${fmt(snap.vel)} ${snap.pstate}${snap.grounded ? ' G' : ''}`);
@@ -290,7 +301,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       if (lastJump) seg.pressed.add('heldIn');
     }
   }
-  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks, fightTicks, slashes };
+  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks, fightTicks, slashes, fightLog };
 }
 
 async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage): Promise<NavOutcome> {
@@ -338,7 +349,7 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   const frames = await page.evaluate(() => window.__HARNESS__!.record());
   st.data['ticks'] = ticks;
   st.data['reached'] = reached;
-  return { reached, ticks, frames, final: snap };
+  return { reached, ticks, frames, final: snap, fight: w.fightLog };
 }
 
 /** Input for this tick, from the target waypoint's `via`. */

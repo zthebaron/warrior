@@ -168,6 +168,8 @@ interface HarnessApi {
   teleportPlayer(pos: Vec3, facingDeg?: number): void;
   /** D-021: show or hide every level mesh whose name starts with `prefix` (the undrawn rock, the cliff wall). Returns how many. */
   showMeshes(prefix: string, visible: boolean): number;
+  /** D-023: show or hide the level's swordsmen (the post stage reads which pixels they cover). Returns how many. */
+  showEnemies(visible: boolean): number;
   /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
   figureClips(): { name: string; duration: number }[];
   showFigure(clip: string | null, time?: number): void;
@@ -435,6 +437,7 @@ async function boot(): Promise<void> {
     deathTicksLeft = Math.round(GAME_RULES.respawnDelaySec * LOOP_CONFIG.fixedHz);
     deaths++;
     lastDeath = [f.x, f.y, f.z];
+    if (player) player.slashTime = null; // D-023: a slash in the air ends with the attempt (the player is not stepped again until the respawn)
     state.transition('death');
   };
   const rulesTick = (): void => {
@@ -457,6 +460,7 @@ async function boot(): Promise<void> {
     });
     const g = level.data.goal;
     if (Math.hypot(f.x - g.pos[0], f.z - g.pos[2]) < (g.radius ?? GAME_RULES.goalRadiusDefault) && Math.abs(f.y - g.pos[1]) < GAME_RULES.goalHeightTolerance) {
+      player.slashTime = null; // D-023: nor does one hang over the results: no tick follows to finish it
       state.transition('results');
     }
   };
@@ -1058,6 +1062,10 @@ async function boot(): Promise<void> {
         if (!player) return;
         player.slashTime = time;
         strokeOf(player);
+      },
+      showEnemies: (visible) => {
+        if (enemies) enemies.root.visible = visible;
+        return enemies?.count ?? 0;
       },
       translators: () => {
         const out: { id: string; name: string; tag: string | null; pos: Vec3 }[] = [];

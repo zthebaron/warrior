@@ -253,6 +253,26 @@ export function inArc(ax: number, az: number, facing: number, bx: number, bz: nu
   return (dx * -Math.sin(facing) + dz * -Math.cos(facing)) / d >= Math.cos((arcDeg / 2) * DEG) - EPS;
 }
 
+/**
+ * The warrior's slash clock, one fixed tick (src/entities/player.ts runs it; check:fight runs the same function).
+ * time: seconds into the slash, or null. pressed: the sword's rising edge this tick.
+ */
+export function stepSlash(time: number | null, pressed: boolean, dt: number): { time: number | null; started: boolean } {
+  const W = FIGHT.warrior;
+  let t = time;
+  if (t !== null) {
+    t += dt;
+    if (t >= W.slashSec) t = null;
+  }
+  // a press too soon after the last is dropped, as it always was: a slash is not cut short while it is young
+  if (pressed && (t === null || t >= W.againSec)) return { time: 0, started: true };
+  return { time: t, started: false };
+}
+
+/** Is the warrior's blade cutting, this far into the slash? (WarriorView.cutting) */
+export const slashCutting = (time: number | null): boolean =>
+  time !== null && time >= FIGHT.warrior.cutFrom - EPS && time <= FIGHT.warrior.cutTo + EPS;
+
 /** The wind-up as it is actually run: the table's value, never under the minimum. */
 export const windupSec = (): number => Math.max(FIGHT.swordsman.windupSec, FIGHT.swordsman.windupMinSec);
 

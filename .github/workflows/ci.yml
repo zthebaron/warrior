@@ -36,6 +36,8 @@ jobs:
       # B-12: the patroller runtime (src/systems/patrol.ts) is a pure function of phase + t*speed
       - run: npm run check:patrol
       - run: npm run check:progression
+      # D-023: the four rules of the fight on the pure state machine; --self-test first, so each is seen to FAIL on a broken fight
+      - run: npm run check:fight
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
       # The prompt pack must not instruct a NOT-listed concept unmarked (UNMARKED_RETIRED); self-test proves it bites
@@ -118,7 +120,7 @@ jobs:
       - name: Install Chromium (+ headless shell, + system deps)
         run: npx playwright install --with-deps chromium
       # D-014 reachable: bare URL -> entry chapter -> every chapter's goal -> menu, as a player, on the whole build
-      - run: npm run playtest -- --only=reachable,pitch-assist,run-metric,ambient-motion
+      - run: npm run playtest -- --only=reachable,pitch-assist,run-metric,ambient-motion,fight
       - name: Upload harness report
         if: always()
         uses: actions/upload-artifact@v4

@@ -121,8 +121,8 @@
       "triangles": 68562
     },
     "01-lower-stair": {
-      "draw_calls": 127,
-      "triangles": 287036
+      "draw_calls": 137,
+      "triangles": 331496
     },
     "02-cliff-seam": {
       "draw_calls": 94,

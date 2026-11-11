@@ -11,7 +11,7 @@ import type { Collider, KinematicCharacterController, RigidBody } from '@dimforg
 import type { Physics, Vec3Like } from '../engine/physics';
 import type { CharacterAsset } from '../loaders/character';
 import { CharacterModel } from './character-model';
-import { FIGHT } from '../systems/fight';
+import { slashCutting, stepSlash } from '../systems/fight';
 
 export const TUNING = {
   // --- presentation (feel test) ---
@@ -404,21 +404,14 @@ export class Player {
 
   /** D-023: the slash's own clock. Before every early return in fixedUpdate, so it runs on a ledge too. */
   private updateSlash(dt: number, pressed: boolean): void {
-    const W = FIGHT.warrior;
-    if (this.slashTime !== null) {
-      this.slashTime += dt;
-      if (this.slashTime >= W.slashSec) this.slashTime = null;
-    }
-    // a press too soon after the last is dropped, as it always was: a slash is not cut short while it is young
-    if (pressed && (this.slashTime === null || this.slashTime >= W.againSec)) {
-      this.slashTime = 0;
-      this.slashCount++;
-    }
+    const s = stepSlash(this.slashTime, pressed, dt); // the rule itself is src/systems/fight.ts's, so check:fight runs it too
+    this.slashTime = s.time;
+    if (s.started) this.slashCount++;
   }
 
   /** Is the blade cutting this tick? (src/systems/fight.ts WarriorView.cutting) */
   cutting(): boolean {
-    return this.slashTime !== null && this.slashTime >= FIGHT.warrior.cutFrom - 1e-9 && this.slashTime <= FIGHT.warrior.cutTo + 1e-9;
+    return slashCutting(this.slashTime);
   }
 
   private currentState(): PlayerState {

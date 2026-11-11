@@ -8,7 +8,7 @@ import type { Browser, Page } from '@playwright/test';
 /** Per-level browser stages, in run order (run.mjs). merge-reports.mjs requires every one of them per level. */
 export const BROWSER_STAGES = ['nav', 'phase-sweep', 'replay', 'chaos', 'hazards', 'counters', 'assets', 'accent', 'visual', 'post'];
 /** Once-per-run stages over the whole game (run.mjs). merge-reports.mjs requires every one of them once. */
-export const ONCE_STAGES = ['reachable', 'pitch-assist', 'run-metric', 'ambient-motion'];
+export const ONCE_STAGES = ['reachable', 'pitch-assist', 'run-metric', 'ambient-motion', 'fight'];
 /** Every playable level id: levels/*.json minus the schema. One source for run.mjs, the CI matrix and merge-reports. */
 export const levelIds = (root: string): string[] =>
   readdirSync(join(root, 'levels'))
@@ -317,6 +317,7 @@ declare global {
       teleportPlayer(pos: Vec3): void;
       /** D-021: show or hide every level mesh whose name starts with `prefix`; returns how many. */
       showMeshes(prefix: string, visible: boolean): number;
+      showEnemies(visible: boolean): number;
       /** D-021: the figure's clips, and one shown at a time in place of the state's pose (null clears it). */
       figureClips(): { name: string; duration: number }[];
       showFigure(clip: string | null, time?: number): void;
