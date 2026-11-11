@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import type { Browser, Page } from '@playwright/test';
 
 /** Per-level browser stages, in run order (run.mjs). merge-reports.mjs requires every one of them per level. */
-export const BROWSER_STAGES = ['nav', 'phase-sweep', 'replay', 'chaos', 'hazards', 'counters', 'assets', 'accent', 'visual', 'post'];
+export const BROWSER_STAGES = ['nav', 'phase-sweep', 'replay', 'chaos', 'hazards', 'counters', 'assets', 'accent', 'visual', 'post', 'camera-room'];
 /** Once-per-run stages over the whole game (run.mjs). merge-reports.mjs requires every one of them once. */
 export const ONCE_STAGES = ['reachable', 'pitch-assist', 'run-metric', 'ambient-motion', 'fight'];
 /** Every playable level id: levels/*.json minus the schema. One source for run.mjs, the CI matrix and merge-reports. */
@@ -294,7 +294,9 @@ declare global {
       rigCamera(pivot: Vec3, dir: Vec3): Vec3;
       instrument(): { level: string; total_s: number | null; finished: boolean; segments: { segment: number; from: string; to: string; crow: number | null; segment_time_s: number | null; deaths: number; first_clear_attempt: number | null; retry_times_s: number[]; attempts: { player_depart_t: number | null; crow_lift_t: number | null; since_last_lift_s: number | null; cleared: boolean }[]; lift_timing: { attempts_n: number; loop_s: number | null; since_last_lift_s: number[]; spread_s: number | null; spread_of_loop: number | null } | null }[] } | null;
       releaseCamera(): void;
-      cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: { standoff: number; rise: number; depth: number; targetDeg: number | null } | null };
+      cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: { standoff: number; rise: number; depth: number; targetDeg: number | null } | null; arm: number; pivot: Vec3; yawDeg: number };
+      look(dxPixels: number, dyPixels: number): void;
+      figureFrame(): { x0: number; x1: number; y0: number; y1: number; nearM: number } | null;
       castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
       castRenderRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
       cameraYaw(facingDeg: number): void;

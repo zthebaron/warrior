@@ -1,0 +1,41 @@
+camera-room on main's camera: the tree with the hooks, the stage and the instrument, and no fix.
+npm run playtest -- --only=visual,camera-room   ->   RESULT: LEVEL_FAILURE, exit 1
+Red on 00-gym, 01-lower-stair, 02-cliff-seam and 04-summit-ridge. 03-drifting-stones passes: its only stretches are the two listed lintels.
+
+┌─ 00-gym ────────────────────────────────────────────────────────────────────────────────
+│ camera-room FAIL    3/6    1.2s  LEVEL_FAILURE
+│     ✓ the recorded run reaches the goal          1677 ticks, state results at (90.51, 3.21, -0.01)
+│     ✗ the camera is never under 50% of its rest arm (3.50 of 7 u) for more than 0.25 s t66..83: arm 0.80 (11% of rest) at (-4.73, 1.80, 4.95) jump, under the floor 18 ticks, cropped 11; the arm meets geometry[19] 1.09 u from the pivot at (-6.50, 3.00, 5.59) | t165..212: arm 0.80 (11% of rest) at (3.06, 2.68, 6.99) fall, under the floor 48 ticks, cropped 44; the arm meets geometry[20] 0.03 u from the pivot at (4.00, 4.64, 7.12)
+│     ✗ the whole warrior is in the frame on every tick t66..83: arm 0.80 (11% of rest) at (-4.73, 1.80, 4.95) jump, under the floor 18 ticks, cropped 11; the arm meets geometry[19] 1.09 u from the pivot at (-6.50, 3.00, 5.59) | t165..212: arm 0.80 (11% of rest) at (3.06, 2.68, 6.99) fall, under the floor 48 ticks, cropped 44; the arm meets geometry[20] 0.03 u from the pivot at (4.00, 4.64, 7.12)
+│     ✗ listed block geometry[22] (B-82) still blocks the arm it no longer does: take it out of CAMERA_ROOM.blocks and close its part of B-82
+│     ✓ with the pivot hold off (?pivothold=off) the same run breaks a rule 2 stretches: t66..83: arm 0.80 (11% of rest) at (-4.73, 1.80, 4.95) jump, under the floor 18 ticks, cropped 11; the arm meets geometry[19] 1.09 u from the pivot at (-6.50, 3.00, 5.59) | t165..212: arm 0.80 (11% of rest) at (3.06, 2.68, 6.99) fall, under the floor 48 ticks, cropped 44; the arm meets geometry[20] 0.03 u from the pivot at (4.00, 4.64, 7.12)
+│     ✓ zero console errors                        none
+┌─ 01-lower-stair ────────────────────────────────────────────────────────────────────────
+│ camera-room FAIL    4/5    1.2s  LEVEL_FAILURE
+│     ✓ the recorded run reaches the goal          1182 ticks, state results at (99.56, 9.01, 0.00)
+│     ✓ the camera is never under 50% of its rest arm (3.50 of 7 u) for more than 0.25 s shortest arm 0.80 u (11%) at t383 (40.60, 3.96, 0.00); 1182 ticks
+│     ✗ the whole warrior is in the frame on every tick t383..392: arm 0.80 (11% of rest) at (40.60, 3.96, 0.00) jump, under the floor 10 ticks, cropped 10; the arm meets geometry[10] 0.09 u from the pivot at (41.66, 5.50, 0.00) | t1098..1107: arm 0.80 (11% of rest) at (93.63, 7.46, 0.00) jump, under the floor 10 ticks, cropped 10; the arm meets geometry[15] 0.08 u from the pivot at (94.66, 9.00, 0.00)
+│     ✓ with the pivot hold off (?pivothold=off) the same run breaks a rule 2 stretches: t383..392: arm 0.80 (11% of rest) at (40.60, 3.96, 0.00) jump, under the floor 10 ticks, cropped 10; the arm meets geometry[10] 0.09 u from the pivot at (41.66, 5.50, 0.00) | t1098..1107: arm 0.80 (11% of rest) at (93.63, 7.46, 0.00) jump, under the floor 10 ticks, cropped 10; the arm meets geometry[15] 0.08 u from the pivot at (94.66, 9.00, 0.00)
+│     ✓ zero console errors                        none
+┌─ 02-cliff-seam ─────────────────────────────────────────────────────────────────────────
+│ camera-room FAIL    3/5    1.2s  LEVEL_FAILURE
+│     ✓ the recorded run reaches the goal          1638 ticks, state results at (143.55, 15.51, -0.00)
+│     ✗ the camera is never under 50% of its rest arm (3.50 of 7 u) for more than 0.25 s t98..130: arm 0.80 (11% of rest) at (11.01, 1.36, -0.00) jump, under the floor 33 ticks, cropped 30; the arm meets geometry[1] 0.10 u from the pivot at (12.00, 2.20, 0.00) | t402..423: arm 1.85 (26% of rest) at (37.00, 8.28, 0.55) run, under the floor 22 ticks, cropped 20; the arm meets geometry[36] 2.15 u from the pivot at (35.16, 10.75, 1.03) | t1371..1402: arm 0.80 (11% of rest) at (115.95, 12.86, 0.00) jump, under the floor 32 ticks, cropped 29; the arm meets geometry[9] 0.06 u from the pivot at (117.00, 13.67, -0.00)
+│     ✗ the whole warrior is in the frame on every tick t98..130: arm 0.80 (11% of rest) at (11.01, 1.36, -0.00) jump, under the floor 33 ticks, cropped 30; the arm meets geometry[1] 0.10 u from the pivot at (12.00, 2.20, 0.00) | t402..423: arm 1.85 (26% of rest) at (37.00, 8.28, 0.55) run, under the floor 22 ticks, cropped 20; the arm meets geometry[36] 2.15 u from the pivot at (35.16, 10.75, 1.03) | t1371..1402: arm 0.80 (11% of rest) at (115.95, 12.86, 0.00) jump, under the floor 32 ticks, cropped 29; the arm meets geometry[9] 0.06 u from the pivot at (117.00, 13.67, -0.00)
+│     ✓ with the pivot hold off (?pivothold=off) the same run breaks a rule 3 stretches: t98..130: arm 0.80 (11% of rest) at (11.01, 1.36, -0.00) jump, under the floor 33 ticks, cropped 30; the arm meets geometry[1] 0.10 u from the pivot at (12.00, 2.20, 0.00) | t402..423: arm 1.85 (26% of rest) at (37.00, 8.28, 0.55) run, under the floor 22 ticks, cropped 20; the arm meets geometry[36] 2.15 u from the pivot at (35.16, 10.75, 1.03) | t1371..1402: arm 0.80 (11% of rest) at (115.95, 12.86, 0.00) jump, under the floor 32 ticks, cropped 29; the arm meets geometry[9] 0.06 u from the pivot at (117.00, 13.67, -0.00)
+│     ✓ zero console errors                        none
+┌─ 03-drifting-stones ────────────────────────────────────────────────────────────────────
+│ camera-room PASS    6/6    0.6s
+│     ✓ the recorded run reaches the goal          1759 ticks, state results at (132.61, 2.51, 0.00)
+│     ✓ the camera is never under 50% of its rest arm (3.50 of 7 u) for more than 0.25 s shortest arm 4.20 u (60%) at t835 (71.24, 1.01, 0.00), outside the listed blocks; 1759 ticks
+│     ✓ the whole warrior is in the frame on every tick 0 cropped ticks outside the listed blocks of 1759
+│     ✓ listed block geometry[8] (B-82) still blocks the arm the first lintel, 2.0 above the floor: the arm rises into its underside. t807..834: arm 1.28 (18% of rest) at (66.68, 0.96, -0.00) run, under the floor 25 ticks, cropped 28; the arm meets geometry[8] 1.58 u from the pivot at (66.24, 3.00, 0.00)
+│     ✓ listed block geometry[9] (B-82) still blocks the arm the second lintel, the same. t1732..1759: arm 1.28 (18% of rest) at (128.20, 2.45, -0.00) run, under the floor 25 ticks, cropped 28; the arm meets geometry[9] 1.58 u from the pivot at (127.80, 4.50, 0.00)
+│     ✓ zero console errors                        none
+┌─ 04-summit-ridge ───────────────────────────────────────────────────────────────────────
+│ camera-room FAIL    4/5    1.1s  LEVEL_FAILURE
+│     ✓ the recorded run reaches the goal          1449 ticks, state results at (141.06, 9.51, -0.00)
+│     ✓ the camera is never under 50% of its rest arm (3.50 of 7 u) for more than 0.25 s shortest arm 0.80 u (11%) at t1109 (100.12, 5.46, -0.00); 1449 ticks
+│     ✗ the whole warrior is in the frame on every tick t1109..1118: arm 0.80 (11% of rest) at (100.12, 5.46, -0.00) jump, under the floor 10 ticks, cropped 10; the arm meets geometry[13] 0.09 u from the pivot at (101.14, 7.00, -0.00)
+│     ✓ with the pivot hold off (?pivothold=off) the same run breaks a rule 1 stretch: t1109..1118: arm 0.80 (11% of rest) at (100.12, 5.46, -0.00) jump, under the floor 10 ticks, cropped 10; the arm meets geometry[13] 0.09 u from the pivot at (101.14, 7.00, -0.00)
+│     ✓ zero console errors                        none

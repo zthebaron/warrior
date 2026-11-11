@@ -136,7 +136,12 @@ interface HarnessApi {
   rigCamera(pivot: Vec3, dir: Vec3): Vec3;
   releaseCamera(): void;
   /** B-18: the follow rig's real pose (after the assist and arm collision), and what the assist's probe saw. */
-  cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: AssistProbe | null };
+  cameraPose(): { pos: Vec3; forward: Vec3; fovDeg: number; viewPitchDeg: number; assistOffsetDeg: number; assistEnabled: boolean; probe: AssistProbe | null; arm: number; pivot: Vec3; yawDeg: number };
+  /** CAMERA-ROOM: the mouse, as a player moves it (pixels; SpringArmCamera.addLook). The camera only: input frames are world-space. */
+  look(dxPixels: number, dyPixels: number): void;
+  /** CAMERA-ROOM: the warrior's box (feet to the top of the figure, the body's width) in the camera's frame: its
+   *  extent in normalised device coordinates (-1..1 is on screen) and the nearest corner's distance in front of the camera (m). */
+  figureFrame(): { x0: number; x1: number; y0: number; y1: number; nearM: number } | null;
   /** B-18: one physics ray against the level (the player excluded), as the camera's own probe casts them. */
   castRay(origin: Vec3, dir: Vec3, max: number): { distance: number; point: Vec3; normal: Vec3 } | null;
   /** Visible level meshes, including collider:none; excludes the player and debug overlays. */
@@ -920,7 +925,26 @@ async function boot(): Promise<void> {
           assistOffsetDeg: camRig.assistOffset * RAD2DEG,
           assistEnabled: camRig.assistEnabled,
           probe: camRig.lastProbe,
+          arm: camRig.arm,
+          pivot: v3(camRig.pivotPoint(new THREE.Vector3())),
+          yawDeg: camRig.yaw * RAD2DEG,
         };
+      },
+      look: (dx, dy) => camRig.addLook(dx, dy),
+      figureFrame: () => {
+        if (!player) return null;
+        const c = renderer.camera;
+        c.updateMatrixWorld(true);
+        const f = player.feet(new THREE.Vector3()), r = TUNING.capsuleRadius, h = 2 * player.feetOffset();
+        const fwd = c.getWorldDirection(new THREE.Vector3()), p = new THREE.Vector3();
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, nearM = Infinity;
+        for (const dx of [-r, r]) for (const dy of [0, h]) for (const dz of [-r, r]) {
+          p.set(f.x + dx, f.y + dy, f.z + dz);
+          nearM = Math.min(nearM, p.clone().sub(c.position).dot(fwd));
+          p.project(c);
+          x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
+        }
+        return { x0, x1, y0, y1, nearM };
       },
       castRay: (origin, dir, max) => {
         const h = physics.castRay({ x: origin[0], y: origin[1], z: origin[2] }, { x: dir[0], y: dir[1], z: dir[2] }, max, player?.collider);

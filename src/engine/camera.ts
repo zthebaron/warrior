@@ -56,6 +56,16 @@ export class SpringArmCamera {
     this.pitch = THREE.MathUtils.clamp(this.pitch + dyPixels * t.mouseSensitivity, t.pitchMinDeg * DEG2RAD, t.pitchMaxDeg * DEG2RAD);
   }
 
+  /** The arm as it is now (m): CAMERA_TUNING.distance at rest, shorter while something blocks it. Read by the harness. */
+  get arm(): number {
+    return this.armLength;
+  }
+
+  /** The point the arm swings about and the view looks at (the harness reads it; never written from outside). */
+  pivotPoint(out: THREE.Vector3): THREE.Vector3 {
+    return out.copy(this.pivot);
+  }
+
   /** Point the camera behind a facing angle (radians, 0 = looking down -Z). */
   setYaw(yaw: number): void {
     this.yaw = yaw;
