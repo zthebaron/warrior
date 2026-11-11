@@ -1,7 +1,7 @@
 # CAMERA-WALL-ZOOM: the frames
 
 Chapter 2's first tall wall (the +4.5 climb face at x = 12), a player's arrival: the recorded run to tick 90,
-then forward held into the wall. He reaches the face and stops at tick 104.
+then forward held into the wall. He reaches the face at tick 104 and his velocity is 0 from tick 105.
 
 | tick | before (main `8ca066c`, the same as `?pivothold=off`) | after |
 |---|---|---|

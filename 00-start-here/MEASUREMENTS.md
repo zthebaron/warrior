@@ -1757,7 +1757,7 @@ forward held into the wall for 2.5 s (`camera-log.ts 02-cliff-seam --script=wall
 |---|---|---|---|---|
 | 97 | running, 1.1 u from the face | 7.00 | the wall, its top edge, the warrior | 7.00 |
 | 98 | running, 1.0 u from the face; pivot at x = 12.09 | 0.80 | | 7.00 |
-| 104 | stopped against the face, velocity 0 | 0.80 | | 7.00 |
+| 105 | against the face (reached at tick 104), velocity 0 | 0.80 | | 7.00 |
 | 110 | standing | 0.80 | the camera is inside the rock: blank paper | 7.00 |
 | 140 | standing | 0.80 | the hat fills the frame | 7.00 |
 | 144 | standing | 1.57 | his back; feet and the wall's top are out of frame | 7.00 |
@@ -1827,6 +1827,11 @@ Chapters 1, 3 and 4 read the same as at the spawn yaw. Chapter 2's wall-jump cor
 | chapter 2, t418..434, running off the shelf while the camera comes round past the backstop (geometry[36]) | 1.62 (23%) | 16 / 17 |
 | chapter 2, standing at the corridor wall's foot facing it (`--script=corridor`): the shelf face (geometry[4]) 3.1 u behind him | 3.34 (48%), the whole warrior in frame; 3.04 as he jumps | for as long as he stands there (165 ticks in the script) / 7, at the jump |
 | gym, t182..204, in the pit behind the test block: the face ahead of the pit (geometry[20]) 0.78 u from the pivot | 0.80 (11%) | 23 / 20 |
+
+**Two numbers in the tools, neither a budget.** `boxAt` names the level box an arm ray's hit point lies on to
+within 0.02 u: wide of float error in a hit point, far under the thinnest box on any path (the 0.5 u lintels).
+The scripted arrivals in `camera-log.ts` hold forward into the wall for 150 ticks (wall12) or 90 (corridor) and
+then let go for 60: long enough for the arm to go to its floor and come all the way back (99% by tick 209).
 
 **Cost and what else moved.** The stage takes 0.6 to 1.2 s per level (two replays where it must be seen to fail).
 Full playtest on the fix, darwin: PASS, 1,060 checks; `pitch-assist` 115 of 115, so every READABLE_CASE,
