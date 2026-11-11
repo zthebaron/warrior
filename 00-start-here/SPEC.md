@@ -23,7 +23,9 @@ No story systems hang off it. It is framing, not a mechanic.*
 
 ## 2. Core verb: leap / traversal (Q1)
 
-Not combat, not a chase. Every level's test stays a deterministic, replayable path. The moveset is
+Not a chase, and not combat beyond one fenced exception (D-023, ruled by Tim): the swordsman, fought with the
+sword slash in the fixed tick, on his own ground, with no route to choose and no random number. Every level's
+test stays a deterministic, replayable path, the fight included. The moveset is
 frozen at the eight measured moves (Q2):
 `ground · jump · double · dash · dashjump · wall · climb · platform`.
 
@@ -121,9 +123,9 @@ what *does* exist.
 <!-- NOT-LIST:BEGIN -->
 | # | Refused | Decision | Kind | Check | Status |
 |---|---|---|---|---|---|
-| 1 | Enemies that fight or pursue: charger, ranged, blocker, `hp`, `aggroRadius`. The patroller lives in `hazards`. | Q1, Q7 | schema | `enemies=[]` | enforced |
-| 2 | Combat verbs and input. One exception, D-022: the sword slash, which is drawn and never simulated, and is named `slash` | Q1, D-022 | src | `attack` `strike` `combo` `parry` `hitstop` | enforced |
-| 3 | Pursuit AI | Q1 | src | `aggro*` `pathfind*` `navmesh` `chase*` | enforced |
+| 1 | Enemies other than the swordsman (D-023 allows him, as the `enemies` list): charger, ranged, blocker. Any stat on an enemy in level data (`hp`, `aggroRadius`): how he fights is one table in code, not level data. The patroller lives in `hazards`. | Q1, Q7, D-023 | schema | `enemies=[{"id":"a","type":"charger","pos":[0,0,0],"facing":0}]` `enemies=[{"id":"a","type":"swordsman","pos":[0,0,0],"facing":0,"hp":2}]` `enemies=[{"id":"a","type":"swordsman","pos":[0,0,0],"facing":0,"aggroRadius":5}]` | enforced |
+| 2 | Combat verbs and input. One exception: the sword slash (D-022), which since D-023 has a hit volume in the fixed tick, and is named `slash` | Q1, D-022, D-023 | src | `attack` `strike` `combo` `parry` `hitstop` | enforced |
+| 3 | Pursuit AI: choosing a route, or following the player off a swordsman's own ground. A swordsman walks straight at the warrior on one box top and stops at its edge (D-023) | Q1, D-023 | src | `aggro*` `pathfind*` `navmesh` `chase*` | enforced |
 | 4 | A ninth move | Q2 | schema | `critical_path[1].via="glide"` | enforced |
 | 5 | A ninth move, in code | Q2 | src | `glide*` | enforced |
 | 6 | Pickups and collectibles | Q3 | schema | `collectibles=[]` | enforced |
@@ -134,11 +136,11 @@ what *does* exist.
 | 11 | Score, par time, rank, in code | Q4 | src | `score` `par_time` `rank` | enforced |
 | 12 | A second route or branching path | Q3, Q5 | schema | `critical_paths=[]` | enforced |
 | 13 | Fire hazard, and any hazard that does damage | Q2c, Q6 | schema | `hazards[0].type="fire"` `hazards[0].damage=1` | enforced |
-| 14 | Health, lives, damage, knockback, invulnerability, game over | Q6 | src | `health` `hp` `lives` `damage` `knockback` `invuln*` `iframe*` `game_over` | enforced |
+| 14 | Health, lives, damage, knockback, invulnerability, game over. A swordsman's cut is a death like a fall (D-023); he falls on a counted hit, which is not a health bar | Q6, D-023 | src | `health` `hp` `lives` `damage` `knockback` `invuln*` `iframe*` `game_over` | enforced |
 | 15 | Saves, unlocks, chapter select | Q4, Q6 | src | `local_storage` `session_storage` `indexed_db` `unlock*` `chapter_select` | enforced |
 | 16 | A light with a direction | STYLE §1 | schema | `lighting.sunAngle=[0,0]` `lighting.intensity=1` | enforced |
 | 17 | Multiplayer or a backend | playbook §3 | src | `web_socket` `rtc_peer_connection` | enforced |
-| 18 | Ambient motion: anything translating except the player and hazards. Moving platforms are allowed as the `platform` move (Q2; OQ-054). Shader-only motion is not seen | Q2a | harness | `ambient-motion` | enforced |
+| 18 | Ambient motion: anything translating except the player, hazards and swordsmen (D-023). Moving platforms are allowed as the `platform` move (Q2; OQ-054). Shader-only motion is not seen | Q2a | harness | `ambient-motion` | enforced |
 | 19 | Dialogue, cutscenes, text in the world (three.js text and DOM-in-world APIs) | STYLE §9.10 | src | `dialogue*` `cutscene*` `subtitle*` `text_geometry` `font_loader` `css2_d` `css3_d` | enforced |
 | 20 | A death counter or any run metric shown to the player. `deaths` exists legitimately for the harness, so the check is behaviour: visible text must not depend on run history. Out of scope: the `~` dev overlay, which shows world time in production too (OQ-054 #3) | Q4, Q6 | harness | `run-metric` | enforced |
 | 21 | Procedurally generated levels (Blender assets authored as code are not this) | playbook | src | `procedural_level*` `perlin*` `simplex*` `level_gen*` `generate_level*` | enforced |

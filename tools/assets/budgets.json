@@ -121,8 +121,8 @@
       "triangles": 68562
     },
     "01-lower-stair": {
-      "draw_calls": 127,
-      "triangles": 287036
+      "draw_calls": 137,
+      "triangles": 331496
     },
     "02-cliff-seam": {
       "draw_calls": 94,
@@ -223,6 +223,15 @@
       "bones": 24,
       "textures": 1,
       "clips": ["climb", "dash", "fall", "idle", "jump", "land", "run", "walk", "wall"]
+    },
+    "swordsman_anim": {
+      "triangles": 14700,
+      "bytes": 1914752,
+      "materials": 1,
+      "draw_calls": 1,
+      "bones": 24,
+      "textures": 1,
+      "clips": ["close", "death", "hit", "idle", "slash", "walk"]
     }
   },
   "ui_basis": "D-022 title and how-to-play paintings (assets/ui/, made from Tim's two paintings in assets/ui/src by tools/art/ui-art.mjs). Byte ceilings. title.webp and title.jpg are the brief's own limit (\"at most about 350 KB\"); the rest are each file's measured size. Checked by tools/assets/shell-budget.mjs. MEASUREMENTS.md \"D-022 title screen\".",
@@ -244,6 +253,10 @@
     "dash.mp3": { "bytes": 50000 },
     "wall_grab.mp3": { "bytes": 50000 },
     "checkpoint.mp3": { "bytes": 50000 },
-    "respawn.mp3": { "bytes": 50000 }
+    "respawn.mp3": { "bytes": 50000 },
+    "notice.mp3": { "bytes": 50000 },
+    "hit.mp3": { "bytes": 50000 },
+    "fell.mp3": { "bytes": 50000 },
+    "cut.mp3": { "bytes": 50000 }
   }
 }

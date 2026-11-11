@@ -1,0 +1,5 @@
+{
+  "model_url": "file:assets/hero/swordsman.glb",
+  "height_meters": 1.75,
+  "animation_action_ids": [89, 243, 21, 242, 219, 178, 189, 187]
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Playtest harness. Order: schema -> lint-level -> preflight -> nav -> phase-sweep -> replay -> chaos -> hazards -> counters -> assets -> accent -> visual,
 // then once per run: reachable (D-014: the game's own front door, as a player), pitch-assist (B-18: the real rig), run-metric (B-15: no run metric on screen),
-// ambient-motion (B-15: nothing translates but the player and hazards)
+// ambient-motion (B-15: nothing translates but the player and hazards), fight (D-023: the four rules of the fight, on a fixture)
 //
 //   npm run playtest                          every level in levels/
 //   npm run playtest -- --level=00-gym        one level
@@ -36,6 +36,7 @@ import { reachable } from './reachable.ts';
 import { pitchAssist } from './pitch-assist.ts';
 import { runMetric } from './run-metric.ts';
 import { ambientMotion } from './ambient-motion.ts';
+import { fight } from './fight.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = Object.fromEntries(
@@ -182,7 +183,8 @@ for (const L of statics) {
             level: L.id,
             recordedAt: new Date().toISOString(),
             source: 'nav bot (tools/harness/nav.ts), green run',
-            expect: { ticks: r.outcome.ticks, final: r.outcome.final.feet, checkpoints: r.outcome.final.checkpoints },
+            // D-023: a level with swordsmen also records its fight, change of mode by change of mode (replay.ts holds a replay to it)
+            expect: { ticks: r.outcome.ticks, final: r.outcome.final.feet, checkpoints: r.outcome.final.checkpoints, ...(L.data.enemies?.length ? { fight: r.outcome.fight } : {}) },
             frames: r.outcome.frames,
           });
           log(`    trace recorded -> ${p.replace(`${ROOT}/`, '')} (${r.outcome.frames.length} frames)`);
@@ -212,9 +214,10 @@ for (const L of statics) {
 //   pitch-assist (B-18):  does the real follow rig make chapter-2-shaped faces readable, as READABLE_RISE says?
 //   run-metric   (B-15, NOT #20): is the player-visible text the same whatever the run's deaths and time?
 //   ambient-motion (B-15, NOT #18): does anything translate except the player, hazards and platforms?
+//   fight        (D-023): the four rules of the fight, in the real game, each also seen to fail on a broken fight
 const once = (name) => (typeof args.only === 'string' ? args.only.split(',').includes(name) : typeof args.level !== 'string');
 // Registered as ['name', fn] pairs: lint:not-list reads that form to prove NOT #18/#20 stages are wired.
-const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion]];
+const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion], ['fight', fight]];
 // B-22: merge-reports.mjs gates CI on ONCE_STAGES (lib.ts). If this list drifts from it, a stage would run unchecked.
 if (ONCE.map(([n]) => n).join() !== ONCE_STAGES.join()) throw new Error(`run.mjs once-stages ${ONCE.map(([n]) => n)} != lib.ts ONCE_STAGES ${ONCE_STAGES}`);
 for (const [name, fn] of ONCE) {

@@ -46,6 +46,11 @@ export const AUDIO_BUILD = {
     wall_grab: { take: 'wall_grab.mp3', seconds: 0.18, fadeOut: 0.06 }, // the catch itself is the last fifth of the take
     checkpoint: { take: 'checkpoint.mp3', seconds: 1.9, fadeOut: 0.5 },
     respawn: { take: 'respawn.mp3', seconds: 1.2, fadeOut: 0.2, fromStart: true }, // a swell: it has no onset to cut to
+    // D-023, the fight (MEASUREMENTS "D-023 sound")
+    notice: { take: 'notice.mp3', seconds: 0.4, fadeOut: 0.1 },   // the take is silent after 0.35 s
+    hit: { take: 'hit-b.mp3', seconds: 0.32, fadeOut: 0.1 },      // the first take was a low thud with no steel in it; this one rings, and is silent after 0.29 s
+    fell: { take: 'fell.mp3', seconds: 0.8, fadeOut: 0.2 },       // 188 ms of silence before the body lands, cut
+    cut: { take: 'cut.mp3', seconds: 0.6, fadeOut: 0.15 },
   },
   music: {
     take: 'music-s11.wav',   // seed 29 clips (peak +1.7 dB) and swings 14 LU; this one swings 7.7
@@ -166,7 +171,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const effects = Object.fromEntries(Object.entries(B.effects).map(([name, e]) => [name, buildEffect(name, e, dir)]));
     const music = buildMusic(dir);
     writeFileSync(join(OUT, 'audio.json'), JSON.stringify({
-      _doc: 'D-022. Written by tools/gen/build-audio.mjs: what src/audio/audio.ts loads. music.loopStart and loopSeconds are the window the music loops over (the file carries the loop continued on both sides). Not typed by hand.',
+      _doc: 'D-022, D-023. Written by tools/gen/build-audio.mjs: what src/audio/audio.ts loads. music.loopStart and loopSeconds are the window the music loops over (the file carries the loop continued on both sides). Not typed by hand.',
       music, effects: Object.fromEntries(Object.entries(effects).map(([n, e]) => [n, { file: e.file, seconds: e.seconds }])),
     }, null, 2) + '\n');
     for (const [n, e] of Object.entries(effects)) console.log(`${n.padEnd(11)} from ${B.effects[n].take}, cut from ${e.cutFromMs} ms, ${e.seconds} s, ${statSync(join(OUT, e.file)).size} B`);

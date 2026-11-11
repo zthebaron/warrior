@@ -1,23 +1,24 @@
-// The sword slash (D-022): a draw-cut from over the right shoulder, down across the body to the left.
+// The sword slash (D-022, D-023): a draw-cut from over the right shoulder, down across the body to the left.
 //
-// It is something the figure is SEEN to do and nothing else. It has no collider, reaches nothing, and is not a
-// player state: the twelve states, the input frame, the traces and every MOVE number are as they were. The press
-// is not part of the simulation's input (src/main.ts takes it from the keyboard, the mouse and the pad and
-// starts this clock); the clock runs on render time while the game is in `play`. Decision Q7 stands: there is
-// nothing to cut. NOT row 2's words are still refused in src/, so this is a "slash" and never the other word.
+// D-022 drew it and simulated nothing. D-023 supersedes that: the slash is part of the input frame, its clock
+// (Player.slashTime) starts on a press and advances in the fixed tick, and while the blade is cutting a
+// swordsman inside its reach is hit (src/systems/fight.ts, which owns the four timings read below). So traces,
+// replays and the bot carry it. It is still not a player state and it touches no velocity, timer or state: the
+// twelve states and every MOVE number are as they were. NOT row 2's words are still refused in src/, so this
+// is a "slash" and never the other word.
 //
-// Three parts, each built the first time a slash is asked for, so a page that never slashes (every harness
-// page) builds none of them and draws exactly what it drew before:
+// This file is only how the slash is SEEN. Two parts, each built the first time a slash is asked for, so a
+// page that never slashes builds neither and draws exactly what it drew before:
 //
-//   SlashClock   seconds into the slash, or idle
 //   slashClip    the upper body's pose through the slash, as an animation clip made in code against the rig's
 //                bone names (the way src/loaders/character.ts makes `rest`). The rig has no clip for it and
 //                could not be given one: OQ-072 says why. CharacterModel lays it over whatever the legs are
 //                doing, so it works on the ground and in the air.
-//   SlashArc     one ink stroke along the path the blade's tip takes, on the paint layer
+//   SlashArc     one ink stroke along the path the blade's tip takes, on the paint layer. A swordsman's own
+//                cut is drawn with a second one (src/entities/swordsman-model.ts).
 //
-// Known limit, recorded in D-022: the rig's sword is part of the body mesh and has no bone, so it stays on the
-// figure's back. The hand goes to the hilt and cuts; the stroke is what reads as the blade.
+// Known limit, recorded in D-022 and kept: the rig's sword is part of the body mesh and has no bone, so it
+// stays on the figure's back. The hand goes to the hilt and cuts; the stroke is what reads as the blade.
 //
 // Every number is in MEASUREMENTS.md "D-022 slash".
 
@@ -26,18 +27,21 @@ import * as THREE from 'three';
 import { paint, paintMaterial, PAINT_LAST } from '../engine/paint-layer';
 import { ramp } from '../engine/palette';
 import type { CharacterAsset } from '../loaders/character';
+import { FIGHT } from '../systems/fight';
 
 type V3 = readonly [number, number, number];
 
 export const SLASH = {
+  // D-023: these four are the rule now (the cut is a hit volume in the fixed tick), so they are read from the
+  // fight's one table and the drawing follows it.
   /** the whole slash, s */
-  seconds: 0.36,
+  seconds: FIGHT.warrior.slashSec,
   /** the hand is at the hilt until here; the cut runs from here ... */
-  windupEnd: 0.07,
+  windupEnd: FIGHT.warrior.cutFrom,
   /** ... to here; then the arm is held out */
-  cutEnd: 0.19,
+  cutEnd: FIGHT.warrior.cutTo,
   /** a second press is ignored before this, and starts the slash again after it */
-  again: 0.24,
+  again: FIGHT.warrior.againSec,
   /** the slash's hold on the upper body rises over this long and lets go over this long */
   fadeIn: 0.05,
   fadeOut: 0.11,
@@ -79,29 +83,6 @@ export const SLASH = {
 
 const S = SLASH;
 const DEG = Math.PI / 180;
-
-/** Seconds into the slash, or idle. Render time, only while the game is in `play`: it is not simulation. */
-export class SlashClock {
-  /** seconds into the slash; null when there is none */
-  time: number | null = null;
-
-  /** Start a slash. False if one is still too young to be cut short. */
-  trigger(): boolean {
-    if (this.time !== null && this.time < S.again) return false;
-    this.time = 0;
-    return true;
-  }
-
-  update(dt: number): void {
-    if (this.time === null) return;
-    this.time += dt;
-    if (this.time >= S.seconds) this.time = null;
-  }
-
-  cancel(): void {
-    this.time = null;
-  }
-}
 
 /** How much of the upper body the slash holds at `time`, 0..SLASH.share. */
 export function slashShare(time: number): number {

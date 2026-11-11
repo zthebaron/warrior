@@ -11,6 +11,7 @@ import type { Collider, KinematicCharacterController, RigidBody } from '@dimforg
 import type { Physics, Vec3Like } from '../engine/physics';
 import type { CharacterAsset } from '../loaders/character';
 import { CharacterModel } from './character-model';
+import { slashCutting, stepSlash } from '../systems/fight';
 
 export const TUNING = {
   // --- presentation (feel test) ---
@@ -123,8 +124,14 @@ export class Player {
   readonly vel = new THREE.Vector3();
   readonly center = new THREE.Vector3();
   groundMotion: GroundMotion = () => null;
-  /** D-022: seconds into a sword slash, or null. Drawn, never simulated: fixedUpdate does not read it (src/entities/slash.ts). */
+  /**
+   * Seconds into a sword slash, or null (D-022). Since D-023 it is simulated: it starts on a press and advances
+   * in fixedUpdate, and src/systems/fight.ts reads it for the cut. It is NOT one of the twelve states and it
+   * never touches velocity, a timer or a state: every move is exactly what it was.
+   */
   slashTime: number | null = null;
+  /** How many slashes have started: names the slash, so one slash lands on a swordsman once. */
+  slashCount = 0;
 
   private readonly ctrl: KinematicCharacterController;
   private readonly material: THREE.MeshBasicMaterial;
@@ -200,6 +207,7 @@ export class Player {
     this.doubleAvailable = true;
     this.airDashesLeft = TUNING.airDashes;
     this.prevInput = { ...NEUTRAL_FRAME };
+    this.slashTime = null; // a slash does not outlast being put somewhere else
     this.setState('fall');
   }
 
@@ -213,6 +221,7 @@ export class Player {
     const t = TUNING;
     const jumpPressed = input.jump && !this.prevInput.jump;
     const dashPressed = input.dash && !this.prevInput.dash;
+    const slashPressed = input.slash && !this.prevInput.slash;
     this.prevInput = { ...input };
     this.prevCenter.copy(this.center);
     this.stateTime += dt;
@@ -223,6 +232,7 @@ export class Player {
     this.wallStickTimer -= dt;
     this.regrabTimer -= dt;
     if (jumpPressed) this.jumpBufferTimer = t.jumpBufferSec;
+    this.updateSlash(dt, slashPressed);
 
     if (this.state === 'ledge_climb') return this.updateClimb();
     if (this.state === 'ledge_grab') return this.updateHang(input, jumpPressed);
@@ -390,6 +400,18 @@ export class Player {
       const maxTurn = t.turnRateRadPerSec * dt;
       this.facing += THREE.MathUtils.clamp(d, -maxTurn, maxTurn);
     }
+  }
+
+  /** D-023: the slash's own clock. Before every early return in fixedUpdate, so it runs on a ledge too. */
+  private updateSlash(dt: number, pressed: boolean): void {
+    const s = stepSlash(this.slashTime, pressed, dt); // the rule itself is src/systems/fight.ts's, so check:fight runs it too
+    this.slashTime = s.time;
+    if (s.started) this.slashCount++;
+  }
+
+  /** Is the blade cutting this tick? (src/systems/fight.ts WarriorView.cutting) */
+  cutting(): boolean {
+    return slashCutting(this.slashTime);
   }
 
   private currentState(): PlayerState {

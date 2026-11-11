@@ -1618,3 +1618,68 @@ took, each PROVISIONAL:
 proof the harness sees none of it: `frame-hashes` on f98e55a is identical to main's build (191 values, 5
 levels). No golden changed.
 status: PROVISIONAL
+
+## OQ-075 — D-023 (enemies): the builder's calls, and what nobody has yet judged
+raised: 2026-11-11 by enemies (claim ENEMIES), in two sessions. Tim ruled the feature and its rules
+(`PROMPT-ENEMIES.md`: "No more chapters, just enemies"); what follows is what the brief left to the builder.
+**Nobody has played it and nothing was judged by ear.**
+took, each PROVISIONAL:
+1. **Two of D-020's paint checks no longer judge the pixels a swordsman covers.** `static` and `hides no accent
+   pixel` were written for painted scenery. A swordsman is a painted figure with an idle clip and a patrol, and
+   `guard-goal` stands in front of the goal torii: unchanged, the checks fail by 610 px and 47 px. Options: A leave
+   the swordsmen out of the paint layer (they would be snapped to the eight-step ramp, unlike the warrior) | B
+   freeze them and move `guard-goal` aside whenever the stage looks (the frame judged would not be the frame
+   played) | C find the pixels a swordsman covers, by drawing the same frame without them, and leave those out of
+   these two checks, counting them. Took C. It narrows a gate, which CLAUDE.md says to raise with evidence:
+   MEASUREMENTS "D-023 the paint gate". Everything else in the frame is still judged, with the swordsmen in it.
+   **Tim may overrule this.**
+2. **A swordsman has no physics body, so he does not block the path.** His ground is one box top and he is
+   clamped to it; the warrior passes through him. That keeps the physics world, and so every MOVE number, exactly
+   main's. Its cost: a player can run or jump past all three. The bot does not: `nav` fails unless every
+   swordsman is down. Whether he should block is the largest thing to judge by hand (B-77).
+3. **Two quick cuts always win.** The first hit staggers him out of whatever he was doing, the wind-up included,
+   and a second slash can start 0.24 s after the first. In chapter 1's trace no wind-up finishes. The wind-up is
+   met only by a player who is slow, misses or arrives mid-swing. The table (`FIGHT`) was left as the first
+   session set it; changing `againSec`, or letting a wind-up survive a hit, is a feel decision and Tim's.
+4. **Swordsmen are per-attempt state, reset at every respawn**, and stepped with the warrior absent while he is
+   dead. Hazards are pure functions of the world clock (Q6); the brief asks that a fallen swordsman "comes back
+   when the warrior respawns", which a function of the clock cannot do.
+5. **The old chapter 1 trace was replaced.** The earlier handoffs say never `--record`. The brief makes the slash
+   recorded input and requires the bot to fight; the old trace ran past all three. It was recorded again from
+   the bot's green run, for chapter 1 only. The collision is known unchanged: with the fight code in and no
+   swordsman placed, CI passed every old trace and golden (run 42952056875) and `frame-hashes` matched main.
+6. **The katana is a mesh on the hand bone,** not part of the figure, which was rigged empty-handed. Its angle in
+   the grip is a table entry judged from two frames.
+7. **The slash clip is not played at its own pace.** Wind-up, cut and recovery are each mapped onto their part of
+   it, so what is seen is the timing the rules run on, whatever `FIGHT` is tuned to.
+8. **Death is ink:** the figure turns ink-black as it falls, ink is thrown at each hit, a splat stays and fades.
+   The figure is multiplied by ramp step `wash-light`: as delivered it was the paper's own value.
+9. **A slash in the air ends with the attempt.** A slash in progress when the warrior dies or reaches the goal is
+   dropped at that tick, as D-022's render clock dropped it. Found in the self-review: without it the stroke
+   stood frozen on screen through the 0.8 s of the death.
+10. **`chaos` presses the sword** (0.3 of segments), using the draw the old attack input still consumed, so the
+    rest of the stream is what it was. The four older levels' chaos runs carry slashes that cut nothing.
+11. **The four checks exist twice** (`check:fight` under Node; the `fight` stage in the real game on a fixture)
+    and each is run against a broken fight in CI. `fight` is a fifth once-per-run stage in the `game` job.
+12. **The `fight` stage launches a fresh Chromium for each of its pages.** Reusing one browser stalled every later
+    page: past the 30 s timeout on Linux CI, about 5 s a page on darwin. Found by the first CI run of the stage.
+13. **How to play joins an action's keys with "or"** where it names them in a sentence. The sword is the first
+    action with two key names, and the page read "Press J Left click". Seen by rendering the page.
+14. **Ultracode was on for both sessions and no workflow was run.** The brief ("usage is tight, no multi-agent
+    review workflow") and Tim's resume message ("No multi-agent review workflow") are the more specific
+    instruction. The review was one focused self-review of the combat code; it found item 9.
+not done, and why:
+- **No person has judged the wind-up, the reach, or whether two hits feels right.** `FIGHT` is one table for that.
+- **Chapters 2 to 4 and the gym have no swordsmen**, by the brief (B-74).
+- **The HUD says "fell" when the warrior is cut.** `run-metric` compares visible text across runs, so wording it
+  by the cause of death needs that stage read first (B-78).
+- **`groundRect` ignores mesh colliders and turned boxes.** Chapter 1's kit rock is beyond the path's edge. A
+  level that stands a swordsman beside a mesh collider would let him walk into it.
+- The first-hit burst, his cut stroke and the grip angle were looked at in stills, never in motion.
+- **The `ENEMIES` claim was not released.** A release is a commit pushed to main and this session may not push to
+  main. It lapses by itself at about 12:47Z on 2026-11-11.
+- `frame.ts` at 5120x1440 in SwiftShader draws the ink pass black, on any level (B-81). The ultrawide screenshots
+  were taken on the real GPU instead; the first three committed were black and were replaced.
+fal: $2.5140 of this task's $6.00 (ledger rows 81 to 93); the ledger stands at $14.6000 of $20.00. Row 84 bought a
+blank sheet and row 83 an input that was not used.
+status: PROVISIONAL

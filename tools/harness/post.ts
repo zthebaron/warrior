@@ -126,6 +126,9 @@ export async function post(ctx: Ctx): Promise<StageResult> {
       // D-021: the rock this level collides with and does not draw is drawn for the ink-only frame
       const undrawn = await g.page.evaluate((p) => window.__HARNESS__!.showMeshes(p, true), PAINT_GATE.undrawn);
       let compN = 0, compPaper = 0, compChanged = 0, compHue = 0, compStill = 0, compMoved = 0, accentLost = 0;
+      // D-023: how many swordsmen the level has, and the pixels they cover (summed over the cameras)
+      const foes = await g.page.evaluate(() => window.__HARNESS__!.showEnemies(true));
+      let foePx = 0, accentBehindFoe = 0;
       let voidN = 0, voidPaper = 0, compDark = 0, voidDark = 0, rockN = 0, rockCovered = 0, rockBare = 0, bareChanged = 0;
       const compHueAt: string[] = [];
       const passes = await g.page.evaluate(() => window.__HARNESS__!.postPasses());
@@ -174,6 +177,15 @@ export async function post(ctx: Ctx): Promise<StageResult> {
           await g.page.evaluate(() => { window.__HARNESS__!.paintLayer(true); window.__HARNESS__!.redraw(); });
           const comp = PNG.sync.read(await g.page.locator('canvas').screenshot());
           if (process.env['POST_DEBUG_DIR']) writeFileSync(join(process.env['POST_DEBUG_DIR'], `${ctx.levelId}-${cam.name}-painted.png`), PNG.sync.write(comp));
+          // D-023: the same frame without the swordsmen. They are painted FIGURES: they move, and one may stand
+          // in front of a gate. `static` and `hides no accent pixel` judge the painted SCENERY, so the pixels a
+          // swordsman covers (where this frame differs from `comp`) are left out of those two and counted.
+          let compNoFoe = comp;
+          if (foes > 0) {
+            await g.page.evaluate(() => { window.__HARNESS__!.showEnemies(false); window.__HARNESS__!.redraw(); });
+            compNoFoe = PNG.sync.read(await g.page.locator('canvas').screenshot());
+            await g.page.evaluate(() => { window.__HARNESS__!.showEnemies(true); window.__HARNESS__!.redraw(); });
+          }
           // D-021: the player's frame with the painted wall lifted away. `bare`: nothing in its place, which is
           // the wrong value of the two checks that need the wall. `voided`: the rock itself drawn in its place,
           // which is the frame the void's paper share was measured on before the wall was painted (the rock is
@@ -189,6 +201,15 @@ export async function post(ctx: Ctx): Promise<StageResult> {
           await g.page.evaluate(() => window.__HARNESS__!.advance(1));
           const comp2 = PNG.sync.read(await g.page.locator('canvas').screenshot());
           const D3 = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist; // the ink depth under comp2
+          let foe: Uint8Array | null = null; // 1 where a swordsman is drawn, in this frame or the next
+          if (foes > 0) {
+            await g.page.evaluate(() => { window.__HARNESS__!.showEnemies(false); window.__HARNESS__!.redraw(); });
+            const comp2NoFoe = PNG.sync.read(await g.page.locator('canvas').screenshot());
+            await g.page.evaluate(() => { window.__HARNESS__!.showEnemies(true); });
+            foe = new Uint8Array(shot.width * shot.height);
+            const differs = (a: PNG, b: PNG, o: number): boolean => a.data[o] !== b.data[o] || a.data[o + 1] !== b.data[o + 1] || a.data[o + 2] !== b.data[o + 2];
+            for (let i = 0; i < foe.length; i++) if (differs(comp, compNoFoe, i * 4) || differs(comp2, comp2NoFoe, i * 4)) { foe[i] = 1; foePx++; }
+          }
           await g.page.evaluate((p) => { window.__HARNESS__!.paintLayer(false); window.__HARNESS__!.showMeshes(p, true); }, PAINT_GATE.undrawn);
           const cv = (img: PNG, k: number): number => (img.data[k * 4]! + img.data[k * 4 + 1]! + img.data[k * 4 + 2]!) / 3;
           const Wc = shot.width, Hc = shot.height;
@@ -220,7 +241,7 @@ export async function post(ctx: Ctx): Promise<StageResult> {
               if (mass(bare, i)) voidDark++;
             }
             if (!accent && !robe && chroma > chromaMax + 1) { compHue++; if (compHueAt.length < 3) compHueAt.push(`${cam.name} (${i % shot.width},${Math.floor(i / shot.width)}) rgb(${r},${gg},${b})`); }
-            if (inkChroma > G.accentChroma && !accent) accentLost++;
+            if (inkChroma > G.accentChroma && !accent) { if (foe?.[i]) accentBehindFoe++; else accentLost++; }
             // D-021: what the paint layer drew with the wall lifted away (the far field, the figure, the path's wash).
             // The wall alone covers far more than the floor below, so it must not be what satisfies it.
             if (Math.abs(cv(bare, i) - (ir + ig + ib) / 3) > PAINT_GATE.changed) bareChanged++;
@@ -233,7 +254,7 @@ export async function post(ctx: Ctx): Promise<StageResult> {
               let clear = xx > 0 && yy > 0 && xx < shot.width - 1 && yy < shot.height - 1;
               for (let dy = -1; clear && dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
                 const j = i + dy * shot.width + dx;
-                if (Dink[j]! < far * 0.999 || D3[j]! < far * 0.999) { clear = false; break; }
+                if (Dink[j]! < far * 0.999 || D3[j]! < far * 0.999 || foe?.[j]) { clear = false; break; }
               }
               if (clear) { compStill++; if (comp2.data[o]! !== r) compMoved++; }
             }
@@ -390,8 +411,8 @@ export async function post(ctx: Ctx): Promise<StageResult> {
         }
         st.check('D-020 paint layer: no hue (the painted frame stays on the ramp\'s chroma)', compHue === 0,
           `${compHue} of ${compN} px above the ramp's chroma ${chromaMax}${compHueAt.length ? `: ${compHueAt.join('; ')}` : ''}`);
-        st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', (dressed ? compStill > 0 : true) && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed`);
-        st.check('D-020 paint layer: hides no accent pixel', accentLost === 0, `${accentLost} px that are accent in the ink pass are not in the painted frame`);
+        st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', (dressed ? compStill > 0 : true) && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed${foes ? `; ${foePx} px that the ${foes} swordsmen cover are not judged: a figure moves (D-023)` : ''}`);
+        st.check('D-020 paint layer: hides no accent pixel', accentLost === 0, `${accentLost} px that are accent in the ink pass are not in the painted frame${foes ? `; ${accentBehindFoe} more are behind a swordsman, who may stand in front of a gate (D-023)` : ''}`);
       }
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');
     } finally {

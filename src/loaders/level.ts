@@ -20,6 +20,8 @@ import { preloadCharacter } from './character';
 import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
 import { patrolFraction, patrolPosition } from '../systems/patrol';
+import type { EnemyDef } from '../systems/fight';
+import { SWORDSMAN } from '../entities/swordsman-model';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
 export type Vec3 = [number, number, number];
@@ -89,6 +91,8 @@ export interface LevelData {
   geometry: Placement[];
   platforms?: PlatformDef[];
   hazards?: HazardDef[];
+  /** D-023: swordsmen. Stateful, unlike a hazard: src/entities/swordsmen.ts owns them, not the level instance. */
+  enemies?: EnemyDef[];
   checkpoints: { pos: Vec3; facing?: number }[];
   lighting?: { preset?: string; ambienceZone?: string };
   cameras?: unknown[];
@@ -250,6 +254,8 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
     preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file, painted: a.class === 'hero' }))),
     isInk(data) ? preloadBackdrop() : null,
     preloadCharacter(CHARACTER.asset),
+    // D-023: the swordsman is decoded only for a level that places one, so every other level loads what it did
+    data.enemies?.length ? preloadCharacter(SWORDSMAN.asset) : null,
   ]);
   return data as PreparedLevel;
 }

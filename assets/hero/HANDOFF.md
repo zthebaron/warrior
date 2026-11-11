@@ -44,6 +44,8 @@ turn the figure to face -Z yourself. Where round 1's text said otherwise it has 
 | `wedge.glb` | yes (round 2). Asked for as a spire; it came back a wedge, twice as deep as wide | 29,400 | 0.547 x 1.0 x 1.126 | 1,950,636 |
 | `rigged/warrior_anim.glb` | **yes, skinned, nine clips; needs loader work** | 29,400 | 1.075 x 1.7 x 0.669 at rest | 3,846,332 |
 | `rigged/warrior_rigged.glb` | no: superseded by `warrior_anim.glb` (kept as the paint tool's reference) | 29,400 | 1.075 x 1.7 x 0.669 at rest | 3,905,320 |
+| `swordsman.glb` | the model the rig request was sent (D-023). Not named in `assets/src/hero.json` `static`, so it does not ship | 14,700 | not measured | 2,258,952 |
+| `rigged/swordsman_anim.glb` | **yes, skinned, six clips** (D-023): `idle walk close slash hit death`. In the game as `assets/char/swordsman_anim.glb` | 14,700 | 1.8 m tall as the game scales him | 2,687,588 |
 | `rejected/pine.glb` | no (flat canopy) | 29,400 | 1.201 x 1.0 x 0.478 | 1,976,892 |
 
 `rigged/` is where your build reads rigged models from. `rejected/` holds what should not ship.

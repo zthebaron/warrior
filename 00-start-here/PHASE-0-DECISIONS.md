@@ -373,7 +373,10 @@ do amend it on evidence.
 
 implemented_by: 1dc3a33 (ACCENT_AREA harness stage + band in accent.json), be27071 (STYLE-BIBLE §2 / §9 / §10 amended) — branch h4-asset-kit, PR 3. Floor provisional: state/OPEN-QUESTIONS.md OQ-020.
 
-## Q7 — The NOT list: **A, with one addition.** CLOSED
+## Q7 — The NOT list: **A, with one addition.** Reversed for enemies only by D-023. CLOSED
+
+**Superseded in part (2026-11-10, D-023).** Tim ruled enemies in: the schema has an `enemies` list again, for one
+type, the swordsman. Everything else here stands: interactables and collectibles are still cut and still refused.
 
 Cut the refused fields from the schema. B is what Q4 amendment 2 already rejected for `score`:
 keeping a field and adding a linter error leaves it visible in the schema an agent reads, and turns
@@ -1402,7 +1405,11 @@ gets no ink edge (B-48). The two 3D cliff stacks in the void are now the most ga
 
 implemented_by: d03247e (the first cut: rock undrawn, the wall, the cards, the animated figure, the path wash), 50d9d8f (the paint gate's three checks, the wall as 12 meshes, cards re-encoded), 0908710 (the wall from the player's camera, low ridges, darwin goldens, scene ratchet, real-GPU measurement)
 
-## D-022 — a title screen, a how-to-play page, sound, and a sword slash that cuts nothing. Narrows Q1 and NOT row 2 by one drawn move; Q7 stands. DECIDED
+## D-022 — a title screen, a how-to-play page, sound, and a sword slash that cuts nothing. Narrows Q1 and NOT row 2 by one drawn move; Q7 stands. The slash's "drawn, never simulated" is superseded by D-023. DECIDED
+
+**Superseded in part (2026-11-10, D-023).** The slash now has a hit volume in the fixed tick and is in the input
+frame, and Q7 no longer stands for enemies. Item 6 below and every sentence saying the slash cuts nothing, is
+not simulated or is not recorded describe D-022 as it shipped, not the game now. The rest of D-022 stands.
 
 **Ruled by Tim** (2026-11-10, `PROMPT-TITLE-AUDIO-SWORD.md`): "create a landing page with these graphics designed
 by Tim de Vallée dedicated to Remi"; "add an instructions page and a sound track with sounds when jumping,
@@ -1474,3 +1481,102 @@ how-to-play page says a keyboard or a pad is needed.
 red seal is in Tim's painting, not in the UI drawn over it.
 
 implemented_by: b483f1d (the gate, the title screen, the how-to-play page, reachable at the bare URL), 0c40975 (sound: the audio module, the tap, the files, the cookie, fal-call's audio endpoints and task ceiling), db5d964 (the sword slash and the gamepad), 10991df (five review findings a player hits, each with a reachable check, and the left click in the bindings table: OQ-073), f98e55a (B-59, B-60 and B-61: the title in near-square and upright-tablet windows, an early How to play, the mouse back at the title: OQ-074)
+
+## D-023 — enemies: one swordsman, a slash that cuts, and a fight in the fixed tick. Reverses Q7 for enemies only and supersedes D-022's "drawn, never simulated". DECIDED
+
+**Ruled by Tim** (2026-11-10, 6:44 pm, `PROMPT-ENEMIES.md`): "No more chapters, just enemies." The brief names the
+two rulings that change and says to record them here:
+- **Q7** (the level schema refuses enemies) is reversed **for enemies only**. Interactables and collectibles stay
+  refused.
+- **D-022** (the slash is drawn, never simulated, and is not in recorded input) is superseded: the slash has a
+  hit volume in the fixed-tick simulation and is part of recorded input, so replays stay exact.
+
+The brief also fixes the rules: one enemy, the swordsman; he stands guard or walks a short patrol on flat ground,
+notices the warrior inside a sight range, closes in, never leaves his own ground and never jumps; a wind-up the
+player can read (near half a second), a short reach, a recovery in which he is open; he falls on the second hit
+and the first staggers him; his slash sends the warrior to the last checkpoint as a hazard does, with no health
+bar; a fallen swordsman stays down for the attempt and comes back when the warrior respawns; death is ink, not
+blood; three swordsmen in chapter 1 and none anywhere else.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-075):** every number in `FIGHT` and `SWORDSMAN`, that
+a swordsman has no physics body, where the three stand, the look of the death, the four sounds, the bot's way of
+fighting, and that two of D-020's paint checks no longer judge the pixels a swordsman covers. **Nobody has played
+it and nothing was judged by ear.**
+
+**What this changes, and what it keeps.**
+- **Q7.** The schema has an `enemies` list again: id, type (one value, `swordsman`), pos, facing, optional
+  patrol points. A swordsman carries no stats in level data: how he fights is one table in code
+  (`src/systems/fight.ts` `FIGHT`), the same for every one, so a level can place him and cannot tune him.
+  `interactables` and `collectibles` are still rejected by the schema and by `lint:not-list`.
+- **D-022.** `slash` is a field of the input frame. The slash's clock starts on a press and advances in the fixed
+  tick; while the blade cuts, a swordsman inside its reach and arc is hit, once a slash. It is still not a player
+  state and touches no velocity, timer or state. Everything else D-022 built stands.
+- **Q1** said "not combat, not a chase", and gave its reason: an enemy that pursues with pathfinding makes the
+  bot's route unreproducible. Tim has now asked for a fight, so "not combat" is narrowed by this entry. The
+  reason is kept whole: a swordsman chooses no route. He walks straight at the warrior on one box top, is
+  clamped to it, and uses no random number and no clock but the tick, so a recorded run replays to the same
+  fight on the same ticks. "Not a chase" stands (SPEC §7 row 3). **D-009** said enemies would need a second bot
+  tier: that was for enemies whose behaviour a trace cannot reproduce. This one can be, so the one bot fights
+  and the one replay proves it; no second tier was built.
+- **Q6** is unchanged: one way to die. A swordsman's cut is that death; nothing else happens on contact.
+- **Q2a / NOT row 18** (nothing translates but the player and hazards): a swordsman translates. He is tagged
+  `enemy` for the `ambient-motion` stage, as hazards and platforms are tagged.
+- **The MOVE budgets** are untouched. A swordsman has no physics body and the warrior does not collide with
+  him, so the physics world is the one main has. Proof below.
+
+**Built.**
+1. **The rules** (`src/systems/fight.ts`): pure functions with no import, run by the game, the level linter,
+   `check:fight` and the harness alike. A swordsman is a state machine stepped once a tick after the warrior has
+   moved: guard or patrol, close, wind-up, slash, recover, stagger, return, fallen. His ground is the top of the
+   one unturned collision box he stands on, cut back from anything standing on it and drawn in by a margin
+   (`groundRect`); he is clamped to it. The wind-up is run at `max(windupSec, windupMinSec)`.
+2. **The warrior's cut** (`src/entities/player.ts`, `src/engine/input.ts`): the sword's key is in the input frame
+   as a held state and a slash starts on its rising edge. A tap shorter than a tick, the mouse button and the
+   pad button are latched for one tick. A trace recorded before this has no `slash` field, which reads as no
+   slash, so the four older traces replay unchanged.
+3. **The game's wiring** (`src/main.ts`, `src/entities/swordsmen.ts`): a cut that lands is `die()`, the same call
+   a fall or a hazard makes. During the death the swordsmen are stepped with the warrior absent; at the respawn
+   every one is put back on his post, on his feet. That is per-attempt state, unlike a hazard, which is a pure
+   function of the world clock (Q6): the brief asks for exactly this.
+4. **The figure** (`src/entities/swordsman-model.ts`, `assets/char/swordsman_anim.glb`): made the way the warrior
+   was, from a clean image out of the courtyard painting: image to 3D, rigged, six clips (idle, walk, close,
+   slash, hit, death). 14,700 triangles, 24 bones, on the paint layer. He was rigged empty-handed and his katana
+   is a small mesh on the right hand's bone. The slash clip is not played at its own pace: the wind-up, the cut
+   and the recovery are each mapped onto their part of it, so what is seen is the timing the rules run on.
+5. **Death is ink.** The falling figure turns ink-black, a burst of ink is thrown at each hit, a splat stays on
+   the ground, and all of it fades to paper. No red: STYLE §2 keeps colour to the torii.
+6. **Sound** (`src/audio/tap.ts`): he notices, a hit lands, he falls, the warrior is cut. The tap reads what the
+   tick reported and writes nothing; no sound feeds the simulation.
+7. **The level format** (`levels/level.schema.json`, `tools/lint-level.mjs`): the `enemies` list and five rules,
+   each seen to fail alone in `lint:self`: `ENEMY_OOB`, `ENEMY_OFF_GROUND`, `ENEMY_PATROL`, `ENEMY_AT_STAND`,
+   `ENEMY_ON_LANDING`.
+8. **Chapter 1** places three: `guard-first` alone on the first flat, `guard-patrol` walking the width of the
+   second torii's approach, `guard-goal` in front of the goal torii. No other level has an `enemies` list.
+9. **The harness fights.** The nav bot fights any standing swordsman near it on its own level, and `nav` fails
+   unless every one is down at the goal. Chapter 1's trace was recorded again from that run and now carries the
+   fight, change of mode by change of mode; `replay` holds a replay to it exactly. `chaos` presses the sword at
+   random. Two checks of the four rules the brief names: `npm run check:fight` (Node, the pure functions) and the
+   `fight` playtest stage (the real game, on a fixture). Each rule is also run against a broken fight, in CI,
+   and must fail.
+10. **How to play** has a short section on swordsmen: two cuts, read the wind-up, his blade sends you back.
+
+**What the old gates needed.** Two of D-020's paint checks were written for painted scenery and fire on a painted
+figure that moves and guards a gate: `static` (610 painted sky pixels changed between two ticks: his idle and his
+patrol) and `hides no accent pixel` (47 pixels of the goal torii are behind `guard-goal` from one camera). Both
+now leave out the pixels a swordsman covers, found by drawing the same frame without the swordsmen, and say how
+many they left out. Everything else in the frame is judged as before. This narrows a gate, so it is the first
+thing in OQ-075 for Tim to overrule; MEASUREMENTS "D-023 the paint gate" has the numbers.
+
+**Proof.** MEASUREMENTS "D-023 ...". In short: with the fight code in and no level placing a swordsman, CI ran
+every older trace and golden untouched and `frame-hashes` matched main's build on all 191 values; with the three
+placed, every level but chapter 1 still matches. Chapter 1's four segments still clear from all eight phases
+inside 12 s each with the bot fighting.
+
+**Known limits (OQ-075).** A player can run or jump past a swordsman: nothing blocks the path. Two quick cuts
+fell him before any wind-up can finish, because the first hit staggers him out of it; the wind-up matters only
+to a player who is slow, misses, or meets him mid-swing. The HUD says "fell" when the warrior is cut. The
+warrior's own sword is still on his back (B-45). Only chapter 1 has swordsmen.
+
+**STYLE-BIBLE:** not amended. The swordsman is toned by a ramp step and carries no hue; the accent stays on the
+torii alone.
+
+implemented_by: 522ff13 (the figure and the four sounds), ffd9116 (the fight in the fixed tick, the slash in the input frame, the figure in the game), dca879e (the level format, the lint rules, chapter 1's three swordsmen, the bot that fights), fdd96f1 (the four fight checks, each seen to fail; chapter 1's trace, scene budget and darwin goldens; the paint gate's swordsman mask; how to play; a slash dropped at death), a289651 (chapter 1's Linux goldens from CI's own frames; the fight stage in a fresh browser per page; "J or Left click")

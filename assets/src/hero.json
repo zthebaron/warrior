@@ -9,7 +9,8 @@
     "boulder": {}
   },
   "characters": {
-    "warrior_anim": {}
+    "warrior_anim": {},
+    "swordsman_anim": {}
   },
   "skins": {
     "kit_torii": { "hero": "torii", "yaw": 90, "fill": "accent" }

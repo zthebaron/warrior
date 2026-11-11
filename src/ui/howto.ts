@@ -2,7 +2,7 @@
 // the tables the game itself reads (INPUT_CONFIG.bindings, GAME_RULES.keys, SHELL.keys, the audio keys, the
 // gamepad table), and the moves come from the level files' own `moves_allowed`, in the order the chapters add
 // them. So a rebinding, a new move or a renamed chapter changes this page without anyone touching it. What IS
-// written here is one plain line per move and three short paragraphs on the rules, in MOVE_TEXT and RULES.
+// written here is one plain line per move and a few short paragraphs on the rules, in MOVE_TEXT and RULES.
 //
 // A move a level names that has no line here is shown under its own id, so a missing line is seen, not hidden.
 
@@ -52,7 +52,10 @@ const RULES = {
   read: 'The vermilion torii show where to go. A crow lifting off shows when: its flight is timed to a sliding stone.',
   checkpoint: 'Every torii you pass is a checkpoint: from then on, that is where you return.',
   fall: 'Fall off the path, or be caught by a sliding stone, and you stand at the furthest torii you reached {delay} later. Nothing else is taken from you.',
-  slash: 'The sword cuts the air and nothing else. There is no one to fight on the mountain yet.',
+  // D-023: the fight, in the three things a player has to know. The sword's key is read from the binding table.
+  fight: 'Swordsmen guard the path. Press {slash} to cut what stands in front of you: the first cut staggers a swordsman, the second fells him.',
+  windup: 'Before a swordsman cuts he draws his blade back. Read it: cut him first, or step out of his reach.',
+  cut: 'If his blade reaches you, you stand at the furthest torii you reached {delay} later, and every swordsman is on his feet again.',
   touch: 'This game needs a keyboard or a gamepad. It has no touch controls.',
 };
 
@@ -107,7 +110,7 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   const fill = (name: string): Node | string => {
     if (name === 'move') return moveKeys();
     if (name === 'delay') return `${d.respawnDelaySec} s`;
-    return bound(name).length ? keys(bound(name)) : name;
+    return bound(name).length ? keys(bound(name), ' or ') : name; // the sword has two (J or Left click); every other action has one name
   };
 
   // --- the rules ---
@@ -117,6 +120,15 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   const fall = el('p');
   fall.append(filled(RULES.fall, fill));
   page.append(el('p', RULES.checkpoint), fall);
+  // D-023: fighting, shown while the sword is bound to anything
+  if (bound('slash').length) {
+    page.append(el('h2', 'Swordsmen'));
+    for (const line of [RULES.fight, RULES.windup, RULES.cut]) {
+      const p = el('p');
+      p.append(filled(line, fill));
+      page.append(p);
+    }
+  }
 
   // --- the moves, chapter by chapter ---
   page.append(el('h2', 'The moves'));
@@ -156,7 +168,6 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   row('Look around', 'Mouse (click the game first)', d.pad?.['look']);
   for (const [label, codes] of d.keys) row(label, keys(codes, ' or '), d.pad?.[label]);
   page.append(table);
-  if (bound('slash').length) page.append(el('p', RULES.slash));
   const touch = el('p', RULES.touch);
   touch.className = 'touch';
   page.append(touch);

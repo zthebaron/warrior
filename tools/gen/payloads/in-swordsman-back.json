@@ -1,0 +1,10 @@
+{
+  "prompt": "Flat sumi-e ink wash painting on aged warm paper. Hand-painted, not rendered. A single isolated subject on plain paper, centred, whole subject in frame. Dark tapering brush outline, flat even ink-wash fill, uniform ambient tone with no visible light source, no cast shadow, no sheen. Monochromatic warm grey from pale paper to near-black ink. Brush character at every edge.\n\nSubject: the BACK VIEW of the swordsman in the first image, seen from directly behind, as the matching view on a character turnaround sheet. Exactly the same man, same size in frame, the same T-pose: standing upright and symmetrical, feet shoulder-width apart, both arms held straight out level to the sides. Both hands are empty: his right hand, now on the viewer's RIGHT, is a closed fist, and his left hand, now on the viewer's LEFT, is open. The back of his head with the small topknot, the back of the dark charcoal-grey kimono jacket with its wide sleeves and of the wide pleated hakama trousers, the knot of the plain grey sash, dark shin wraps and straw sandals seen from behind. The empty dark scabbard is at his left hip, now on the viewer's LEFT, pointing down and back. No red and no other colour anywhere. The second image shows such a swordsman from behind in the original painting: take the look of his back from it, but keep the pose and proportions of the first image.\n\nPlain empty paper background and nothing else in the picture: no ground line, no courtyard, no wall, no mist, no clouds, no shadow under the feet, no text, no seal. Whole figure from the top of the head to the sandals in frame with a paper margin all round.",
+  "image_urls": [
+    "file:assets/build/gen/in/swordsman_front.png",
+    "file:assets/build/gen/refs/ref_swordsman_near.png"
+  ],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

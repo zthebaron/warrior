@@ -1,0 +1,106 @@
+{
+  "id": "fixture-swordsman",
+  "title": "Fixture: one swordsman on a flat pad",
+  "chapter": 0,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "double",
+    "dash",
+    "dashjump",
+    "wall",
+    "climb",
+    "platform"
+  ],
+  "palette": "greybox",
+  "spawn": {
+    "pos": [
+      -14,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      15,
+      0,
+      0
+    ],
+    "radius": 1
+  },
+  "bounds": {
+    "min": [
+      -22,
+      -15,
+      -9
+    ],
+    "max": [
+      22,
+      10,
+      9
+    ]
+  },
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        0,
+        -0.5,
+        0
+      ],
+      "scale": [
+        36,
+        1,
+        10
+      ],
+      "tag": "spawn"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        -7,
+        0,
+        0
+      ],
+      "facing": -90
+    }
+  ],
+  "critical_path": [
+    [
+      -14,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        15,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "past the swordsman at x=0"
+    }
+  ],
+  "difficulty": 1,
+  "enemies": [
+    {
+      "id": "foe",
+      "type": "swordsman",
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "facing": 90
+    }
+  ]
+}

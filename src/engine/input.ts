@@ -11,9 +11,13 @@ export interface InputFrame {
   jump: boolean;   // held state (edge detection is the consumer's job)
   dash: boolean;   // held state
   sprint: boolean; // held state (explicit — no auto-sprint, so replays/bots control it exactly)
+  slash: boolean;  // held state (D-023): the sword. The player starts a slash on its rising edge, in the fixed tick
 }
 
-export const NEUTRAL_FRAME: Readonly<InputFrame> = { x: 0, y: 0, jump: false, dash: false, sprint: false };
+export const NEUTRAL_FRAME: Readonly<InputFrame> = { x: 0, y: 0, jump: false, dash: false, sprint: false, slash: false };
+
+/** A frame from outside (a trace, the bot): a trace recorded before D-023 has no `slash`, which means no slash. */
+const whole = (f: Partial<InputFrame>): InputFrame => ({ ...NEUTRAL_FRAME, ...f });
 
 export const INPUT_CONFIG = {
   bindings: {
@@ -24,9 +28,9 @@ export const INPUT_CONFIG = {
     jump: ['Space'],
     dash: ['KeyK'],
     sprint: ['ShiftLeft', 'ShiftRight'],
-    // D-022: the sword slash. It is in this table so the how-to-play page shows it with the rest, and it is NOT
-    // in InputFrame: a slash is drawn, never simulated, so no trace, replay or bot ever carries it.
-    // Mouse0 is the left button, read in src/main.ts only while the mouse is the camera's; no key has that code.
+    // The sword slash (D-022, D-023). Since D-023 it IS in InputFrame: the slash has a hit volume in the fixed
+    // tick, so traces, replays and the bot carry it. Mouse0 is the left button, which src/main.ts hands to
+    // pressSlash() only while the mouse is the camera's; no key has that code.
     slash: ['KeyJ', 'Mouse0'],
   },
   maxRecordedFrames: 60 * 60 * 30, // 30 minutes at 60Hz; past this, recording stops (warned once)
@@ -51,6 +55,8 @@ export class InputSystem {
   /** Actions the keyboard is not believed about until their key has been seen up (holdOff). */
   private readonly heldOff = new Set<Action>();
   private pad: PadSource | null = null;
+  /** A slash press not yet sampled: a tap shorter than a tick, a mouse button, a pad button (pressSlash). */
+  private slashLatch = false;
 
   constructor(target: Window) {
     target.addEventListener('keydown', (e) => this.down.add(e.code));
@@ -61,6 +67,14 @@ export class InputSystem {
   /** D-022: also read a gamepad, on the live path only (beside the keyboard; never under playback or the override). */
   setPad(pad: PadSource | null): void {
     this.pad = pad;
+  }
+
+  /**
+   * D-023: the sword was pressed. It is reported as held on the next live tick, whatever has happened to the
+   * key since, so a tap shorter than a tick still slashes. Playback and the override never see it.
+   */
+  pressSlash(): void {
+    this.slashLatch = true;
   }
 
   /** Raw key query, for UI / dev tools (NOT for gameplay — gameplay reads InputFrames). */
@@ -95,6 +109,8 @@ export class InputSystem {
    */
   sample(cameraYaw: number, live = true): InputFrame {
     let frame: InputFrame;
+    const latched = this.slashLatch;
+    this.slashLatch = false; // a press belongs to the tick after it and to no other
     const queued = this.playbackQueue[this.playbackIndex];
     if (queued) {
       frame = { ...queued };
@@ -106,6 +122,7 @@ export class InputSystem {
       frame = { ...NEUTRAL_FRAME };
     } else {
       frame = this.sampleKeyboard(cameraYaw);
+      if (latched) frame.slash = true;
     }
     if (this.recorded.length < INPUT_CONFIG.maxRecordedFrames) {
       this.recorded.push(frame);
@@ -132,6 +149,7 @@ export class InputSystem {
       jump: this.pressed('jump') || (this.pad?.held('jump') ?? false),
       dash: this.pressed('dash') || (this.pad?.held('dash') ?? false),
       sprint: this.pressed('sprint') || (this.pad?.held('sprint') ?? false),
+      slash: this.pressed('slash'), // the mouse and the pad come through pressSlash
     };
   }
 
@@ -147,7 +165,7 @@ export class InputSystem {
 
   /** Replace live input with these frames, one per fixed tick, starting next tick. */
   playback(frames: readonly InputFrame[]): void {
-    this.playbackQueue = frames.map((f) => ({ ...f }));
+    this.playbackQueue = frames.map(whole);
     this.playbackIndex = 0;
   }
 
@@ -157,7 +175,7 @@ export class InputSystem {
    * playtest bot so it drives the game exactly as a player would — no teleporting.
    */
   setOverride(frame: InputFrame | null): void {
-    this.override = frame ? { ...frame } : null;
+    this.override = frame ? whole(frame) : null;
   }
 
   stopPlayback(): void {

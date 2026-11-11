@@ -22,6 +22,8 @@ export const MOVE = {
 import { CAMERA_TUNING, allowedArm } from '../src/engine/camera-tuning.ts';
 import { RENDER_CONFIG } from '../src/engine/render-config.ts';
 import { visibleTopBand } from './visible-top.mjs';
+// D-023: where a swordsman may stand is the game's own rule, imported, never retyped (src/systems/fight.ts is import-free).
+import { FIGHT, boxTops, groundRect, inRect } from '../src/systems/fight.ts';
 
 // standoffM and minBandDeg: D-015b's ruling, recorded in MEASUREMENTS.md "D-015 readable rise".
 export const READABLE_RISE = { standoffM: 2.0, minBandDeg: 2.0 };
@@ -547,6 +549,32 @@ export function lintLevel(level, manifest){
     }
   });
   if(!(level.hazards??[]).some(h=>h.type==='fall')) W('NO_FALL_PLANE','no fall plane — leaving the world never respawns');
+
+  // Swordsmen (D-023). A swordsman has no physics body: he stands on ONE box top and is clamped to it, so where he
+  // is placed is the whole proof that he cannot fall, block a jump, or stand where the player is put.
+  //   ENEMY_OOB         his post or a patrol point is outside bounds
+  //   ENEMY_OFF_GROUND  his post is not on the top of an unturned collision box, edgeMargin clear of its edge and
+  //                     of anything standing on it (groundRect: the same function the game clamps him with)
+  //   ENEMY_PATROL      a patrol point is off the ground segment his post is on
+  //   ENEMY_AT_STAND    his post or a patrol point is on the spawn, a checkpoint or the goal: within its radius
+  //                     plus a body and standClear, at its height (a respawn must not put the player beside him)
+  //   ENEMY_ON_LANDING  his post or a patrol point is within landClear of where a required jump lands
+  {
+    const PL=FIGHT.placing, tops=boxTops(level), seen=new Set();
+    const landings=cp.map((w,i)=>({i,w})).filter(({i,w})=>i>0&&typeof w==='object'&&!Array.isArray(w)&&MOVE[w.via]&&w.via!=='ground'&&w.via!=='platform');
+    (level.enemies??[]).forEach((e,k)=>{
+      const tag=`enemies[${k}] "${e.id}"`, pts=[e.pos,...(e.patrol??[])], nameOf=j=>j?`patrol[${j-1}]`:'his post';
+      if(seen.has(e.id)) E('DUP_ID',`enemy id "${e.id}" used twice`); seen.add(e.id);
+      pts.forEach((p,j)=>{ if(!inB(p,b)) E('ENEMY_OOB',`${tag}: ${nameOf(j)} ${JSON.stringify(p)} is outside bounds`); });
+      const g=groundRect(tops,e.pos);
+      if(!g) E('ENEMY_OFF_GROUND',`${tag}: his post ${JSON.stringify(e.pos)} is not on the top of an unturned collision box (within ${PL.onGround}u), at least ${FIGHT.swordsman.edgeMargin}u from its edge and from anything standing on it. A swordsman has no physics body: his ground is one box top (D-023)`);
+      else (e.patrol??[]).forEach((p,j)=>{ if(!inRect(g,p)) E('ENEMY_PATROL',`${tag}: patrol[${j}] ${JSON.stringify(p)} is off the ground segment his post is on (x ${g.x0.toFixed(2)}..${g.x1.toFixed(2)}, z ${g.z0.toFixed(2)}..${g.z1.toFixed(2)}, y ${g.y}). A patrol stays on one ground segment: he never jumps and never steps off (D-023)`); });
+      for(const st of stands) pts.forEach((p,j)=>{ const clear=st.radius+R.bodyRadius+PL.standClear;
+        if(d(p,st.pos)<clear&&Math.abs(p[1]-st.pos[1])<R.heightTolerance) E('ENEMY_AT_STAND',`${tag}: ${nameOf(j)} ${JSON.stringify(p)} is ${d(p,st.pos).toFixed(2)}u from ${st.name}, inside its ${clear.toFixed(2)}u (radius ${st.radius} + a body + ${PL.standClear}). A swordsman does not stand where the player is put or arrives (D-023)`); });
+      for(const {i,w} of landings) pts.forEach((p,j)=>{
+        if(d(p,w.pos)<PL.landClear&&Math.abs(p[1]-w.pos[1])<R.heightTolerance) E('ENEMY_ON_LANDING',`${tag}: ${nameOf(j)} ${JSON.stringify(p)} is ${d(p,w.pos).toFixed(2)}u from critical_path[${i}], where a required ${w.via} lands; it must be at least ${PL.landClear}u clear (D-023)`); });
+    });
+  }
 
   const segs=segmentsOf(level), CL=CHAPTER_SEGMENTS, ch=level.chapter;
   // D-011: place each segment on the path (a checkpoint ends its segment at the first waypoint after the

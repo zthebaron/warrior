@@ -1,9 +1,9 @@
-# assets/audio: the game's sound (D-022)
+# assets/audio: the game's sound (D-022, D-023)
 
 Every file here was generated on fal through `tools/gen/fal-call.mjs`, so each has a row in
 `state/FAL-LEDGER.md`, and cut to what ships by `tools/gen/build-audio.mjs`. **Nothing here was judged by ear:**
 the session that made it cannot hear. Every choice below rests on a measurement (`tools/gen/audio-stats.mjs`,
-`tools/harness/audio-check.ts`); MEASUREMENTS.md "D-022 sound" has the numbers. Tim should listen.
+`tools/harness/audio-check.ts`); MEASUREMENTS.md "D-022 sound" and "D-023 sound" have the numbers. Tim should listen.
 
 ## Shipped
 
@@ -18,6 +18,10 @@ the session that made it cannot hear. Every choice below rests on a measurement 
 | `wall_grab.mp3` | 2,821 | 0.18 s | `wall_grab.mp3` from 410 ms | 73 | $0.0020 | A wall slide or a ledge grab beginning. |
 | `checkpoint.mp3` | 23,510 | 1.90 s | `checkpoint.mp3` from 0 ms | 74 | $0.0040 | A torii reached. The chapter's goal is this file played at 0.75. |
 | `respawn.mp3` | 15,046 | 1.20 s | `respawn.mp3`, whole | 75 | $0.0040 | Standing at the torii again after a fall. |
+| `notice.mp3` | 5,642 | 0.40 s | `notice.mp3`, from its onset | 89 | $0.0020 | D-023: a swordsman notices the warrior. |
+| `hit.mp3` | 4,702 | 0.32 s | `hit-b.mp3`, from its onset | 93 | $0.0020 | D-023: the warrior's blade lands. |
+| `fell.mp3` | 10,031 | 0.76 s | `fell.mp3` from 188 ms | 91 | $0.0020 | D-023: a swordsman falls. Played with `hit.mp3`. |
+| `cut.mp3` | 7,836 | 0.60 s | `cut.mp3`, from its onset | 92 | $0.0020 | D-023: a swordsman's blade lands on the warrior. |
 
 Effects are mono, 96 kbps, each with its peak set to -3 dB. The brief's limits are about 1.5 MB for the music and
 about 50 KB an effect; `tools/assets/shell-budget.mjs` (in `npm run assets:budget`) holds them.
@@ -33,6 +37,7 @@ the window the music loops over.
 | `jump-b.mp3` | 78 | $0.0020 | The same again (90.9% under 200 Hz), with a prompt that asked for air and cloth only. |
 | `land_soft.mp3` | 69 | $0.0020 | Nearly silent: its peak is -38.6 dB. |
 | `music-s29.wav` | 77 | $0.2000 | It clips (peak +1.7 dB) and its level swings 14.2 LU; seed 11 swings 7.7. |
+| `hit.mp3` (first take) | 90 | $0.0020 | D-023: a low thud with no steel in it: 54% of its energy is under 200 Hz, centroid 367 Hz. `hit-b.mp3` ships in its place. |
 
 ## Endpoints and prices (read from each model page on 2026-11-10)
 
@@ -42,6 +47,9 @@ the window the music loops over.
 
 The task's sound cost **$0.4860** in 14 rows (67 to 80), of the $4.00 it was allowed. Every call carried
 `--max-total 15.60` (the ledger stood at $11.60 when the task began).
+
+D-023's four fight sounds cost **$0.0100** in 5 rows (89 to 93). Every call carried `--max-total 18.08`. None has
+a voice in it: a cry cannot be judged by a session that cannot hear.
 
 ## What was measured, and what was not
 

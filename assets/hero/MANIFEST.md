@@ -12,6 +12,22 @@ and $4.7694 in round 2. Tim raised the cap from $10.00 to $20.00 in total at 11:
 what fal's pages list (the round 1 rig at $0.80 against $0.20, the round 2 animation request at
 $2.00 against $1.40), so the real charge could be about $1.20 lower.
 
+## The swordsman (D-023, 2026-11-10)
+
+Made for `00-start-here/PROMPT-ENEMIES.md` after the two rounds below, so the totals in this file's first
+paragraph do not include him: **$2.5040 in 8 calls (ledger rows 81 to 88)**, which with his four sounds
+($0.0100, `assets/audio/MANIFEST.md`) is the task's $2.5140. The ledger stands at $14.6000 of $20.00.
+
+| what | where | ledger rows | cost | verdict |
+|---|---|---|---|---|
+| Input images | `input/swordsman.png` (front, A-pose, empty hands), `input/swordsman_back.png` | 81 to 85 | $0.1990 | The front is take v2 with its hanging katana painted out locally (`tools/gen/swordsman-input.mjs`). Row 83 (blade in line with the arm) was not used. Row 84 asked the image model to remove the sword and bought a blank sheet |
+| A cheap shape test | (not kept) | 86 | $0.0200 | `fal-ai/trellis`: a two-cent look at what the input gives before the $0.525 call. Its verdict was not written down by the session that ran it |
+| The model | `swordsman.glb`, 14,700 triangles (`tools/gen/process.mjs --tris 14700`), 2,258,952 B | 87 | $0.5250 | `fal-ai/hunyuan3d-v3/image-to-3d`, Normal + back view, request `01a1c890-f9d1-7fc2-b6c5-1fda2415747a`. Half the warrior's triangles: three stand in a level |
+| Rig and clips | `rigged/swordsman_anim.glb`, 24 joints, six clips, 2,687,588 B; ships as `assets/char/swordsman_anim.glb` (1,914,752 B) | 88 | $1.7600 booked (0.80 + 0.12 a clip) | `fal-ai/meshy/rigging/multi-animation`, request `01a1c893-fa97-75c1-b9c6-d6841e706de1`: the rig, its walk and eight library clips, of which five are used (`tools/gen/build-swordsman.mjs` says which and why). Looked at in `docs/build-log/enemies/clip-sheet.png`; not judged in motion |
+
+He was rigged **empty-handed**: a blade fused to a hand is the auto-rig's to misread and a skinned blade bends.
+His katana is a small mesh the game hangs on the `RightHand` bone (`src/entities/swordsman-model.ts`).
+
 ## Round 2 in one screen
 
 | what | where | cost | verdict |

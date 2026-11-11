@@ -185,5 +185,31 @@ mutated.geometry.find((g) => (g.tag ?? '').startsWith('dress:')).collider = 'tri
 const mr = lintLevel(mutated, manifest);
 check('one dressing placement given collider trimesh FAILS DRESS_COLLIDES, and nothing else', codes(mr).length === 1 && codes(mr)[0] === 'DRESS_COLLIDES', codes(mr).join(', ') || 'no errors: art became collision silently');
 
+// ---- swordsmen (D-023): each placement rule must be seen to fail, alone, on a bad level ---------------
+console.log('swordsmen (D-023): where one may stand');
+{
+  const base = lintLevel(ch1, manifest);
+  check('shipped chapter 1 places three swordsmen and lints clean', (ch1.enemies ?? []).length === 3 && base.ok, base.errors.join(' ') || `${(ch1.enemies ?? []).length} swordsmen`);
+  const only = (name, code, change) => {
+    const L = structuredClone(ch1);
+    change(L);
+    const got = codes(lintLevel(L, manifest));
+    check(`${name} FAILS ${code}, and nothing else`, got.length >= 1 && got.every((c) => c === code), got.join(', ') || 'no errors');
+  };
+  const first = (L) => L.enemies[0], patrol = (L) => L.enemies[1];
+  only('a swordsman outside bounds', 'ENEMY_OOB', (L) => { L.bounds.min[2] = -2; }); // the patrolling one stands at z -2.4
+  only('a swordsman in the air', 'ENEMY_OFF_GROUND', (L) => { first(L).pos = [4.6, 0.5, 0]; });
+  only('a swordsman over the void', 'ENEMY_OFF_GROUND', (L) => { first(L).pos = [4.6, 0, 6]; });
+  only('a swordsman on the lip of his ground', 'ENEMY_OFF_GROUND', (L) => { first(L).pos = [4.6, 0, 3.3]; });
+  only('a patrol that steps off the edge of its ground', 'ENEMY_PATROL', (L) => { patrol(L).patrol = [[49.5, 5.5, 4.5]]; });
+  only('a patrol onto the next ground along (the shelf below)', 'ENEMY_PATROL', (L) => { L.enemies[2].patrol = [[98.1, 9, 3.2]]; });
+  only('a patrol point on another height', 'ENEMY_PATROL', (L) => { patrol(L).patrol = [[49.5, 9, 2.4]]; });
+  only('a swordsman on the spawn', 'ENEMY_AT_STAND', (L) => { first(L).pos = [2, 0, 0]; });
+  only('a swordsman on a checkpoint', 'ENEMY_AT_STAND', (L) => { patrol(L).pos = [55, 5.5, 0]; patrol(L).patrol = [[52, 5.5, 2.4]]; });
+  only('a swordsman on the goal', 'ENEMY_AT_STAND', (L) => { L.enemies[2].pos = [99.4, 9, 0]; });
+  only('a swordsman where a required jump lands', 'ENEMY_ON_LANDING', (L) => { L.enemies[2].pos = [96.5, 9, 0]; });
+  only('a patrol that walks onto a landing', 'ENEMY_ON_LANDING', (L) => { patrol(L).patrol = [[43.5, 5.5, 0]]; });
+}
+
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');
 process.exit(fails ? 1 : 0);

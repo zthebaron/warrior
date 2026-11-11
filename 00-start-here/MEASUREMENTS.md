@@ -1506,3 +1506,234 @@ nothing. Tim should try one.
 
 `reachable` was mutated to prove it bites: with the title swallowing Enter (in `src/ui/shell.ts` and in
 `index.html`'s inline listener) it is red on three checks ("loaded (nothing)" after 20.2 s). Restored.
+
+## D-023 the fight (2026-11-10)
+
+`src/systems/fight.ts` `FIGHT`: the one table of the fight, read by the game, the level linter, `check:fight` and
+the harness. **Every value is authored by the builder to the brief's words and is PROVISIONAL for Tim's feel
+(OQ-075). Nobody has played it.** The fixed tick is 1/60 s, so a time in the table runs as a whole number of
+ticks; those are in the last column and are what `npm run check:fight` prints in its three `measured:` lines,
+counted from the stepped functions, not worked out from the table (the 0.05 row and the trace's gap are the
+`fight` stage's and the trace's own).
+
+| Constant | Value | Kind | Basis, and what was measured |
+|---|---|---|---|
+| `warrior.slashSec` | 0.36 s | authored (D-022) | the whole slash: the clock is cleared on tick 22 after the press |
+| `warrior.cutFrom`, `cutTo` | 0.07 s, 0.19 s | authored (D-022) | D-022's drawn cut, now the rule: the blade cuts on ticks 5 to 11 after the press, 7 ticks |
+| `warrior.againSec` | 0.24 s | authored (D-022) | a second press is taken from tick 15. Two cuts land 16 ticks (0.267 s) apart in chapter 1's trace |
+| `warrior.reach` | 1.9 m | authored | the warrior's centre to the swordsman's. The drawn stroke's tip is 1.4 m from the chest (`SLASH.arc.radius`) |
+| `warrior.arcDeg` | 150 deg | authored | in front of him, half to each side |
+| `warrior.reachHeight` | 1.5 m | authored | the two stand within this of the same height |
+| `swordsman.hitsToFall` | 2 | the brief | "falls on the second hit; the first staggers him" |
+| `swordsman.sightRange`, `sightHeight` | 4.5 m, 1.0 m | authored | he notices inside this, on his own level |
+| `swordsman.keepRange`, `keepHeight` | 7 m, 3 m | authored | once roused. A jump rises 2.0 m and a double jump 2.9 m (MOVE), so neither loses him |
+| `swordsman.forgetSec` | 1.5 s | authored | unseen this long, he walks back to his post |
+| `swordsman.patrolSpeed`, `closeSpeed` | 1.5, 2.8 m/s | authored | the warrior runs at 7 m/s |
+| `swordsman.turnRate` | 7 rad/s | authored | |
+| `swordsman.patrolPauseSec` | 1.2 s | authored | at each end of a patrol |
+| `swordsman.standoff` | 1.4 m | authored | he stops closing here: inside his own reach |
+| `swordsman.engageRange`, `engageArcDeg` | 1.7 m, 50 deg | authored | the warrior this near and in front of him starts the wind-up |
+| `swordsman.windupSec` | 0.6 s | the brief ("start near half a second") | **the number to judge.** His blade is out 36 ticks after the wind-up starts and the earliest cut lands on tick 37: 0.617 s |
+| `swordsman.windupMinSec` | 0.5 s | authored | the wind-up is run at max(windupSec, windupMinSec). With windupSec set to 0.05: blade out at 30 ticks, cut at 31 (0.517 s) |
+| `swordsman.windupTrackShare` | 0.6 | authored | he turns with the warrior for this share of the wind-up, then commits |
+| `swordsman.slashSec` | 0.12 s | authored | his blade is live for 8 ticks |
+| `swordsman.reach`, `arcDeg`, `reachHeight` | 1.8 m, 110 deg, 1.2 m | authored | "a short reach". A warrior more than 1.2 m above his ground is not cut |
+| `swordsman.recoverSec` | 0.9 s | authored | 54 ticks in which he does nothing |
+| `swordsman.staggerSec` | 0.7 s | authored | 42 ticks |
+| `swordsman.edgeMargin` | 0.5 m | authored | his ground is drawn in this far from every edge |
+| `placing.landClear` | 3 m | authored | `ENEMY_ON_LANDING` |
+| `placing.standClear` | 0.5 m | authored | `ENEMY_AT_STAND`: beyond the stand's radius and a body's radius (0.35 m) |
+| `placing.onGround` | 0.01 m | derived | his feet are on a box top to within this |
+| `placing.stepOver`, `bodyHeight` | 0.05 m, 1.9 m | derived | what counts as standing on his ground: taller than a seam, lower than his head |
+
+**What the table does as it stands** (chapter 1's trace, `tools/harness/traces/01-lower-stair.json`
+`expect.fight`): each of the three is noticed, starts a wind-up, is hit 6 to 11 ticks into it, staggers, and falls
+16 ticks later. No wind-up finishes. The first hit staggers him out of it, so two quick cuts fell a swordsman
+before he can cut: the wind-up is only met by a player who is slow, misses, or arrives mid-swing. That is for Tim
+to judge (OQ-075).
+
+**The movement numbers did not change.** A swordsman has no physics body, so the physics world is main's. With
+the fight code in and no level placing one (ffd9116), CI run 42952056875 passed every older trace, golden and
+budget untouched, 9 of 9, and `frame-hashes --diff` against main's build was identical on 191 values.
+
+## D-023 the swordsman (2026-11-10)
+
+`src/entities/swordsman-model.ts` `SWORDSMAN`. The figure: `assets/char/swordsman_anim.glb`, 14,700 triangles,
+1,914,752 B, one material, one texture (1024 px), 24 joints, six clips (`budgets.json` `characters`, at the
+measured values). Made from `assets/hero/input/swordsman.png` and `swordsman_back.png` (the courtyard painting's
+swordsman, redrawn to an A-pose with empty hands) by `fal-ai/hunyuan3d-v3/image-to-3d`, cut to 14,700 triangles
+by `tools/gen/process.mjs --tris`, rigged and given clips by one `fal-ai/meshy/rigging/multi-animation` request,
+assembled by `tools/gen/build-swordsman.mjs` (run again from the downloads in the second session: the rigged file
+came out byte-identical). Looked at in `docs/build-log/enemies/clip-sheet.png`; never judged
+in motion by a person.
+
+| Clip | Length | From |
+|---|---|---|
+| idle | 1.667 s, a loop | Combat_Stance |
+| walk | 1.033 s, a loop | the rig's own walk |
+| close | 1.700 s, a loop | Walk_Fight_Forward |
+| slash | 1.500 s | Right_Hand_Sword_Slash, whole |
+| hit | 0.900 s | Hit_Reaction, its first 0.9 s |
+| death | 1.200 s | dying_backwards, 0.30 to 1.50 s |
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `height` | 1.8 m | authored | bare-headed, a little under the warrior's 1.9 m with his hat |
+| `tone` | `wash-light` | measured | as delivered his texture is the paper's own value and does not read against it; multiplied by this ramp step it does. No hue |
+| `faceTurn` | pi | derived | the model looks down +Z; forward in the game is -Z |
+| `blendSec` | 0.12 s | authored | a change of clip is faded over this |
+| `slashMarks` | cut from 0.433 s to 0.667 s of 1.5 s | measured | printed by `build-swordsman.mjs --probe`: the stretch of the slash clip in which the sword hand is above half its peak speed (11.82 m/s at 0.500 s). The fight's wind-up, cut and recovery are each mapped onto their part of the clip at these marks |
+| `lastFrameShy` | 0.001 s | derived | a looping action evaluated AT its end reads its start |
+| `movingAbove` | 0.2 m/s | authored | slower than this he shows the stance, not a stride |
+| `walkRate`, `closeRate` | 1, 1.3 | authored | the walk clips' pace |
+| `katana.blade`, `bladeWidth`, `bladeThick`, `curve` | 0.74, 0.034, 0.012, 0.045 m | authored | a katana's blade, guard to tip; the tip sits 0.045 m behind a straight line |
+| `katana.hilt`, `hiltWidth`, `guard`, `guardThick`, `grip` | 0.25, 0.03, 0.045, 0.012, 0.07 m | authored | |
+| `katana.bladeDir`, `edgeDir`, `inHand` | directions and an offset, in the code | authored | from two frames of the clip sheet: a blade carried ready, edge down and forward |
+| the katana's mesh | 8 segments along the blade; the last 14% of it (from 0.86) narrows to a point no thinner than 0.08 of its width; the hilt is 0.8 of its width thick; a 10-sided guard | authored | 120 triangles, one draw call |
+| `arcScale` | 1.15 | authored | his cut is the warrior's ink stroke, a little larger |
+| `fall.inkBy`, `fadeFrom`, `fadeTo` | 0.3, 0.9, 1.6 s | authored | the falling figure is all ink by 0.3 s and gone by 1.6 s |
+| `burst.seconds`, `from`, `to`, `hitShare`, `height`, `opacity` | 0.32 s, 0.5 m, 1.9 m, 0.6, 1.15 m, 0.9 | authored | ink thrown by a hit; the hit that only staggers throws 0.6 as much |
+| `splat.size`, `growSec`, `holdSec`, `fadeSec`, `opacity` | 2.6 m, 0.2, 1.4, 1.6 s, 0.85 | authored | on the ground where he fell: gone to paper by 3.2 s |
+| `ink.px`, `lobes`, `ragged`, `blot`, `droplets`, `dropMin`, `dropMax`, `seed` | 128, 7, 0.28, 0.42, 26, 0.012, 0.05, 23 | authored | the splatter's one texture, seeded: the same every time. Its edge is 1.5 texels soft, its blot fills 0.62 of `blot`, and its droplets land 0.75 to 1.3 of `blot` out, plus 0.04, drawn in by 0.9 |
+| `inkTurn` | 2.399963 rad | derived | the golden angle: each swordsman's splatter is turned from the last one's |
+| `order` | 600 | derived | drawn after every card and the warrior's stroke (500), before the figures |
+
+## D-023 the bot and the harness (2026-11-10)
+
+`tools/harness/nav.ts` `NAV_CONFIG`, `tools/harness/chaos.ts` `CHAOS_CONFIG`, `tools/harness/fight.ts`
+`FIGHT_STAGE`.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `NAV_CONFIG.foeRange` | 5.5 m | authored | a standing swordsman this near is fought before the path goes on: beyond his sight range (4.5 m), so the bot turns to him first |
+| `NAV_CONFIG.foeDy` | 1.2 m | authored | and only one on the bot's own level |
+| `NAV_CONFIG.slashShare` | 0.85 | authored | of the warrior's reach: the bot presses the sword from 1.615 m |
+| `NAV_CONFIG.creep`, `standShare` | 0.2, 0.5 | authored | inside that it creeps to keep facing him, and stands still nearer than 0.95 m |
+| `CHAOS_CONFIG.p.slash` | 0.3 | authored | a random segment holds the sword this often. It takes the draw the old attack input took, which was still being consumed, so every other field of the stream is what it was |
+| `FIGHT_STAGE.standShare` | 0.8 | authored | of the nearer reach: where the bot stops to be cut (1.36 m) |
+| `FIGHT_STAGE.holdTicks`, `waitTicks` | 300, 900 | authored | a fallen swordsman is watched for 5 s; no one wait may take more than 15 s |
+| `FIGHT_STAGE.lowWindupSec` | 0.05 s | authored | windupSec set a tenth of the minimum |
+| `FIGHT_STAGE.broken` | hitsToFall 1, reach 0.1 m, closing speed x1.01, wind-up 0.1 s | authored | the four broken fights |
+
+**Chapter 1, by the bot** (darwin and Linux agree to the tick: on CI run 42958599423 Linux replayed the
+darwin-recorded trace with all 12 changes of mode on the recorded ticks, and measured the same 137 draw calls and
+331,496 triangles): goal at 19.70 s of the 48 s budget (15.35 s
+before the swordsmen); 3 down, 6 sword presses, 1.93 s spent fighting. Chapter 1's trace was recorded again from
+that run (1,182 frames, was 921): the brief makes the slash recorded input and asks that the bot fight, which the
+old trace did not (it ran past all three: a swordsman does not block). No other level's trace changed.
+
+**PHASE_SWEEP with swordsmen in** (the same bot, from every torii at eight phases; 12 s a segment is an assertion):
+
+| Segment | Worst arrival before | With swordsmen |
+|---|---|---|
+| spawn to torii 0 (`guard-first`) | 5.05 s | 5.43 s |
+| torii 0 to 1 (`guard-patrol`) | 2.97 s | 3.30 s |
+| torii 1 to 2 | 6.85 s | 6.85 s |
+| torii 2 to goal (`guard-goal`) | 6.77 s | 7.12 s |
+
+The crow segments still fail blind from the same offsets (0, 3, 4, 7 and 3, 7) and clear 8 of 8 on the cue.
+
+**Every other level is what it was.** `node tools/harness/frame-hashes.ts --diff` against main's build: 23 values
+differ, all of them chapter 1's (six frames, their counters, geometries 35 to 39, textures 22 to 26, renderables
+84 to 90, painted meshes 42 to 48); the other 168 values, on four levels, are identical. Chapter 1's goldens were
+written again (`--update-goldens` on darwin; Linux from CI's own frames). Against the old goldens the six cameras
+drift 0.019% to 0.414%, under the 0.5% gate: the swordsmen are small in those frames. The six Linux goldens are
+CI's own frames (run 42958599423, taken with the Linux goldens removed so that all six were written); against the
+new darwin goldens they differ by 0, 0, 2, 21, 3 and 0 px.
+
+**The screenshots** (`docs/build-log/enemies/`). The clip sheet and the three 1920x1080 frames are the harness's own
+Chromium (SwiftShader). The three 5120x1440 frames are headed Chrome on the real GPU (`frame.ts --gpu`, ANGLE
+Metal, Apple M4 Max), because at 5120x1440 SwiftShader draws the whole ink pass black: the path, the torii and
+the sky are black and only painted things are drawn. That is not this change: chapter 2, which has no swordsmen,
+does the same, and `ink-post.ts`, `renderer.ts` and `paint-layer.ts` are untouched on this branch. It was not
+traced further (B-81). No stage of the playtest draws at that size.
+
+## D-023 the checks (2026-11-10)
+
+The brief asks for four checks. Each exists twice, and each was seen to fail.
+
+`npm run check:fight` (`tools/check-fight.ts`, Node, in CI's static job) steps the real `stepSwordsman`,
+`stepSlash` and `slashCutting`. Its `--self-test` runs first and puts each rule to nine broken fights:
+
+| Rule | Broken fight | What the rule said |
+|---|---|---|
+| 1. two hits and not one | `hitsToFall` 1 | ONE hit felled him |
+| | `hitsToFall` 3 | TWO hits did not fell him |
+| | a slash that lands every tick its blade is inside him | one slash landed 2 times |
+| 2. his cut reaches a warrior who stands there, and only one | his reach 0.1 m | the fight opened notice, wind-up, wind-up |
+| | his blade ignores height | a warrior above his blade was cut |
+| | a cut that lands on every tick of his slash | wind-up, cut, cut |
+| 3. a fight replays the same | a step that keeps state outside the swordsman | differs from tick 1 |
+| 4. the wind-up is never under the minimum | a wind-up clock run twice as fast | blade out after 0.250 s |
+| | a wind-up cut short when the warrior is near | blade out after 0.167 s |
+
+As shipped, rule 4 is measured at seven settings of `windupSec` from 0 to 1.5 s: the wind-up always runs
+ceil(max(windupSec, 0.5) x 60) ticks, never fewer than 30.
+
+The `fight` playtest stage (`tools/harness/fight.ts`, once a run, on `tools/harness/fixtures/swordsman.json`)
+plays one attempt in the real game by input frames only: 713 ticks, 617 input frames.
+
+| Rule | In the real game | Broken, it failed with |
+|---|---|---|
+| 1 | one slash: 1 hit, staggered; two: fallen; still down 5 s later; on his post again after the warrior's next respawn | `hitsToFall` 1: "after ONE slash: hits 1, mode fallen" |
+| 2 | cut at tick 140: a death, and the respawn at the torii (-7, 0, 0), not the spawn (-14, 0, 0); he is back on his post, unhurt | reach 0.1 m: "stood in front of him and was never cut" |
+| 3 | the recorded input replayed in two fresh pages: all 713 ticks identical to the live run and to each other (the warrior's position, both deaths, the checkpoint, the swordsman's every field) | closing speed x1.01: differs from tick 87 |
+| 4 | 37 ticks (0.617 s) from the wind-up to the cut; 31 (0.517 s) with `windupSec` set to 0.05 | wind-up run at 0.1 s: "he cut 0.117 s after the wind-up began" |
+
+**The stage launches a fresh Chromium for each of its seven pages.** Its first cut reused one browser: on Linux
+the second page never loaded (CI run 42958599423, `page.goto` timed out after rules 1, 2 and 4 had passed on the
+first page), and on darwin the same stage took 39.4 s against 3.9 s with fresh browsers. `run.mjs` already gives
+every stage its own browser for the same reason (SwiftShader's GPU process wedging). A page that does not come
+up is reported as an environment failure, with `diagnose`'s evidence, as `openGame` does.
+
+`replay` on chapter 1 also holds the fight exactly: 12 changes of mode by three swordsmen, each on the tick the
+trace recorded. Run twice on darwin, identical.
+
+The warrior's slash clock was moved into `src/systems/fight.ts` after the engine-only proof (so that
+`check:fight` runs the same function the player does). After the move every level's replay still ends 0.000 u
+from its recorded position on the recorded tick (gym 1,677, chapter 2 1,638, chapter 3 1,759, chapter 4 1,449
+ticks, their traces untouched), and `frame-hashes` is as above.
+
+## D-023 sound (2026-11-10)
+
+`tools/gen/build-audio.mjs` `AUDIO_BUILD`, `src/audio/audio.ts` `AUDIO.gain` (notice 0.5, hit 0.8, fell 0.8, cut
+0.9: authored). **Nothing here was judged by ear.** Ledger rows 89 to 93, $0.0100. Each take's numbers are
+`tools/gen/audio-stats.mjs` on the take, measured again in the second session. No voice in any take: a cry
+cannot be judged by a session that cannot hear it.
+
+| Take | Asked for | Centroid Hz | Verdict |
+|---|---|---|---|
+| notice | a blade loosened in its scabbard, a rustle of cloth | 4,935 | ships, cut to 0.40 s (silent after 0.35 s) |
+| hit | steel on steel over a dull thud | 367, with 54% of its energy under 200 Hz | rejected: a low thud with no steel in it |
+| hit-b | two blades meeting, metal only | 5,854; peak -29.8 dB before it is set to -3 dB | ships as `hit`, cut to 0.32 s (silent after 0.29 s) |
+| fell | a body in heavy cloth on stone, a sword clattering once | 324 (57% under 200 Hz); 266 and 70% as shipped | ships, with 188 ms of silence before the thud cut away; 0.76 s |
+| cut | a blade through cloth, a dull thump | 5,586 | ships, 0.60 s |
+
+As shipped (`node tools/gen/build-audio.mjs --check`): notice 5,642 B, hit 4,702 B, fell 10,031 B, cut 7,836 B
+(limit 50,000 each), peaks -3.3 to -4.1 dB. The nine older files came out byte-identical. When a hit fells him
+the game plays `hit` and `fell` together.
+
+## D-023 the paint gate (2026-11-10)
+
+Two of D-020's six paint checks were written for painted scenery, and a swordsman is a painted figure that moves
+and stands in front of a gate. These are the first measured wrong values those two rows have had.
+
+| Check | With swordsmen, unchanged check | Now |
+|---|---|---|
+| static | 610 painted sky px changed between two ticks on darwin, 609 on Linux (CI run 42953349314): his idle clip and his patrol | 0 of 450,352 judged on darwin, 0 of 450,325 on Linux (run 42958599423); 2,509 px that the three swordsmen cover are not judged on either |
+| hides no accent pixel | 47 px of the goal torii are behind `guard-goal` from one camera | 0; 47 more are counted as behind a swordsman |
+
+The pixels a swordsman covers are found by drawing the same frame, at the same tick, without the swordsmen
+(`__HARNESS__.showEnemies`) and taking every pixel that differs, in this frame or the next. A level with no
+swordsmen takes no extra frame and is judged as it was. The other four paint checks and the 17 ink checks are
+unchanged and judge the frame with the swordsmen in it: no hue above the ramp's chroma (0 px), paper 41.4% of the
+frame. `ACCENT_AREA` still passes at every torii with the swordsmen standing.
+
+## D-023 scene budget (2026-11-10)
+
+Chapter 1's line in `budgets.json` `scenes` is RAISED to the new measured peak: 137 draw calls (was 127) and
+331,496 triangles (was 287,036), over the new trace (47 samples) and the six cameras, the same on two runs.
+Three figures of 14,700 triangles and three katanas of 120 are 44,460 triangles and six draw calls; the other
+four draw calls are the ink of a fight on screen (a burst, a splat, a stroke). Geometries peak at 47 (was 36) and
+textures at 29 (was 23). Tier 1 is 300 draw calls and 500,000 triangles. The other four levels' lines are
+unchanged: the swordsman is decoded only for a level that places one.

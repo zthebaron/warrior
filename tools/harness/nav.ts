@@ -19,11 +19,18 @@
 //            lift-off. This is the crow read as a player is told to read it (SPEC: wait for the crow,
 //            go), so a clear proves the cue is a sufficient "go now". ignoreCues: depart blind.
 //
+//   fight    (D-023, on any grounded segment) a swordsman still on his feet, near the bot and on its level, is
+//            fought before the path goes on: the bot walks at him, and from inside the warrior's reach it
+//            presses the sword, releases, and presses again as soon as the game takes a second slash. It
+//            reads only what a player sees (where he is, whether he is down) and the fight's own table.
+//            It does not dodge: two cuts land before a wind-up can finish, and the nav stage asserts that
+//            every swordsman of the level is down when the goal is reached.
+//
 // Public input API only (window.__HARNESS__.step -> InputSystem override). No teleporting.
 // ASSERTS: goal within the Q3 bot budget (12s x segments), never below bounds.min.y, waypoints in order.
 // The budget is derived, never authored: levels have no par_time (PHASE-0-DECISIONS Q4 amendment 2).
 
-import { FIXED_HZ, NEUTRAL, Stage, fmt, guard, hdist, openGame, wp, type Ctx, type InputFrame, type Snapshot, type StageResult, type Vec3, type Waypoint } from './lib.ts';
+import { FIXED_HZ, NEUTRAL, Stage, fmt, guard, hdist, openGame, wp, type Ctx, type Foe, type InputFrame, type Snapshot, type StageResult, type Vec3, type Waypoint } from './lib.ts';
 
 export const NAV_CONFIG = {
   segmentBudgetSec: 12,      // Q3: expert bot, no deaths, <= 12s per segment. An assertion, not a tuning knob.
@@ -45,6 +52,12 @@ export const NAV_CONFIG = {
   rideFeetSlack: 2.0,        // m: and the player is still with it
   renderEvery: 30,           // render a frame every N ticks (exercise the renderer; sim is unaffected)
   maxAttempts: 3,            // ballistic retries when a jump lands back short (alive)
+  // D-023, the fight (MEASUREMENTS "D-023 the bot")
+  foeRange: 5.5,             // m: a standing swordsman this near is fought before the path goes on
+  foeDy: 1.2,                // m: and only one on the bot's own level
+  slashShare: 0.85,          // of the warrior's reach: the bot presses the sword from inside this
+  creep: 0.2,                // input magnitude while inside it: enough to keep facing him, not to run through him
+  standShare: 0.5,           // of the reach: nearer than this the bot stands still
 };
 
 const BALLISTIC = new Set(['jump', 'double', 'dash', 'dashjump', 'wall', 'climb']);
@@ -63,6 +76,32 @@ interface SegState {
 
 function newSeg(cue = false): SegState {
   return { phase: 'approach', airborneSeen: false, walkOffTick: null, pressed: new Set(), attempts: 0, platDist: null, cueWait: cue, cueSeen: null, cueLift: null };
+}
+
+/** The nearest swordsman still standing that the bot should fight now, or null. */
+function foeOf(s: Snapshot): Foe | null {
+  const C = NAV_CONFIG;
+  let best: Foe | null = null;
+  for (const e of s.enemies ?? []) {
+    if (e.mode === 'fallen' || Math.abs(e.pos[1] - s.feet[1]) > C.foeDy) continue;
+    const d = hdist(s.feet, e.pos);
+    if (d <= C.foeRange && (!best || d < hdist(s.feet, best.pos))) best = e;
+  }
+  return best;
+}
+
+/** The fight's numbers the bot needs, read from the running game: never retyped here. */
+export interface FightRules { reach: number; againSec: number }
+
+/** Input for a tick spent fighting `foe`. lastSlash: whether the sword was held on the tick before. */
+function fight(s: Snapshot, foe: Foe, R: FightRules, lastSlash: boolean): InputFrame {
+  const C = NAV_CONFIG;
+  const d = hdist(s.feet, foe.pos), dir = toward(s.feet, foe.pos);
+  const inside = d <= R.reach * C.slashShare;
+  const k = !inside ? 1 : d > R.reach * C.standShare ? C.creep : 0;
+  // the sword is edge-triggered: one tick down, then up, and down again once the game will take another slash
+  const ready = s.slash === null || s.slash >= R.againSec;
+  return { ...NEUTRAL, x: dir.x * k, y: dir.y * k, slash: inside && ready && !lastSlash };
 }
 
 function toward(from: Vec3, to: Vec3): { x: number; y: number } {
@@ -90,6 +129,8 @@ export interface NavOutcome {
   ticks: number;
   frames: InputFrame[];
   final: Snapshot;
+  /** D-023: every change of a swordsman's mode over the run (WalkResult.fightLog) */
+  fight: [number, string, string][];
 }
 
 export async function nav(ctx: Ctx): Promise<StageResult & { outcome?: NavOutcome }> {
@@ -141,6 +182,11 @@ export interface WalkResult {
   movesDone: Map<string, number>;
   /** ticks spent holding at a torii for a crow's lift-off */
   cueWaitTicks: number;
+  /** D-023: ticks spent fighting, and how many times the sword was pressed */
+  fightTicks: number;
+  slashes: number;
+  /** D-023: every change of a swordsman's mode, as [ticks since the walk began, id, mode] (the trace keeps it: replay.ts) */
+  fightLog: [number, string, string][];
 }
 
 /**
@@ -157,7 +203,11 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
   const log = (m: string): void => { if (!opts.quiet) ctx.log(m); };
 
   let snap = await page.evaluate(() => window.__HARNESS__!.snapshot());
+  const rules: FightRules = await page.evaluate(() => ({ reach: window.__HARNESS__!.fight.warrior['reach']!, againSec: window.__HARNESS__!.fight.warrior['againSec']! }));
+  let lastSlash = false, fightTicks = 0, slashes = 0;
   const t0 = snap.tick;
+  const modes = new Map((snap.enemies ?? []).map((e) => [e.id, e.mode]));
+  const fightLog: [number, string, string][] = [];
   let i = opts.startIndex; // waypoint index being sought
   const cueOf = (k: number): number | undefined => (opts.ignoreCues ? undefined : path[k]?.cue);
   let seg = newSeg(cueOf(i) !== undefined);
@@ -200,10 +250,21 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
     }
     const holding = seg.cueWait && i < path.length;
     if (holding) cueWaitTicks++;
-    const frame = holding ? NEUTRAL : i < path.length ? control(origin(i), path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
+    // D-023: a swordsman in the way is fought first, but never in the middle of a jump (seg.phase 'air')
+    const foe = snap.grounded && seg.phase !== 'air' ? foeOf(snap) : null;
+    const frame: InputFrame = foe ? fight(snap, foe, rules, lastSlash)
+      : holding ? NEUTRAL : i < path.length ? control(origin(i), path[i]!, path[i + 1], snap, seg) : { ...NEUTRAL, ...toward(snap.feet, L.goal.pos) };
+    if (foe) fightTicks++;
+    if (frame.slash && !lastSlash) slashes++;
+    lastSlash = !!frame.slash;
     lastJump = frame.jump;
     const prevDeaths = snap.deaths;
     snap = await step(frame, (snap.tick - t0) % C.renderEvery === 0);
+    for (const e of snap.enemies ?? []) {
+      if (modes.get(e.id) === e.mode) continue;
+      modes.set(e.id, e.mode);
+      fightLog.push([snap.tick - t0, e.id, e.mode]);
+    }
     minYSeen = Math.min(minYSeen, snap.feet[1]);
     if (traceSeg === i) {
       ctx.log(`      [seg ${i} t${snap.tick - segStartTick}] in(${frame.x.toFixed(2)},${frame.y.toFixed(2)})${frame.jump ? ' J' : ''}${frame.dash ? ' D' : ''} feet ${fmt(snap.feet)} vel ${fmt(snap.vel)} ${snap.pstate}${snap.grounded ? ' G' : ''}`);
@@ -240,7 +301,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       if (lastJump) seg.pressed.add('heldIn');
     }
   }
-  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks };
+  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks, fightTicks, slashes, fightLog };
 }
 
 async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage): Promise<NavOutcome> {
@@ -279,11 +340,16 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   const tally = [...declared].map(([v, n]) => `${v} ${movesDone.get(v) ?? 0}/${n}`).join(', ');
   const missed = [...declared].filter(([v, n]) => (movesDone.get(v) ?? 0) < n).map(([v]) => v);
   st.check('every declared move completed', missed.length === 0, missed.length ? `NOT completed: ${missed.join(', ')} — ${tally}` : tally);
+  // D-023: a level with swordsmen is finished by fighting them. One the bot walked past is not proven beatable.
+  if (L.enemies?.length) {
+    const up = snap.enemies.filter((e) => e.mode !== 'fallen').map((e) => e.id);
+    st.check('every swordsman fought and down', up.length === 0 && snap.enemies.length === L.enemies.length, up.length ? `still standing: ${up.join(', ')}` : `${snap.enemies.length} down, ${w.slashes} sword presses, ${(w.fightTicks / FIXED_HZ).toFixed(2)}s fighting`);
+  }
   st.data['moves'] = Object.fromEntries(movesDone);
   const frames = await page.evaluate(() => window.__HARNESS__!.record());
   st.data['ticks'] = ticks;
   st.data['reached'] = reached;
-  return { reached, ticks, frames, final: snap };
+  return { reached, ticks, frames, final: snap, fight: w.fightLog };
 }
 
 /** Input for this tick, from the target waypoint's `via`. */
