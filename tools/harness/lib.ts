@@ -93,9 +93,21 @@ export interface InputFrame {
   jump: boolean;
   dash: boolean;
   sprint: boolean;
+  /** D-023: the sword. Absent in a trace recorded before it, which means no slash. */
+  slash?: boolean;
 }
 
-export const NEUTRAL: InputFrame = { x: 0, y: 0, jump: false, dash: false, sprint: false };
+export const NEUTRAL: InputFrame = { x: 0, y: 0, jump: false, dash: false, sprint: false, slash: false };
+
+/** D-023: a swordsman as the snapshot shows him (src/entities/swordsmen.ts SwordsmanSnapshot). */
+export interface Foe {
+  id: string;
+  mode: string;
+  modeTime: number;
+  pos: Vec3;
+  facing: number;
+  hits: number;
+}
 
 export interface Snapshot {
   tick: number;
@@ -113,6 +125,10 @@ export interface Snapshot {
   lastDeath: Vec3 | null;
   runTime: number;
   inputTicks: number;
+  enemies: Foe[];
+  /** seconds into the warrior's slash, or null; and how many slashes have started */
+  slash: number | null;
+  slashes: number;
 }
 
 export interface Waypoint {
@@ -134,6 +150,7 @@ export interface LevelJson {
   checkpoints: { pos: Vec3; facing?: number }[];
   platforms?: { id?: string; asset: string; path: Vec3[]; duration: number; loop?: 'pingpong' | 'cycle' | 'once' }[];
   hazards?: { type: string; path?: Vec3[]; speed?: number; phase?: number }[];
+  enemies?: { id: string; type: string; pos: Vec3; facing: number; patrol?: Vec3[] }[];
 }
 
 export interface Ctx {
@@ -260,6 +277,12 @@ declare global {
       snapshot(): Snapshot;
       tuning: Record<string, number>;
       rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
+      /** D-023: the fight's table as the running game has it (src/systems/fight.ts FIGHT) */
+      fight: { warrior: Record<string, number>; swordsman: Record<string, number>; placing: Record<string, number> };
+      windupSec(): number;
+      facing(): number;
+      enemyClips(): { name: string; duration: number }[];
+      teleportPlayer(pos: Vec3, facingDeg?: number): void;
       rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
       postPasses(): string[];
       paintLayer(on?: boolean): { painted: number; backdrop: number; drawn: boolean };

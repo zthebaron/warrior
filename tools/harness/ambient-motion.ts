@@ -4,7 +4,7 @@
 // renderable is sampled once a second (window.__HARNESS__.translators()). An object whose world position
 // moves, with no `userData.translates` tag on it or an ancestor, is ambient motion: an error.
 //
-// Tags, and where they are set: `player` (the player mesh and the landing mark, src/main.ts),
+// Tags, and where they are set: `enemy` (the level's swordsmen, src/main.ts: D-023), `player` (the player mesh and the landing mark, src/main.ts),
 // `hazard` (hazard volumes and the patroller's crow cue, src/loaders/level.ts), and `platform` (moving
 // platforms, level.ts). Platforms are not in Q2a's sentence. They are allowed because `platform` is one
 // of the eight moves Q2 closed, so a moving platform is the move's affordance, not ambience. That reading

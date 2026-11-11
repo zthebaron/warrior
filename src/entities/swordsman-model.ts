@@ -23,7 +23,7 @@ import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 import { paint, paintLast, paintMaterial, PAINT_LAST } from '../engine/paint-layer';
-import { ramp } from '../engine/palette';
+import { ramp, type RampName } from '../engine/palette';
 import type { CharacterAsset } from '../loaders/character';
 import { FIGHT, windupSec, type SwordsmanMode } from '../systems/fight';
 import { SlashArc } from './slash';
@@ -35,6 +35,8 @@ export const SWORDSMAN = {
   asset: 'swordsman_anim',
   /** m he stands: bare-headed, a little under the warrior's 1.9 with his hat */
   height: 1.8,
+  /** His texture is multiplied by this ramp step: as delivered he is the paper's own value and does not read against it */
+  tone: 'wash-light' as RampName,
   /** The delivered model looks down +Z; a swordsman's forward is -Z, as the player's. */
   faceTurn: Math.PI,
   /** a change of clip is faded over this long */
@@ -189,7 +191,8 @@ export class SwordsmanModel {
   private readonly material: THREE.MeshBasicMaterial;
   private readonly katana: THREE.Mesh;
   private readonly katanaMaterial: THREE.MeshBasicMaterial;
-  private readonly white = new THREE.Color(0xffffff);
+  private readonly toned = new THREE.Color(ramp(SWORDSMAN.tone));
+  private readonly plain = new THREE.Color(0xffffff); // the katana's colours are its own ramp steps already
   private readonly ink = new THREE.Color(ramp('ink-black'));
   private shown: Clip = 'idle';
   private pose: SwordsmanPose = { mode: 'guard', modeTime: 0, speed: 0, hits: 0 };
@@ -354,7 +357,7 @@ export class SwordsmanModel {
     const inked = fallen ? Math.min(1, p.modeTime / F.inkBy) : 0;
     const gone = fallen ? Math.min(1, Math.max(0, (p.modeTime - F.fadeFrom) / (F.fadeTo - F.fadeFrom))) : 0;
     for (const m of [this.material, this.katanaMaterial]) {
-      m.color.copy(this.white).lerp(this.ink, inked);
+      m.color.copy(m === this.material ? this.toned : this.plain).lerp(this.ink, inked);
       m.opacity = 1 - gone;
       m.blending = gone > 0 ? THREE.NormalBlending : THREE.NoBlending; // solid until it starts to go (paintLast)
     }
