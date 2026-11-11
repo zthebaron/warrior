@@ -2,7 +2,11 @@
 
 **COMPLETE (2026-11-11, second session).** Everything in section 2 is done on this branch from fdd96f1 on: the
 trace, the scene budget, the goldens, the other stages, the four checks, how to play, the records (D-023,
-MEASUREMENTS "D-023 ...", OQ-075, B-74 to B-80), the screenshots and the self-review. What follows is the first
+MEASUREMENTS "D-023 ...", OQ-075, B-74 to B-81), the screenshots and the self-review. **One thing in step 10 was
+not done: the `ENEMIES` claim was not released.** Releasing it is a commit pushed to main, and the second session
+ran under a rule never to push to main, so the claim is left to lapse on its own at about 12:47Z on 2026-11-11
+(`tools/claim.mjs` ignores an expired claim). Step 8's command for the 5120x1440 frames is also wrong: at that size
+SwiftShader draws the ink pass black, so they were taken with `frame.ts --gpu` (B-81). What follows is the first
 session's handoff as it was written, kept as a record: its section 2 is no longer a to-do list, and where it
 differs from OQ-075 or MEASUREMENTS, they are right.
 

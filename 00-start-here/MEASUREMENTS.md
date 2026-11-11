@@ -1641,6 +1641,13 @@ drift 0.019% to 0.414%, under the 0.5% gate: the swordsmen are small in those fr
 CI's own frames (run 42958599423, taken with the Linux goldens removed so that all six were written); against the
 new darwin goldens they differ by 0, 0, 2, 21, 3 and 0 px.
 
+**The screenshots** (`docs/build-log/enemies/`). The clip sheet and the three 1920x1080 frames are the harness's own
+Chromium (SwiftShader). The three 5120x1440 frames are headed Chrome on the real GPU (`frame.ts --gpu`, ANGLE
+Metal, Apple M4 Max), because at 5120x1440 SwiftShader draws the whole ink pass black: the path, the torii and
+the sky are black and only painted things are drawn. That is not this change: chapter 2, which has no swordsmen,
+does the same, and `ink-post.ts`, `renderer.ts` and `paint-layer.ts` are untouched on this branch. It was not
+traced further (B-81). No stage of the playtest draws at that size.
+
 ## D-023 the checks (2026-11-10)
 
 The brief asks for four checks. Each exists twice, and each was seen to fail.

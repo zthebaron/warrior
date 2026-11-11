@@ -1676,6 +1676,10 @@ not done, and why:
 - **`groundRect` ignores mesh colliders and turned boxes.** Chapter 1's kit rock is beyond the path's edge. A
   level that stands a swordsman beside a mesh collider would let him walk into it.
 - The first-hit burst, his cut stroke and the grip angle were looked at in stills, never in motion.
+- **The `ENEMIES` claim was not released.** A release is a commit pushed to main and this session may not push to
+  main. It lapses by itself at about 12:47Z on 2026-11-11.
+- `frame.ts` at 5120x1440 in SwiftShader draws the ink pass black, on any level (B-81). The ultrawide screenshots
+  were taken on the real GPU instead; the first three committed were black and were replaced.
 fal: $2.5140 of this task's $6.00 (ledger rows 81 to 93); the ledger stands at $14.6000 of $20.00. Row 84 bought a
 blank sheet and row 83 an input that was not used.
 status: PROVISIONAL

@@ -1579,4 +1579,4 @@ warrior's own sword is still on his back (B-45). Only chapter 1 has swordsmen.
 **STYLE-BIBLE:** not amended. The swordsman is toned by a ramp step and carries no hue; the accent stays on the
 torii alone.
 
-implemented_by: 522ff13 (the figure and the four sounds), ffd9116 (the fight in the fixed tick, the slash in the input frame, the figure in the game), dca879e (the level format, the lint rules, chapter 1's three swordsmen, the bot that fights), fdd96f1 (the four fight checks, each seen to fail; chapter 1's trace, scene budget and darwin goldens; the paint gate's swordsman mask; how to play; a slash dropped at death)
+implemented_by: 522ff13 (the figure and the four sounds), ffd9116 (the fight in the fixed tick, the slash in the input frame, the figure in the game), dca879e (the level format, the lint rules, chapter 1's three swordsmen, the bot that fights), fdd96f1 (the four fight checks, each seen to fail; chapter 1's trace, scene budget and darwin goldens; the paint gate's swordsman mask; how to play; a slash dropped at death), a289651 (chapter 1's Linux goldens from CI's own frames; the fight stage in a fresh browser per page; "J or Left click")

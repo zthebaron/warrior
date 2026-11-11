@@ -2,17 +2,22 @@
 // For looking at the art (build-log sheets, display-size screenshots); it judges nothing.
 //
 //   node tools/harness/frame.ts <level> <out.png> [--size=WxH] [--cam=x,y,z --target=x,y,z] [--at=x,y,z --yaw=deg]
-//                               [--paint=off] [--settle=N] [--build]
+//                               [--paint=off] [--settle=N] [--build] [--gpu]
 //
 //   --cam/--target   a fixed camera (the six visual cameras are printed by --list)
 //   --at/--yaw       put the player's FEET at a point, turn the follow rig to face yaw degrees, let it settle
 //   --paint=off      the ink pass alone (D-020)
 //   --build          rebuild the bundles first; otherwise dist-harness/ must already match the source
 //   --list           print the level's visual cameras and critical path, then exit
+//   --gpu            draw it in HEADED Chrome on this machine's real GPU, launched as tools/measure-display.mjs
+//                    launches it. For display sizes: at 5120x1440 SwiftShader draws the whole ink pass black
+//                    (seen on chapter 2 and chapter 1 alike, D-023), so a frame that size needs this. It refuses
+//                    a software renderer. Opens a window.
 //
-// Runs in the harness's own Chromium (SwiftShader), so a frame here is what the goldens are made of.
+// Without --gpu it runs in the harness's own Chromium (SwiftShader), so a frame here is what the goldens are made of.
 // One playtest or frame at a time: it uses the preview port.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { chromium } from '@playwright/test';
 import { preflight } from './preflight.ts';
 import { cameras } from './visual.ts';
 import type { Vec3 } from './lib.ts';
@@ -42,7 +47,10 @@ if (!pf.browser || !pf.baseUrl) {
   for (const c of pf.result.checks) if (!c.ok) console.error(`preflight: ${c.name}: ${c.detail}`);
   process.exit(1);
 }
-const page = await pf.browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+// --gpu: the same launch as tools/measure-display.mjs (ANGLE on Metal, a window the size of the frame)
+const GPU_ARGS = ['--use-angle=metal', '--ignore-gpu-blocklist', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'];
+const real = has('gpu') ? await chromium.launch({ headless: false, channel: 'chrome', args: [...GPU_ARGS, `--window-size=${width},${height}`, '--window-position=0,0'] }) : null;
+const page = await (real ?? pf.browser).newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
 const errors: string[] = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
@@ -63,15 +71,17 @@ if (at) {
   const c = cam && target ? { pos: cam, target } : cameras(level)[2]!;
   await page.evaluate((v) => { window.__HARNESS__!.setCamera(v.pos, v.target); window.__HARNESS__!.advance(1); }, c);
 }
-writeFileSync(out!, await page.locator('canvas').first().screenshot());
 const pose = await page.evaluate(() => window.__HARNESS__!.cameraPose());
 const gpu = await page.evaluate(() => {
   const gl = document.createElement('canvas').getContext('webgl2');
   const ext = gl?.getExtension('WEBGL_debug_renderer_info');
   return gl && ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : 'unknown';
 });
+if (real && /swiftshader|llvmpipe|software/i.test(gpu)) { console.error(`--gpu got a software renderer (${gpu}): no frame written`); await real.close(); await pf.browser.close(); pf.server?.kill(); process.exit(1); }
+writeFileSync(out!, await page.locator('canvas').first().screenshot());
 console.log(`${out}  ${width}x${height}  camera ${pose.pos.map((n) => n.toFixed(2)).join(',')}  paint ${flag('paint') === 'off' ? 'off' : 'on'}  ${gpu}`);
 if (errors.length) console.error(`console errors: ${errors.slice(0, 5).join(' | ')}`);
+await real?.close();
 await pf.browser.close();
 pf.server?.kill();
 process.exit(errors.length ? 1 : 0);
