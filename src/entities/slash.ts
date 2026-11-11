@@ -26,18 +26,21 @@ import * as THREE from 'three';
 import { paint, paintMaterial, PAINT_LAST } from '../engine/paint-layer';
 import { ramp } from '../engine/palette';
 import type { CharacterAsset } from '../loaders/character';
+import { FIGHT } from '../systems/fight';
 
 type V3 = readonly [number, number, number];
 
 export const SLASH = {
+  // D-023: these four are the rule now (the cut is a hit volume in the fixed tick), so they are read from the
+  // fight's one table and the drawing follows it.
   /** the whole slash, s */
-  seconds: 0.36,
+  seconds: FIGHT.warrior.slashSec,
   /** the hand is at the hilt until here; the cut runs from here ... */
-  windupEnd: 0.07,
+  windupEnd: FIGHT.warrior.cutFrom,
   /** ... to here; then the arm is held out */
-  cutEnd: 0.19,
+  cutEnd: FIGHT.warrior.cutTo,
   /** a second press is ignored before this, and starts the slash again after it */
-  again: 0.24,
+  again: FIGHT.warrior.againSec,
   /** the slash's hold on the upper body rises over this long and lets go over this long */
   fadeIn: 0.05,
   fadeOut: 0.11,
@@ -79,29 +82,6 @@ export const SLASH = {
 
 const S = SLASH;
 const DEG = Math.PI / 180;
-
-/** Seconds into the slash, or idle. Render time, only while the game is in `play`: it is not simulation. */
-export class SlashClock {
-  /** seconds into the slash; null when there is none */
-  time: number | null = null;
-
-  /** Start a slash. False if one is still too young to be cut short. */
-  trigger(): boolean {
-    if (this.time !== null && this.time < S.again) return false;
-    this.time = 0;
-    return true;
-  }
-
-  update(dt: number): void {
-    if (this.time === null) return;
-    this.time += dt;
-    if (this.time >= S.seconds) this.time = null;
-  }
-
-  cancel(): void {
-    this.time = null;
-  }
-}
 
 /** How much of the upper body the slash holds at `time`, 0..SLASH.share. */
 export function slashShare(time: number): number {

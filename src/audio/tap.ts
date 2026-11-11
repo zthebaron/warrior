@@ -16,6 +16,10 @@
 //                        is louder the harder it is, and past `hardAbove` it is the heavy landing's sound.
 //                        The end of a ledge climb also puts the player on the ground, with no fall: no sound.
 //   torii                the run has logged one more checkpoint
+//   slash                the player has started one more slash (D-023: the slash starts in the fixed tick now,
+//                        so it is heard here like every other move, and no longer played where the key is read)
+//   the fight (D-023)    what src/systems/fight.ts reported for the tick: a swordsman notices the warrior, the
+//                        warrior's blade lands (and, on the hit that fells him, he falls), a swordsman's blade lands
 //
 // A teleport (a level starting, a respawn) drops the player from where it stands, which reads as a landing a
 // tick or two later. reset() is called at each teleport and the first landing after it makes no sound.
@@ -24,6 +28,7 @@
 
 import type { Player, PlayerState } from '../entities/player';
 import type { GameAudio } from './audio';
+import type { FightEvent } from '../systems/fight';
 
 export const SOUND_TAP = {
   /** the second jump is the first jump's sound at this rate */
@@ -46,6 +51,8 @@ export class SoundTap {
   private fallSpeed = 0;
   private checkpoints = 0;
   private skipLanding = true;
+  /** how many slashes the player had started at the last tick; -1 before the first tick */
+  private slashes = -1;
 
   constructor(private readonly audio: GameAudio) {}
 
@@ -59,7 +66,15 @@ export class SoundTap {
   }
 
   /** Call once after each fixed tick that advanced the player. Reads only. */
-  afterTick(player: Player, checkpoints: number): void {
+  afterTick(player: Player, checkpoints: number, fight: readonly FightEvent[] = []): void {
+    if (this.slashes >= 0 && player.slashCount > this.slashes) this.audio.play('slash');
+    this.slashes = player.slashCount;
+    for (const e of fight) {
+      if (e.kind === 'notice') this.audio.play('notice');
+      else if (e.kind === 'hit') this.audio.play('hit');
+      else if (e.kind === 'fell') { this.audio.play('hit'); this.audio.play('fell'); }
+      else if (e.kind === 'cut') this.audio.play('cut');
+    }
     const s = player.state;
     const was = this.state;
     if (was !== null && s !== was) {

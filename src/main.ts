@@ -26,7 +26,10 @@ import { buildHowto, chaptersFrom, keyName, type HowtoChapter } from './ui/howto
 import { AUDIO, GameAudio } from './audio/audio';
 import { SoundTap } from './audio/tap';
 import { Gamepad, GAMEPAD } from './engine/gamepad';
-import { SlashArc, SlashClock } from './entities/slash';
+import { SlashArc } from './entities/slash';
+import { Swordsmen, type SwordsmanSnapshot } from './entities/swordsmen';
+import { SWORDSMAN } from './entities/swordsman-model';
+import { FIGHT, windupSec, type FightEvent, type WarriorView } from './systems/fight';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -77,6 +80,11 @@ export interface HarnessSnapshot {
   hazards: { index: number; type: string; pos: Vec3 }[];
   /** Crow cues by hazard index: the bot holds at a torii for a perched -> airborne edge (Q2, Q5). */
   crows: { index: number; airborne: boolean; pos: Vec3 }[];
+  /** D-023: every swordsman of the level, in the level file's order: where he is and what he is doing */
+  enemies: SwordsmanSnapshot[];
+  /** D-023: seconds into the warrior's slash, or null; and how many slashes have started */
+  slash: number | null;
+  slashes: number;
   /** fixed ticks that consumed an input frame (every executed tick except `death` ticks) */
   inputTicks: number;
   checkpoints: number[];
@@ -104,6 +112,13 @@ interface HarnessApi {
   tuning: typeof TUNING;
   /** Rule constants the harness must agree with (checkpoint activation radius, height slack). */
   rules: { checkpointRadius: number; goalHeightTolerance: number; goalRadiusDefault: number; respawnDelaySec: number; fixedDt: number };
+  /** D-023: the fight's one table, live, and the wind-up as it is actually run (never under its minimum). */
+  fight: typeof FIGHT;
+  windupSec(): number;
+  /** D-023: the player's facing, degrees (teleportPlayer's second argument sets it). */
+  facing(): number;
+  /** D-023: the swordsman's clips (name, seconds); empty on a level with none. */
+  enemyClips(): { name: string; duration: number }[];
   rendererInfo(): { calls: number; triangles: number; geometries: number; textures: number };
   /** D-018: the STYLE §6 passes the running post stack was compiled with, in order. */
   postPasses(): string[];
@@ -149,8 +164,8 @@ interface HarnessApi {
   startJson(text: string): Promise<{ ok: boolean; error: string | null }>;
   /** B-24: the level files' text as bundled, keyed by file name; preflight compares it with levels/ on disk. */
   levelSources(): Promise<Record<string, string>>;
-  /** Harness-only: move the player (PR 4's hazards stage). */
-  teleportPlayer(pos: Vec3): void;
+  /** Harness-only: move the player (PR 4's hazards stage). facingDeg: also turn it (D-023's fight stage). */
+  teleportPlayer(pos: Vec3, facingDeg?: number): void;
   /** D-021: show or hide every level mesh whose name starts with `prefix` (the undrawn rock, the cliff wall). Returns how many. */
   showMeshes(prefix: string, visible: boolean): number;
   /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
@@ -281,10 +296,11 @@ async function boot(): Promise<void> {
   const audio = !HARNESS_MODE && shellEnabled() ? new GameAudio() : null;
   const tap = audio ? new SoundTap(audio) : null;
 
-  // D-022: a gamepad, and the sword slash's clock. Neither exists in the harness's test mode.
+  // D-022: a gamepad. It does not exist in the harness's test mode.
   const pad = HARNESS_MODE ? null : new Gamepad();
   if (pad) input.setPad({ move: () => pad.move(), held: (a) => pad.held(a) });
-  const slashClock = HARNESS_MODE ? null : new SlashClock();
+  // D-023: the level's swordsmen, or null on a level with none (every level but chapter 1)
+  let enemies: Swordsmen | null = null;
   let slashArc: SlashArc | null = null;
   /** The ink stroke, made the first time it is wanted: a page that never slashes has no such mesh. */
   const strokeOf = (p: Player): SlashArc => {
@@ -295,11 +311,13 @@ async function boot(): Promise<void> {
     }
     return slashArc;
   };
+  /**
+   * The sword was pressed (a key, the mouse, the pad). D-023: the slash itself starts in the fixed tick, from the
+   * input frame, so this only hands the press to the input system; the sound tap hears the slash start.
+   */
   const slash = (): void => {
-    if (!slashClock || !player || !state.is('play') || shell?.helpOpen) return;
-    if (!slashClock.trigger()) return;
-    strokeOf(player);
-    audio?.play('slash');
+    if (!player || !state.is('play') || shell?.helpOpen) return;
+    input.pressSlash();
   };
 
   const landingMark = new LandingMark(physics);
@@ -335,6 +353,15 @@ async function boot(): Promise<void> {
       player = new Player(physics, { x, y, z }, facing, getCharacter(CHARACTER.asset));
       player.mesh.userData['translates'] = 'player';
       renderer.scene.add(player.mesh);
+    }
+    enemies?.dispose();
+    enemies = null;
+    if (data.enemies?.length) {
+      const figure = getCharacter(SWORDSMAN.asset);
+      if (!figure) throw new Error(`[level] ${data.id} places swordsmen but "${SWORDSMAN.asset}" is not decoded: prepareLevel was skipped`);
+      enemies = new Swordsmen(data, figure);
+      enemies.root.userData['translates'] = 'enemy'; // NOT #18: a swordsman may translate (D-023)
+      renderer.scene.add(enemies.root);
     }
     paintLayer.refresh();
     const lvl = level;
@@ -435,6 +462,13 @@ async function boot(): Promise<void> {
   };
 
   // ---------- loop ----------
+  /** What a swordsman is told about the warrior this tick. absent: between a death and the respawn. */
+  const warriorView = (p: Player, present: boolean): WarriorView => {
+    const f = p.feet(tmpFeet);
+    return { present, x: f.x, y: f.y, z: f.z, facing: p.facing, cutting: present && p.cutting(), slashId: p.slashCount };
+  };
+  const NO_FIGHT: FightEvent[] = [];
+
   const onFixedUpdate = (dt: number): void => {
     if (!level || !player) return;
     worldTick++; // every executed tick advances the world: play, death, or an explicit frame step
@@ -443,9 +477,11 @@ async function boot(): Promise<void> {
       // the player and input do not advance, and nothing is recorded, so traces stay aligned.
       level.fixedUpdate(worldTime(), dt);
       physics.step(dt);
+      enemies?.fixedUpdate(dt, warriorView(player, false)); // they finish what they were doing; nobody is there to see or cut
       if (--deathTicksLeft <= 0) {
         const [x, y, z] = respawn.pos;
         player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
+        enemies?.reset(); // D-023: a fallen swordsman comes back when the warrior does
         camRig.snap(player.feet(tmpFeet), player.facing);
         state.transition('play');
         tap?.respawned(checkpointLog.length);
@@ -463,8 +499,12 @@ async function boot(): Promise<void> {
     physics.step(dt);
     profiler.end('physics');
     tools.probe.sample(player.feet(tmpFeet), player.grounded);
+    // D-023: the swordsmen, after the warrior has moved. A cut that lands is a death like any other (Q6: one way
+    // to die, nothing else happens on contact). Only from `play`, as every rule transition is.
+    const fight = enemies ? enemies.fixedUpdate(dt, warriorView(player, state.is('play'))) : NO_FIGHT;
+    if (state.is('play') && fight.some((e) => e.kind === 'cut')) die(player.feet(tmpFeet));
     rulesTick();
-    tap?.afterTick(player, checkpointLog.length); // D-022: reads the tick, writes nothing
+    tap?.afterTick(player, checkpointLog.length, fight); // D-022: reads the tick, writes nothing
     instrumentTick();
   };
 
@@ -491,12 +531,6 @@ async function boot(): Promise<void> {
 
   const onRender = (alpha: number, frameDt: number): void => {
     if (pad) padFrame(pad, frameDt);
-    if (slashClock && player) {
-      // render time, and only while the game runs: paused, the slash waits; anywhere else it is dropped
-      if (state.is('play')) slashClock.update(frameDt);
-      else if (!state.is('pause')) slashClock.cancel();
-      player.slashTime = slashClock.time;
-    }
     profiler.begin('animation');
     level?.render(alpha);
     player?.render(alpha);
@@ -514,7 +548,9 @@ async function boot(): Promise<void> {
     tools.update(frameDt);
     if (level) level.debugRoot.visible = overlay.visible;
     // D-022: the slash's ink stroke faces the camera, so it is placed once the camera is. No stroke exists until a first slash.
+    if (player && player.slashTime !== null && !slashArc) strokeOf(player);
     slashArc?.update(player?.slashTime ?? null, renderer.camera);
+    enemies?.render(alpha, renderer.camera); // D-023: their ink faces the camera too
 
     profiler.begin('render');
     if (!skipRender) {
@@ -760,6 +796,9 @@ async function boot(): Promise<void> {
       lastDeath,
       runTime: worldTime(),
       inputTicks,
+      enemies: enemies?.snapshot() ?? [],
+      slash: player?.slashTime ?? null,
+      slashes: player?.slashCount ?? 0,
     });
     // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
     // Mirrors GameLoop.frame's gate: ticks run while the world runs (play AND death, D-004), not in pause.
@@ -798,6 +837,7 @@ async function boot(): Promise<void> {
         deathTicksLeft = 0;
         level.snapTo(worldTime(), loop.dt);
         player.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facing * DEG2RAD);
+        enemies?.reset(); // as a real respawn does (D-023)
         respawn = { pos, facing };
         camRig.snap(player.feet(tmpFeet), player.facing);
         checkpointLog = [];
@@ -820,6 +860,10 @@ async function boot(): Promise<void> {
         get respawnDelaySec() { return GAME_RULES.respawnDelaySec; },
         fixedDt: loop.dt,
       },
+      fight: FIGHT,
+      windupSec: () => windupSec(),
+      facing: () => (player ? player.facing * RAD2DEG : 0),
+      enemyClips: () => enemies?.clips() ?? [],
       postPasses: () => [...renderer.post.passes],
       paintLayer: (on) => {
         if (on !== undefined) paintLayer.enabled = on;
@@ -998,8 +1042,8 @@ async function boot(): Promise<void> {
         const top = [...hist.entries()].sort((x, y) => y[1] - x[1]).slice(0, 6).map(([k, n]) => `#${k.toString(16).padStart(6, '0')}:${n}`);
         return { ok: true, error: null, ...info, maps, materials: mats.map((m) => m.type), top, ktx2: getKtx2Support(), pixels: { covered, nearPalette: near, maxError } };
       },
-      teleportPlayer: (pos) => {
-        player?.teleport({ x: pos[0], y: pos[1], z: pos[2] });
+      teleportPlayer: (pos, facingDeg) => {
+        player?.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facingDeg === undefined ? undefined : facingDeg * DEG2RAD);
       },
       showMeshes: (prefix, visible) => {
         let n = 0;
