@@ -50,7 +50,10 @@
       /* The title. Three shapes of screen, one painting (1376x768), whose keep zone is x 17% to 81%:
          wider than the painting   the whole painting, full height, centred; title-wide.webp beside it
          between the two           the painting fills the screen; its sides are cropped, never past the keep zone
-         narrower than the zone    the keep zone across the top; title-tall.webp below it; the buttons under it */
+         narrower than the zone    the keep zone across the top; title-tall.webp below it; the buttons under it.
+                                   The painting takes the height the buttons leave: in a near-square window it is
+                                   shorter than the keep zone at full width, so it shows more than the zone, and
+                                   never less than its own full height (B-59) */
       #title { position: fixed; inset: 0; z-index: 30; overflow: hidden; display: grid; place-items: center;
                font-family: var(--serif); color: var(--ink);
                background: var(--paper) url(./assets/ui/title-wide.webp) center / auto 100% no-repeat;
@@ -72,13 +75,28 @@
       }
       @media (max-aspect-ratio: 1146/1000) {
         #title { place-items: start center; background: var(--paper) url(./assets/ui/title-tall.webp) top center / 100% auto no-repeat; }
-        #title .stage { height: auto; width: 100%; aspect-ratio: 1.1467; }
-        #title .art { -webkit-mask-image: linear-gradient(to bottom, #000 94%, transparent 100%);
+        /* a column the height of the screen: the painting's box first, as tall as the keep zone needs at this
+           width (100cqw / 1.1467) and shrinking when the panel under it needs the room; the panel keeps its size */
+        #title .stage { height: 100%; width: 100%; aspect-ratio: auto; display: flex; flex-direction: column; }
+        #title .stage picture { position: relative; flex: 0 1 calc(100cqw / 1.1467); min-height: 0; }
+        /* the image is as tall as its box and as wide as the painting is at that height, up to the screen's
+           width: so the box is never wider than the painting (which would crop its top and bottom) */
+        #title .art { width: auto; max-width: 100%; margin: 0 auto;
+                      -webkit-mask-image: linear-gradient(to bottom, #000 94%, transparent 100%);
                       mask-image: linear-gradient(to bottom, #000 94%, transparent 100%); }
-        #title .panel { left: 0; right: 0; bottom: auto; top: 100%; margin: 0; padding: 5cqw 6cqw 0; text-align: center;
+        #title .panel { position: static; flex: none; margin: 0; padding: 5cqw 6cqw 3cqw; text-align: center;
                         font-size: clamp(15px, 4.4cqw, 24px); background: none; }
         #title .row { flex-direction: column; align-items: stretch; gap: 0.6em; }
         #title .credits { margin-top: 1.1em; text-shadow: 0 0 0.5em var(--paper), 0 0 0.25em var(--paper); }
+      }
+      @media (max-aspect-ratio: 1146/1000) and (min-aspect-ratio: 2/3) {
+        /* Squarer than 2:3 the painting's box is shorter than the keep zone at full width, so the extension behind
+           the buttons (laid from the top of the screen) would be the wrong part of it. Here the panel fills what
+           is left and carries the extension from where the painting ends: title-tall.webp is the keep zone and
+           then its mirror image, so the mirror starts 100cqw / 1.1467 down it. Narrower than 2:3 (a phone) the
+           panel always fits under the whole keep zone, and nothing is changed. */
+        #title .panel { flex: 1 0 auto;
+                        background: var(--paper) url(./assets/ui/title-tall.webp) center calc(-100cqw / 1.1467) / 100cqw auto no-repeat; }
       }
 
       /* How to play: the courtyard painting as its header, a column of text under or beside it. */

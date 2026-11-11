@@ -620,7 +620,7 @@ async function boot(): Promise<void> {
     : null;
   if (shell) {
     errorBanner.style.zIndex = '50'; // above the title: a level that fails to load must be seen
-    void bundledLevelSources().then((s) => { chapters = chaptersFrom(s); });
+    void bundledLevelSources().then((s) => { chapters = chaptersFrom(s); shell.refreshHelp(); });
   }
 
   // ---------- HUD + UI keys ----------
