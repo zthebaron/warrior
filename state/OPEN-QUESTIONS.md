@@ -1661,7 +1661,11 @@ took, each PROVISIONAL:
     rest of the stream is what it was. The four older levels' chaos runs carry slashes that cut nothing.
 11. **The four checks exist twice** (`check:fight` under Node; the `fight` stage in the real game on a fixture)
     and each is run against a broken fight in CI. `fight` is a fifth once-per-run stage in the `game` job.
-12. **Ultracode was on for both sessions and no workflow was run.** The brief ("usage is tight, no multi-agent
+12. **The `fight` stage launches a fresh Chromium for each of its pages.** Reusing one browser stalled every later
+    page: past the 30 s timeout on Linux CI, about 5 s a page on darwin. Found by the first CI run of the stage.
+13. **How to play joins an action's keys with "or"** where it names them in a sentence. The sword is the first
+    action with two key names, and the page read "Press J Left click". Seen by rendering the page.
+14. **Ultracode was on for both sessions and no workflow was run.** The brief ("usage is tight, no multi-agent
     review workflow") and Tim's resume message ("No multi-agent review workflow") are the more specific
     instruction. The review was one focused self-review of the combat code; it found item 9.
 not done, and why:

@@ -1512,8 +1512,9 @@ nothing. Tim should try one.
 `src/systems/fight.ts` `FIGHT`: the one table of the fight, read by the game, the level linter, `check:fight` and
 the harness. **Every value is authored by the builder to the brief's words and is PROVISIONAL for Tim's feel
 (OQ-075). Nobody has played it.** The fixed tick is 1/60 s, so a time in the table runs as a whole number of
-ticks; those are in the last column and were counted from the stepped fight (`npm run check:fight`, the `fight`
-stage), not worked out from the table.
+ticks; those are in the last column and are what `npm run check:fight` prints in its three `measured:` lines,
+counted from the stepped functions, not worked out from the table (the 0.05 row and the trace's gap are the
+`fight` stage's and the trace's own).
 
 | Constant | Value | Kind | Basis, and what was measured |
 |---|---|---|---|
@@ -1562,7 +1563,8 @@ budget untouched, 9 of 9, and `frame-hashes --diff` against main's build was ide
 measured values). Made from `assets/hero/input/swordsman.png` and `swordsman_back.png` (the courtyard painting's
 swordsman, redrawn to an A-pose with empty hands) by `fal-ai/hunyuan3d-v3/image-to-3d`, cut to 14,700 triangles
 by `tools/gen/process.mjs --tris`, rigged and given clips by one `fal-ai/meshy/rigging/multi-animation` request,
-assembled by `tools/gen/build-swordsman.mjs`. Looked at in `docs/build-log/enemies/clip-sheet.png`; never judged
+assembled by `tools/gen/build-swordsman.mjs` (run again from the downloads in the second session: the rigged file
+came out byte-identical). Looked at in `docs/build-log/enemies/clip-sheet.png`; never judged
 in motion by a person.
 
 | Clip | Length | From |
@@ -1580,7 +1582,7 @@ in motion by a person.
 | `tone` | `wash-light` | measured | as delivered his texture is the paper's own value and does not read against it; multiplied by this ramp step it does. No hue |
 | `faceTurn` | pi | derived | the model looks down +Z; forward in the game is -Z |
 | `blendSec` | 0.12 s | authored | a change of clip is faded over this |
-| `slashMarks` | cut from 0.433 s to 0.667 s of 1.5 s | measured | printed by `build-swordsman.mjs`: where the hand moves fastest in the slash clip (peak 11.8 m/s). The fight's wind-up, cut and recovery are each mapped onto their part of the clip at these marks |
+| `slashMarks` | cut from 0.433 s to 0.667 s of 1.5 s | measured | printed by `build-swordsman.mjs --probe`: the stretch of the slash clip in which the sword hand is above half its peak speed (11.82 m/s at 0.500 s). The fight's wind-up, cut and recovery are each mapped onto their part of the clip at these marks |
 | `lastFrameShy` | 0.001 s | derived | a looping action evaluated AT its end reads its start |
 | `movingAbove` | 0.2 m/s | authored | slower than this he shows the stance, not a stride |
 | `walkRate`, `closeRate` | 1, 1.3 | authored | the walk clips' pace |
@@ -1613,7 +1615,9 @@ in motion by a person.
 | `FIGHT_STAGE.lowWindupSec` | 0.05 s | authored | windupSec set a tenth of the minimum |
 | `FIGHT_STAGE.broken` | hitsToFall 1, reach 0.1 m, closing speed x1.01, wind-up 0.1 s | authored | the four broken fights |
 
-**Chapter 1, by the bot** (darwin and Linux agree to the tick): goal at 19.70 s of the 48 s budget (15.35 s
+**Chapter 1, by the bot** (darwin and Linux agree to the tick: on CI run 42958599423 Linux replayed the
+darwin-recorded trace with all 12 changes of mode on the recorded ticks, and measured the same 137 draw calls and
+331,496 triangles): goal at 19.70 s of the 48 s budget (15.35 s
 before the swordsmen); 3 down, 6 sword presses, 1.93 s spent fighting. Chapter 1's trace was recorded again from
 that run (1,182 frames, was 921): the brief makes the slash recorded input and asks that the bot fight, which the
 old trace did not (it ran past all three: a swordsman does not block). No other level's trace changed.
@@ -1633,7 +1637,9 @@ The crow segments still fail blind from the same offsets (0, 3, 4, 7 and 3, 7) a
 differ, all of them chapter 1's (six frames, their counters, geometries 35 to 39, textures 22 to 26, renderables
 84 to 90, painted meshes 42 to 48); the other 168 values, on four levels, are identical. Chapter 1's goldens were
 written again (`--update-goldens` on darwin; Linux from CI's own frames). Against the old goldens the six cameras
-drift 0.019% to 0.414%, under the 0.5% gate: the swordsmen are small in those frames.
+drift 0.019% to 0.414%, under the 0.5% gate: the swordsmen are small in those frames. The six Linux goldens are
+CI's own frames (run 42958599423, taken with the Linux goldens removed so that all six were written); against the
+new darwin goldens they differ by 0, 0, 2, 21, 3 and 0 px.
 
 ## D-023 the checks (2026-11-10)
 
@@ -1667,13 +1673,25 @@ plays one attempt in the real game by input frames only: 713 ticks, 617 input fr
 | 3 | the recorded input replayed in two fresh pages: all 713 ticks identical to the live run and to each other (the warrior's position, both deaths, the checkpoint, the swordsman's every field) | closing speed x1.01: differs from tick 87 |
 | 4 | 37 ticks (0.617 s) from the wind-up to the cut; 31 (0.517 s) with `windupSec` set to 0.05 | wind-up run at 0.1 s: "he cut 0.117 s after the wind-up began" |
 
+**The stage launches a fresh Chromium for each of its seven pages.** Its first cut reused one browser: on Linux
+the second page never loaded (CI run 42958599423, `page.goto` timed out after rules 1, 2 and 4 had passed on the
+first page), and on darwin the same stage took 39.4 s against 3.9 s with fresh browsers. `run.mjs` already gives
+every stage its own browser for the same reason (SwiftShader's GPU process wedging). A page that does not come
+up is reported as an environment failure, with `diagnose`'s evidence, as `openGame` does.
+
 `replay` on chapter 1 also holds the fight exactly: 12 changes of mode by three swordsmen, each on the tick the
 trace recorded. Run twice on darwin, identical.
+
+The warrior's slash clock was moved into `src/systems/fight.ts` after the engine-only proof (so that
+`check:fight` runs the same function the player does). After the move every level's replay still ends 0.000 u
+from its recorded position on the recorded tick (gym 1,677, chapter 2 1,638, chapter 3 1,759, chapter 4 1,449
+ticks, their traces untouched), and `frame-hashes` is as above.
 
 ## D-023 sound (2026-11-10)
 
 `tools/gen/build-audio.mjs` `AUDIO_BUILD`, `src/audio/audio.ts` `AUDIO.gain` (notice 0.5, hit 0.8, fell 0.8, cut
-0.9: authored). **Nothing here was judged by ear.** Ledger rows 89 to 93, $0.0100. No voice in any take: a cry
+0.9: authored). **Nothing here was judged by ear.** Ledger rows 89 to 93, $0.0100. Each take's numbers are
+`tools/gen/audio-stats.mjs` on the take, measured again in the second session. No voice in any take: a cry
 cannot be judged by a session that cannot hear it.
 
 | Take | Asked for | Centroid Hz | Verdict |
@@ -1681,7 +1699,7 @@ cannot be judged by a session that cannot hear it.
 | notice | a blade loosened in its scabbard, a rustle of cloth | 4,935 | ships, cut to 0.40 s (silent after 0.35 s) |
 | hit | steel on steel over a dull thud | 367, with 54% of its energy under 200 Hz | rejected: a low thud with no steel in it |
 | hit-b | two blades meeting, metal only | 5,854; peak -29.8 dB before it is set to -3 dB | ships as `hit`, cut to 0.32 s (silent after 0.29 s) |
-| fell | a body in heavy cloth on stone, a sword clattering once | 266 as shipped, 70% under 200 Hz | ships, with 188 ms of silence before the thud cut away; 0.76 s |
+| fell | a body in heavy cloth on stone, a sword clattering once | 324 (57% under 200 Hz); 266 and 70% as shipped | ships, with 188 ms of silence before the thud cut away; 0.76 s |
 | cut | a blade through cloth, a dull thump | 5,586 | ships, 0.60 s |
 
 As shipped (`node tools/gen/build-audio.mjs --check`): notice 5,642 B, hit 4,702 B, fell 10,031 B, cut 7,836 B
@@ -1695,7 +1713,7 @@ and stands in front of a gate. These are the first measured wrong values those t
 
 | Check | With swordsmen, unchanged check | Now |
 |---|---|---|
-| static | 610 painted sky px changed between two ticks on darwin, 609 on Linux (CI run 42953349314): his idle clip and his patrol | 0 of 450,352 judged; 2,509 px that the three swordsmen cover are not judged |
+| static | 610 painted sky px changed between two ticks on darwin, 609 on Linux (CI run 42953349314): his idle clip and his patrol | 0 of 450,352 judged on darwin, 0 of 450,325 on Linux (run 42958599423); 2,509 px that the three swordsmen cover are not judged on either |
 | hides no accent pixel | 47 px of the goal torii are behind `guard-goal` from one camera | 0; 47 more are counted as behind a swordsman |
 
 The pixels a swordsman covers are found by drawing the same frame, at the same tick, without the swordsmen

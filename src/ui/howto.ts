@@ -110,7 +110,7 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   const fill = (name: string): Node | string => {
     if (name === 'move') return moveKeys();
     if (name === 'delay') return `${d.respawnDelaySec} s`;
-    return bound(name).length ? keys(bound(name)) : name;
+    return bound(name).length ? keys(bound(name), ' or ') : name; // the sword has two (J or Left click); every other action has one name
   };
 
   // --- the rules ---

@@ -25,7 +25,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { FIXED_HZ, Stage, guard, hdist, VIEWPORT, type Ctx, type Foe, type InputFrame, type StageResult, type Vec3 } from './lib.ts';
+import { EnvironmentError, FIXED_HZ, Stage, diagnose, guard, hdist, VIEWPORT, type Ctx, type Foe, type InputFrame, type StageResult, type Vec3 } from './lib.ts';
+import { launchBrowser } from './preflight.ts';
 import { NAV_CONFIG } from './nav.ts';
 
 const FIXTURE = 'tools/harness/fixtures/swordsman.json';
@@ -142,13 +143,29 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
     const fx = JSON.parse(text) as { spawn: { pos: Vec3 }; checkpoints: { pos: Vec3 }[]; enemies: { pos: Vec3 }[] };
     const torii = fx.checkpoints[0]!.pos, post = fx.enemies[0]!.pos;
     const errors: string[] = [];
-    /** A fresh page with the fixture running; `set` and `times` change the swordsman's live table before anything is stepped. */
+    /**
+     * A fresh page with the fixture running; `set` and `times` change the swordsman's live table before anything
+     * is stepped. Every page gets a freshly launched Chromium, closed with it (shut): on Linux CI the second page
+     * opened in one browser never loaded (run 42958599423: page.goto timed out after the first attempt had passed).
+     * run.mjs gives every stage its own browser for the same reason, SwiftShader's GPU process wedging; this stage
+     * is seven short stages in a row, so it does the same. ctx.browser is not used.
+     */
+    const browsers: import('@playwright/test').Browser[] = [];
+    const shut = async (page: Page): Promise<void> => { await page.context().browser()?.close().catch(() => {}); };
     const open = async (set: Record<string, number> = {}, times: Record<string, number> = {}): Promise<Page> => {
-      const page = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+      const browser = await launchBrowser();
+      browsers.push(browser);
+      const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
       page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
       page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
-      await page.goto(`${ctx.baseUrl}/?harness=1&level=00-gym`);
-      await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
+      try {
+        await page.goto(`${ctx.baseUrl}/?harness=1&level=00-gym`);
+        await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1', null, { timeout: 20000 });
+      } catch (err) {
+        // the page never came up: nothing about the fight was observed. Environment, with evidence (as openGame)
+        const why = (err instanceof Error ? err.message : String(err)).split('\n')[0];
+        throw new EnvironmentError(`fixture page ${browsers.length} did not load: ${why} | ${await diagnose({ ...ctx, browser } as Ctx)}`);
+      }
       const started = await page.evaluate((t) => window.__HARNESS__!.startJson(t), text);
       if (!started.ok) throw new Error(`fixture did not load: ${started.error ?? 'unknown'}`);
       await page.evaluate(([set, times]) => {
@@ -198,7 +215,7 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
     try {
       // ---------- the fight as shipped ----------
       const run = await attempt(live, args(false));
-      await live.close();
+      await shut(live);
       if (!st.check('the attempt was played to its end', run.ok, run.stopped ?? `${run.log.length} ticks, ${run.frames.length} input frames`)) return;
       const cutTicks = run.deathTick! - run.windupTick!;
       st.check('2. his slash sends the warrior to the checkpoint', cutSendsBack(run) === null,
@@ -209,9 +226,9 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
         twoHits(run) ?? `one slash: ${run.afterOne!.hits} hit, ${run.afterOne!.mode}; two: ${run.afterTwo!.mode}; still down ${(C.holdTicks / FIXED_HZ).toFixed(0)} s later; on his post again after the warrior's respawn`);
 
       const pageA = await open(), logA = await replayOf(pageA, run.frames, run.log.length);
-      await pageA.close();
+      await shut(pageA);
       const pageB = await open(), logB = await replayOf(pageB, run.frames, run.log.length);
-      await pageB.close();
+      await shut(pageB);
       const d1 = sameLog(run.log, logA), d2 = sameLog(logA, logB);
       st.check('3. a replay of the fight is identical to the live run', d1 === null, d1 ?? `${run.log.length} ticks: the warrior, the swordsman, both deaths and the checkpoint, bit for bit`);
       st.check('3. a replay of the fight is identical run to run', d2 === null, d2 ?? `${logA.length} ticks, two fresh pages`);
@@ -220,7 +237,7 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const low = await open({ windupSec: C.lowWindupSec });
       const lowRun = await attempt(low, args(true));
       const lowAsk = await low.evaluate(() => window.__HARNESS__!.fight.swordsman['windupSec']);
-      await low.close();
+      await shut(low);
       st.check(`4. the wind-up is never shorter than the minimum (windupSec set to ${C.lowWindupSec})`, lowAsk === C.lowWindupSec && windupHolds(lowRun) === null,
         windupHolds(lowRun) ?? `${secs(lowRun.deathTick! - lowRun.windupTick!)} from the wind-up to the cut with the table asking for ${lowAsk} s`);
 
@@ -228,28 +245,28 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const B = C.broken;
       const one = await open({ hitsToFall: B.hitsToFall });
       const oneRun = await attempt(one, args(false));
-      await one.close();
+      await shut(one);
       st.check(`seen to fail: rule 1 with hitsToFall ${B.hitsToFall}`, twoHits(oneRun) !== null, twoHits(oneRun) ?? 'PASSED: the rule does not catch a swordsman who falls to one hit');
 
       const blunt = await open({ reach: B.reach });
       const bluntRun = await attempt(blunt, { ...args(true), wait: C.holdTicks });
-      await blunt.close();
+      await shut(blunt);
       st.check(`seen to fail: rule 2 with his reach ${B.reach} m`, cutSendsBack(bluntRun) !== null, cutSendsBack(bluntRun) ?? 'PASSED: the rule does not catch a blade that reaches nothing');
 
       const drift = await open({}, { closeSpeed: B.closeSpeedTimes });
       const driftLog = await replayOf(drift, run.frames, run.log.length);
-      await drift.close();
+      await shut(drift);
       st.check(`seen to fail: rule 3 with his closing speed x${B.closeSpeedTimes}`, sameLog(run.log, driftLog) !== null, sameLog(run.log, driftLog) ?? 'PASSED: the rule does not catch a fight that changed');
 
       const quick = await open({ windupMinSec: B.windupMinSec, windupSec: B.windupMinSec });
       const quickRun = await attempt(quick, args(true));
-      await quick.close();
+      await shut(quick);
       st.check(`seen to fail: rule 4 with the wind-up run at ${B.windupMinSec} s`, windupHolds(quickRun) !== null, windupHolds(quickRun) ?? 'PASSED: the rule does not measure the wind-up');
 
       st.check('zero console errors', errors.length === 0, errors.slice(0, 3).join(' | ') || 'none');
       st.data['fight'] = { ticks: run.log.length, frames: run.frames.length, windupToCutTicks: cutTicks, windupSec: shipped.windup };
     } finally {
-      await live.close().catch(() => {});
+      for (const b of browsers) await b.close().catch(() => {});
     }
   });
 }

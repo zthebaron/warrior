@@ -290,6 +290,33 @@ for (const [name, rule] of RULES) {
   for (let k = 0; k < 300; k++) tick(d, { x: -near(), z: 0 });
   const up = first(d, 'windup'), cut = first(d, 'cut', up);
   console.log(`  measured: wind-up to his cut ${sec(cut - up)}; noticed at tick ${first(d, 'notice')}, wind-up from tick ${up}`);
+  // how many ticks he spends in each mode, counted from the log (the first unbroken run of each)
+  const run = (dl: Duel, mode: string): number => {
+    const at = dl.log.findIndex((l) => l.split(' ')[1] === mode);
+    let n = 0;
+    while (at >= 0 && dl.log[at + n]?.split(' ')[1] === mode) n++;
+    return n;
+  };
+  const h = duel(GUARD);
+  tick(h, { x: -near(), z: 0, press: true });
+  for (let k = 0; k < 120; k++) tick(h, { x: -near(), z: 0 });
+  console.log(`  measured: his modes, in ticks: wind-up ${run(d, 'windup')}, blade out ${run(d, 'slash')}, recovery ${run(d, 'recover')}, stagger ${run(h, 'stagger')}`);
+  // the warrior's slash clock: tick 0 is the press
+  let t: number | null = stepSlash(null, true, DT).time;
+  const cutting: number[] = [];
+  let ends = -1;
+  for (let k = 1; k <= 60 && ends < 0; k++) {
+    t = stepSlash(t, false, DT).time;
+    if (slashCutting(t)) cutting.push(k);
+    if (t === null) ends = k;
+  }
+  let again = -1;
+  for (let k = 1; k <= 60 && again < 0; k++) {
+    let u: number | null = stepSlash(null, true, DT).time;
+    for (let j = 1; j < k; j++) u = stepSlash(u, false, DT).time;
+    if (stepSlash(u, true, DT).started) again = k;
+  }
+  console.log(`  measured: the warrior's slash, in ticks after the press: cutting on ${cutting[0]} to ${cutting.at(-1)} (${cutting.length} ticks), over on ${ends}, a second press taken from ${again}`);
 }
 console.log(failed ? `CHECK-FIGHT FAIL (${failed} of ${RULES.length} rules)` : `CHECK-FIGHT PASS (${RULES.length} rules)`);
 process.exit(failed ? 1 : 0);
