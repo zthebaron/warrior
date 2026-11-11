@@ -1313,3 +1313,182 @@ other four levels are unchanged (the figure is still 29,400 triangles).
 D-020 cost 4.39 ms at 5120x1440 from the rig. "D-020 production load", not measured there: on a CI runner the
 bare-URL load took 2.1 s at 640x360 (run 42896909133), against the 20 s wait; with this pass's cards and
 character, 1.8 s (run 42911617289).
+
+## D-022 title screen (2026-11-10)
+
+`index.html` (markup, CSS and the gate), `src/ui/shell.ts` `SHELL`, `tools/art/ui-art.mjs` `UI_ART`,
+`assets/ui/art.json`. The two paintings are Tim's (`assets/ui/src/`); `assets/ui/MANIFEST.md` lists what ships.
+
+**Measured.** `node tools/harness/shell-shots.ts <dir>` draws the production page in Chromium at each size and
+computes, from the image's real box and `object-fit`, where the painting's keep zone lands on screen:
+
+| Size | Painting on screen | Keep zone (x 17% to 81%) | Result |
+|---|---|---|---|
+| 400x800 | x -106 to 519, y 0 to 349 | x 0 to 400 | whole; no button or credit line cut off |
+| 1920x1080 | x -7 to 1927, y 0 to 1080 | x 322 to 1560 | whole |
+| 5120x1440 | x 1270 to 3850, y 0 to 1440 | x 1709 to 3360 | whole; the painting is whole too |
+
+The first run of that measurement found two faults, both fixed: the focal point was 49% (the zone's centre), which
+cropped 4 px of the zone at 400 px wide, where the right figure is 47.2%; and the stage's `max-width: 100%`
+resolved against an auto-sized grid track, so at 1920x1080 the box was 1935 px wide.
+
+Sizes shipped (`npm run assets:budget`, `tools/assets/shell-budget.mjs`): `title.webp` 266,046 B and `title.jpg`
+240,351 B against the brief's 350,000; `title-wide.webp` 7,858 B; `title-tall.webp` 5,930 B; `courtyard.webp`
+164,778 B; `courtyard.jpg` 168,571 B.
+
+Load (`reachable`, production bundle): the first chapter decodes behind the title. Locally the level is up 0.3 s
+after Enter. On a CI runner it took 1.9 s (run 42932276468): the stage presses Enter the moment the game says it
+is ready, so the decode has barely begun. D-021 measured 1.8 to 2.5 s on CI with nothing decoded ahead.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| keep zone `keep.x0`, `keep.x1` | 0.17, 0.81 of the painting's width | measured | read off the painting: the boat's bow tip is at x 255 of 1376 (18.5%) and the oar's blade at x 1100 (80%); the lettering and seal are inside that (31% to 72%). One point of margin each side |
+| keep zone aspect | 1.1467 (881 x 768) | derived | (0.81 - 0.17) x 1376 / 768. The CSS switches to the tall layout at `max-aspect-ratio: 1146/1000` |
+| painting aspect | 1376 / 768 = 1.7917 | measured | the file. The CSS softens the painting's side edges from `min-aspect-ratio: 1377/768`, the first shape wider than it |
+| `object-position` x | 47.2% | derived | x0 / (1 - (x1 - x0)) = 0.17 / 0.36: the one focal point at which a box of the keep zone's aspect shows exactly the zone |
+| paper tone `--paper` | `#e0d4be` | measured | the median colour of the title painting's pixels brighter than 185 (`ui-art.mjs` prints it) |
+| `paperMinValue` | 185 of 255 | authored | what counts as bare paper when measuring the tone |
+| `--ink`, `--ink-soft` | `#20201e`, `#534e4b` | derived | palette.json ink-black and ink-grey. The accent is not used: STYLE §2, never on UI |
+| `webpQuality`, `jpegQuality` | 82, 80 | authored | the title lands at 266 KB and 240 KB, under the 350 KB the brief allows |
+| `wide` 1536 x 432, blur 14, reach 0.8, quality 60 | | authored | a 32:9 wash, stretched: at 5120x1440 it is scaled 3.3 times, which a blurred wash bears. `reach`: bare paper from 80% of the way out |
+| `tall` width 448, blur 9, reach 0.7, quality 60 | | authored | the keep zone and its mirror image, for a phone |
+| `veilGamma` | 0.7 | authored | the wash pales early, so the extension never competes with the painting |
+| edge mask | 6% each side (wide), last 6% (tall) | authored | the join between the painting and its extension is a fade, not a line; inside the 17% margin of the keep zone |
+| `SHELL.leaveMs` | 350 ms | authored | the title's fade when a level starts; the same number as the CSS transition |
+| panel type | `clamp(12px, 1.55cqw, 30px)`; tall `clamp(15px, 4.4cqw, 24px)` | authored | sized from the painting's own width, so the buttons keep their place on it at any size |
+| button `min-height` | 44 px | authored | a finger's target on a phone |
+| z-index | title 30, how-to-play 40, error banner 50, hint 5 | authored | a level that fails to load is shown above the title |
+
+## D-022 sound (2026-11-10)
+
+`src/audio/audio.ts` `AUDIO`, `src/audio/tap.ts` `SOUND_TAP`, `src/audio/prefs.ts` `SOUND_PREFS`,
+`tools/gen/build-audio.mjs` `AUDIO_BUILD` and `LIMITS`, `tools/harness/audio-check.ts` `CHECK`.
+**Nothing here was judged by ear.** The session that made it cannot hear (D-009: "Claude cannot hear it").
+Every take was accepted or rejected on what `tools/gen/audio-stats.mjs` measures and on a spectrogram that was
+looked at. `assets/audio/MANIFEST.md` lists every file, its take, its ledger row and its cost.
+
+**The takes** (fal, through `tools/gen/fal-call.mjs`; ledger rows 67 to 80; $0.4860):
+
+| Take | s | Peak dB | Energy under 200 Hz | Centroid Hz | Verdict |
+|---|---|---|---|---|---|
+| jump | 0.48 | 0.0 | 91.5% | 115 | rejected: a low thump, not a leap |
+| jump-b | 0.48 | -2.1 | 90.9% | 167 | rejected: the same, with a prompt asking for air and cloth only |
+| double_jump | 0.48 | -1.2 | 45.4% | 644 | ships as `jump`: broadband, spread over 0.25 s |
+| land_soft | 0.48 | -38.6 | 6.6% | 4023 | rejected: nearly silent |
+| land_soft-b | 0.48 | -14.4 | 0.4% | 4351 | ships: a bright scuff |
+| land_hard | 0.80 | +0.8 | 35.8% | 382 | ships: a low thud, then three smaller hits |
+| slash | 0.60 | +0.1 | 9.4% | 2649 | ships: broadband for 0.16 s, then thin lines near 4 to 5 kHz that ring to 0.56 s |
+| dash | 0.60 | -11.6 | 78.3% | 233 | ships, cut from 229 ms: 170 ms of silence stood before it |
+| wall_grab | 0.60 | +1.3 | 3.2% | 911 | ships, cut from 410 ms: the catch is the last fifth of the take |
+| checkpoint | 2.00 | -15.7 | 0% | 2117 | ships: two steady partials near 1.6 and 2.2 kHz, decaying |
+| respawn | 1.20 | -12.6 | 0% | 468 | ships: a tone near 250 Hz, harmonics entering, wavering at the end |
+| music-s11 | 95.0 | -0.6 | 0% | 588 | ships: -17.8 LUFS, loudness range 7.7 LU; one sustained line 300 to 600 Hz, plucked transients, a few low hits. No noise bed: no wind, no rain |
+| music-s29 | 95.0 | +1.7 | 0.2% | 586 | rejected: clips, loudness range 14.2 LU |
+| rain_wind | 30.0 | -14.9 | 9.7% | 1980 | ships under the music: broadband, loudness range 1.8 LU |
+
+**What ships** (`node tools/gen/build-audio.mjs --check`): eight effects, 2,821 to 23,510 B each (limit 50,000),
+peaks -3.0 to -3.9 dB; `music.mp3` 1,359,620 B (limit 1,500,000), 84.9 s, -19.9 LUFS, loudness range 6.0 LU,
+peak -2.5 dB.
+
+**As a browser decodes it** (`node tools/harness/audio-check.ts`, Chromium's `decodeAudioData`): the decoder
+adds 0 samples to the music file. Audio one loop apart differs by -23.2 dB (what is left is the codec's noise
+on rain); the step across the seam is 1.81 ordinary sample steps. The control, a window 0.37 s too short:
+-0.3 dB and 15.52 steps. Every effect starts within 0.9 ms of its file's start.
+
+**What the page does** (`reachable`, production bundle, bare URL): before Play, 0 audio contexts and 0 sound
+files requested. After Play: 1 context, running; 9 sounds decoded (0.18 to 1.9 s, and 84.9 s); a looping source
+started; Space starts a 0.4 s source and J a 0.58 s one; N writes `karasu_sound=1.80`; a hidden tab leaves the
+context `suspended`. On each of five gated URLs, after entering the level and jumping: 0 contexts, 0 sources,
+0 requests.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `AUDIO_BUILD.onsetDb` | -18 dB under the take's peak | authored | where an effect is taken to start. It puts the dash's cut at 229 ms and the wall grab's at 410 ms, which is where the spectrograms show them |
+| `leadInMs`, `fadeInMs` | 4 ms, 2 ms | authored | kept before the onset so the attack is whole; a 2 ms ramp so it cannot click |
+| `effectPeakDb`, `effectKbps` | -3 dB, 96 kbps mono | authored | one level for every effect before the game's mix; the largest file is 23,510 B |
+| effect lengths and fade-outs | jump 0.4 / 0.12, land_soft 0.4 / 0.1, land_hard 0.6 / 0.15, slash 0.58 / 0.12, dash 0.4 / 0.1, wall_grab 0.18 / 0.06, checkpoint 1.9 / 0.5, respawn 1.2 / 0.2 s | authored | each cut where its spectrogram is spent |
+| music `from`, `to` | 0.1 s, 88 s | measured | the take fades out from about 89 s (2.7 s of silence at its end) |
+| music `cross` | 4 s | authored | the end is cross-faded into the beginning, equal power |
+| music `pad` | 0.5 s | authored | the loop is continued this long on both sides, so the window is seamless wherever a decoder's delay puts it |
+| music `bedDb` | -10 dB under the music | authored | not judged by ear. The bed is under the music and above nothing |
+| music `peakDb`, `kbps` | -2 dB, 128 kbps stereo | authored | 1,359,620 B for 84.9 s |
+| `LIMITS.effectBytes`, `musicBytes` | 50,000, 1,500,000 B | brief | "each effect at most about 50 KB", "music at most about 1.5 MB" |
+| `LIMITS.effectPeakDb` | -6 to 0 dB | measured | the encoded files peak at -3.0 to -3.9 |
+| `LIMITS.effectLeadSilenceMs` | 40 ms | authored | more would be heard as lag; measured 0 to 0.9 ms |
+| `LIMITS.musicLufs`, `musicPeakDb` | -24 to -14 LUFS, 0 dB | authored | around the shipped -19.9; a peak over 0 clips |
+| `CHECK.sameAudioDb` | -15 dB | measured | between the shipped loop's -23.2 and a wrong window's -0.3. A first line of -25 was a guess made before measuring, and the shipped loop failed it |
+| `CHECK.seamStep` | 4 ordinary steps | measured | between the shipped 1.81 and a wrong window's 15.52 |
+| `CHECK.offBy`, `effectLagMs`, `silenceDb` | 0.37 s, 40 ms, -50 dB | authored | the control window; the lag limit; what counts as silence |
+| `AUDIO.music.level` | title 0.3, game 0.6 | authored | not judged by ear. Under the title, and while paused, the music is at half its level in the game |
+| `AUDIO.music.fadeSec` | 0.8 s | authored | a change of scene, mute or volume is eased, so nothing clicks |
+| `AUDIO.gain` | jump 0.45, land_soft 0.5, land_hard 0.9, slash 0.7, dash 0.55, wall_grab 0.6, checkpoint 0.5, respawn 0.45 | authored | not judged by ear. Each effect's place against the others; all the files peak near -3 dB |
+| `AUDIO.minGapSec` | 0.08 s | authored | 5 ticks: a wall slide can begin again within a few ticks |
+| `AUDIO.volumeStep` | 0.1 | authored | one press of - or = |
+| `SOUND_PREFS.volume`, `days` | 0.8, 365 | authored | a first visit's volume; how long the cookie lasts |
+| `SOUND_TAP.doubleJumpRate` | 1.3 | authored | the second jump is the first jump's sound, quicker and higher |
+| `SOUND_TAP.goalRate` | 0.75 | authored | the goal is the torii's bell, lower |
+| `SOUND_TAP.land.silentBelow` | 3 m/s | authored | stepping down a stair is not a landing |
+| `SOUND_TAP.land.hardAbove` | 18 m/s | derived | a jump on flat ground lands at 15.3 m/s (peak 2.44 m, fall gravity 32 x 1.5 = 48: the square root of 2 x 48 x 2.44); faster than that it has been a fall |
+| `SOUND_TAP.land.fullAt`, `quietest` | 30 m/s, 0.3 | authored | terminal speed is 35 (`TUNING.maxFallSpeed`); the quietest landing's level |
+
+## D-022 slash (2026-11-10)
+
+`src/entities/slash.ts` `SLASH`. Looked at with `node tools/harness/motion.ts <dir> --slash`: the slash at six
+times through it, over the figure standing, running and in the air, each from in front and from behind
+(`docs/build-log/title/slash-standing.png`, `slash-running.png`). What the strips show: the hand goes up to the
+right shoulder, the arm comes forward and ends low across the body; the legs go on idling, running or holding the
+jump's frame; from behind, the stroke rises over the right shoulder, passes behind the figure and comes out low
+on the left. Not judged in motion at speed by a person.
+
+The first stroke was a ribbon in the blade's own plane, 0.39 m wide: from in front it read as a pale sheet, and
+from behind (where the camera is) it was edge-on and could not be seen. It is now a ribbon turned to face the
+camera each frame.
+
+The harness never slashes, and what it draws is unchanged: `node tools/harness/frame-hashes.ts` gives the same
+sha256 for all 30 frames (five levels, six cameras), the same counters and the same list of renderables as
+main's build. The slash's clip, mixer action and stroke are made on the first slash.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `seconds` | 0.36 s | authored | the whole slash: about 22 frames at 60 Hz |
+| `windupEnd`, `cutEnd` | 0.07 s, 0.19 s | authored | the hand is at the hilt for 0.07 s; the cut takes 0.12 s |
+| `again` | 0.24 s | authored | a second press before this is ignored; after it, it starts the slash again |
+| `fadeIn`, `fadeOut` | 0.05 s, 0.11 s | authored | how the slash takes and lets go of the upper body |
+| `share` | 0.97 | authored | the slash's share of each bone it moves at its fullest; its mixer weight is share / (1 - share) against the pose's 1 |
+| `lastFrameShy` | 0.0001 s | derived | a looping action evaluated AT its end reads its start |
+| `chest` | wind-up twist -34, lean -5; cut twist 36, lean 14 degrees; the neck takes 0.3 of the turn | authored | from the strips |
+| `swordArm`, `offArm` | directions, in the code | authored | from the strips |
+| `arc.radius`, `centreY` | 1.4 m, 0.3 m above the capsule's centre | authored | the tip's reach from the shoulder line |
+| `arc.width`, `fullAt`, `taper` | 0.2 m, 0.75, 0.8 | authored | a brush stroke: thin where it lands, widest soon after, drawn out to a point |
+| `arc.from`, `through`, `to` | directions, in the code | authored | from over the right shoulder, across the front, to low on the left |
+| `arc.segments` | 28 | authored | 56 triangles, one draw call, and only while a slash is on screen |
+| `arc.opacity`, `tailLag` | 0.92, 0.85 | authored | from the strips: at 0.55 the far half of the stroke was gone before it was seen |
+| `arc.order` | 500 | derived | after every painted card (100 to 400) and before the figure (`PAINT_LAST`) |
+| `arc.streaks`, `bristleMin`, `dryFrom`, `dryOver`, `seed` | 9, 0.6, 0.7, 0.3, 7 | authored | the dry-brush: nine bristle tracks, some running dry in the stroke's last third. Seeded: it does not shimmer |
+
+## D-022 gamepad (2026-11-10)
+
+`src/engine/gamepad.ts` `GAMEPAD`. **Not tested with a pad:** none was connected to the machine or to the
+harness's browser. It typechecks, it is not built in the harness's test mode, and with no pad connected it reads
+nothing. Tim should try one.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `deadzone` | 0.35 | authored | a resting stick is rarely at 0 |
+| move intent | length 0 or 1 | derived | past the dead zone a stick is a direction at full deflection, as a held key is. The simulation is never given a part speed, which no MOVE number was measured with |
+| `lookPixelsPerSec` | 900 | authored | the right stick at full tilt turns the camera as a mouse moved that far each second |
+| buttons | jump 0, dash 1, slash 2, sprint 7, start 0 or 9, pause 9, how to play 8, back 1 or 8, d-pad 12 to 15 | authored | the W3C standard mapping |
+
+## D-022 the harness sees none of it (2026-11-10)
+
+`node tools/harness/frame-hashes.ts <out.json> --build`, then `--diff`, on one machine (darwin, SwiftShader):
+
+| Compared | Result |
+|---|---|
+| main (d9fad33) against itself, run twice | 1 value differs: chapter 1 cam3. One pixel, (606, 91), flips between two values from run to run (channel delta 51). Seen 3 times each way in 6 runs. A finding about main, not about this change |
+| main against the title screen alone (b483f1d) | the page title, and that one pixel in its other value |
+| main against the whole change (db5d964) | the page title only. 30 frames, counters, 255 renderables and the element ids `app hud` identical |
+| every frame against its committed darwin golden | pixel-identical, but for that one pixel on chapter 1 cam3 |
+
+`reachable` was mutated to prove it bites: with the title swallowing Enter (in `src/ui/shell.ts` and in
+`index.html`'s inline listener) it is red on three checks ("loaded (nothing)" after 20.2 s). Restored.
