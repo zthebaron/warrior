@@ -24,11 +24,21 @@ export const INPUT_CONFIG = {
     jump: ['Space'],
     dash: ['KeyK'],
     sprint: ['ShiftLeft', 'ShiftRight'],
+    // D-022: the sword slash. It is in this table so the how-to-play page shows it with the rest, and it is NOT
+    // in InputFrame: a slash is drawn, never simulated, so no trace, replay or bot ever carries it.
+    slash: ['KeyJ'],
   },
   maxRecordedFrames: 60 * 60 * 30, // 30 minutes at 60Hz; past this, recording stops (warned once)
 };
 
 type Action = keyof typeof INPUT_CONFIG.bindings;
+
+/** A gamepad as the input system reads it (src/engine/gamepad.ts): the same three held states and a move intent. */
+export interface PadSource {
+  /** screen-relative move intent, x right and y forward; length 0 or 1 */
+  move(): { x: number; y: number };
+  held(action: 'jump' | 'dash' | 'sprint'): boolean;
+}
 
 export class InputSystem {
   private readonly down = new Set<string>();
@@ -39,11 +49,17 @@ export class InputSystem {
   private override: InputFrame | null = null;
   /** Actions the keyboard is not believed about until their key has been seen up (holdOff). */
   private readonly heldOff = new Set<Action>();
+  private pad: PadSource | null = null;
 
   constructor(target: Window) {
     target.addEventListener('keydown', (e) => this.down.add(e.code));
     target.addEventListener('keyup', (e) => this.down.delete(e.code));
     target.addEventListener('blur', () => this.down.clear());
+  }
+
+  /** D-022: also read a gamepad, on the live path only (beside the keyboard; never under playback or the override). */
+  setPad(pad: PadSource | null): void {
+    this.pad = pad;
   }
 
   /** Raw key query, for UI / dev tools (NOT for gameplay — gameplay reads InputFrames). */
@@ -100,8 +116,9 @@ export class InputSystem {
   }
 
   private sampleKeyboard(yaw: number): InputFrame {
-    const rx = (this.held('right') ? 1 : 0) - (this.held('left') ? 1 : 0);
-    const ry = (this.held('forward') ? 1 : 0) - (this.held('back') ? 1 : 0);
+    const stick = this.pad?.move();
+    const rx = (this.held('right') ? 1 : 0) - (this.held('left') ? 1 : 0) + (stick?.x ?? 0);
+    const ry = (this.held('forward') ? 1 : 0) - (this.held('back') ? 1 : 0) + (stick?.y ?? 0);
     const len = Math.hypot(rx, ry);
     const nx = len > 1 ? rx / len : rx;
     const ny = len > 1 ? ry / len : ry;
@@ -111,9 +128,9 @@ export class InputSystem {
     return {
       x: c * nx - s * ny,
       y: -s * nx - c * ny,
-      jump: this.pressed('jump'),
-      dash: this.pressed('dash'),
-      sprint: this.pressed('sprint'),
+      jump: this.pressed('jump') || (this.pad?.held('jump') ?? false),
+      dash: this.pressed('dash') || (this.pad?.held('dash') ?? false),
+      sprint: this.pressed('sprint') || (this.pad?.held('sprint') ?? false),
     };
   }
 

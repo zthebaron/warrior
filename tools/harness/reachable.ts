@@ -161,6 +161,11 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       await page.keyboard.press('Space');
       const jump = await page.waitForFunction((n) => window.__audioProbe?.starts.slice(n).find((s) => !s.loop) ?? null, before, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => null);
       st.check('a jump starts the jump sound', !!jump && jump.seconds === want9.effects['jump']!.seconds, jump ? `a ${jump.seconds} s source at rate ${jump.rate} (jump.mp3 is ${want9.effects['jump']!.seconds} s)` : 'Space started no sound in 5 s');
+      await page.waitForTimeout(900); // the jump lands
+      const beforeSlash = await page.evaluate(() => window.__audioProbe?.starts.length ?? 0);
+      await page.keyboard.press('KeyJ');
+      const cut = await page.waitForFunction(([n, sec]) => window.__audioProbe?.starts.slice(n).find((x) => x.seconds === sec) ?? null, [beforeSlash, want9.effects['slash']!.seconds] as const, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => null);
+      st.check('the slash key starts the slash sound', !!cut, cut ? `a ${cut.seconds} s source (slash.mp3 is ${want9.effects['slash']!.seconds} s)` : 'J started no slash sound in 5 s');
       await page.keyboard.press('KeyN');
       const muted = await page.evaluate(() => `${document.cookie} | ${document.getElementById('hint')?.textContent ?? ''}`);
       st.check('the mute key is remembered in one cookie and shown in the hint', /^karasu_sound=1\.\d+ \| .*sound: off/.test(muted), muted);

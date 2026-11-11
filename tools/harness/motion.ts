@@ -3,6 +3,9 @@
 //
 //   node tools/harness/motion.ts <out dir> [--only=name,name] [--cell=WxH] [--build]
 //   node tools/harness/motion.ts <out dir> --clips[=name,name] [--frames=N]     every clip, N frames evenly through it
+//   node tools/harness/motion.ts <out dir> --slash [--frames=N]                 the sword slash (D-022), N frames through it:
+//                                                                               standing, running and in the air, each seen from
+//                                                                               in front and from behind (where the player's camera is)
 //
 // Each scene teleports the player, plays scripted input through the real player (the same step() the nav bot
 // uses), and shoots a close camera every few ticks. One PNG per scene, eight frames a row, in tick order; the
@@ -59,6 +62,60 @@ mkdirSync(outDir, { recursive: true });
 const errors: string[] = [];
 let loaded = '';
 let page = await pf.browser.newPage({ viewport: { width: cw, height: ch }, deviceScaleFactor: 1 });
+
+if (argv.includes('--slash')) {
+  // The slash is laid over whatever the figure is doing, so it is looked at over three things: idle, a running
+  // stride and a jump. The simulation is stopped at one tick for each row; only the slash's time changes.
+  const frames = Number(flag('frames') ?? COLS);
+  const SECONDS = 0.36; // SLASH.seconds (src/entities/slash.ts): the times shown are 0 to this
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto(`${pf.baseUrl}/?harness=1&level=01-lower-stair`);
+  await page.waitForFunction(() => window.__HARNESS__?.version === 'HARNESS_API_V1');
+  await page.evaluate(() => window.__HARNESS__!.start());
+  const run: Input = { ...N, x: 1 };
+  const rows: { name: string; script: Script }[] = [
+    { name: 'standing', script: [[30, {}]] },
+    { name: 'running', script: [[30, {}], [14, run]] },
+    { name: 'in the air', script: [[30, {}], [6, run], [9, { ...run, jump: true }]] },
+  ];
+  const views: { name: string; cam: Vec3 }[] = [
+    { name: 'front', cam: [2.6, 1.3, 1.5] },   // the figure runs toward +x: this is ahead of it and to one side
+    { name: 'behind', cam: [-3.2, 1.9, 0.9] }, // about where the follow camera stands
+  ];
+  const sheet = new PNG({ width: frames * cw, height: rows.length * views.length * ch });
+  let r = 0;
+  for (const row of rows) {
+    const feet = await page.evaluate(([script, neutral]) => {
+      const H = window.__HARNESS__!;
+      H.showSlash(null);
+      H.respawnAt([44, 5.5, 0], -90, 0);
+      for (const [ticks, input] of script) for (let i = 0; i < ticks; i++) H.step({ ...neutral, ...input }, false);
+      return H.snapshot().feet;
+    }, [row.script, N] as const);
+    for (const view of views) {
+      for (let k = 0; k < frames; k++) {
+        const t = frames > 1 ? (SECONDS * 0.97 * k) / (frames - 1) : 0;
+        await page.evaluate(([f, cam, time]) => {
+          const H = window.__HARNESS__!;
+          H.setCamera([f[0] + cam[0], f[1] + cam[1], f[2] + cam[2]], [f[0], f[1] + 1, f[2]]);
+          H.showSlash(time);
+          H.redraw();
+        }, [feet, view.cam, t] as const);
+        const img = PNG.sync.read(await page.locator('canvas').first().screenshot());
+        PNG.bitblt(img, sheet, 0, 0, Math.min(cw, img.width), Math.min(ch, img.height), k * cw, r * ch);
+      }
+      console.log(`row ${r}  ${row.name}, from ${view.name}`);
+      r++;
+    }
+  }
+  await page.evaluate(() => window.__HARNESS__!.showSlash(null));
+  const file = join(outDir, 'slash.png');
+  writeFileSync(file, PNG.sync.write(sheet));
+  console.log(`${file}  ${frames} frames, 0 to ${(SECONDS * 0.97).toFixed(3)} s`);
+  await pf.browser.close();
+  pf.server?.kill();
+  process.exit(errors.length ? 1 : 0);
+}
 
 if (clipsArg) {
   // every clip at N times evenly through it, on the still figure: one row a clip. The times are printed.

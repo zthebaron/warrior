@@ -25,6 +25,8 @@ import { Shell, SHELL, shellEnabled } from './ui/shell';
 import { buildHowto, chaptersFrom, keyName, type HowtoChapter } from './ui/howto';
 import { AUDIO, GameAudio } from './audio/audio';
 import { SoundTap } from './audio/tap';
+import { Gamepad, GAMEPAD } from './engine/gamepad';
+import { SlashArc, SlashClock } from './entities/slash';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -154,6 +156,8 @@ interface HarnessApi {
   /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
   figureClips(): { name: string; duration: number }[];
   showFigure(clip: string | null, time?: number): void;
+  /** D-022: show the sword slash `time` seconds into it over whatever the figure is doing; null clears it (tools/harness/motion.ts --slash). */
+  showSlash(time: number | null): void;
   /**
    * Every visible renderable in the scene with its world position and the nearest `userData.translates`
    * tag on it or an ancestor (player, platform, hazard), or null. B-15 / NOT #18 (Q2a): nothing
@@ -276,6 +280,27 @@ async function boot(): Promise<void> {
   // every line that names them does nothing: no context is opened and no file is fetched.
   const audio = !HARNESS_MODE && shellEnabled() ? new GameAudio() : null;
   const tap = audio ? new SoundTap(audio) : null;
+
+  // D-022: a gamepad, and the sword slash's clock. Neither exists in the harness's test mode.
+  const pad = HARNESS_MODE ? null : new Gamepad();
+  if (pad) input.setPad({ move: () => pad.move(), held: (a) => pad.held(a) });
+  const slashClock = HARNESS_MODE ? null : new SlashClock();
+  let slashArc: SlashArc | null = null;
+  /** The ink stroke, made the first time it is wanted: a page that never slashes has no such mesh. */
+  const strokeOf = (p: Player): SlashArc => {
+    if (!slashArc) {
+      slashArc = new SlashArc();
+      p.mesh.add(slashArc.mesh);
+      paintLayer.refresh();
+    }
+    return slashArc;
+  };
+  const slash = (): void => {
+    if (!slashClock || !player || !state.is('play') || shell?.helpOpen) return;
+    if (!slashClock.trigger()) return;
+    strokeOf(player);
+    audio?.play('slash');
+  };
 
   const landingMark = new LandingMark(physics);
   landingMark.mesh.userData['translates'] = 'player'; // follows the player's ground point (D-010)
@@ -465,6 +490,13 @@ async function boot(): Promise<void> {
   }
 
   const onRender = (alpha: number, frameDt: number): void => {
+    if (pad) padFrame(pad, frameDt);
+    if (slashClock && player) {
+      // render time, and only while the game runs: paused, the slash waits; anywhere else it is dropped
+      if (state.is('play')) slashClock.update(frameDt);
+      else if (!state.is('pause')) slashClock.cancel();
+      player.slashTime = slashClock.time;
+    }
     profiler.begin('animation');
     level?.render(alpha);
     player?.render(alpha);
@@ -481,6 +513,8 @@ async function boot(): Promise<void> {
     }
     tools.update(frameDt);
     if (level) level.debugRoot.visible = overlay.visible;
+    // D-022: the slash's ink stroke faces the camera, so it is placed once the camera is. No stroke exists until a first slash.
+    slashArc?.update(player?.slashTime ?? null, renderer.camera);
 
     profiler.begin('render');
     if (!skipRender) {
@@ -551,15 +585,18 @@ async function boot(): Promise<void> {
   // Only at the game's front door (index.html decides, from the URL) and never in a harness build's test mode.
   // A bare page builds none of it: `shell` is null and every line below that names it does nothing.
   let chapters: HowtoChapter[] = [];
-  const shell = !HARNESS_MODE && shellEnabled()
+  /** Play: from the title's button, its keys, or a pad. */
+  const startGame = (): void => {
+    audio?.wake(); // the Play press is the gesture a browser needs before a page may make sound
+    if (!state.is('menu')) return;
+    input.holdOff('jump'); // Space and the pad's A are Play here and jump there: the press that starts the game is not a jump
+    pad?.holdOff('jump');
+    void startLevel();
+  };
+  const shell: Shell | null = !HARNESS_MODE && shellEnabled()
     ? new Shell({
         state: () => state.get(),
-        start: () => {
-          audio?.wake(); // the Play press is the gesture a browser needs before a page may make sound
-          if (!state.is('menu')) return;
-          input.holdOff('jump'); // Space is Play here and jump there: the press that starts the game is not a jump
-          void startLevel();
-        },
+        start: startGame,
         pause: () => { if (state.is('play')) state.transition('pause'); },
         resume: () => { if (state.is('pause')) state.transition('play'); },
         helpContent: () => buildHowto({
@@ -572,7 +609,7 @@ async function boot(): Promise<void> {
             ['How to play', [SHELL.keys.help]],
             ...(audio ? [['Sound on and off', [AUDIO.keys.mute]], ['Quieter, louder', [AUDIO.keys.quieter, AUDIO.keys.louder]]] as const : []),
           ],
-          pad: null,
+          pad: GAMEPAD.labels,
           respawnDelaySec: GAME_RULES.respawnDelaySec,
         }),
         hint: () => `${keyName(SHELL.keys.help)}  how to play` + (audio ? `     ${keyName(AUDIO.keys.mute)}  sound: ${audio.muted ? 'off' : 'on'}` : ''),
@@ -608,6 +645,38 @@ async function boot(): Promise<void> {
     if (to === 'results') tap?.goal();
   });
 
+  // D-014 fix 3: finishing a chapter loads the next; after the last one, back to the menu, which
+  // then starts the game from the front door again.
+  const afterResults = (): void => {
+    if (nextId) void startLevel(nextId);
+    else {
+      currentId = levelId;
+      state.transition('menu');
+    }
+  };
+
+  // D-022: the pad's buttons that are not moves, once a render frame. The moves go through the input system.
+  function padFrame(p: Gamepad, frameDt: number): void {
+    p.poll();
+    if (shell?.helpOpen) {
+      if (p.pressed('back') || p.pressed('help')) shell.closeHelp();
+      return;
+    }
+    if (shell && p.pressed('help') && !state.is('loading') && !state.is('boot')) return shell.openHelp();
+    if (state.is('menu')) {
+      if (p.pressed('start')) startGame();
+    } else if (state.is('results')) {
+      if (p.pressed('start')) afterResults();
+    } else if (state.is('pause')) {
+      if (p.pressed('pause')) state.transition('play');
+    } else if (state.is('play')) {
+      if (p.pressed('pause')) return state.transition('pause');
+      if (p.pressed('slash')) slash();
+      const look = p.look(frameDt);
+      if ((look.x || look.y) && !tools.freeCamActive) camRig.addLook(look.x, look.y);
+    }
+  }
+
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
     if (audio) {
@@ -618,22 +687,19 @@ async function boot(): Promise<void> {
       if (e.code === AUDIO.keys.mute || e.code === AUDIO.keys.quieter || e.code === AUDIO.keys.louder) shell?.syncSound();
     }
     if (shell?.onKey(e, k.start)) return;
+    if (!e.repeat && INPUT_CONFIG.bindings.slash.includes(e.code)) slash();
     if (e.code === k.start && state.is('menu')) void startLevel();
-    else if (e.code === k.start && state.is('results')) {
-      // D-014 fix 3: finishing a chapter loads the next; after the last one, back to the menu, which
-      // then starts the game from the front door again.
-      if (nextId) void startLevel(nextId);
-      else {
-        currentId = levelId;
-        state.transition('menu');
-      }
-    }
+    else if (e.code === k.start && state.is('results')) afterResults();
     else if (k.pause.includes(e.code) && state.is('play')) state.transition('pause');
     else if (k.pause.includes(e.code) && state.is('pause')) state.transition('play');
     else if (e.code === k.menu && state.is('pause')) state.transition('menu');
   });
 
   if (audio) window.addEventListener('pointerdown', () => audio.nudge());
+  // the left button is the sword once the mouse is the camera's (the click that captures it is not a slash)
+  renderer.canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0 && document.pointerLockElement === renderer.canvas) slash();
+  });
   renderer.canvas.addEventListener('click', () => {
     if (state.is('play') && !overlay.visible) void renderer.canvas.requestPointerLock();
   });
@@ -943,6 +1009,11 @@ async function boot(): Promise<void> {
       },
       figureClips: () => player?.figureClips() ?? [],
       showFigure: (clip, time) => player?.showFigure(clip, time),
+      showSlash: (time) => {
+        if (!player) return;
+        player.slashTime = time;
+        strokeOf(player);
+      },
       translators: () => {
         const out: { id: string; name: string; tag: string | null; pos: Vec3 }[] = [];
         const w = new THREE.Vector3();
