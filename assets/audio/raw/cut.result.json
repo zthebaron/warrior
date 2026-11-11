@@ -1,0 +1,11 @@
+{
+  "request_id": "01a1c89c-2c98-77c1-8d83-1d65d0c8b356",
+  "result": {
+    "audio": {
+      "url": "https://v3b.fal.media/files/b/0ab1fca0/NU5Cj0ixeQa6h4VgyZnNx_sound_effect.mp3",
+      "content_type": "audio/mpeg",
+      "file_name": "sound_effect.mp3",
+      "file_size": 18224
+    }
+  }
+}

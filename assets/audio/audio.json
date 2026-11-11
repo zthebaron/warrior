@@ -1,5 +1,5 @@
 {
-  "_doc": "D-022. Written by tools/gen/build-audio.mjs: what src/audio/audio.ts loads. music.loopStart and loopSeconds are the window the music loops over (the file carries the loop continued on both sides). Not typed by hand.",
+  "_doc": "D-022, D-023. Written by tools/gen/build-audio.mjs: what src/audio/audio.ts loads. music.loopStart and loopSeconds are the window the music loops over (the file carries the loop continued on both sides). Not typed by hand.",
   "music": {
     "file": "music.mp3",
     "loopStart": 0.5,
@@ -37,6 +37,22 @@
     "respawn": {
       "file": "respawn.mp3",
       "seconds": 1.2
+    },
+    "notice": {
+      "file": "notice.mp3",
+      "seconds": 0.4
+    },
+    "hit": {
+      "file": "hit.mp3",
+      "seconds": 0.32
+    },
+    "fell": {
+      "file": "fell.mp3",
+      "seconds": 0.76
+    },
+    "cut": {
+      "file": "cut.mp3",
+      "seconds": 0.6
     }
   }
 }

@@ -90,3 +90,16 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 78 | 2026-11-11T00:24:57Z | fal-ai/elevenlabs/sound-effects/v3 | audio: jump-b | $0.0020 | $0.0020 | 01a1c7fe-58a3-7c23-8f82-f7a59f323609 | done | $12.0240 |
 | 79 | 2026-11-11T00:25:02Z | fal-ai/elevenlabs/sound-effects/v3 | audio: land_soft-b | $0.0020 | $0.0020 | 01a1c7fe-6eca-73f0-b03a-037160a8ad11 | done | $12.0260 |
 | 80 | 2026-11-11T00:25:08Z | fal-ai/elevenlabs/sound-effects/v3 | audio: rain_wind | $0.0600 | $0.0600 | 01a1c7fe-84cc-7720-af21-29a2f9a82bca | done | $12.0860 |
+| 81 | 2026-11-11T03:00:23Z | fal-ai/nano-banana/edit | input image: swordsman front v1 | $0.0398 | $0.0398 | 01a1c88c-a782-7b51-8046-332975d14bf9 | done | $12.1258 |
+| 82 | 2026-11-11T03:01:09Z | fal-ai/nano-banana/edit | input image: swordsman front v2 (arms opened to an A-pose) | $0.0398 | $0.0398 | 01a1c88d-5c5e-7cb2-a87c-18262a361bc9 | done | $12.1656 |
+| 83 | 2026-11-11T03:02:01Z | fal-ai/nano-banana/edit | input image: swordsman front v3 (blade in line with the arm) | $0.0398 | $0.0398 | 01a1c88e-256e-7a70-a191-3be024a11c01 | done | $12.2054 |
+| 84 | 2026-11-11T03:02:40Z | fal-ai/nano-banana/edit | input image: swordsman front v4 (empty hands: the katana is attached to the hand bone in the game) | $0.0398 | $0.0398 | 01a1c88e-bd92-7763-85ec-eeca79171c45 | done | $12.2452 |
+| 85 | 2026-11-11T03:03:45Z | fal-ai/nano-banana/edit | input image: swordsman back v1 | $0.0398 | $0.0398 | 01a1c88f-bc04-7632-899c-6fe5cbe6dc40 | done | $12.2850 |
+| 86 | 2026-11-11T03:04:14Z | fal-ai/trellis | trellis test: swordsman | $0.0200 | $0.0200 | 01a1c890-2cd6-78c1-815a-045ca5d8d7c3 | done | $12.3050 |
+| 87 | 2026-11-11T03:05:06Z | fal-ai/hunyuan3d-v3/image-to-3d | final: swordsman (Normal + back view, no PBR) | $0.5250 | $0.5250 | 01a1c890-f9d1-7fc2-b6c5-1fda2415747a | done | $12.8300 |
+| 88 | 2026-11-11T03:08:23Z | fal-ai/meshy/rigging/multi-animation | animate: swordsman, rig + 8 library clips (Combat_Stance, Idle_3, Walk_Fight_Forward, Charged_Slash, Right_Hand_Sword_Slash, Hit_Reaction, dying_backwards, Knock_Down; booked at 0.80 + 0.12 per clip) | $1.7600 | $1.7600 | 01a1c893-fa97-75c1-b9c6-d6841e706de1 | done | $14.5900 |
+| 89 | 2026-11-11T03:17:03Z | fal-ai/elevenlabs/sound-effects/v3 | audio: notice | $0.0020 | $0.0020 | 01a1c89b-e92c-7073-8a28-9a23e0d52891 | done | $14.5920 |
+| 90 | 2026-11-11T03:17:08Z | fal-ai/elevenlabs/sound-effects/v3 | audio: hit | $0.0020 | $0.0020 | 01a1c89b-ff29-7b53-b7c0-1da56d852b4b | done | $14.5940 |
+| 91 | 2026-11-11T03:17:14Z | fal-ai/elevenlabs/sound-effects/v3 | audio: fell | $0.0020 | $0.0020 | 01a1c89c-1606-7740-89d0-7d70133a65ab | done | $14.5960 |
+| 92 | 2026-11-11T03:17:20Z | fal-ai/elevenlabs/sound-effects/v3 | audio: cut | $0.0020 | $0.0020 | 01a1c89c-2c98-77c1-8d83-1d65d0c8b356 | done | $14.5980 |
+| 93 | 2026-11-11T03:17:46Z | fal-ai/elevenlabs/sound-effects/v3 | audio: hit-b | $0.0020 | $0.0020 | 01a1c89c-9165-7442-9ead-70321b43c967 | done | $14.6000 |

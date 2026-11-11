@@ -1,0 +1,7 @@
+{
+  "prompt": "Edit this painting, changing only the arms. Raise both arms so that each is held straight and well away from the body, about 45 degrees out from the side, like the A-pose of a character turnaround sheet, with clear empty paper between each arm and the torso and hips. The left hand (on the viewer's right) is open, empty, and well clear of the scabbard at his hip. The right hand (on the viewer's left) still grips the drawn katana, whose blade points down and outward in the same straight line as the raised arm, well clear of the leg. Keep everything else identical: the face and topknot, the dark grey kimono jacket, the grey sash, the short sword tucked in the sash, the scabbard at his left hip, the wide hakama trousers, shin wraps and sandals, the upright symmetrical stance with feet shoulder-width apart, the line quality, the flat ink-wash fill, and the plain empty aged-paper background with no shadow. No red and no other colour.",
+  "image_urls": ["file:assets/build/gen/in/swordsman_front_v1.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

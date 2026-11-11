@@ -1,0 +1,7 @@
+{
+  "prompt": "Edit this painting, changing only the katana in his right hand (on the viewer's left). Turn the sword in his grip so that its blade points straight out sideways, horizontally, away from his body, in the same straight line as his outstretched right arm, like an extension of the arm: the wrapped hilt in his closed fist, the round guard just beyond the fist, and the slightly curved steel blade continuing outward toward the left edge of the picture. Nothing hangs down from the hand any more. Show the whole sword, tip included, inside the picture with a paper margin: make the whole figure a little smaller if that is needed. Keep everything else identical: the T-pose with both arms held straight out level, the open empty left hand, the face and topknot, the dark grey kimono jacket, the grey sash, the short sword tucked in the sash, the scabbard at his left hip, the wide hakama trousers, shin wraps and sandals, feet shoulder-width apart, the line quality, the flat ink-wash fill, and the plain empty aged-paper background with no shadow. No red and no other colour.",
+  "image_urls": ["file:assets/build/gen/in/swordsman_front_v2.png"],
+  "aspect_ratio": "1:1",
+  "output_format": "png",
+  "num_images": 1
+}

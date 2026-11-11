@@ -33,6 +33,13 @@ const EFFECTS = {
   // landing nearly silent (peak -38.6 dB): tools/gen/audio-stats.mjs, MEASUREMENTS "D-022 sound".
   'jump-b': [0.5, 'A quick airy whoosh of loose cloth as someone leaps upward. Only moving air and fabric, bright and breathy. No thud, no footstep, no impact, no voice, no music.'],
   'land_soft-b': [0.5, 'A light landing on a stone step in straw sandals: one soft dull thump with a brief scuff of straw on stone. Clearly audible, close microphone. No voice, no music.'],
+  // D-023, the fight. No voice in any of them: a cry cannot be judged by someone who cannot hear it.
+  notice: [0.6, 'A swordsman readies his blade: one sharp short metallic click as a katana is loosened in its scabbard, with a quick rustle of cloth as he turns. Dry, close. No voice, no music.'],
+  hit: [0.6, 'A katana lands: one hard bright ring of steel on steel with a short dull thud of padded cloth under it. A single impact. Dry, close. No voice, no music.'],
+  fell: [1, 'A man in heavy cloth drops to a stone floor: one low soft body thud, then a sword clattering once on stone. Dry, close. No voice, no music.'],
+  cut: [0.7, 'A blade cuts through cloth: one fast sharp slicing rip, then a low dark dull thump. Final. Dry, close. No voice, no music.'],
+  // Second take: the first hit came back as a low thud (54% of its energy under 200 Hz, centroid 367 Hz), no steel in it.
+  'hit-b': [0.6, 'Two steel sword blades meet once: a single bright high ringing metallic clang, sharp and clean. Only metal on metal. No thud, no bass, no voice, no music.'],
 };
 /** Under the music: the model made flute, koto and drum and left out the weather the brief asks for. */
 const BED = { text: 'Steady light rain falling on stone with a low mountain wind. Even and continuous. No thunder, no birds, no voices, no music.', duration_seconds: 30, prompt_influence: 0.6, output_format: 'mp3_44100_192', loop: true };

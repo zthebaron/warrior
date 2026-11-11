@@ -1,0 +1,7 @@
+{
+  "prompt": "Edit this painting, changing only one thing: remove the drawn katana from his right hand (on the viewer's left) completely, hilt, guard and blade. That hand is now empty and open, palm down, fingers together, exactly mirroring his open left hand. Paint plain empty aged paper where the sword was. Keep everything else identical: the T-pose with both arms held straight out level, the face and topknot, the dark grey kimono jacket, the grey sash, the short sword tucked in the sash, the empty scabbard at his left hip, the wide hakama trousers, shin wraps and sandals, feet shoulder-width apart, the line quality, the flat ink-wash fill, and the plain empty aged-paper background with no shadow. No red and no other colour.",
+  "image_urls": ["file:assets/build/gen/in/swordsman_front_v2.png"],
+  "aspect_ratio": "3:4",
+  "output_format": "png",
+  "num_images": 1
+}

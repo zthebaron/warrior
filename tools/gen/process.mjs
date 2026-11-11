@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Raw fal download -> the GLB that ships in assets/hero/.
 //
-//   node tools/gen/process.mjs <raw.glb> <out.glb> [--match <input.png>] [--elev 0] [--tint <hex> [--pin-median]] [--stats <file.json>]
+//   node tools/gen/process.mjs <raw.glb> <out.glb> [--match <input.png>] [--elev 0] [--tint <hex> [--pin-median]] [--tris <n>] [--stats <file.json>]
 //
 // 1. weld, then simplify to at most MAX_TRIS triangles (the error bound is raised until it gets there)
 // 2. textures resized to at most MAX_TEX px
@@ -27,7 +27,6 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const MAX_TRIS = 30000;
 const MAX_TEX = 1024;
 const HERE = dirname(fileURLToPath(import.meta.url));
 const a = process.argv.slice(2);
@@ -36,6 +35,8 @@ const match = opt('--match', null);
 const elev = opt('--elev', '0');
 const statsFile = opt('--stats', null);
 const tint = opt('--tint', null);
+// The class ceiling is 30,000. --tris asks for fewer: the swordsman stands three to a level (D-023).
+const MAX_TRIS = Math.min(30000, Number(opt('--tris', 30000)));
 const pinMedian = (() => { const i = a.indexOf('--pin-median'); if (i === -1) return false; a.splice(i, 1); return true; })();
 const [src, dst] = a;
 if (!src || !dst) { console.error('usage: process.mjs <raw.glb> <out.glb> [--match <input.png>] [--elev 0] [--stats <file.json>]'); process.exit(2); }
