@@ -236,3 +236,6 @@
 {"id":"B-49","agent":"art-pass-2","ts":"2026-11-10T22:50:41.189Z","released":true}
 {"id":"TITLE-AUDIO-SWORD","agent":"title-audio-sword","ts":"2026-11-10T23:46:04.750Z","ttl_min":480}
 {"id":"TITLE-AUDIO-SWORD","agent":"title-audio-sword","ts":"2026-11-11T01:39:50.976Z","released":true}
+{"id":"B-59","agent":"title-fixes","ts":"2026-11-11T02:09:21.546Z","ttl_min":240}
+{"id":"B-60","agent":"title-fixes","ts":"2026-11-11T02:09:21.573Z","ttl_min":240}
+{"id":"B-61","agent":"title-fixes","ts":"2026-11-11T02:09:21.600Z","ttl_min":240}
