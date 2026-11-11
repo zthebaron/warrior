@@ -276,7 +276,9 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       await inGame.keyboard.press('Enter');
       const inLevel = await levelOf(inGame, 20000);
       await inGame.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).catch(() => null);
+      // every sound decoded first (a slow runner decodes for seconds, and check 5 listens for the dash), then
       // let the warrior land and every sound of the start finish starting: nothing new for a second
+      await inGame.waitForFunction((n) => (window.__audioProbe?.decoded.length ?? 0) >= n, Object.keys(want9.effects).length + 1, { timeout: 20000 }).catch(() => null);
       for (let i = 0, n = -1; i < 10; i++) {
         const now = await inGame.evaluate(() => window.__audioProbe?.starts.length ?? 0);
         if (now === n) break;
