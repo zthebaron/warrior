@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 
 import type { CharacterAsset } from '../loaders/character';
-import { boxTops, groundRect, inRect, makeSwordsman, resetSwordsman, stepSwordsman, type EnemyDef, type FightEvent, type FightLevel, type Swordsman, type SwordsmanMode, type WarriorView } from '../systems/fight';
+import { boxTops, groundRect, inRect, makeSwordsman, noGroundWhy, resetSwordsman, risers, stepSwordsman, type EnemyDef, type FightAsset, type FightEvent, type FightLevel, type Swordsman, type SwordsmanMode, type WarriorView } from '../systems/fight';
 import { SWORDSMAN, SwordsmanModel } from './swordsman-model';
 
 export interface SwordsmanSnapshot {
@@ -35,12 +35,16 @@ interface Entry {
 const RAD2DEG = 180 / Math.PI;
 const NO_EVENTS: FightEvent[] = [];
 
-/** The ground under each of a level's swordsmen. Throws, naming him, if one is not on a box top with his whole route. */
-export function swordsmanGrounds(level: FightLevel & { id?: string }): Map<string, NonNullable<ReturnType<typeof groundRect>>> {
-  const boxes = boxTops(level), out = new Map<string, NonNullable<ReturnType<typeof groundRect>>>();
+/**
+ * The ground under each of a level's swordsmen. Throws, naming him, if one is not on a box top with his whole route.
+ * `assets` is the manifest's list: whatever stands on his ground that is not a box (rock, a torii) is cut out of
+ * it by the size the manifest gives it (B-79), which is what the level linter placed him by.
+ */
+export function swordsmanGrounds(level: FightLevel & { id?: string }, assets: readonly FightAsset[]): Map<string, NonNullable<ReturnType<typeof groundRect>>> {
+  const boxes = boxTops(level), standing = risers(level, assets), out = new Map<string, NonNullable<ReturnType<typeof groundRect>>>();
   for (const def of level.enemies ?? []) {
-    const ground = groundRect(boxes, def.pos);
-    if (!ground) throw new Error(`[swordsman] ${level.id ?? 'level'}: "${def.id}" at ${JSON.stringify(def.pos)} does not stand on the top of a collision box, clear of its edge (npm run lint:levels says where)`);
+    const ground = groundRect(boxes, def.pos, standing);
+    if (!ground) throw new Error(`[swordsman] ${level.id ?? 'level'}: "${def.id}" at ${JSON.stringify(def.pos)} has no ground: ${noGroundWhy(boxes, def.pos, standing)} (npm run lint:levels)`);
     const off = (def.patrol ?? []).find((p) => !inRect(ground, p));
     if (off) throw new Error(`[swordsman] ${level.id ?? 'level'}: "${def.id}" patrols to ${JSON.stringify(off)}, which is off the ground he stands on`);
     out.set(def.id, ground);
@@ -52,9 +56,9 @@ export class Swordsmen {
   readonly root = new THREE.Group();
   private readonly all: Entry[];
 
-  constructor(level: FightLevel & { id?: string }, asset: CharacterAsset) {
+  constructor(level: FightLevel & { id?: string }, asset: CharacterAsset, assets: readonly FightAsset[]) {
     this.root.name = 'swordsmen';
-    const grounds = swordsmanGrounds(level);
+    const grounds = swordsmanGrounds(level, assets);
     this.all = (level.enemies ?? []).map((def: EnemyDef, i) => {
       const sim = makeSwordsman(def, grounds.get(def.id)!);
       const model = new SwordsmanModel(asset, i * SWORDSMAN.inkTurn); // each one's ink is turned from the last one's

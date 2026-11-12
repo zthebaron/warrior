@@ -1484,6 +1484,10 @@ implemented_by: b483f1d (the gate, the title screen, the how-to-play page, reach
 
 ## D-023 — enemies: one swordsman, a slash that cuts, and a fight in the fixed tick. Reverses Q7 for enemies only and supersedes D-022's "drawn, never simulated". DECIDED
 
+**Extended (2026-11-12, D-024).** "Three swordsmen in chapter 1 and none anywhere else" and "Only chapter 1 has
+swordsmen" below are replaced: chapters 2, 3 and 4 have ten more. "His ground is ... cut back from anything
+standing on it" was true of unturned boxes only until D-024's B-79. Everything else here stands.
+
 **Ruled by Tim** (2026-11-10, 6:44 pm, `PROMPT-ENEMIES.md`): "No more chapters, just enemies." The brief names the
 two rulings that change and says to record them here:
 - **Q7** (the level schema refuses enemies) is reversed **for enemies only**. Interactables and collectibles stay
@@ -1580,3 +1584,34 @@ warrior's own sword is still on his back (B-45). Only chapter 1 has swordsmen.
 torii alone.
 
 implemented_by: 522ff13 (the figure and the four sounds), ffd9116 (the fight in the fixed tick, the slash in the input frame, the figure in the game), dca879e (the level format, the lint rules, chapter 1's three swordsmen, the bot that fights), fdd96f1 (the four fight checks, each seen to fail; chapter 1's trace, scene budget and darwin goldens; the paint gate's swordsman mask; how to play; a slash dropped at death), a289651 (chapter 1's Linux goldens from CI's own frames; the fight stage in a fresh browser per page; "J or Left click")
+
+## D-024 — swordsmen in chapters 2, 3 and 4: ten of them, the same swordsman and the same fight. Extends D-023's "none anywhere else". DECIDED
+
+**Ruled by Tim** (2026-11-12, `PROMPT-ENEMIES-CH2-4.md`, after playing chapter 1's fight and putting it live:
+"continue"). D-023 placed three swordsmen in chapter 1 "and none anywhere else"; that clause is replaced by this
+entry. Everything else in D-023 stands: one enemy type, one `FIGHT` table, no physics body, no retuning.
+
+The brief fixes: 3 in chapter 2 (one on a patrol), 3 in chapter 3 (none on a moving platform), 4 in chapter 4
+(two of them a pair, the first the player faces), none in the gym; wide flat ground only, never where a chapter
+first teaches a move, never where a required jump lands; one guards the approach to each goal torii; the first a
+player meets in each chapter stands alone, in the open; B-79 first; B-78 if `run-metric` allows.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-077):** where each of the ten stands, that a
+collider on a swordsman's ground is cut out by its bounding box, that a turned box is never ground, and the word
+`cut down`. **Nobody has played chapters 2 to 4 with swordsmen.**
+
+**Built.**
+1. **B-79** (`src/systems/fight.ts` `risers`, `groundRect`): every collider standing on a swordsman's ground
+   is cut out of it, not only unturned boxes. Red first on a fixture, against the colliders' real triangles.
+   Chapter 1's file is unchanged; two of its three grounds now stop short of a torii they ran through.
+2. **The ten** (`levels/02-cliff-seam.json`, `03-drifting-stones.json`, `04-summit-ridge.json`): all five
+   `ENEMY_*` rules pass. The bot fells every one and is never cut; the three traces were recorded again with
+   their fight logs; every segment stays inside `PHASE_SWEEP`'s 12 s. The pair stand 3.86 m apart.
+3. **B-78**: the HUD says `cut down` when a swordsman's cut ends the attempt.
+
+**What it keeps.** The MOVE budgets, `FIGHT`, `SWORDSMAN` and `NAV_CONFIG` are untouched. Chapter 1 and the
+gym are byte-identical to main in every frame the harness draws. The scene budgets of chapters 2 to 4 are raised
+to their measured peaks (MEASUREMENTS "ENEMIES-CH2-4 where the ten stand"); Tier 1 is not approached.
+
+**STYLE-BIBLE:** not amended.
+
+implemented_by: 525faac (B-79 red: the fixture, check:fight rule 5 and the lint:self cases, failing on main's ground), 06cf80b (B-79: risers, groundRect, the game and the linter on one function), 1e0036b (B-78: the HUD word), a9670a8 (the ten swordsmen, the three traces, the scene budgets, the darwin goldens)

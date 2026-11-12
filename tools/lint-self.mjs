@@ -190,11 +190,12 @@ console.log('swordsmen (D-023): where one may stand');
 {
   const base = lintLevel(ch1, manifest);
   check('shipped chapter 1 places three swordsmen and lints clean', (ch1.enemies ?? []).length === 3 && base.ok, base.errors.join(' ') || `${(ch1.enemies ?? []).length} swordsmen`);
-  const only = (name, code, change) => {
+  const only = (name, code, change, clean = false) => {
     const L = structuredClone(ch1);
     change(L);
     const got = codes(lintLevel(L, manifest));
-    check(`${name} FAILS ${code}, and nothing else`, got.length >= 1 && got.every((c) => c === code), got.join(', ') || 'no errors');
+    if (clean) check(`${name} is a fair one`, got.length === 0, got.join(', ') || 'no errors');
+    else check(`${name} FAILS ${code}, and nothing else`, got.length >= 1 && got.every((c) => c === code), got.join(', ') || 'no errors');
   };
   const first = (L) => L.enemies[0], patrol = (L) => L.enemies[1];
   only('a swordsman outside bounds', 'ENEMY_OOB', (L) => { L.bounds.min[2] = -2; }); // the patrolling one stands at z -2.4
@@ -205,10 +206,21 @@ console.log('swordsmen (D-023): where one may stand');
   only('a patrol onto the next ground along (the shelf below)', 'ENEMY_PATROL', (L) => { L.enemies[2].patrol = [[98.1, 9, 3.2]]; });
   only('a patrol point on another height', 'ENEMY_PATROL', (L) => { patrol(L).patrol = [[49.5, 9, 2.4]]; });
   only('a swordsman on the spawn', 'ENEMY_AT_STAND', (L) => { first(L).pos = [2, 0, 0]; });
-  only('a swordsman on a checkpoint', 'ENEMY_AT_STAND', (L) => { patrol(L).pos = [55, 5.5, 0]; patrol(L).patrol = [[52, 5.5, 2.4]]; });
-  only('a swordsman on the goal', 'ENEMY_AT_STAND', (L) => { L.enemies[2].pos = [99.4, 9, 0]; });
+  // B-79: each of these stands has a torii 2u before it, and a torii is no longer ground: both now stand past it
+  only('a swordsman on a checkpoint', 'ENEMY_AT_STAND', (L) => { patrol(L).pos = [56.5, 5.5, 0]; patrol(L).patrol = [[58.5, 5.5, 2.4]]; });
+  only('a swordsman on the goal', 'ENEMY_AT_STAND', (L) => { L.enemies[2].pos = [100.3, 9, 0]; });
   only('a swordsman where a required jump lands', 'ENEMY_ON_LANDING', (L) => { L.enemies[2].pos = [96.5, 9, 0]; });
   only('a patrol that walks onto a landing', 'ENEMY_ON_LANDING', (L) => { patrol(L).patrol = [[43.5, 5.5, 0]]; });
+
+  // B-79: his ground stops at whatever stands on it. Each collider is put beside the path's centre line, where it
+  // is in nobody's way but his, so the only rule it can break is the swordsman's.
+  const beside = [3, 0, 2.2]; // on chapter 1's first ground, clear of the spawn, the step and the edge
+  only('(B-79) a swordsman beside the path, with nothing standing there, FAILS nothing; so this case', 'NOTHING', (L) => { first(L).pos = beside; }, true);
+  only('(B-79) a swordsman standing in rock', 'ENEMY_OFF_GROUND', (L) => { first(L).pos = beside; L.geometry.push({ asset: 'kit_rock_mass', pos: beside, scale: 0.2 }); });
+  only('(B-79) a swordsman standing in a turned box', 'ENEMY_OFF_GROUND', (L) => { first(L).pos = beside; L.geometry.push({ asset: 'prim_box', pos: [3, 0.5, 2.2], rot: [0, 30, 0], scale: [1, 1, 1] }); });
+  only('(B-79) a swordsman standing on top of a turned box', 'ENEMY_OFF_GROUND', (L) => { first(L).pos = [3, 1, 2.2]; L.geometry.push({ asset: 'prim_box', pos: [3, 0.5, 2.2], rot: [0, 30, 0], scale: [1, 1, 1] }); });
+  only('(B-79) a patrol that walks through rock standing on its ground', 'ENEMY_PATROL', (L) => { L.geometry.push({ asset: 'kit_rock_mass', pos: [49.5, 5.5, 1.5], scale: 0.2 }); });
+  only('(B-79) a patrol that walks through a turned box standing on its ground', 'ENEMY_PATROL', (L) => { L.geometry.push({ asset: 'prim_box', pos: [49.5, 6, 1.5], rot: [0, 30, 0], scale: [0.8, 1, 0.8] }); });
 }
 
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');

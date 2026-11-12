@@ -1,0 +1,17 @@
+{
+  "about": "B-79. Two floors, each with one collider standing on it and one swordsman beside it. `warriors` is where check:fight (rule 5) stands the warrior for each: across the collider, inside the swordsman's sight, so the straight line he closes along runs through it. Not a playable level and not linted as one: only `geometry` and `enemies` are read, as src/systems/fight.ts reads a level.",
+  "geometry": [
+    { "asset": "prim_box", "pos": [-6, -1, 0], "scale": [12, 2, 8], "tag": "floor under the rock: top 0, x -12..0, z -4..4" },
+    { "asset": "kit_rock_mass", "pos": [-6, 0, 0], "scale": 0.3, "tag": "rock: a mesh collider standing on the floor" },
+    { "asset": "prim_box", "pos": [8, -1, 0], "scale": [12, 2, 8], "tag": "floor under the turned box: top 0, x 2..14, z -4..4" },
+    { "asset": "prim_box", "pos": [8, 1, 0], "rot": [0, 30, 0], "scale": [2, 2, 2], "tag": "a box turned 30 degrees, standing on the floor" }
+  ],
+  "enemies": [
+    { "id": "beside-rock", "type": "swordsman", "pos": [-7.9, 0, -1.2], "facing": -90 },
+    { "id": "beside-turned-box", "type": "swordsman", "pos": [6, 0, -0.9], "facing": -90 }
+  ],
+  "warriors": {
+    "beside-rock": [-4.5, 0, 1.3],
+    "beside-turned-box": [9.9, 0, 0.9]
+  }
+}

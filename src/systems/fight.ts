@@ -101,7 +101,7 @@ export const FIGHT = {
 /** An axis-aligned box top: the only ground a swordsman stands on. */
 export interface Rect { x0: number; x1: number; z0: number; z1: number; y: number }
 
-interface BoxTop { x0: number; x1: number; z0: number; z1: number; top: number; bot: number }
+interface BoxTop { x0: number; x1: number; z0: number; z1: number; top: number; bot: number; /** what it is, for a message */ what?: string }
 
 /** The level fields this file reads. A level file's own shape: nothing is assumed beyond it. */
 export interface FightLevel {
@@ -119,36 +119,90 @@ export interface EnemyDef {
   patrol?: V3[];
 }
 
+type Placement = NonNullable<FightLevel['geometry']>[number];
+
+/** A placement boxTops reads as ground: a collision box, with three scales, that is not turned. */
+const isBoxTop = (g: Placement): boolean =>
+  g.asset === 'prim_box' && Array.isArray(g.pos) && Array.isArray(g.scale) && !(Array.isArray(g.rot) && g.rot.some((v) => v !== 0)) && g.collider !== 'none';
+
 /** The level's unturned collision boxes, as tools/lint-level.mjs boxesOf reads them. */
 export function boxTops(level: FightLevel): BoxTop[] {
   const out: BoxTop[] = [];
   for (const g of level.geometry ?? []) {
-    if (g.asset !== 'prim_box' || !Array.isArray(g.pos) || !Array.isArray(g.scale)) continue;
-    if (Array.isArray(g.rot) && g.rot.some((v) => v !== 0)) continue;
-    if (g.collider === 'none') continue;
-    const s = g.scale;
+    if (!isBoxTop(g)) continue;
+    const s = g.scale as V3;
     out.push({ x0: g.pos[0] - s[0] / 2, x1: g.pos[0] + s[0] / 2, z0: g.pos[2] - s[2] / 2, z1: g.pos[2] + s[2] / 2, top: g.pos[1] + s[1] / 2, bot: g.pos[1] - s[1] / 2 });
   }
   return out;
 }
 
+/** What this file reads of an asset in assets/dist/manifest.json. */
+export interface FightAsset {
+  name: string;
+  kind?: string;
+  collider?: string;
+  /** a primitive's size at scale 1 */
+  size?: number[];
+  /** a mesh's bounding box at scale 1 */
+  bbox?: { min: number[]; max: number[] };
+}
+
 /**
- * The ground segment under `pos`: the top of the one box he stands on, cut back from anything else standing
- * on it, and drawn in by the edge margin. null if `pos` is not on a box top, or is inside the margin.
- * A box that rises from his ground is cut away along whichever side loses the least ground, so the result is
- * always a rectangle: smaller than the truth where an obstacle stands mid-floor, never larger.
+ * B-79. Every collider of the level that boxTops does NOT return, as the box that bounds it where it stands:
+ * a mesh (rock, a torii) by its bounding box in the manifest, a turned box by the box around its eight corners.
+ * groundRect cuts these out of a swordsman's ground exactly as it cuts an unturned box that rises from it.
+ *
+ * The bounding box is larger than the collider: a torii's spans its whole gate, a rock's its widest point, a
+ * turned box's its corners. So what is cut away is more than the collider's footprint and never less; he does
+ * not walk through a torii's gate, and he keeps further from a rock than its face.
+ *
+ * A placement is read as tools/lint-level.mjs obstaclesOf reads it: collider `none` (the placement's, else the
+ * asset's) is dressing and is skipped; a scale is one number or three; a rotation is three.js Euler XYZ, degrees.
+ * A moving platform is not a placement and is not here.
  */
-export function groundRect(boxes: readonly BoxTop[], pos: V3): Rect | null {
+export function risers(level: FightLevel, assets: readonly FightAsset[]): BoxTop[] {
+  const byName = new Map(assets.map((a) => [a.name, a]));
+  const out: BoxTop[] = [];
+  (level.geometry ?? []).forEach((g, gi) => {
+    const a = byName.get(g.asset);
+    if (!a || !Array.isArray(g.pos) || isBoxTop(g) || (g.collider ?? a.collider) === 'none') return;
+    const sc: number[] = typeof g.scale === 'number' ? [g.scale, g.scale, g.scale] : Array.isArray(g.scale) ? g.scale : [1, 1, 1];
+    let lo: number[], hi: number[];
+    if (a.kind === 'primitive' && Array.isArray(a.size)) { hi = a.size.map((v, k) => (v * sc[k]!) / 2); lo = hi.map((v) => -v); }
+    else if (a.bbox) { lo = a.bbox.min.map((v, k) => v * sc[k]!); hi = a.bbox.max.map((v, k) => v * sc[k]!); }
+    else return; // no size to place: the linter's UNKNOWN_ASSET or the manifest schema reports it
+    const turned = Array.isArray(g.rot) && g.rot.some((v) => v !== 0);
+    let R: number[][] | null = null;
+    if (turned) { // R = Rx * Ry * Rz
+      const [rx, ry, rz] = (g.rot as V3).map((v) => (v * Math.PI) / 180) as V3;
+      const ca = Math.cos(rx), sa = Math.sin(rx), cb = Math.cos(ry), sb = Math.sin(ry), cc = Math.cos(rz), sn = Math.sin(rz);
+      R = [[cb * cc, -cb * sn, sb], [ca * sn + sa * sb * cc, ca * cc - sa * sb * sn, -sa * cb], [sa * sn - ca * sb * cc, sa * cc + ca * sb * sn, ca * cb]];
+    }
+    const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    for (let m = 0; m < 8; m++) {
+      const p = [m & 1 ? hi[0]! : lo[0]!, m & 2 ? hi[1]! : lo[1]!, m & 4 ? hi[2]! : lo[2]!];
+      const q = R ? R.map((r) => r[0]! * p[0]! + r[1]! * p[1]! + r[2]! * p[2]!) : p;
+      for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k]!, q[k]! + g.pos[k]!); mx[k] = Math.max(mx[k]!, q[k]! + g.pos[k]!); }
+    }
+    out.push({ x0: mn[0]!, x1: mx[0]!, z0: mn[2]!, z1: mx[2]!, bot: mn[1]!, top: mx[1]!, what: `geometry[${gi}] ${g.asset}${turned ? ', turned' : ''}` });
+  });
+  return out;
+}
+
+/** His ground at `pos`, or why he has none there. */
+function place(boxes: readonly BoxTop[], pos: V3, standing: readonly BoxTop[]): { rect: Rect } | { why: string } {
   const P = FIGHT.placing, m = FIGHT.swordsman.edgeMargin;
   const [x, y, z] = pos;
   const inside = (b: BoxTop): boolean => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1;
   const support = boxes.find((b) => inside(b) && Math.abs(b.top - y) <= P.onGround);
-  if (!support) return null;
+  if (!support) return { why: `there is no unturned collision box whose top is within ${P.onGround}u of his feet (a turned box is not ground)` };
   const r = { x0: support.x0, x1: support.x1, z0: support.z0, z1: support.z1, y: support.top };
-  for (const b of boxes) {
+  // the boxes first and in the level's order, then whatever else stands there: the order decides which side a
+  // cut takes, and a level that places nothing but boxes on his ground is cut exactly as it was before B-79
+  for (const b of [...boxes, ...standing]) {
     if (b === support || b.top <= y + P.stepOver || b.bot >= y + P.bodyHeight) continue;
     if (b.x1 <= r.x0 || b.x0 >= r.x1 || b.z1 <= r.z0 || b.z0 >= r.z1) continue; // not over this ground
-    if (inside(b)) return null; // he is inside it
+    if (inside(b)) return { why: `he is inside ${b.what ? `the box around ${b.what}` : 'a box'} that stands on his ground (x ${b.x0.toFixed(2)}..${b.x1.toFixed(2)}, z ${b.z0.toFixed(2)}..${b.z1.toFixed(2)})` };
     const cuts: { area: number; apply: () => void }[] = [];
     const area = (x0: number, x1: number, z0: number, z1: number): number => Math.max(0, x1 - x0) * Math.max(0, z1 - z0);
     if (b.x0 >= x) cuts.push({ area: area(r.x0, b.x0, r.z0, r.z1), apply: () => { r.x1 = b.x0; } });
@@ -159,9 +213,27 @@ export function groundRect(boxes: readonly BoxTop[], pos: V3): Rect | null {
     cuts[0]!.apply();
   }
   const out = { x0: r.x0 + m, x1: r.x1 - m, z0: r.z0 + m, z1: r.z1 - m, y: r.y };
-  if (out.x0 > out.x1 || out.z0 > out.z1) return null;
-  if (x < out.x0 || x > out.x1 || z < out.z0 || z > out.z1) return null;
-  return out;
+  if (out.x0 > out.x1 || out.z0 > out.z1 || x < out.x0 || x > out.x1 || z < out.z0 || z > out.z1)
+    return { why: `he is within ${m}u of the edge of his ground or of something standing on it (clear of both it is x ${out.x0.toFixed(2)}..${out.x1.toFixed(2)}, z ${out.z0.toFixed(2)}..${out.z1.toFixed(2)})` };
+  return { rect: out };
+}
+
+/**
+ * The ground segment under `pos`: the top of the one box he stands on, cut back from anything else standing
+ * on it, and drawn in by the edge margin. null if `pos` is not on a box top, or is inside the margin.
+ * `standing` is risers(): what stands on the level that is not an unturned box (B-79). Whatever rises from his
+ * ground is cut away along whichever side loses the least ground, so the result is always a rectangle: smaller
+ * than the truth where an obstacle stands mid-floor, never larger.
+ */
+export function groundRect(boxes: readonly BoxTop[], pos: V3, standing: readonly BoxTop[] = []): Rect | null {
+  const g = place(boxes, pos, standing);
+  return 'rect' in g ? g.rect : null;
+}
+
+/** Why groundRect gives no ground at `pos`, in words for a level's author. '' if it gives one. */
+export function noGroundWhy(boxes: readonly BoxTop[], pos: V3, standing: readonly BoxTop[] = []): string {
+  const g = place(boxes, pos, standing);
+  return 'why' in g ? g.why : '';
 }
 
 export const inRect = (r: Rect, p: V3): boolean =>

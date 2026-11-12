@@ -483,6 +483,38 @@
       }
     }
   ],
+  "enemies": [
+    {
+      "id": "guard-first",
+      "type": "swordsman",
+      "pos": [
+        21.5,
+        0,
+        0
+      ],
+      "facing": 90
+    },
+    {
+      "id": "guard-run",
+      "type": "swordsman",
+      "pos": [
+        104.5,
+        2.5,
+        0
+      ],
+      "facing": 90
+    },
+    {
+      "id": "guard-goal",
+      "type": "swordsman",
+      "pos": [
+        127,
+        2.5,
+        2.4
+      ],
+      "facing": 90
+    }
+  ],
   "checkpoints": [
     {
       "pos": [

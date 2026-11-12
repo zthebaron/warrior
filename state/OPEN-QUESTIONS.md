@@ -1718,3 +1718,56 @@ took, each PROVISIONAL:
 what nobody has judged: whether the wall now reads to Tim in play; whether the pivot stopping short of a wall
 (it no longer leads him into it) feels different when running along or past rock.
 status: PROVISIONAL
+
+## OQ-077 — ENEMIES-CH2-4: the builder's calls, and three placements the checks moved
+raised: 2026-11-12 by enemies-ch2-4 (claims ENEMIES-CH2-4, B-74, B-78, B-79). Tim's brief is
+`PROMPT-ENEMIES-CH2-4.md` (D-024). What follows is what it left to the builder. Numbers: MEASUREMENTS
+"ENEMIES-CH2-4 his ground" and "ENEMIES-CH2-4 where the ten stand".
+took, each PROVISIONAL:
+1. **Worked solo, with ultracode on.** The brief says "No multi-agent review workflow. One focused self-review";
+   the session's ultracode setting says to use a workflow for every substantive task. The brief is the more
+   specific instruction (the same call as OQ-075). Every proof here also runs one at a time on one port.
+2. **B-79: what stands on his ground is cut out by its bounding box, not its true footprint.** Options: A the
+   manifest's bounding box, placed (one definition for the game and the linter, no new data) | B the collision
+   triangles in his height band (true footprint; the game would have to decode it before it can place him, and
+   the linter would give a different answer whenever the triangles were not loaded). Took A. Its cost: a torii's
+   box is its whole gate, so no swordsman passes through one, and a rock's box is its widest point. Where it
+   errs, it errs toward less ground. With the posts alone cut out, chapter 1's patrol would be off its ground and
+   chapter 1 would have had to change (B-87).
+3. **"Let `ENEMY_OFF_GROUND` handle a turned box" was read as: a turned box is never ground, and one standing on
+   his ground is cut out of it.** The other reading, that he may stand ON a box turned about the vertical, would
+   make his ground a turned rectangle and change the clamp the whole fight is stepped with. No level turns a box
+   but the gym, which gets no swordsmen. The rule now says why: "there is no unturned collision box ... (a turned
+   box is not ground)".
+4. **Chapter 1's swordsmen have less ground than on main, and its file did not change.** B-79's row said
+   "nothing ships wrong today". Two of chapter 1's three grounds ran through a torii. They now stop half a metre
+   short of it. No trace, golden or frame hash moved.
+5. **"Never where a chapter first teaches a move" was read as the place, not the D-011 teaching segment.** By
+   the linter's own classification nine of the ten stand in practice or transfer segments. One does not: chapter
+   2's `guard-first` is in segment 0, which teaches the climb, 9.0 u past where the climb lands and 15 u before
+   the wall jump. Chapter 2 has no other place for a third: its two segments that teach nothing hold one each (item 6, and
+   MEASUREMENTS "three placements that were tried and moved"). Chapter 1's own first guard stands at the approach to its first jump.
+6. **No swordsman between a crow's torii and its sweep.** Found, not planned: the bot died in the sweep with the
+   patrol there. The lift-off is "go now" from the torii; a fight on the way breaks the timing for a player too.
+   No lint rule holds this (B-84).
+7. **Two goal guards do not stand quite where the brief's rules point.** Chapter 2's is 3.2 u from where the last
+   double lands (the rule's 3 u, but inside his 4.5 m sight: he comes at a player who has just landed, as chapter
+   1's does from 3.1 u). Chapter 3's is on the last stone before the final dash, not on the goal's ground: there
+   the dash lands 1.7 u before the torii and the goal is 1.7 u after it, so no legal post exists.
+8. **The pair stand 3.86 m apart.** "Close enough to come at the warrior together" was read as: the second has
+   noticed and is closing before the first falls (he notices 20 ticks after the first, 20 before he falls). The
+   bot beat them at the first distance tried, so nothing was moved apart. Nearer (2.47 m) was probed and is
+   easier, not harder: one slash lands on both.
+9. **Linux goldens were got by deleting 15 of them.** Every changed frame was inside `visual`'s 0.5% against its
+   old golden, so CI would have passed and written no frame. A missing golden makes the stage fail and write
+   one. That is one deliberately red CI run, then the same frames committed as the goldens.
+10. **B-78: the word is `cut down`.** A hazard's death (the crow's sweep) still says `fell`, as on main (B-86).
+11. **The patrol's ends are z -2.3 and 2.3, not chapter 1's 2.4.** His ground ends at 2.4000000000000004 (the
+    crow's perch post cuts it), so 2.4 passes by a rounding error.
+12. **D-024 is a new entry, not an edit of D-023**, because D-023 says "three swordsmen in chapter 1 and none
+    anywhere else" and CLAUDE.md lets only a later entry override a closed one.
+13. **The claim was pushed to main as one ledger-only commit** from the branch before it carried any work
+    (06ab7b4), which is how the project's claim rule is used; the release is the same from a detached main.
+
+**What nobody has judged.** No person has played chapters 2 to 4 with swordsmen. The bot does not dodge, never
+waits and never runs past, so it says nothing about how a fight beside a void, a sweep or a docked stone feels.

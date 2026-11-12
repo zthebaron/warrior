@@ -125,16 +125,16 @@
       "triangles": 331496
     },
     "02-cliff-seam": {
-      "draw_calls": 94,
-      "triangles": 132870
+      "draw_calls": 100,
+      "triangles": 177330
     },
     "03-drifting-stones": {
-      "draw_calls": 94,
-      "triangles": 134094
+      "draw_calls": 100,
+      "triangles": 178554
     },
     "04-summit-ridge": {
-      "draw_calls": 92,
-      "triangles": 132846
+      "draw_calls": 106,
+      "triangles": 192226
     }
   },
   "classes_basis": "D-020 (Tim): a hero asset is an externally authored or generated model with its own painted texture. These are CEILINGS for the class, ruled, not measured: about 30k triangles and a 1024 px texture per asset. One texture, one material, one draw call are the kit's own rule, kept (PROVISIONAL, OQ-070). Every hero asset still has its own line in assets, set AT its measured value, and that line may not pass these. There is no bytes ceiling: none has been measured yet.",

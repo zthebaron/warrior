@@ -368,7 +368,7 @@ async function boot(): Promise<void> {
     if (data.enemies?.length) {
       const figure = getCharacter(SWORDSMAN.asset);
       if (!figure) throw new Error(`[level] ${data.id} places swordsmen but "${SWORDSMAN.asset}" is not decoded: prepareLevel was skipped`);
-      enemies = new Swordsmen(data, figure);
+      enemies = new Swordsmen(data, figure, [...MANIFEST.values()]); // the manifest: what stands on his ground is cut out of it by its size (B-79)
       enemies.root.userData['translates'] = 'enemy'; // NOT #18: a swordsman may translate (D-023)
       renderer.scene.add(enemies.root);
     }
@@ -440,9 +440,13 @@ async function boot(): Promise<void> {
   // ---------- rules (checkpoints, goal, death) — run inside the fixed tick ----------
   // Q6 part 1: one way to die. Falling below the fall plane and touching a hazard volume both enter
   // `death`; nothing else happens on contact (no damage, no knockback).
-  const die = (f: THREE.Vector3): void => {
+  // B-78: what ended this attempt, for the one word the HUD shows. It is set by the death it describes and read
+  // only while that death is on screen: it says HOW the warrior went down just now, never how often.
+  let deathByCut = false;
+  const die = (f: THREE.Vector3, cut = false): void => {
     deathTicksLeft = Math.round(GAME_RULES.respawnDelaySec * LOOP_CONFIG.fixedHz);
     deaths++;
+    deathByCut = cut;
     lastDeath = [f.x, f.y, f.z];
     if (player) player.slashTime = null; // D-023: a slash in the air ends with the attempt (the player is not stepped again until the respawn)
     state.transition('death');
@@ -513,7 +517,7 @@ async function boot(): Promise<void> {
     // D-023: the swordsmen, after the warrior has moved. A cut that lands is a death like any other (Q6: one way
     // to die, nothing else happens on contact). Only from `play`, as every rule transition is.
     const fight = enemies ? enemies.fixedUpdate(dt, warriorView(player, state.is('play'))) : NO_FIGHT;
-    if (state.is('play') && fight.some((e) => e.kind === 'cut')) die(player.feet(tmpFeet));
+    if (state.is('play') && fight.some((e) => e.kind === 'cut')) die(player.feet(tmpFeet), true);
     rulesTick();
     tap?.afterTick(player, checkpointLog.length, fight); // D-022: reads the tick, writes nothing
     instrumentTick();
@@ -678,7 +682,7 @@ async function boot(): Promise<void> {
       case 'loading': return 'loading…';
       case 'play': return '';
       case 'pause': return 'PAUSED\nP / Esc: resume   M: menu';
-      case 'death': return 'fell';
+      case 'death': return deathByCut ? 'cut down' : 'fell'; // B-78: a swordsman's blade is not a fall
       // Q4: win is *arrive*. The results state reads `complete` and nothing else — no time, score,
       // par or rank. Run time stays on the ~ debug overlay, which is dev tooling, not the game.
       case 'results': return nextId ? 'COMPLETE\nEnter: next chapter' : 'COMPLETE\nEnter: menu';

@@ -18,6 +18,10 @@
 //   - Text drawn into the WebGL canvas is not read (NOT row 19's src check refuses world text APIs).
 //   - The ~ overlay shows fps and timings, and it is excluded on purpose: it is dev tooling, toggled
 //     by a key the menu names. If it ever ships open by default, this stage reads it and fails.
+//   - B-78: the `death` word names what ended THAT attempt ("fell", or "cut down" for a swordsman's blade). It
+//     is a function of the death on screen and not of the run's history, so it is not a run metric; but every
+//     death this stage causes is a fall, so the two words are never compared here. The `fight` stage reads both.
+//     If a run here were ever ended by a blade, "constant within run B" would fail on the word, not on a metric.
 //   - Only the entry chapter is played. The HUD is per-state, not per-level, so another level adds
 //     nothing unless a level-specific UI appears.
 

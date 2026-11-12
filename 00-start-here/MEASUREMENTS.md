@@ -1837,3 +1837,128 @@ then let go for 60: long enough for the arm to go to its floor and come all the 
 Full playtest on the fix, darwin: PASS, 1,060 checks; `pitch-assist` 115 of 115, so every READABLE_CASE,
 ASSIST_CASE and B-23 proof reads as before. No golden was rewritten: the visual stage's six cameras per level
 are fixed cameras that never run the follow rig.
+
+## ENEMIES-CH2-4 his ground: B-79 (2026-11-12)
+
+`src/systems/fight.ts` `risers()` adds no number: it reads each asset's size from `assets/dist/manifest.json`
+(`bbox` for a mesh, `size` for a primitive) and the placement's own scale and rotation, and `groundRect` cuts the
+result with the numbers it already had (`FIGHT.placing.stepOver` 0.05, `bodyHeight` 1.9, `swordsman.edgeMargin` 0.5).
+
+**The fixture** (`tools/fixtures/fight/risers.json`): a floor with `kit_rock_mass` at scale 0.3 standing on it and a
+floor with a 2 u box turned 30 degrees standing on it; one swordsman beside each; the warrior stood across the
+collider, inside his sight. `check:fight` rule 5 steps him 600 ticks with the game's own ground and tests his
+centre against the collider's REAL triangles (the soup Rapier is handed, read by the linter's `obstaclesOf`; a
+box as its eight corners): inside the solid (a ray's crossings are odd), and the distance on plan to the surface
+that stands in his height band.
+
+| | ground as main had it (unturned boxes only) | ground with B-79 |
+|---|---|---|
+| `beside-rock` | walks 2.82 m, inside the rock's triangles for 569 of 600 ticks, from tick 31 | walks 3.40 m along the cut, never nearer than 0.530 m |
+| `beside-turned-box` | walks 2.89 m, inside the box for 579 of 600 ticks, from tick 22 | walks 1.80 m, never nearer than 0.593 m |
+
+Main's ground is kept in `check:fight --self-test` as a broken fight rule 5 must catch (11 of 11 caught). `lint:self`
+has six new cases, one that must lint clean and five that must fail; four of the five were red on main (commit 525faac): the linter passed a swordsman standing
+in rock, standing in a turned box, and a patrol through either.
+
+**What it cost chapter 1** (its file is unchanged): `guard-first`'s ground is the same rectangle. `guard-patrol`'s
+ended at x 81.50 and now ends at 54.19, half a metre short of T2's torii; `guard-goal`'s ended at 107.50 and now
+ends at 98.19, short of the goal torii (he stands at 98.10). On main both rectangles ran through a torii: B-79's
+row said nothing shipped wrong, and that was not so. Proof nothing a harness sees moved: `frame-hashes --diff`
+against main's build, taken on this machine before the change, `IDENTICAL: 191 values, 5 levels`; chapter 1's
+untouched trace replays (12 changes of mode on the recorded ticks, 3 fell); `fight` 12 of 12.
+
+**A torii is a wall to him.** Its bounding box is the whole gate (z -3.6 to 3.6 on a 7 u path), so no swordsman
+passes through one. Measured on chapter 1's T2 torii: in his height band its collision triangles stand at |z| 1.89
+to 2.51 (the two posts). With the posts alone cut out, `groundRect` would cut his ground along z at 1.89 and
+draw it in to 1.39, and chapter 1's patrol (z -2.4 to 2.4) would be off its ground.
+
+**The built game uses the same ground** (the checks above run the linter's copy of the manifest, not the
+game's). Probed once in the harness bundle, not kept as a stage: chapter 1, the warrior put at (99.8, 9, 2.9),
+past the goal torii, 3.36 m from `guard-goal` and 3.14 u from the goal, then 40 ticks. The game's swordsman is at
+x 98.1565, z 1.8191: the position `stepSwordsman` gives under Node with B-79's ground, to 1e-9, and never past
+x 98.19. With main's ground the same 40 ticks take him to x 98.9732, inside the torii's box (98.69 to 99.31).
+
+## ENEMIES-CH2-4 where the ten stand (2026-11-12)
+
+No number in `FIGHT`, `SWORDSMAN` or `NAV_CONFIG` changed. Positions are level data (`levels/0[234]-*.json`
+`enemies`). Distances below are on plan, from his post (and patrol point) to the nearest of each thing; `lint`
+holds only the first two (`ENEMY_AT_STAND`: 2.4 u from a stand; `ENEMY_ON_LANDING`: 3 u from a landing). His
+sight is 4.5 m.
+
+| Chapter | id | post | ground he keeps to (x, z) | D-011 segment | nearest respawn | nearest landing | sweep lane | dock |
+|---|---|---|---|---|---|---|---|---|
+| 2 | `guard-first` | 22, 4.5, 0 | 12.50..29.19, -3..3 | 0, teaches climb | T1 10.0 | climb 9.0 | none on his level | none |
+| 2 | `guard-patrol` | 78.8, 10, -2.3 to 2.3 | 62.81..81.50, -3..2.4 | 3, transfer | T3 14.98 | double 10.94, across the gap | 4.8 past its far edge | none |
+| 2 | `guard-goal` | 141.7, 15.5, 0 | 137.50..142.19, -3..3 | 4, practice | none on his ground (the goal is 3.3) | double 3.2 | none | none |
+| 3 | `guard-first` | 21.5, 0, 0 | 15.50..26.50, -3..3 | 0, practice | spawn 21.5 | jump 6.0 | 63.5 | 28.3 |
+| 3 | `guard-run` | 104.5, 2.5, 0 | 97.50..107.39, -3..3 | 3, practice | T4 5.7 | jump 6.0 | 17.5 | 7.5 |
+| 3 | `guard-goal` | 127, 2.5, 2.4 | 122.50..127.50, -3..3 | 4, transfer | T4 16.97 | dash 3.84, across the gap | 40 | 5.55 |
+| 4 | `guard-first` | 5.5, 0, 0 | -5.50..9.50, -3..3 | 0, practice | spawn 5.5 | jump 8.0 | none on his level | none |
+| 4 | `guard-pair-a` | 111, 7, -1.8 | 104.81..114.00, -3..3 | 4, practice | T4 5.31 | jump 9.18 | none | none |
+| 4 | `guard-pair-b` | 112.4, 7, 1.8 | 104.81..114.00, -3..3 | 4, practice | T4 6.65 | dashjump 9.28 | none | none |
+| 4 | `guard-goal` | 139.2, 9.5, 0 | 134.00..139.69, -3..3 | 4, practice | none on his ground (the goal is 3.3) | double 4.7 | none | none |
+
+The pair stand 3.86 m apart. No respawn is inside any swordsman's sight. Chapter 3's second lintel (x 127 to
+129.3, its underside 2.0 u over the ground) is over the last half metre of `guard-goal`'s ground and not over his
+post's far side; it is 0.1 u higher than `bodyHeight`, so it is not cut out.
+
+**Three placements that were tried and moved, each for a measured reason.**
+1. Chapter 2's patrol was first put at x 68.6, between T3's torii and the crow's sweep. `nav` FAILED: the bot
+   died at (71.69, 10.01, 0.34), in the sweep. The crow's lift-off is "go now" timed from the torii; a fight
+   4.6 m into the run leaves the warrior that much nearer the lane when it lifts. So: no swordsman between a crow
+   torii and its sweep. He patrols 4.8 m past the lane instead.
+2. Chapter 2's last segment (T4 to the goal) is worst arrival 10.73 s of `PHASE_SWEEP`'s 12 s with nobody in it,
+   so it holds one swordsman, not two. The patrol was planned for the open ground at x 124.5 and is not there.
+3. Chapter 2's and 4's goal guards were first stood in front of the gate's right post (142.1, 15.5, 2.8 and
+   139.5, 9.5, 2.8). `post` FAILED on chapter 2 by one pixel: `D-020 paint layer: no hue`, cam4 (639, 43)
+   rgb(120, 78, 72), the figure's edge over the post's vermilion. Chapter 4 passed with 7 accent pixels behind
+   him. Both now stand in the gate's opening, as chapter 1's does: 0 accent pixels behind a swordsman on either.
+
+**The bot** (`nav`, the same `NAV_CONFIG`), before and after, 60 Hz:
+
+| Chapter | run before | run after | swordsmen down | sword presses | time fighting |
+|---|---|---|---|---|---|
+| 2 | 27.30 s | 27.63 s | 3 of 3 | 6 | 2.00 s |
+| 3 | 29.32 s | 29.95 s | 3 of 3 | 6 | 2.60 s |
+| 4 | 24.15 s | 25.23 s | 4 of 4 | 8 | 2.80 s |
+
+In all three traces every swordsman's modes are close, wind-up, stagger, fallen: none reaches `slash`, so the
+bot is never cut. `PHASE_SWEEP`, worst arrival per segment over the eight phases, limit 12 s:
+
+| Chapter | before | after |
+|---|---|---|
+| 2 | 4.87, 2.65, 2.35, 8.85, 10.73 | 5.20, 2.65, 2.35, 9.18, **11.05** |
+| 3 | 6.63, 7.67, 1.03, 8.32, 8.25 | 6.97, 7.67, 1.03, 8.65, 8.75 |
+| 4 | 4.93, 2.00, 7.43, 6.60, 4.75 | 5.25, 2.00, 7.43, 6.60, 5.83 |
+
+**The pair** (chapter 4's trace, `expect.fight`, ticks from the start of the run): `guard-pair-a` notices at
+1175, winds up at 1193, is staggered at 1199 and falls at 1215. `guard-pair-b` notices at 1195, 20 ticks (0.33 s)
+after the first and 20 ticks before he falls; winds up at 1228, is staggered at 1234 (6 ticks into a 36-tick
+wind-up) and falls at 1250. Both are down 75 ticks (1.25 s) after the first notices. Four presses; no slash lands
+on both. Probed, not shipped: at 2.47 m apart (111, 7, -1.2 and 111.6, 7, 1.2) the bot also fells all four, with
+7 presses in place of 8, because one slash lands on both: nearer is easier, not harder.
+
+**Scene budgets** (`tools/assets/budgets.json` `scenes`), each RAISED to the measured peak over the new trace
+and the six cameras, the same on two runs:
+
+| Level | draw calls | triangles | was |
+|---|---|---|---|
+| `02-cliff-seam` | 100 | 177,330 | 94 / 132,870 |
+| `03-drifting-stones` | 100 | 178,554 | 94 / 134,094 |
+| `04-summit-ridge` | 106 | 192,226 | 92 / 132,846 |
+
+A figure and its katana are 14,820 triangles and two draw calls. Chapters 2 and 3: three of them, exactly. Chapter
+4: four are 59,280 triangles and 8 draw calls; the other 100 triangles and 6 draw calls are the ink of the pair's
+fight on screen. Tier 1 is 300 draw calls and 500,000 triangles. Chapter 1's and the gym's lines are unchanged.
+
+**Goldens.** 15 of the 18 frames changed: cameras 0, 2, 3, 4 and 5 of each chapter. Camera 1 of each has no
+swordsman in it and is byte-identical. `frame-hashes --diff` against main: 66 values differ, 22 a chapter, none in
+`00-gym` or `01-lower-stair`. Every changed frame is under the `visual` stage's 0.5% drift against the old
+golden, so CI would have passed without new goldens; the 15 Linux goldens were removed so that CI wrote its own
+frames, and those frames are the new goldens. That was CI run 43244669052: on chapters 2, 3 and 4 `visual` was
+the only stage of fourteen to fail, five times each, every one "golden missing"; `static`, `game`, the gym and
+chapter 1 passed. Each of CI's 15 frames is 640x360 and within 37 px (0.016%, chapter 2 cam2) of the darwin
+golden of the same camera at the stage's own threshold; four of them differ by 0 px.
+
+**B-78.** `hudText('death')` is `cut down` when a swordsman's cut ended the attempt and `fell` otherwise. The
+`fight` stage reads both off the page (13 of 13). `run-metric` 15 of 15: every death it causes is a fall.
