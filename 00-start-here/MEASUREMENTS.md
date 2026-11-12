@@ -1947,7 +1947,10 @@ fight on screen. Tier 1 is 300 draw calls and 500,000 triangles. Chapter 1's and
 swordsman in it and is byte-identical. `frame-hashes --diff` against main: 66 values differ, 22 a chapter, none in
 `00-gym` or `01-lower-stair`. Every changed frame is under the `visual` stage's 0.5% drift against the old
 golden, so CI would have passed without new goldens; the 15 Linux goldens were removed so that CI wrote its own
-frames, and those frames are the new goldens.
+frames, and those frames are the new goldens. That was CI run 43244669052: on chapters 2, 3 and 4 `visual` was
+the only stage of fourteen to fail, five times each, every one "golden missing"; `static`, `game`, the gym and
+chapter 1 passed. Each of CI's 15 frames is 640x360 and within 37 px (0.016%, chapter 2 cam2) of the darwin
+golden of the same camera at the stage's own threshold; four of them differ by 0 px.
 
 **B-78.** `hudText('death')` is `cut down` when a swordsman's cut ended the attempt and `fell` otherwise. The
 `fight` stage reads both off the page (13 of 13). `run-metric` 15 of 15: every death it causes is a fall.
