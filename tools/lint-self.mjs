@@ -206,8 +206,9 @@ console.log('swordsmen (D-023): where one may stand');
   only('a patrol onto the next ground along (the shelf below)', 'ENEMY_PATROL', (L) => { L.enemies[2].patrol = [[98.1, 9, 3.2]]; });
   only('a patrol point on another height', 'ENEMY_PATROL', (L) => { patrol(L).patrol = [[49.5, 9, 2.4]]; });
   only('a swordsman on the spawn', 'ENEMY_AT_STAND', (L) => { first(L).pos = [2, 0, 0]; });
-  only('a swordsman on a checkpoint', 'ENEMY_AT_STAND', (L) => { patrol(L).pos = [55, 5.5, 0]; patrol(L).patrol = [[52, 5.5, 2.4]]; });
-  only('a swordsman on the goal', 'ENEMY_AT_STAND', (L) => { L.enemies[2].pos = [99.4, 9, 0]; });
+  // B-79: each of these stands has a torii 2u before it, and a torii is no longer ground: both now stand past it
+  only('a swordsman on a checkpoint', 'ENEMY_AT_STAND', (L) => { patrol(L).pos = [56.5, 5.5, 0]; patrol(L).patrol = [[58.5, 5.5, 2.4]]; });
+  only('a swordsman on the goal', 'ENEMY_AT_STAND', (L) => { L.enemies[2].pos = [100.3, 9, 0]; });
   only('a swordsman where a required jump lands', 'ENEMY_ON_LANDING', (L) => { L.enemies[2].pos = [96.5, 9, 0]; });
   only('a patrol that walks onto a landing', 'ENEMY_ON_LANDING', (L) => { patrol(L).patrol = [[43.5, 5.5, 0]]; });
 

@@ -22,8 +22,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  FIGHT, boxTops, groundRect, makeSwordsman, resetSwordsman, slashCutting, stepSlash, stepSwordsman,
-  type EnemyDef, type FightEvent, type FightLevel, type Rect, type Swordsman, type V3, type WarriorView,
+  FIGHT, boxTops, groundRect, makeSwordsman, resetSwordsman, risers, slashCutting, stepSlash, stepSwordsman,
+  type EnemyDef, type FightAsset, type FightEvent, type FightLevel, type Rect, type Swordsman, type V3, type WarriorView,
 } from '../src/systems/fight.ts';
 // @ts-expect-error the linter is plain JavaScript: obstaclesOf and withColliders are documented where they are defined
 import { obstaclesOf, withColliders } from './lint-level.mjs';
@@ -236,8 +236,10 @@ function windupFloor(step: Step): string[] {
 // are odd), and how near is it to the part of the surface that stands in his own height band.
 
 /** The ground a swordsman is given at `pos`: what the game clamps him to and the linter places him by. */
-type Ground = (level: FightLevel, assets: readonly unknown[], pos: V3) => Rect | null;
-const shippedGround: Ground = (level, _assets, pos) => groundRect(boxTops(level), pos);
+type Ground = (level: FightLevel, assets: readonly FightAsset[], pos: V3) => Rect | null;
+const shippedGround: Ground = (level, assets, pos) => groundRect(boxTops(level), pos, risers(level, assets));
+/** The ground as it was before B-79: unturned boxes only. A rock or a turned box standing on it is not seen. */
+const boxesOnlyGround: Ground = (level, _assets, pos) => groundRect(boxTops(level), pos);
 
 interface Solid { what: string; tris: number[][] }
 interface Obstacle { gi: number; corners: number[][]; tris: { W: Float64Array; ix: number[] } | null }
@@ -317,7 +319,7 @@ interface RiserFixture extends FightLevel { enemies: EnemyDef[]; warriors: Recor
 const MANIFEST_PATH = fileURLToPath(new URL('../assets/dist/manifest.json', import.meta.url));
 const RISERS = {
   level: JSON.parse(readFileSync(new URL('./fixtures/fight/risers.json', import.meta.url), 'utf8')) as RiserFixture,
-  manifest: await withColliders(JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')), MANIFEST_PATH) as { assets: unknown[] },
+  manifest: await withColliders(JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')), MANIFEST_PATH) as { assets: FightAsset[] },
 };
 const RISER_SOLIDS = solidsOf(RISERS.level, RISERS.manifest);
 /** how long he is given to walk into something: several times what the walk takes */
@@ -400,6 +402,8 @@ const MUTATIONS: [string, number, () => string[]][] = [
   ['a cut that lands on every tick of his slash', 1, () => hisCut((s, w, dt) => { s.landed = false; return stepSwordsman(s, w, dt); })],
   ['a step that keeps state outside the swordsman (a counter that never resets)', 2, () => replays((s, w, dt) => { s.x += 1e-9 * (drift++ % 7); return stepSwordsman(s, w, dt); })],
   ['a wind-up that runs twice as fast as its clock', 3, () => windupFloor((s, w, dt) => { if (s.mode === 'windup') s.modeTime += dt; return stepSwordsman(s, w, dt); })],
+  ['his ground as it was before B-79: unturned boxes only, a rock or a turned box on it unseen', 4, () => hisGround(stepSwordsman, boxesOnlyGround)],
+  ['a swordsman who is not held to his ground', 4, () => hisGround((s, w, dt) => { const g = s.ground; s.ground = FLOOR; try { return stepSwordsman(s, w, dt); } finally { s.ground = g; } })],
   ['a wind-up cut to a third whenever the warrior is close', 3, () => windupFloor((s, w, dt) => { if (s.mode === 'windup' && s.modeTime < dt * 1.5) s.modeTime += F.windupMinSec * 0.67; return stepSwordsman(s, w, dt); })],
 ];
 

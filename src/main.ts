@@ -368,7 +368,7 @@ async function boot(): Promise<void> {
     if (data.enemies?.length) {
       const figure = getCharacter(SWORDSMAN.asset);
       if (!figure) throw new Error(`[level] ${data.id} places swordsmen but "${SWORDSMAN.asset}" is not decoded: prepareLevel was skipped`);
-      enemies = new Swordsmen(data, figure);
+      enemies = new Swordsmen(data, figure, [...MANIFEST.values()]); // the manifest: what stands on his ground is cut out of it by its size (B-79)
       enemies.root.userData['translates'] = 'enemy'; // NOT #18: a swordsman may translate (D-023)
       renderer.scene.add(enemies.root);
     }
