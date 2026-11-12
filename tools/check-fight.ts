@@ -22,9 +22,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  FIGHT, makeSwordsman, resetSwordsman, slashCutting, stepSlash, stepSwordsman,
-  type EnemyDef, type FightEvent, type Rect, type Swordsman, type WarriorView,
+  FIGHT, boxTops, groundRect, makeSwordsman, resetSwordsman, slashCutting, stepSlash, stepSwordsman,
+  type EnemyDef, type FightEvent, type FightLevel, type Rect, type Swordsman, type V3, type WarriorView,
 } from '../src/systems/fight.ts';
+// @ts-expect-error the linter is plain JavaScript: obstaclesOf and withColliders are documented where they are defined
+import { obstaclesOf, withColliders } from './lint-level.mjs';
 
 const DT = 1 / 60;
 const F = FIGHT.swordsman, W = FIGHT.warrior;
@@ -227,11 +229,153 @@ function windupFloor(step: Step): string[] {
   return bad;
 }
 
+// ---------- 5. his ground stops at whatever stands on it (B-79) ----------
+// The oracle is NOT the ground code: it is the collider. Every obstacle of the fixture is read the way the
+// linter's camera arm reads it (obstaclesOf: a mesh as the triangles Rapier is handed, a box as its corners),
+// and on every tick his centre is tested against those triangles: is it INSIDE the solid (a ray's crossings
+// are odd), and how near is it to the part of the surface that stands in his own height band.
+
+/** The ground a swordsman is given at `pos`: what the game clamps him to and the linter places him by. */
+type Ground = (level: FightLevel, assets: readonly unknown[], pos: V3) => Rect | null;
+const shippedGround: Ground = (level, _assets, pos) => groundRect(boxTops(level), pos);
+
+interface Solid { what: string; tris: number[][] }
+interface Obstacle { gi: number; corners: number[][]; tris: { W: Float64Array; ix: number[] } | null }
+/** a box's six faces, as indices into obstaclesOf's corners (bit 0 is x, bit 1 y, bit 2 z) */
+const FACES = [[0, 2, 6, 4], [1, 3, 7, 5], [0, 1, 5, 4], [2, 3, 7, 6], [0, 1, 3, 2], [4, 5, 7, 6]];
+
+function solidsOf(level: FightLevel, manifest: unknown): Solid[] {
+  return (obstaclesOf(level, manifest) as Obstacle[]).map((o) => {
+    const tris: number[][] = [];
+    if (o.tris) {
+      const { W, ix } = o.tris;
+      for (let t = 0; t + 2 < ix.length; t += 3) tris.push([0, 1, 2].flatMap((k) => { const i = ix[t + k]! * 3; return [W[i]!, W[i + 1]!, W[i + 2]!]; }));
+    } else {
+      for (const [a, b, c, d] of FACES) for (const f of [[a, b, c], [a, c, d]]) tris.push(f.flatMap((m) => o.corners[m!]!));
+    }
+    const g = level.geometry![o.gi]!;
+    return { what: `geometry[${o.gi}] ${g.asset}`, tris };
+  });
+}
+
+const cross = (a: number[], b: number[]): number[] => [a[1]! * b[2]! - a[2]! * b[1]!, a[2]! * b[0]! - a[0]! * b[2]!, a[0]! * b[1]! - a[1]! * b[0]!];
+const dot = (a: number[], b: number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;
+/** A ray that lies in no face of an axis-aligned box and along no edge of the kit's meshes. */
+const RAY = [1, 0.0137, 0.0071];
+
+/** Is `p` inside the closed solid: does a ray from it cross the surface an odd number of times. */
+function insideSolid(solid: Solid, p: number[]): boolean {
+  let n = 0;
+  for (const t of solid.tris) {
+    const e1 = [t[3]! - t[0]!, t[4]! - t[1]!, t[5]! - t[2]!], e2 = [t[6]! - t[0]!, t[7]! - t[1]!, t[8]! - t[2]!];
+    const h = cross(RAY, e2), a = dot(e1, h);
+    if (Math.abs(a) < 1e-12) continue;
+    const s = [p[0]! - t[0]!, p[1]! - t[1]!, p[2]! - t[2]!], u = dot(s, h) / a;
+    if (u < 0 || u > 1) continue;
+    const q = cross(s, e1), v = dot(RAY, q) / a;
+    if (v < 0 || u + v > 1) continue;
+    if (dot(e2, q) / a > 0) n++;
+  }
+  return n % 2 === 1;
+}
+
+/** The part of a polygon on one side of the plane y = at (keep +1: above it, -1: below it). */
+function clipY(poly: number[][], at: number, keep: 1 | -1): number[][] {
+  const out: number[][] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i]!, b = poly[(i + 1) % poly.length]!;
+    const ina = (a[1]! - at) * keep >= 0, inb = (b[1]! - at) * keep >= 0;
+    if (ina) out.push(a);
+    if (ina !== inb) { const k = (at - a[1]!) / (b[1]! - a[1]!); out.push([a[0]! + (b[0]! - a[0]!) * k, at, a[2]! + (b[2]! - a[2]!) * k]); }
+  }
+  return out;
+}
+
+/** Metres on the ground plan from (x, z) to the part of the solid's surface between heights lo and hi. 0: he is under or over it. */
+function clearance(solid: Solid, x: number, z: number, lo: number, hi: number): number {
+  let best = Infinity;
+  for (const t of solid.tris) {
+    const poly = clipY(clipY([[t[0]!, t[1]!, t[2]!], [t[3]!, t[4]!, t[5]!], [t[6]!, t[7]!, t[8]!]], lo, 1), hi, -1);
+    if (poly.length < 3) continue;
+    let side = 0, covers = true, area = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i]!, b = poly[(i + 1) % poly.length]!;
+      const ex = b[0]! - a[0]!, ez = b[2]! - a[2]!, px = x - a[0]!, pz = z - a[2]!;
+      area += a[0]! * b[2]! - b[0]! * a[2]!;
+      const turn = Math.sign(ex * pz - ez * px);
+      if (turn !== 0) { if (side === 0) side = turn; else if (turn !== side) covers = false; }
+      const len = ex * ex + ez * ez, k = len > 0 ? Math.max(0, Math.min(1, (px * ex + pz * ez) / len)) : 0;
+      best = Math.min(best, Math.hypot(px - ex * k, pz - ez * k));
+    }
+    if (covers && Math.abs(area) > 1e-9) return 0;
+  }
+  return best;
+}
+
+/** tools/fixtures/fight/risers.json: a level's geometry and enemies, and where the warrior stands for each. */
+interface RiserFixture extends FightLevel { enemies: EnemyDef[]; warriors: Record<string, V3> }
+const MANIFEST_PATH = fileURLToPath(new URL('../assets/dist/manifest.json', import.meta.url));
+const RISERS = {
+  level: JSON.parse(readFileSync(new URL('./fixtures/fight/risers.json', import.meta.url), 'utf8')) as RiserFixture,
+  manifest: await withColliders(JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')), MANIFEST_PATH) as { assets: unknown[] },
+};
+const RISER_SOLIDS = solidsOf(RISERS.level, RISERS.manifest);
+/** how long he is given to walk into something: several times what the walk takes */
+const GROUND_TICKS = 600;
+
+interface GroundRun {
+  rect: Rect | null;
+  /** tick he noticed the warrior on, -1 never */
+  notice: number;
+  /** ticks his centre spent inside a collider, the first of them, and which collider */
+  insideTicks: number; firstInside: number; into: string;
+  /** the nearest he came to a collider's surface in his height band, and which, on which tick */
+  minClear: number; nearest: string; nearestTick: number;
+  /** how far he walked from his post */
+  walked: number;
+}
+
+/** One of the fixture's swordsmen, given his ground by `ground`, with the warrior stood across the collider from him. */
+function groundRun(def: EnemyDef, step: Step, ground: Ground): GroundRun {
+  const P = FIGHT.placing;
+  const out: GroundRun = { rect: ground(RISERS.level, RISERS.manifest.assets, def.pos), notice: -1, insideTicks: 0, firstInside: -1, into: '', minClear: Infinity, nearest: '', nearestTick: -1, walked: 0 };
+  if (!out.rect) return out;
+  const d = duel(def, step, out.rect), w = RISERS.level.warriors[def.id]!;
+  for (let k = 0; k < GROUND_TICKS; k++) {
+    tick(d, { x: w[0], y: w[1], z: w[2] });
+    const { x, z } = d.s, y = out.rect.y;
+    out.walked = Math.max(out.walked, Math.hypot(x - def.pos[0], z - def.pos[2]));
+    for (const solid of RISER_SOLIDS) {
+      if (insideSolid(solid, [x, y + P.bodyHeight / 2, z])) {
+        if (!out.insideTicks) { out.firstInside = d.tick; out.into = solid.what; }
+        out.insideTicks++;
+      }
+      const c = clearance(solid, x, z, y + P.stepOver, y + P.bodyHeight);
+      if (c < out.minClear) { out.minClear = c; out.nearest = solid.what; out.nearestTick = d.tick; }
+    }
+  }
+  out.notice = first(d, 'notice');
+  return out;
+}
+
+function hisGround(step: Step, ground: Ground = shippedGround): string[] {
+  const bad: string[] = [];
+  for (const def of RISERS.level.enemies) {
+    const r = groundRun(def, step, ground);
+    if (!r.rect) { bad.push(`${def.id}: no ground at his post ${JSON.stringify(def.pos)}: the fixture stands him clear of the collider`); continue; }
+    if (r.notice < 0 || r.walked < F.edgeMargin) bad.push(`${def.id}: he ${r.notice < 0 ? 'never noticed the warrior' : `walked only ${r.walked.toFixed(2)} m`}: the fixture tests nothing`);
+    if (r.insideTicks) bad.push(`${def.id}: he walked INTO ${r.into}: inside its collision triangles for ${r.insideTicks} of ${GROUND_TICKS} ticks, from tick ${r.firstInside}`);
+    else if (r.minClear < F.edgeMargin - 1e-9) bad.push(`${def.id}: he came within ${r.minClear.toFixed(3)} m of ${r.nearest} (tick ${r.nearestTick}); he keeps edgeMargin ${F.edgeMargin} m from anything standing on his ground`);
+  }
+  return bad;
+}
+
 const RULES: [string, (step: Step) => string[]][] = [
   ['a swordsman falls to two hits and not one', twoHits],
   ['his slash reaches a warrior who stands in front of him, and only one who does', hisCut],
   ['a fight replays the same, run to run', replays],
   ['the wind-up is never shorter than the configured minimum', windupFloor],
+  ['his ground stops at whatever stands on it: rock, a turned box', hisGround],
 ];
 
 // ---------- the self-test: each rule against a fight broken in the way it exists to catch ----------
