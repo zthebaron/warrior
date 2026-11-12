@@ -249,3 +249,7 @@
 {"id":"B-74","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.598Z","ttl_min":600}
 {"id":"B-79","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.626Z","ttl_min":600}
 {"id":"B-78","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.651Z","ttl_min":600}
+{"id":"ENEMIES-CH2-4","agent":"enemies-ch2-4","ts":"2026-11-12T15:33:25.013Z","released":true}
+{"id":"B-74","agent":"enemies-ch2-4","ts":"2026-11-12T15:33:25.039Z","released":true}
+{"id":"B-79","agent":"enemies-ch2-4","ts":"2026-11-12T15:33:25.064Z","released":true}
+{"id":"B-78","agent":"enemies-ch2-4","ts":"2026-11-12T15:33:25.089Z","released":true}
