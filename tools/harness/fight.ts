@@ -55,6 +55,9 @@ interface Attempt {
   afterTwo: Foe | null;
   afterHold: { foe: Foe; deaths: number; state: string } | null;
   afterFall: { foe: Foe; deaths: number } | null;
+  /** B-78: what the page shows the player (document.body.innerText) at his cut, and at the fall in B */
+  hudAtCut: string | null;
+  hudAtFall: string | null;
 }
 
 /** One attempt, driven in the page a tick at a time through the public input path. onlyCut: stop after A. */
@@ -62,7 +65,7 @@ function attempt(page: Page, a: { stand: number; press: number; hold: number; wa
   return page.evaluate((a) => {
     const H = window.__HARNESS__!;
     const N: InputFrame = { x: 0, y: 0, jump: false, dash: false, sprint: false, slash: false };
-    const out: Attempt = { ok: false, stopped: null, log: [], frames: [], windupTick: null, deathTick: null, afterCut: null, afterOne: null, afterTwo: null, afterHold: null, afterFall: null };
+    const out: Attempt = { ok: false, stopped: null, log: [], frames: [], windupTick: null, deathTick: null, afterCut: null, afterOne: null, afterTwo: null, afterHold: null, afterFall: null, hudAtCut: null, hudAtFall: null };
     H.setInput(null);
     let s = H.snapshot();
     const t0 = s.tick;
@@ -96,6 +99,7 @@ function attempt(page: Page, a: { stand: number; press: number; hold: number; wa
     if (!until(() => s.state === 'death', () => N)) return done('A: stood in front of him and was never cut');
     out.windupTick = lastWindup;
     out.deathTick = s.tick - t0;
+    out.hudAtCut = document.body.innerText.trim();
     if (!until(() => s.state === 'play', () => N)) return done('A: never respawned');
     out.afterCut = { feet: s.feet, checkpoints: s.checkpoints, deaths: s.deaths, foe: foe() };
     if (a.onlyCut) return done(null);
@@ -113,6 +117,7 @@ function attempt(page: Page, a: { stand: number; press: number; hold: number; wa
     // off the side of the pad: a fall, a respawn, and he is back
     const deaths = s.deaths;
     if (!until(() => s.deaths > deaths, () => ({ ...N, y: 1 }))) return done('B: never fell off the pad');
+    out.hudAtFall = document.body.innerText.trim();
     if (!until(() => s.state === 'play', () => N)) return done('B: never respawned after the fall');
     out.afterFall = { foe: foe(), deaths: s.deaths };
     return done(null);
@@ -220,6 +225,11 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const cutTicks = run.deathTick! - run.windupTick!;
       st.check('2. his slash sends the warrior to the checkpoint', cutSendsBack(run) === null,
         cutSendsBack(run) ?? `cut at tick ${run.deathTick}; respawned at the torii (${run.afterCut!.feet.map((v) => v.toFixed(2)).join(', ')}), not the spawn; he is back on his post, unhurt`);
+      // B-78: the HUD's one word names what ended the attempt. Each is read off the page on the tick of that death.
+      const shown = (t: string | null): string => (t ?? '').split('\n').map((l) => l.trim()).filter(Boolean).join(' / ');
+      st.check('the HUD says he was cut down at his cut, and that he fell at a fall (B-78)',
+        shown(run.hudAtCut) === 'cut down' && shown(run.hudAtFall) === 'fell',
+        `at his cut: "${shown(run.hudAtCut)}"; off the side of the pad: "${shown(run.hudAtFall)}"`);
       st.check('4. the wind-up is never shorter than the configured minimum (as shipped)', windupHolds(run) === null,
         windupHolds(run) ?? `${secs(cutTicks)} from the wind-up to the cut; minimum ${F['windupMinSec']} s (${floorTicks} ticks); windupSec ${F['windupSec']}`);
       st.check('1. a swordsman falls to two hits and not one', twoHits(run) === null,
