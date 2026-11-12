@@ -1857,7 +1857,7 @@ that stands in his height band.
 | `beside-turned-box` | walks 2.89 m, inside the box for 579 of 600 ticks, from tick 22 | walks 1.80 m, never nearer than 0.593 m |
 
 Main's ground is kept in `check:fight --self-test` as a broken fight rule 5 must catch (11 of 11 caught). `lint:self`
-has five new cases; four were red on main (commit 525faac): the linter passed a swordsman standing
+has six new cases, one that must lint clean and five that must fail; four of the five were red on main (commit 525faac): the linter passed a swordsman standing
 in rock, standing in a turned box, and a patrol through either.
 
 **What it cost chapter 1** (its file is unchanged): `guard-first`'s ground is the same rectangle. `guard-patrol`'s
@@ -1868,7 +1868,15 @@ against main's build, taken on this machine before the change, `IDENTICAL: 191 v
 untouched trace replays (12 changes of mode on the recorded ticks, 3 fell); `fight` 12 of 12.
 
 **A torii is a wall to him.** Its bounding box is the whole gate (z -3.6 to 3.6 on a 7 u path), so no swordsman
-passes through one. With the posts alone cut out, chapter 1's patrol (z -2.4 to 2.4) would be off its ground.
+passes through one. Measured on chapter 1's T2 torii: in his height band its collision triangles stand at |z| 1.89
+to 2.51 (the two posts). With the posts alone cut out, `groundRect` would cut his ground along z at 1.89 and
+draw it in to 1.39, and chapter 1's patrol (z -2.4 to 2.4) would be off its ground.
+
+**The built game uses the same ground** (the checks above run the linter's copy of the manifest, not the
+game's). Probed once in the harness bundle, not kept as a stage: chapter 1, the warrior put at (99.8, 9, 2.9),
+past the goal torii, 3.36 m from `guard-goal` and 3.14 u from the goal, then 40 ticks. The game's swordsman is at
+x 98.1565, z 1.8191: the position `stepSwordsman` gives under Node with B-79's ground, to 1e-9, and never past
+x 98.19. With main's ground the same 40 ticks take him to x 98.9732, inside the torii's box (98.69 to 99.31).
 
 ## ENEMIES-CH2-4 where the ten stand (2026-11-12)
 
