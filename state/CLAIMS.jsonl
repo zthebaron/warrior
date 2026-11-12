@@ -245,3 +245,7 @@
 {"id":"ENEMIES","agent":"enemies","ts":"2026-11-11T02:47:11.630Z","ttl_min":600}
 {"id":"CAMERA-WALL-ZOOM","agent":"camera-wall-zoom","ts":"2026-11-11T13:34:11.964Z","ttl_min":480}
 {"id":"CAMERA-WALL-ZOOM","agent":"camera-wall-zoom","ts":"2026-11-11T15:48:13.396Z","released":true}
+{"id":"ENEMIES-CH2-4","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.572Z","ttl_min":600}
+{"id":"B-74","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.598Z","ttl_min":600}
+{"id":"B-79","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.626Z","ttl_min":600}
+{"id":"B-78","agent":"enemies-ch2-4","ts":"2026-11-12T14:11:06.651Z","ttl_min":600}
