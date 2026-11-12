@@ -466,5 +466,10 @@ for (const [name, rule] of RULES) {
   }
   console.log(`  measured: the warrior's slash, in ticks after the press: cutting on ${cutting[0]} to ${cutting.at(-1)} (${cutting.length} ticks), over on ${ends}, a second press taken from ${again}`);
 }
+// B-79, for MEASUREMENTS "ENEMIES-CH2-4 his ground": the fixture with his ground as shipped, and as it was
+for (const def of RISERS.level.enemies) {
+  const now = groundRun(def, stepSwordsman, shippedGround), was = groundRun(def, stepSwordsman, boxesOnlyGround);
+  console.log(`  measured: ${def.id}: he walks ${now.walked.toFixed(2)} m and comes no nearer than ${now.minClear.toFixed(3)} m to ${now.nearest} (edgeMargin ${F.edgeMargin}); on unturned boxes only he walks ${was.walked.toFixed(2)} m and is inside ${was.into} for ${was.insideTicks} of ${GROUND_TICKS} ticks, from tick ${was.firstInside}`);
+}
 console.log(failed ? `CHECK-FIGHT FAIL (${failed} of ${RULES.length} rules)` : `CHECK-FIGHT PASS (${RULES.length} rules)`);
 process.exit(failed ? 1 : 0);
