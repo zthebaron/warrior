@@ -11,7 +11,7 @@
     "platform",
     "dash"
   ],
-  "palette": "greybox",
+  "palette": "ink",
   "spawn": {
     "pos": [
       0,
@@ -550,7 +550,8 @@
     }
   ],
   "lighting": {
-    "preset": "greybox"
+    "preset": "ink",
+    "ambienceZone": "drift"
   },
   "critical_path": [
     [

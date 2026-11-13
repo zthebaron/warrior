@@ -2084,3 +2084,62 @@ took, each PROVISIONAL. **Nobody has played chapter 2 in this look; every call b
     first face the lip is unmistakable and the face is a painting; no striping or z-fight on a wash. In the
     corridor both walls carry lips and nothing says which to kick off (item 9). In the harness's cam3 a pale
     patch of a rock ledge shows through a gap between two wall cards (item 7).
+
+## OQ-083 — CH3-INK: the builder's calls on chapter 3's look, and two checks added to a gate
+raised: 2026-11-13 by ch3-ink (claim CH3-INK). Brief: `00-start-here/PROMPT-CH3-INK.md`. Decision: D-029.
+Numbers: MEASUREMENTS "D-029 the drift's look", "D-029 the stone check", "D-029 proportion", "D-029 every other level".
+took, each PROVISIONAL. **Nobody has played chapter 3 in this look; every call below was judged from frames.**
+
+1. **Its own zone, `drift`, on D-028's method** (OQ-082 item 4 left this open). Its loader draws the level's own
+   boxes as the seam's does and shares the seam's two cards and its ledge code; chapter 2's constants are not
+   touched. Chapter 4 would be a third zone or take one of these two.
+2. **A dark brink, not a paper lip.** Chapter 2's top is read from below by a paper lip; chapter 3's is read from
+   above, and the lip would fill the slice of a gap's far face that the camera sees with paper. So the top 0.5 u
+   of every face here is dark. **The game now has two ways of drawing the edge of ground. Tim: say if one should
+   win** (B-120). The brink also marks a face too high to matter and the lintels' tops: it says "ground", not
+   "use this".
+3. **A moving stone's top is mist-pale**, the one top in an ink level that is not paper. Measured, not chosen by
+   eye: docked and seen from above, a paper top over the void is 4.8% off the paper's value. It is also how the
+   stone is told from the ground it docks against. Revisit: if every top should be one value.
+4. **The keel has no collider.** It is rock drawn under a slab he stands on, over the void: seen and not
+   touched, as a pine under a ledge is. D-028's rule is the other way round (nothing unseen collides); that holds.
+5. **Where the stone is going is a streak of mist under its travel.** A painted wake that followed the stone was
+   the first idea and cannot be: `post` advances the world a tick between two frames and fails if anything
+   painted moved over the sky, and the paint layer's rule is that nothing painted moves. The streak is fixed in
+   the world. It is soft grey on the mist, 2.5 and 4 u under the tops, and **it could be taken for a lower path**
+   (B-118). Remove: pass no `travels` to `buildDrift`.
+6. **The rocks adrift are cliff paintings hung with their feet in the air.** Reuse, and they read as hanging
+   spires, not floating islands. A painting made for it (a rock with an underside) is about $0.12 and was not
+   bought: the brief says reuse first, and the level's own floating rock (the stones, the lintels) is drawn (B-119).
+7. **The mist stands 1.5 u higher** than in chapters 1 and 2. It is "more void and mist", and it hides the feet
+   of 13 u boxes that would otherwise stand as towers under stones that are meant to drift. The six sheets of
+   its fade can be counted on a rock's foot from the overview camera (B-121).
+8. **Chapter 2 did not take the proportion fix.** Its frames are byte-identical. What it would take: the wall's
+   flag (one argument), the far peaks' (one argument), and `SEAM.across.metres` 7 x 9 to 7 x 7, which moves the
+   mirror line of its face card to 7 u down, inside its taller faces; then its goldens on both platforms.
+   `post` now reports every dressed level's worst card and judges only the drift (B-116). Chapter 1 the same.
+9. **The wall is in proportion and is still seen along its length** (B-52). A card measured true is still
+   foreshortened about five to one from behind him. Not tried: turning the front cards to face the way he comes;
+   anisotropic filtering on the wall's textures (they are shared with chapter 1, whose frames may not change) (B-117).
+10. **Two checks added to `post`; none edited, no threshold moved.** The stone check and the proportion check.
+    The stone check's first cut compared the frame with the one without the stone, and a paper-on-paper stone
+    PASSED it at 83%, because the mist channel under it is grey: it was replaced by one that judges the stone's
+    own pixels against the paper's value before any number was recorded. Its camera is the follow rig's offset
+    behind a point 5.2 u before the stone's start, not the rig itself.
+11. **`frame-hashes` is 25, not 24.** The 25th is chapter 1's cam3, B-115's one pixel: main's source gave
+    881620c4 in this run and the branch c7b29bc6, the same two values D-028 recorded from main's own source.
+    The gym and chapters 2, 4 and 5 are identical.
+12. **A platform's mesh has a name in an ink level** (`platform:<id>`), so the harness can find it. In a greybox
+    level it has none, as before: the gym's renderables are unchanged.
+13. **STYLE strains, not amended.** §6: the brink is a value band that is not a silhouette (as D-028's lip band).
+    §5: a mist streak under each stone, in a void that wants to be bright (D-021's bands are the precedent).
+    §3: a painted face keeps full ink at any distance.
+14. **No fal spend.** The brief allowed $1.50. The ledger stands at $15.1968.
+15. **Not done:** a phone was not held; nobody has played it.
+16. **Self-review, as a player, on the real GPU at 5120 x 1440** (the one review the brief asks for). Riding the
+    stone, it reads: a mist-pale top edged in dark, the mist streak under it. The dash gap is a dark slot under the
+    hanging lintel. **Before the first jump the docked stone is behind the torii's posts and its top reads only as
+    a greyer piece of ground; nothing in that frame says it moves** (the keel is under it, out of sight until it
+    is out over the void): the brief's "where it is going ... before he jumps for it" is met by the streak only,
+    and faintly. The wall beside the path is foreshortened, its strokes magnified near the camera (B-117), and a
+    reachable ledge of it is a thin pale scratch (as chapter 2's B-113).

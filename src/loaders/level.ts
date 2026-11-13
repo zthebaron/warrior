@@ -16,6 +16,7 @@ import { getLoadedAsset, preloadAssets } from './assets';
 import { buildBackdrop, preloadBackdrop } from './backdrop';
 import { buildCliffWall, type RockMass } from './cliff-wall';
 import { COURTYARD, buildCourtyard, preloadCourtyard, type YardBox } from './courtyard';
+import { DRIFT, buildDrift, buildDriftStone, type DriftTravel } from './drift';
 import { buildPathWash, type WalkTop } from './path-wash';
 import { SEAM, buildSeam, preloadSeam, type SeamBox, type SeamRock } from './seam';
 import { preloadCharacter } from './character';
@@ -183,6 +184,8 @@ export const INK = {
 } as const;
 /** Name prefix of the hidden mesh an undrawn collider keeps (D-021). */
 export const UNDRAWN = 'undrawn:';
+/** Name prefix of a moving platform's mesh in an ink level, whatever it is drawn as (D-029). */
+export const PLATFORM_MESH = 'platform:';
 const isInk = (data: Pick<LevelData, 'palette'>): boolean => data.palette === INK.palette;
 const inkBackground = (): number => {
   const c = paletteJson.colors.find((x) => x.name === INK.background);
@@ -258,6 +261,7 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
     isInk(data) ? preloadBackdrop() : null,
     isInk(data) && data.lighting?.ambienceZone === COURTYARD.zone ? preloadCourtyard() : null, // D-026: its own cards, for it alone
     isInk(data) && data.lighting?.ambienceZone === SEAM.zone ? preloadSeam() : null, // D-028: likewise
+    isInk(data) && data.lighting?.ambienceZone === DRIFT.zone ? preloadSeam() : null, // D-029: the drift lays the seam's two cards
     preloadCharacter(CHARACTER.asset),
     // D-023: the swordsman is decoded only for a level that places one, so every other level loads what it did
     data.enemies?.length ? preloadCharacter(SWORDSMAN.asset) : null,
@@ -496,6 +500,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const yardBoxes: YardBox[] = [], doorBoxes: YardBox[] = [];
   // D-028: an ink level in the cliff seam has no dressing placed over its boxes: they are the rock, and seam.ts draws them
   const seamLook = ink && data.lighting?.ambienceZone === SEAM.zone;
+  // D-029: an ink level in the drift is drawn from its own boxes too (drift.ts), and its moving stones with them
+  const driftLook = ink && data.lighting?.ambienceZone === DRIFT.zone;
+  const rockLook = seamLook || driftLook; // either way: every unturned box is drawn as rock, by its own loader
   const seamBoxes: SeamBox[] = [];
   const seamRocks: SeamRock[] = [];
   // a kit mesh drawn in place of a hazard cube (INK): same pose and scale, so `size` stays the volume
@@ -540,7 +547,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
         maxX = Math.max(maxX, v.x + p.pos[0]);
       }
       rockMasses.push({ x: p.pos[0], baseY, topY, frontZ, minX, maxX });
-      if (seamLook) seamRocks.push({ positions: src, indices: loaded.collision.indices, matrix: new THREE.Matrix4().compose(new THREE.Vector3(...p.pos), q, scale) });
+      if (rockLook) seamRocks.push({ positions: src, indices: loaded.collision.indices, matrix: new THREE.Matrix4().compose(new THREE.Vector3(...p.pos), q, scale) });
     }
     if (undrawn) {
       // Kept in the scene, never visible in the game: the harness shows it for the frame that tests the ink
@@ -612,7 +619,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (kind === 'none') {
       // D-028: in the seam every unturned box is drawn as rock, with or without a collider: READABLE_RISE counts a
       // render-only box as something that hides a top (B-23), and a box an ink level did not draw would not
-      if (seamLook && !(p.rot ?? []).some((v) => v !== 0)) seamBoxes.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2 });
+      if (rockLook && !(p.rot ?? []).some((v) => v !== 0)) seamBoxes.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2 });
       if (door) throw new Error(`[level] geometry[${i}]: a "${GATE.doorTag}" is what stands in the gateway while the gate is shut: it needs a collider`);
       return;
     }
@@ -620,7 +627,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     // D-026: a door is not ground: nothing is brushed onto the top of it.
     if (ink && !door && !(p.rot ?? []).some((v) => v !== 0)) {
       walkTops.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2, y: p.pos[1] + size.y / 2 });
-      if (seamLook) seamBoxes.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2 });
+      if (rockLook) seamBoxes.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2 });
     }
     const desc = colliderDesc(kind, size, `geometry[${i}]`);
     desc.setTranslation(...p.pos).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
@@ -629,6 +636,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   });
 
   // moving platforms
+  const stones: { dispose(): void }[] = [];
+  const travels: DriftTravel[] = [];
   const platforms: PlatformInstance[] = (data.platforms ?? []).map((def, i) => {
     const a = asset(def.asset, `platforms[${i}]`);
     if (a.kind !== 'primitive') throw new Error(`[level] platforms[${i}]: "${a.name}" is a ${a.kind} asset — moving platforms are primitive-only for now`);
@@ -638,9 +647,14 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     const kind = def.collider ?? a.collider;
     if (kind === 'none') throw new Error(`[level] platforms[${i}]: a platform needs a collider`);
     const collider = physics.world.createCollider(colliderDesc(kind, size, `platforms[${i}]`), body);
-    const mesh = new THREE.Mesh(walkGeo(V.platformTopColor, V.platformColor), walkMat);
+    // D-029: in the drift a moving stone is drawn as one (drift.ts): the same slab, at its own size, in the ink pass
+    const stone = driftLook ? buildDriftStone(size) : null;
+    if (stone) stones.push(stone);
+    const mesh = stone ? stone.mesh : new THREE.Mesh(walkGeo(V.platformTopColor, V.platformColor), walkMat);
     mesh.userData['translates'] = 'platform'; // NOT #18: a moving platform is the `platform` move (Q2), not ambience
-    mesh.scale.copy(size);
+    if (ink) mesh.name = `${PLATFORM_MESH}${def.id ?? i}`; // the harness finds an ink level's platform by this (tools/harness/post.ts STONE_GATE)
+    if (!stone) mesh.scale.copy(size);
+    travels.push({ from: def.path[0]!, to: def.path[def.path.length - 1]!, size: a.size });
     mesh.position.copy(start);
     root.add(mesh);
     pickables.push(mesh);
@@ -724,10 +738,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const byHandle = new Map<number, PlatformInstance>(platforms.map((p) => [p.collider.handle, p]));
 
   // D-020: an ink level's far field is painted (paint layer), under root so it leaves with the level
-  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : seamLook ? SEAM.cliffs : undefined) : null;
+  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : seamLook ? SEAM.cliffs : driftLook ? DRIFT.cliffs : undefined, driftLook ? DRIFT.mist : undefined, driftLook ? 1 : undefined) : null; // D-029: the drift's far peaks are not squashed
   if (backdrop) root.add(backdrop.root);
   // D-021: the near rock is painted too, from the placements that collide and are not drawn
-  const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses) : null;
+  const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses, driftLook) : null; // D-029: the drift's wall keeps its paintings' proportion
   if (cliffWall) root.add(cliffWall.root);
   const pathWash = ink && !yardLook && walkTops.length ? buildPathWash(walkTops) : null; // the yard's floor is flags, not a brushed path
   if (pathWash) root.add(pathWash.root);
@@ -735,6 +749,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   if (courtyard) root.add(courtyard.root);
   const seam = seamLook ? buildSeam(seamBoxes, seamRocks) : null; // D-028
   if (seam) root.add(seam.root);
+  const drift = driftLook ? buildDrift(seamBoxes, seamRocks, travels) : null; // D-029
+  if (drift) root.add(drift.root);
 
   return {
     data,
@@ -820,6 +836,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       pathWash?.dispose();
       courtyard?.dispose();
       seam?.dispose();
+      drift?.dispose();
+      for (const st of stones) st.dispose();
     },
   };
 }

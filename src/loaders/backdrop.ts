@@ -127,9 +127,9 @@ export function cardPlane(width: number, height: number, mirror: boolean): THREE
  * lowestLanding: the lowest y the critical path stands on. The mist is paper drawn over whatever is below it,
  * and it is on the paint layer, which the linter's sightline rules do not see: so it may never reach a landing.
  */
-export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: number, cliffs: readonly (typeof BACKDROP.cliffs)[number][] = BACKDROP.cliffs): { root: THREE.Group; dispose(): void } {
-  if (BACKDROP.mist.topY >= lowestLanding) {
-    throw new Error(`[backdrop] the mist tops out at y ${BACKDROP.mist.topY}, at or above the level's lowest landing (y ${lowestLanding}): it would cover the path`);
+export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: number, cliffs: readonly (typeof BACKDROP.cliffs)[number][] = BACKDROP.cliffs, mistY: { baseY: number; topY: number } = BACKDROP.mist, peakSquash: number = BACKDROP.peakSquash): { root: THREE.Group; dispose(): void } {
+  if (mistY.topY >= lowestLanding) {
+    throw new Error(`[backdrop] the mist tops out at y ${mistY.topY}, at or above the level's lowest landing (y ${lowestLanding}): it would cover the path`);
   }
   const root = new THREE.Group();
   root.name = 'backdrop';
@@ -168,7 +168,7 @@ export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: n
   }
 
   // farthest first, so a nearer peak is laid over a farther one
-  for (const p of [...BACKDROP.peaks].sort((a, b) => b[2] - a[2])) ringCard('backdrop:peak', p, BACKDROP.peakSquash);
+  for (const p of [...BACKDROP.peaks].sort((a, b) => b[2] - a[2])) ringCard('backdrop:peak', p, peakSquash);
 
   // the mid cliffs stand at chapter 1's own places: a level that is not on that mountainside passes none
   for (const [card, x, z, height, yaw, ink, mirror] of cliffs) {
@@ -177,7 +177,7 @@ export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: n
     cliff.rotation.y = (yaw * Math.PI) / 180;
   }
 
-  const m = BACKDROP.mist;
+  const m = { ...BACKDROP.mist, baseY: mistY.baseY, topY: mistY.topY }; // D-029: a level in the mist has its own heights
   const sheetGeo = new THREE.CircleGeometry(m.radius, BACKDROP.mistSegments);
   for (let i = 0; i < m.sheets; i++) {
     const f = i / (m.sheets - 1); // 0 at the base, 1 at the top

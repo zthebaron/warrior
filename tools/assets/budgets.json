@@ -137,8 +137,8 @@
       "triangles": 171290
     },
     "03-drifting-stones": {
-      "draw_calls": 100,
-      "triangles": 178554
+      "draw_calls": 80,
+      "triangles": 171044
     },
     "04-summit-ridge": {
       "draw_calls": 106,

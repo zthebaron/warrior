@@ -1904,3 +1904,83 @@ The wall-jump corridor's two walls are painted as rock like any other face: noth
 more over the path) are behind the painted wall and not drawn. Chapters 3 and 4 are still greybox.
 
 implemented_by: 5b8ca9e (chapter 2 to ink in the seam zone, the boxes as paper tops, pale faces and a lip, the two face washes, the grazing check's sign), 5af4e4c (the pines under the ledges, the seam's own towers, the rock wall's reachable ledges, face cards laid from each face's top), ffdb1df (the seam's cards under assets:budget, the scene ratchet, darwin goldens), 2754b16 (a seam level draws a box with no collider)
+
+## D-029 — chapter 3 in the ink look: the drift, read from above; a moving stone drawn in the ink pass; no painting out of proportion. Extends D-028. DECIDED
+
+**Ruled by Tim** (2026-11-13, `PROMPT-CH3-INK.md`: "keep going"). "Give chapter 3 ... the ink look by the method
+D-028 built for chapter 2, and fix on the way the two things chapter 2's frames showed weak." The brief fixes: the
+place ("stones adrift over the void ... more void and mist than chapter 2's seam, rock that floats"); "Reuse
+first"; "**A stone that moves must read as a thing that moves and can be stood on** ... where it is, where it is
+going, and that its top is ground"; "**A gap he must dash must read as a gap**, and its far side as ground"; "no
+painted face may be stretched or sheared out of its painting's proportion"; "any surface the chapter asks him to
+use ... is drawn so it can be told from rock that is only scenery ... No arrows, no glow, no colour but the
+accent's own rules"; geometry, colliders, platform paths and timings, placements, swordsmen, hazards, checkpoints,
+critical path and nav unchanged; chapters 1, 4, 5 and the gym "byte-identical frames"; "A check, seen to fail,
+that a moving stone is drawn in an ink level"; "Do not change a gate to pass"; fal at most $1.50.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-083):** every value of the look, the zone's name,
+that a moving stone's top is mist-pale, the mist channel under its travel, the rocks adrift, and the thresholds
+of the two new checks. **Nobody has played it in this look; it has been judged only from frames.**
+
+**The finding, as measured.** With `palette: ink` and chapter 2's zone, chapter 3 is drawn, but wrongly for what
+it is. (1) A moving platform stays the greybox slab: a paper top over a paper void. Docked, seen from where he
+stands before it, 4.8% of it is off the paper's value: an outline. That is B-110's "undrawn in its own way".
+(2) Chapter 2's lip was made to be read from below; chapter 3 is read from above. Across a 1.5 u dash gap the
+follow camera sees the top 0.65 u of the far face, and 0.3 u of that is the paper lip: the gap all but closes.
+(3) The two lintels that force the dash are 0.5 u thick, under `minSlab`: no lip, no dark, a pale bar on paper.
+(4) Paintings are out of proportion in shared code: the seam's square face card is laid 7 u by 9 u (1.29), the
+wall's cliff cards up to a third too narrow (cliff_c, 0.50 wide to its height, drawn 7.5 by 20), and the far
+peaks are squashed to 0.6 (1.667).
+
+**Built.**
+1. **The level file** changes in three lines: `palette: "ink"`, `lighting.preset: "ink"`,
+   `lighting.ambienceZone: "drift"`. No placement, collider, platform, hazard, enemy, checkpoint or waypoint is
+   touched.
+2. **The rock** (`src/loaders/drift.ts`, render only, from the level's own boxes, by D-028's method). Tops are
+   paper. The top 0.5 u of every face is one dark band, the **brink**, with no paper over it: from above, the
+   slice of a gap's far face that the camera sees IS the dark band, so a gap is a dark slot between two papers
+   and the far top is paper starting at a hard edge. A box thinner than 1 u (the two lintels, the crow's perch)
+   **hangs**: the band all the way down, a paper top, a dark underside.
+3. **A moving stone** (`buildDriftStone`, in place of the greybox slab in a drift level): the same 4 x 0.5 x 4 u
+   slab in the INK PASS, with a mist-pale top (one step off the paper of the void and of the ground, at any
+   distance), sides in the brink's step, and a keel of rock hanging 1.7 u under it, the darkest thing in the void.
+   It rides the platform's own mesh (the `platform` move, NOT #18) and nothing of it is painted: the paint
+   layer's own rule is that nothing painted moves, and `post` checks it. The keel has no collider: it is under a
+   slab he stands on, over the void. At a dock the stone's top lies in the ground's plane: it is drawn with a
+   polygon offset and wins that tie.
+4. **Where it is going:** one streak of mist lies on the mist under each stone's travel, dock to dock, fixed in
+   the world. No arrow and no line: a wash, as the far field's mist bands are.
+5. **Surfaces he acts on:** ground is bare paper edged by the dark brink, and a stone is mist-pale edged in dark;
+   rock that is only scenery (the painted wall, the rocks adrift) is brushwork with no edge. The rule is the
+   same for every top, so it also marks the lintels' tops, which he can stand on and need not.
+6. **No painting out of proportion.** Faces: the seam's two square cards as SQUARE 7 u tiles, cropped at a face's
+   end and never scaled, in a cycle of four along a face (two paintings, each also mirrored), so the same strokes
+   come round every 28 u (B-112: 7 to 9 u in chapter 2). The wall: `buildCliffWall(masses, proportion)` keeps a
+   row's heights and takes each card's width from its painting. The far peaks: not squashed here. Chapters 1 and
+   2 pass none of these flags and are byte-identical.
+7. **Its own character:** the mist stands 1.5 u under the lowest top (3 u in chapters 1 and 2), so the rock's
+   feet dissolve close under the path; five rocks hang in the void with their feet in the air, turned to face the
+   way he comes; five towers in the far field (the seam has eight).
+8. **Reused whole:** D-028's method and its two face cards, chapter 1's painted wall and its pines, the path's
+   dry-brush, the far ridge, peaks, mist and its bands, the hero torii, the kit crow and sliding stone, the
+   animated warrior and the swordsman. **Nothing was bought.**
+9. **Two checks, added to `post`; no existing check is edited.** The stone check (B-110): from where he stands
+   before each stone, at each end of its travel, the stone's own pixels must be there, off the paper's value, and
+   hold a light top. Seen red four ways: not drawn, the greybox slab, paper on paper, dark all over. The
+   proportion check: every painted card of a drift level lays its painting at one scale both ways (reported on
+   every dressed level, judged in the drift).
+10. **Colliders did not change.** Replay passes against the committed, un-re-recorded trace, with nav,
+    phase-sweep, chaos, hazards and camera-room.
+
+**Measurement.** MEASUREMENTS "D-029 the drift's look", "D-029 the stone check", "D-029 proportion", "D-029 every
+other level".
+
+**STYLE-BIBLE:** not amended. Strains recorded in OQ-083: the brink is a value band that is not a silhouette
+(§6, as D-028's lip band is); a mist streak in the void under each stone (§5 wants a bright void; D-021's three
+mist bands are the precedent); a painted face keeps full ink at any distance (§3), as chapters 1 and 2 do.
+
+**Not done, and where it falls short.** Nobody has played it. The painted wall is chapter 1's, still seen along
+its length: its cards are now in proportion and are still foreshortened from behind him (B-52, B-117). The mist
+channel is quiet, and could be taken for a lower path (B-118). The rocks adrift are cliff paintings hung in the
+air: spires, not islands (B-119). Chapters 1 and 2 keep their stretched paintings (B-116). Chapter 4 is greybox.
+
+implemented_by: 568fab4 (chapter 3 to ink in the drift zone: the brink, the hanging lintels, the stone in the ink pass, the mist channel, the rocks adrift, the wall at its paintings' proportion), 8cf74d3 (the stone's mist-pale top and its tie at the dock, the stone check), 4b437bf (the far peaks unsquashed, the proportion check, darwin goldens, the scene ratchet)

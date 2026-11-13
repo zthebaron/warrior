@@ -124,7 +124,14 @@ export const CLIFF_WALL = {
 const W = CLIFF_WALL;
 
 /** The painted wall for these rock masses, which must stand on the -z side of the path. Static: built once. */
-export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose(): void } {
+/**
+ * `proportion` (D-029): every cliff card is drawn at its painting's own proportion. Its height is the row's (the
+ * skyline and what the wall covers do not change); its width is that height times the painting's width / height,
+ * not the row's `width`, which lays cliff_a and cliff_c up to a third too narrow. Without it: chapters 1 and 2,
+ * exactly as they were built.
+ */
+export function buildCliffWall(masses: RockMass[], proportion = false): { root: THREE.Group; dispose(): void } {
+  const true0 = <T extends { card: string; width: number; height: number }>(s: T): T => (proportion ? { ...s, width: s.height * cardAspect(s.card) } : s);
   const root = new THREE.Group();
   root.name = 'cliff-wall';
   type Row = keyof typeof W.order;
@@ -151,7 +158,7 @@ export function buildCliffWall(masses: RockMass[]): { root: THREE.Group; dispose
   sorted.forEach((m, i) => {
     const frontZ = m.frontZ - W.frontBehind;
     const end = Math.min(i, sorted.length - 1 - i); // how far this mass is from the nearer end of the wall
-    const tall = <T extends { height: number }>(s: T, row: keyof typeof W.taper, from = end): T => ({ ...s, height: s.height * (W.taper[row][from] ?? 1) });
+    const tall = <T extends { card: string; width: number; height: number }>(s: T, row: keyof typeof W.taper, from = end): T => true0({ ...s, height: s.height * (W.taper[row][from] ?? 1) });
 
     // Where no rock stands beside this mass (the wall's end, or a gap wider than a bay card: chapter 1 has one,
     // x 36 to 40.5, with nothing to collide with at the path's height), no front card may reach past the rock's

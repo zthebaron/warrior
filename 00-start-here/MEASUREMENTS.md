@@ -2526,3 +2526,103 @@ on Linux its `post` is 26/26 with darwin's numbers (ink-black mass 0.3%, paper 4
 |---|---|---|---|
 | 01-lower-stair | 144.9 fps, 0 frames over 10 ms | 144.9 fps, 0 over 10 ms | 1.98 ms / 2.85 ms (2.81 ms on record, D-021) |
 | 02-cliff-seam | 144.9 fps, 0 over 10 ms | 144.9 fps, 0 over 10 ms | 2.02 ms / 3.04 ms |
+
+## D-029 the drift's look (2026-11-13)
+
+Chapter 3, `03-drifting-stones`, as an ink level (`palette: ink`, `lighting.ambienceZone: drift`). Constants:
+`DRIFT` in `src/loaders/drift.ts`. Darwin SwiftShader, the harness's 640 x 360, unless a row says otherwise.
+"authored" is a choice made by eye from the player's own camera at the beats in `docs/build-log/ch3-ink/`;
+"measured" has the number beside it. Every value is PROVISIONAL (OQ-083).
+
+| Constant | Value | Basis | How |
+|---|---|---|---|
+| `top`, `face` | paper-cream, mist-pale | D-028 | the seam's, for the reasons measured there (paper share; a dark face is not a light form) |
+| `brink.depth`, `brink.step` | 0.5 u, ink-grey | derived | the follow rig stands 6.66 u behind his feet and 3.67 u over them. At a 1.5 u gap, 2 u before its near edge, it sees the far face down to 3.67 x 1.5 / 8.66 = 0.64 u under its top; 0.5 u of dark fills that slice (chapter 2's lip leaves 0.12 u of dark in it). ink-grey is the lip band's step in D-028 |
+| `minSlab`, `under` | 1 u, ink-deep | authored | a box thinner than 1 u hangs in the air (the lintels at 0.5 u, the crow's perch at 0.4 u): the band all the way down, and an underside, one step darker, so it is not see-through from below |
+| `tile` | 7 u | derived | the seam's cards are 1024 x 1024: a square tile is the painting at its own proportion. 7 u is the path's width, so a face across the path carries one whole painting; 146 px a u |
+| `cycle` | a, b mirrored, a mirrored, b | authored | the card of each tile along a face. The same strokes come round every 4 x 7 = 28 u (B-112: 7 to 9 u in chapter 2). The longest face is 28 u |
+| `ink` | 0.85 | authored | between the seam's 0.9 (across) and 0.8 (along): one mesh a card here |
+| `order` | -20 | D-028 | before the mist sheets, which are paper over what stands in them |
+| `ledge` | reach 6 u, up 0.9, paper-cream | D-028 | the rock wall's two lowest ledges, as level ground |
+| `mist` | base -5.5, top -1.5 | authored | chapters 1 and 2: -7 and -3. The lowest landing is y 0 (`buildBackdrop` throws if the mist reaches one). The same four u of fade, 1.5 u higher: the rock's feet dissolve 1.5 u under the lowest top, 4 u under the highest |
+| `stone.top` | mist-pale | measured | paper: 4.8% of a docked stone's footprint is off the paper's value (the stone check, red). mist-pale: 100%. It is 22 levels off paper-cream and the post pass never pushes it (D-019) |
+| `stone.lift` | polygon offset -2, -2 | derived | the stone's top lies in the ground's plane at each dock (0.5 u of it at its start, 2 u at its end). The path's dry-brush is offset -1; at -2 the stone is over both. Without it the frame at a dock is a depth tie between two meshes (B-115 is one such tie) |
+| `stone.keel` | inset 0.35 u, drop 1.7 u, off (0.45, -0.3) u, ink-deep and ink-black | authored | rock hanging under the slab: 1.7 u is 3.4 slabs deep. Off centre, and two steps on alternate faces, so it is not a neat pyramid |
+| `channel` | `mist_a` at its own 3.53 : 1, 3 u past each dock, 0.15 u over the mist's top, ink 0.6, order 60 | authored | 10 u of travel + 4 u of stone + 6 = 20 u long, so 5.67 u wide: wider than the 4 u stone, seen on both sides of it from above. Its thin ends lie inside the rock he boards from |
+| `cliffs` | 5 towers | authored | three behind the wall, 60 to 72 u tall, ink 0.45 to 0.5; one past each end. The seam has 8 |
+| `adrift` | 5 rocks | authored | cliff paintings 12 to 22 u tall hung with their feet 1.5 to 8 u over the path's lowest top, 22 to 44 u out in the void (18.5 u and more from the path's edge), ink 0.4 to 0.5, yaw 228 to 238: facing the way he comes. At yaw 170 to 200 (facing straight across the path) the first cut showed them as slivers from behind him |
+
+**The gates on the shipped look** (`npm run playtest`, the whole run: every stage of chapter 3 PASS, `post` 28/28):
+
+| Check | Chapter 3, ink | Floor or ceiling |
+|---|---|---|
+| near field dark mass (ink pass, rock shown) | 19.8% of 697,200 px | >= 10% |
+| ink-black mass | 2.0% | >= 0.2% |
+| silhouette inked where value separates | 70.7% of 3,530 px | 35 to 92% |
+| ... where it does not | 99.4% of 1,309 px | >= 95% |
+| measurable stroke px; 1 px share; 2 px and over | 659; 41.9%; 58.1% | >= 200; >= 10%; >= 10% |
+| interior creases inked | 9.3% | <= 45% |
+| flat ground inked, grazing camera | 148 of 48,446 px (0.3%, as greybox) | <= 1% |
+| distant forms with a drawn line | 2.1% | <= 35% |
+| void paper (rock drawn in place of the wall) | 48.5% | >= 41% |
+| painted frame differs from the ink pass, wall lifted | 19.9% | >= 3% |
+| dark mass where the rock stands; rock drawn over | 8.1%; 99.9% | >= 4%; >= 90% |
+| scene peak (`counters`) | 80 draw calls, 171,044 triangles (greybox: 100 and 178,554) | ratchet set there |
+
+## D-029 the stone check (2026-11-13)
+
+`STONE_GATE` in `tools/harness/post.ts`: every moving stone of an ink level, from a camera at the follow rig's
+offset (6.66 u behind, 3.67 u over) behind a point 5.2 u before the stone's start along its travel, with the
+stone at each end of its path; the stone's own pixels are those that come nearer when its mesh is shown. Chapter
+3, darwin SwiftShader, 640 x 360. Every red run is a mutation of the source, run with `--only=post`, then the
+source restored and compared byte for byte.
+
+| Run | stone_a near / far | stone_b near / far | Result |
+|---|---|---|---|
+| shipped | 2,908 / 1,346 px; 100% / 100% off paper; 93.1% / 29.7% light top | 2,890 / 1,332 px; 100% / 100%; 92.5% / 29.2% | PASS |
+| the stone not drawn | 0 / 0 px | 0 / 0 px | FAIL |
+| the greybox slab (an ink level before D-029) | 2,441 / 746 px; 6.3% / 68.9% off paper | 2,426 / 732 px; 4.8% / 69.0% | FAIL |
+| paper on paper (top, sides, keel paper) | 6.0% / 34.4% off paper | 3.7% / 37.7% | FAIL |
+| dark all over (top in the brink's step) | 0.0% / 0.8% light top | 0.0% / 0.0% | FAIL |
+
+Thresholds: `minPx` 500, `minOff` 0.6, `minTop` 0.15, each between the worst wrong value and the least shipped.
+**A first cut was discarded before any number was set:** it compared the frame with the frame without the stone,
+and the paper-on-paper stone passed it at 83%, because the mist channel under the stone is grey.
+
+## D-029 proportion (2026-11-13)
+
+`PROPORTION_GATE` in `tools/harness/post.ts`, measured by the harness function `paintStretch` (`src/main.ts`):
+for each textured painted mesh, the worst of its triangles' ratio between the two scales at which the painting's
+pixels are laid on the world (1: neither stretched nor sheared). Judged in the `drift` zone, `max` 1.02;
+reported elsewhere. It measures the card, not the view (a true card seen along its length is still foreshortened).
+
+| Level | Painted cards | The worst three | Over 1.02 |
+|---|---|---|---|
+| 01-lower-stair | 9 | cliff:back 1.854, cliff:bay 1.815, backdrop:peak 1.667 | 4 (reported, B-116) |
+| 02-cliff-seam | 12 | cliff:back 1.854, cliff:bay 1.815, backdrop:peak 1.667 | 5 (reported, B-116) |
+| 03-drifting-stones | 13 | backdrop:ridge 1.003, path:wash 1.000, cliff:front 1.000 | 0 |
+| 05-courtyard | 9 | courtyard:planks 2.075, backdrop:yard-sky 1.938, courtyard:tiles 1.707 | 5 (reported, B-116) |
+
+Red runs on chapter 3 (each source restored byte-identical): the wall without the proportion flag, cliff:back
+2.035, cliff:bay 1.815, cliff:front 1.342 (and `post` also lost one accent px to it); the far peaks squashed to
+0.6, 1.667; a face tile laid 7 u by 9 u as the seam lays its card, 1.286. The far ridge's ring is 1.003: its
+1024 x 64 painting is laid 481.7 u by 30 u a repeat.
+
+## D-029 every other level (2026-11-13)
+
+**Frame hashes.** `node tools/harness/frame-hashes.ts`, darwin SwiftShader, on origin/main at 584a9d4 (a scratch
+checkout) and on this branch at 4b437bf: **25 values differ, 24 `03-drifting-stones`'s** (six frames, their
+counts, the renderables, the paint layer) **and 1 `01-lower-stair` cam3**: 881620c4 on main's run and c7b29bc6 on
+the branch's, the two values B-115's flipping pixel gives on main's own source (D-028). The gym and chapters 2,
+4 and 5: identical. Chapter 2 did not take the proportion fix.
+
+**The whole playtest** (`npm run playtest`, darwin, at d27f7f6's source): every stage of every level PASS; `post`
+22, 27, 27, 28, 22, 24 for the gym and chapters 1 to 5; `reachable` 69/69, `pitch-assist` 117/117, `run-metric`
+15/15, `ambient-motion` 13/13, `fight` 15/15, `touch` 29/29, `touch-release` 16/16, `touch-chapters` 27/27.
+
+**Linux goldens, chapter 3** (the documented way: CI's own frames). CI run 43515130393 on 4b437bf: every job green
+but `level (03-drifting-stones)`, red at `visual` alone (six cameras 29.3 to 53.3% off the greybox goldens); on Linux
+its `post` is 28/28. All six `camN.actual.png` taken; against the darwin goldens (pixelmatch, threshold 0.1) they
+differ in 0, 2, 0, 1, 0 and 0 px of 230,400. No other level's golden is written.
+
+**fal:** no call. The ledger stands at $15.1968 of $20.00.

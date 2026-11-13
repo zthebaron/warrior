@@ -178,6 +178,13 @@ interface HarnessApi {
   teleportPlayer(pos: Vec3, facingDeg?: number): void;
   /** D-021: show or hide every level mesh whose name starts with `prefix` (the undrawn rock, the cliff wall). Returns how many. */
   showMeshes(prefix: string, visible: boolean): number;
+  /**
+   * D-029: how far each painted card of the level is from its painting's own proportion. For every textured mesh
+   * of the level on the paint layer whose name begins with one of `prefixes`, the worst of its triangles: the
+   * ratio of the two scales at which the painting's pixels are laid over the world (1: a similarity, neither
+   * stretched nor sheared; 1.29: a square painting laid 7 u by 9 u).
+   */
+  paintStretch(prefixes: string[]): { name: string; stretch: number }[];
   /** D-023: show or hide the level's swordsmen (the post stage reads which pixels they cover). Returns how many. */
   showEnemies(visible: boolean): number;
   /** D-021: the figure's clips (name, seconds), and one shown at a time in place of the state's pose; null clears it. */
@@ -1297,6 +1304,38 @@ async function boot(): Promise<void> {
       },
       teleportPlayer: (pos, facingDeg) => {
         player?.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facingDeg === undefined ? undefined : facingDeg * DEG2RAD);
+      },
+      paintStretch: (prefixes) => {
+        const worst = new Map<string, number>();
+        const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), n = new THREE.Vector3();
+        level?.root.updateMatrixWorld(true);
+        level?.root.traverse((o) => {
+          if (!(o instanceof THREE.Mesh) || !o.layers.isEnabled(PAINT_LAYER) || !prefixes.some((p) => o.name.startsWith(p))) return;
+          const map = (o.material as THREE.MeshBasicMaterial).map, pos = o.geometry.getAttribute('position'), uv = o.geometry.getAttribute('uv');
+          const img = map?.image as { width: number; height: number } | undefined;
+          if (!map || !img || !pos || !uv) return;
+          const w = img.width * map.repeat.x, h = img.height * map.repeat.y, idx = o.geometry.getIndex();
+          const tris = (idx ? idx.count : pos.count) / 3, at = (k: number): number => (idx ? idx.getX(k) : k);
+          let m = worst.get(o.name) ?? 1;
+          for (let t = 0; t < tris; t++) {
+            const [i, j, k] = [at(t * 3), at(t * 3 + 1), at(t * 3 + 2)];
+            a.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); b.fromBufferAttribute(pos, j).applyMatrix4(o.matrixWorld); c.fromBufferAttribute(pos, k).applyMatrix4(o.matrixWorld);
+            e1.subVectors(b, a); e2.subVectors(c, a); n.crossVectors(e1, e2);
+            const l1 = e1.length();
+            if (l1 === 0 || n.length() === 0) continue;
+            // the triangle's two edges in its own plane (x along the first), and in the painting's pixels
+            const p11 = l1, p21 = e2.dot(e1) / l1, p22 = n.length() / l1;
+            const q11 = (uv.getX(j) - uv.getX(i)) * w, q12 = (uv.getY(j) - uv.getY(i)) * h, q21 = (uv.getX(k) - uv.getX(i)) * w, q22 = (uv.getY(k) - uv.getY(i)) * h;
+            // J: pixels per unit, world plane -> painting. P J = Q, P lower triangular
+            const j11 = q11 / p11, j12 = q12 / p11, j21 = (q21 - p21 * j11) / p22, j22 = (q22 - p21 * j12) / p22;
+            const s = j11 * j11 + j12 * j12 + j21 * j21 + j22 * j22, d = Math.abs(j11 * j22 - j12 * j21);
+            if (d === 0) { m = Infinity; continue; }
+            const disc = Math.sqrt(Math.max(0, s * s - 4 * d * d)); // singular values: sqrt((s +- disc) / 2)
+            m = Math.max(m, Math.sqrt((s + disc) / (s - disc)));
+          }
+          worst.set(o.name, m);
+        });
+        return [...worst].map(([name, stretch]) => ({ name, stretch }));
       },
       showMeshes: (prefix, visible) => {
         let n = 0;

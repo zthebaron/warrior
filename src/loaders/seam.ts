@@ -107,6 +107,10 @@ export async function preloadSeam(): Promise<void> {
     textures.set(name, t);
   }));
 }
+/** A decoded seam card (assets/seam/<name>.png). */
+export function seamCard(name: string): THREE.Texture {
+  return texture(name);
+}
 function texture(name: string): THREE.Texture {
   const t = textures.get(name);
   if (!t) throw new Error(`[seam] "${name}" was not preloaded: prepareLevel must await preloadSeam()`);
@@ -116,7 +120,7 @@ function texture(name: string): THREE.Texture {
 const col = (name: RampName): THREE.Color => new THREE.Color(ramp(name));
 
 /** Quads with one flat colour each (the ink pass), or with a texture coordinate at each corner (a wash). */
-class Quads {
+export class Quads {
   readonly pos: number[] = [];
   readonly rgb: number[] = [];
   readonly uv: number[] = [];
@@ -150,6 +154,26 @@ class Quads {
     geo.setIndex(this.idx);
     geo.computeVertexNormals();
     return geo;
+  }
+}
+
+/**
+ * The rock wall's ledges a player can reach, as level ground in the ink pass: every triangle of the undrawn rock
+ * that faces up (`up`: its normal's y) and stands within `reach` u of its mass's base. Shared with drift.ts.
+ */
+export function rockLedges(ink: Quads, rocks: SeamRock[], ledge: { reach: number; up: number; step: RampName }): void {
+  const cLedge = col(ledge.step);
+  const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3(), n = new THREE.Vector3();
+  for (const r of rocks) {
+    let base = Infinity;
+    for (let j = 1; j < r.positions.length; j += 3) base = Math.min(base, va.set(r.positions[j - 1]!, r.positions[j]!, r.positions[j + 1]!).applyMatrix4(r.matrix).y);
+    const at = (i: number, out: THREE.Vector3): THREE.Vector3 => out.set(r.positions[i * 3]!, r.positions[i * 3 + 1]!, r.positions[i * 3 + 2]!).applyMatrix4(r.matrix);
+    for (let t = 0; t < r.indices.length; t += 3) {
+      at(r.indices[t]!, va); at(r.indices[t + 1]!, vb); at(r.indices[t + 2]!, vc);
+      n.subVectors(vb, va).cross(vc.clone().sub(va));
+      if (n.y / n.length() < ledge.up || Math.max(va.y, vb.y, vc.y) > base + ledge.reach) continue;
+      ink.tri(va.toArray() as Vec3, vb.toArray() as Vec3, vc.toArray() as Vec3, cLedge);
+    }
   }
 }
 
@@ -189,19 +213,7 @@ export function buildSeam(boxes: SeamBox[], rocks: SeamRock[]): { root: THREE.Gr
   }
 
   // the rock wall's reachable ledges, as level ground
-  const cLedge = col(S.ledge.step);
-  const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3(), n = new THREE.Vector3();
-  for (const r of rocks) {
-    let base = Infinity;
-    for (let j = 1; j < r.positions.length; j += 3) base = Math.min(base, va.set(r.positions[j - 1]!, r.positions[j]!, r.positions[j + 1]!).applyMatrix4(r.matrix).y);
-    const at = (i: number, out: THREE.Vector3): THREE.Vector3 => out.set(r.positions[i * 3]!, r.positions[i * 3 + 1]!, r.positions[i * 3 + 2]!).applyMatrix4(r.matrix);
-    for (let t = 0; t < r.indices.length; t += 3) {
-      at(r.indices[t]!, va); at(r.indices[t + 1]!, vb); at(r.indices[t + 2]!, vc);
-      n.subVectors(vb, va).cross(vc.clone().sub(va));
-      if (n.y / n.length() < S.ledge.up || Math.max(va.y, vb.y, vc.y) > base + S.ledge.reach) continue;
-      ink.tri(va.toArray() as Vec3, vb.toArray() as Vec3, vc.toArray() as Vec3, cLedge);
-    }
-  }
+  rockLedges(ink, rocks, S.ledge);
 
   // a pine under the void-side corner of every top caught from below
   const slabs = boxes.filter((b) => b.y1 - b.y0 >= S.minSlab).sort((a, b) => a.x0 - b.x0);
