@@ -1839,3 +1839,68 @@ with a notch, or by a thumb (B-106). The stage does not play the double jump, wa
 **STYLE-BIBLE:** not amended. §2: the controls are ink and paper, part see-through; no accent on UI.
 
 implemented_by: 2df48b3 (the touch source, the controls, the cards, the words, the cap), d9019eb (the touch stage and its CI job, a page button pressed with a thumb on the stick, the chapter list's gap)
+
+## D-028 — chapter 2 in the ink look: the cliff seam's own boxes drawn as rock, a top read by its lip, and nothing bought. Extends D-020, D-021 and D-026. DECIDED
+
+**Ruled by Tim** (2026-11-13, `PROMPT-CH2-INK.md`: "keep going"). "Chapters 2, 3 and 4 are still greybox, and on
+the public site a player walks out of an ink painting into grey boxes at the first chapter change. Give chapter
+2 ... the ink look, to chapter 1's standard or better." The brief fixes: the place ("a seam up a cliff ... ink
+rock in mist, pines on ledges, paper sky, far peaks. Its own character, not chapter 1 again turned on end");
+"Reuse first"; "**What he climbs must read as climbable** ... HANDOFF-ART section 3 lists where chapter 1 fell
+short of this (B-51, B-52); do not repeat those here"; "Chapter 2's geometry, colliders, placements, swordsmen,
+hazards, checkpoints, critical path and nav: unchanged. This is paint over the same level"; chapters 1, 3, 4, 5
+and the gym "byte-identical frames"; fal at most $2.50.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-082):** every value of the look, that a top is
+marked by a lip in the ink pass, where the pines and the towers stand, the zone's name, and one sign in the
+`post` gate. **Nobody has played it in this look; it has been judged only from frames.**
+
+**The finding, as measured.** An ink level draws no box: chapter 1 has kit ledges placed over its boxes, chapter
+5 is dressed by its boxes' tags. Chapter 2 has neither, so with `palette: ink` alone its wall, far field, torii
+and figure appear and its ground does not: he walks on bare paper. And its rock is seen as chapter 1's never is:
+its faces stand ACROSS the path, head on to the follow camera, so a flat painting on one is seen square, not at
+a grazing angle (D-021's finding about the wall beside the path does not apply to them).
+
+**Built.**
+1. **The level file** changes in three lines: `palette: "ink"`, `lighting.preset: "ink"`,
+   `lighting.ambienceZone: "seam"`. No placement, collider, hazard, enemy, checkpoint or waypoint is touched.
+2. **The rock** (`src/loaders/seam.ts`, render only, from the level's own boxes). In the ink pass every box is
+   flat fills: a paper top, pale faces, and at the top of every face a 0.3 u **lip** of the top's own paper over
+   one dark band: the edge of a slab of ground. That lip is how a top is read from below, and it is in the ink
+   pass, so it has a depth and a surface: wherever it stands within reach there is ground to catch.
+3. **The brushwork** (paint layer): a cliff painting's strokes laid flat on every face under its lip, one card
+   for faces across the path and one for faces along it (`tools/art/seam-cards.mjs` -> `assets/seam/`), both cut
+   from the inside of ART-GEN's paid-for cliff paintings. Nothing is painted on a lip.
+4. **Reused whole:** chapter 1's painted cliff wall (`cliff-wall.ts`, from this level's 18 rock masses, with its
+   pines; the 12 u between the masses at x 32 and 44 is left an open cleft by the same rule, exactly where the
+   wall-jump corridor's own boxes stand), the path's dry-brush, the far ridge, peaks and mist, the hero torii,
+   the kit crow and sliding stone, the animated warrior and the swordsman.
+5. **B-51 not repeated:** the rock wall's ledges within reach of the path (1.2 and 3.8 u over it) are drawn in
+   the ink pass as level paper, so a ledge he can stand on is shown. Its joins are 0.63 u wide at the path's
+   height, narrower than the capsule; chapter 1's passable joins (masses 9 u apart) do not occur here.
+6. **Its own character:** a pine grows out of the rock under the void-side corner of every top he catches from
+   below (four, derived from the boxes), and the far field is the seam's own: towers behind the wall that stand
+   taller as the path climbs, three thin ones out in the mist of the void.
+7. **The gate** (`tools/harness/post.ts`): one sign. The grazing check's "ground" is now a plane that comes
+   nearer toward the foot of the frame; the underside of the rock's overhanging slab, seen from below, is not
+   ground. The 1% ceiling stands, and D-019's mutation still fails it on chapters 1 and 2.
+8. **Colliders did not change.** Replay passes against the committed, un-re-recorded trace, with nav,
+   phase-sweep, chaos, hazards and camera-room. `frame-hashes` against origin/main differs on `02-cliff-seam`
+   alone, but for one pixel of chapter 1's cam3 that flips between runs of one build (B-115).
+   `src/engine/ink-post.ts` and `src/engine/renderer.ts` are not edited.
+9. **Every box of a seam level is drawn**, with or without a collider: READABLE_RISE counts a render-only box
+   as hiding a top, and `pitch-assist` holds the rig to that on a clone of chapter 2.
+
+**Measurement.** MEASUREMENTS "D-028 the seam's look", "D-028 the seam's cards", "D-028 every other level".
+`post` 26/26; paper 44.6% (floor 41%); scene peak 80 draw calls and 171,290 triangles (100 and 177,330 as
+greybox). fal: $0.00; the ledger stands at $15.1968.
+
+**STYLE-BIBLE:** not amended. Strains recorded in OQ-082 for Tim: a painted face keeps its full ink at any
+distance (§3 says mid forms carry no surface texture), as chapter 1's wall does; the lip's dark band is a line
+that is not a silhouette (§6), drawn as value, not by the ink edge.
+
+**Known limits (OQ-082).** The wall beside the path is still chapter 1's wall, seen along its length (B-52).
+The wall-jump corridor's two walls are painted as rock like any other face: nothing but the teach line says
+"kick off this". A face's card repeats every 7 to 9 u and mirrors 9 u down. The rock's upper ledges (6 u and
+more over the path) are behind the painted wall and not drawn. Chapters 3 and 4 are still greybox.
+
+implemented_by: 5b8ca9e (chapter 2 to ink in the seam zone, the boxes as paper tops, pale faces and a lip, the two face washes, the grazing check's sign), 5af4e4c (the pines under the ledges, the seam's own towers, the rock wall's reachable ledges, face cards laid from each face's top), ffdb1df (the seam's cards under assets:budget, the scene ratchet, darwin goldens), 2754b16 (a seam level draws a box with no collider)

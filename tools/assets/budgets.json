@@ -133,8 +133,8 @@
       "triangles": 331496
     },
     "02-cliff-seam": {
-      "draw_calls": 100,
-      "triangles": 177330
+      "draw_calls": 80,
+      "triangles": 171290
     },
     "03-drifting-stones": {
       "draw_calls": 100,
@@ -250,6 +250,17 @@
     "yard_tiles": {
       "px": 512,
       "bytes": 29102
+    }
+  },
+  "seam_basis": "D-028 the cliff seam's painted cards (assets/seam/*.png, made by tools/art/seam-cards.mjs: each is cut from the inside of one of ART-GEN's cliff paintings in assets/backdrop/gen, as a wash). Each set AT its measured longest side and file size. Checked by tools/assets/paint-budget.mjs inside npm run assets:budget, which also requires each card to be exactly what the script gives. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'D-028 the seam's cards'.",
+  "seam": {
+    "seam_face_a": {
+      "px": 1024,
+      "bytes": 776504
+    },
+    "seam_face_b": {
+      "px": 1024,
+      "bytes": 797296
     }
   },
   "characters_basis": "D-020 rigged characters (assets/char/*.glb, imported from assets/hero by npm run assets:build: unlit, base colour only, chroma cap, 1024 px KTX2, skin and clips as delivered). Each set AT its measured value and checked by tools/assets/paint-budget.mjs inside npm run assets:budget; the clip list must match exactly. A character is held to the hero class ceilings as well. Record a raise in 00-start-here/MEASUREMENTS.md, section 'D-020 hero assets'.",

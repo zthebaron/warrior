@@ -2402,3 +2402,127 @@ place. The line: "This gate opens when every swordsman is down. Press {slash} to
 `node tools/harness/frame-hashes.ts --build` on a copy of origin/main (`03b3988`) and on this branch after the
 gate's sound and line, one machine (darwin, SwiftShader), then `--diff`: **IDENTICAL: 229 values, 6 levels**,
 chapter 5 included. The harness's bare page shows no teach line and plays no sound. No golden was written.
+
+## D-028 the seam's look (2026-11-13)
+
+Chapter 2, `02-cliff-seam`, as an ink level (`palette: ink`, `lighting.ambienceZone: seam`). Constants: `SEAM` in
+`src/loaders/seam.ts`. Darwin SwiftShader, the harness's 640 x 360, unless a row says otherwise. "authored" is a
+choice made by eye from the player's own camera at the six beats in `docs/build-log/ch2-ink/`; "measured" has
+the number beside it. Every value is PROVISIONAL (OQ-082).
+
+| Constant | Value | Basis | How |
+|---|---|---|---|
+| `top` | paper-cream | measured | the six harness cameras look down on the path: with tops and lips at mist-pale the paint gate's paper share is 29.7% (floor 41%); at paper-cream 45.4% |
+| `face` | mist-pale | measured | at wash-light (pushed dark when near, D-019) `post` is 24/26: 162 measurable stroke px (need 200), because a dark face is not a light form and a paper top against paper sky is a same-value edge. At mist-pale: 358 px, 26/26, and the rock's darks are the painted strokes (the courtyard's rule, OQ-079 item 8) |
+| `lip.depth`, `lip.step` | 0.3 u, paper-cream | authored | the edge of the slab of ground at the top of every face, in the top's own value: the band a top is read by from below. 0.3 u is 5 px at 1080 lines from 10 u |
+| `lip.under`, `lip.underStep` | 0.12 u, ink-grey | authored | one dark band under the lip (STYLE §4 Paths: a defined dark edge). Pushed to ink-black inside 12 u (D-019) |
+| `minSlab` | 1 u | authored | a box lower than this is a stone (the two crow perches, 0.4 u): no lip, no brushwork |
+| `across` | `seam_face_a`, 7 x 9 u a card, ink 0.9 | authored | faces across the path: 7 u is the path's width, so a face he climbs carries the card once. Laid from the box's own edge: laid in world z the first cut showed the card and its mirror image either side of z 0 |
+| `along` | `seam_face_b`, 9 x 9 u, ink 0.8 | authored | faces along the path, in world x. Both cards: repeated as they are along a face (the cut edge is one more upright stroke), from the face's top and mirrored down it |
+| `order` | -20 | derived | before the far field's mist sheets (0 up), which are paper over what stands in them: drawn after them, the strokes of a face showed through the mist |
+| `ledge` | reach 6 u, up 0.9, paper-cream | derived | `kit_rock_mass` has level tops at 3.2, 5.8, 8.2, 10.2 and 12 u over its base, each stepped back up to 0.65 u; a mass stands with its base 2 u under the path. The two lowest (1.2 and 3.8 u over the path) are within a jump and a climb, and are drawn; the cards of the painted wall stand 6 u or more over the path and cover the rest |
+| `pine.rise` | 2.5 u | derived | a face caught from below: chapter 2's are +4.5, +6.25, +2.8 and +4 (four pines); its +1.5 step has none |
+| `pine.inset`, `pine.below` | 0.5 u, 0.3 u | measured | the card stands across the path 0.5 u past the face, its crown 0.3 u under the top. Standing ON the corner, the first cut failed the paint gate: 529 accent px hidden from the overview camera and 39 px off the ramp's chroma. Under the top: 0 and 0 |
+| `EPS` (in `buildSeam`) | 1e-6 u | derived | two boxes meet where one's x1 is the other's x0: the edges of chapter 2's slabs in x and z are multiples of 0.5 u (the two perches, at 69.7 and the like, are not slabs), so any tolerance far under that tells "meets" from "does not" |
+| `pine.cards` | pine_a 5.5, pine_c 5, pine_b 5.5 mirrored, pine_a 6 (u wide) | authored | chapter 1's wall pines are 6 to 7.5 wide; these grow from a face, not a cliff |
+| `cliffs` | 8 towers | authored | three behind the wall, 66, 84 and 98 u tall (taller as the path climbs 15.5 u), ink 0.5 to 0.55; three in the void 30 to 62 u off the path, 60 to 84 u tall, ink 0.36 to 0.42 (thinner: STYLE §3 mid band, and §5's bright void); two past the ends. The paper share with them: 44.6% (45.4% without) |
+
+**The gates on the shipped look** (`npm run playtest -- --level=02-cliff-seam`, all 14 stages PASS; `post` 26/26):
+
+| Check | Chapter 2, ink | Floor or ceiling |
+|---|---|---|
+| near field dark mass (ink pass, rock shown) | 19.8% of 753,076 px | >= 10% |
+| ink-black mass | 0.3% | >= 0.2% |
+| silhouette inked where value separates | 71.0% of 3,602 px | 35 to 92% |
+| ... where it does not | 98.3% of 898 px | >= 95% |
+| measurable stroke px; 1 px share; 2 px and over | 316; 64.9%; 35.1% | >= 200; >= 10%; >= 10% |
+| interior creases inked | 11.7% | <= 45% |
+| flat ground inked, grazing camera | 0 of 48,098 px | <= 1% |
+| mid silhouettes with a line | 3.0% | <= 35% |
+| painted share (wall lifted away) | 25.3% | >= 3% |
+| paper, rock drawn in place of the wall | 44.6% (37.7% of the frame the player sees) | >= 41% |
+| dark mass where the rock stands | 10.2% (0.1% with the wall lifted away) | >= 4% |
+| rock px drawn over | 99.8% (16.0% lifted away) | >= 90% |
+| accent px hidden by paint; px off the ramp's chroma | 0; 0 | 0; 0 |
+
+**The grazing check's ground class** (`tools/harness/post.ts`, one sign). The class was "a plane that recedes
+steeply down the rows", by the absolute change of 1/z. On chapter 2 the rock's second slab overhangs the first,
+and from 0.35 u over the ground its underside is such a plane, dark by value: 773 of 48,871 px, 1.6%, the same
+1.6% this file records for chapter 2 under D-019 ("dark material", the reason the check was limited to dressed
+levels). The slope is now signed: ground comes nearer toward the foot of the frame, an underside toward its top.
+
+| Run | Chapter 1 | Chapter 2 |
+|---|---|---|
+| absolute slope, as it was | 0.1% (on record) | 1.6% (773 of 48,871): FAIL on rock, not on a line |
+| signed slope, shipped | see "D-028 every other level" | 0.0% (0 of 48,098) |
+| signed slope, the ink pass mutated to 0.7071 px diagonal steps (D-019's proof) | **FAIL 25/26**: 25.1% (10,873 of 43,267); 25.2% on record with the absolute slope | **FAIL 25/26**: 26.8% (12,903 of 48,098) |
+
+`src/engine/ink-post.ts` was mutated for those two runs and restored; `git status` clean after. The 1% ceiling
+and every other constant of `POST_GATE` and `PAINT_GATE` are untouched.
+
+**Scene budget** (`tools/assets/budgets.json` `scenes`), beside chapter 1's:
+
+| Level | Draw calls | Triangles | Was |
+|---|---|---|---|
+| 01-lower-stair | 137 | 331,496 | unchanged |
+| 02-cliff-seam | 80 | 171,290 | 100 and 177,330 as greybox: 18 rock masses are no longer drawn, 14 boxes are one mesh |
+
+## D-028 the seam's cards (2026-11-13)
+
+`tools/art/seam-cards.mjs` -> `assets/seam/`. No fal call: both are cut from the inside of a cliff painting
+ART-GEN delivered in round 2 (`assets/backdrop/gen`, ledger rows 47 to 60). Ledger total unchanged at $15.1968.
+
+| Card | Source and rect (px) | Size | Bytes | Ink | Why |
+|---|---|---|---|---|---|
+| `seam_face_a` | `cliff_b`, 150,760 to 850,1460 | 1024 x 1024 | 776,504 | 37.6% | two buttresses and the cleft between them, below their tops and above the painted foot |
+| `seam_face_b` | `cliff_c`, 280,390 to 860,970 | 1024 x 1024 | 797,296 | 40.9% | the broad stepped wall above its ledge: long dry strokes |
+
+`floor` 0.3, `gain` 1.25 (authored): a wash is ink-black with the painting's density in alpha; density under 0.3
+is the painting's own pale ground wash, which the face's mist-pale fill already is, so it is not laid twice.
+At 1024 px a card is 114 to 146 px a u; chapter 1's front cliff cards are 98 to 158. Download: +1.57 MB.
+
+## D-028 every other level (2026-11-13)
+
+**Frame hashes.** `node tools/harness/frame-hashes.ts`, darwin SwiftShader, 229 values a report (six frames a
+level with their counters, every visible renderable, the paint layer, the page's text and ids), on origin/main at
+12a09c7 before any edit and on this branch.
+
+| Run | Values that differ | Whose |
+|---|---|---|
+| first cut (5b8ca9e) | 24 | all `02-cliff-seam` |
+| final tree | 24 or 25 | 24 `02-cliff-seam`; in some runs 1 more: `01-lower-stair` cam3 |
+
+Chapter 1's cam3 is **not stable from run to run of one build**: hashed three times on the final tree it gave
+the baseline's value once (c7b29bc6) and another twice (881620c4). The two frames differ in ONE pixel of
+230,400, at (606, 91), by 51 levels in one channel. Nothing of the seam is loaded by chapter 1, and a run that
+reproduces the baseline's hash exactly shows the branch changed nothing there. **And main does it too:** the
+same tool run six times from a checkout of main's own source (the `polish-1` worktree at 0763225, whose `src`
+differs from this branch's only in `level.ts` and `seam.ts`) gave 881620c4 four times and c7b29bc6 twice.
+Not traced further (B-115).
+The gym and chapters 3, 4 and 5: identical in every run.
+
+**The grazing check after its sign** (the whole playtest, every level): gym 0 of 48,857 px; chapter 1 0 of
+43,267 (0.1% on record with the absolute slope); chapter 2 0 of 48,098; chapter 3 148 of 48,446 (0.3%); chapter
+4 31 of 47,453 (0.1%); chapter 5 49 of 50,868 (0.1%, ceiling 1%). The check is judged on dressed levels: 1, 2, 5.
+
+**The whole playtest** on the tree before the last loader fix: every stage of every level PASS, and of the game
+stages `reachable` 69/69, `run-metric` 15/15, `ambient-motion` 13/13, `fight` 15/15, `touch` 29/29,
+`touch-release` 16/16, `touch-chapters` 27/27; `pitch-assist` 116/117. The one red was the fixture
+`render-only-rear-beam` (a clone of chapter 2 with a beam that has no collider across the view): the linter's
+model rejects the top behind it (0.000 deg) and the rig read it (4.250 deg), because an ink level did not draw a
+box with no collider. A seam level now draws every unturned box; rerun: `pitch-assist` 117/117, and chapter 2's
+`visual` unchanged against its goldens (the level has no such box).
+
+**Linux goldens, chapter 2** (the documented way: CI's own frames). CI run 43504604178 on 0d7262b: every job
+green but `level (02-cliff-seam)`, red at `visual` alone (six cameras 31.2 to 56.7% off the greybox goldens);
+on Linux its `post` is 26/26 with darwin's numbers (ink-black mass 0.3%, paper 44.6%, grazing 0 of 48,098) and
+`counters` is at the ratchet (80 and 171,290). All six `camN.actual.png` taken; against the darwin goldens
+(pixelmatch, threshold 0.1) they differ in 0, 2, 1, 0, 1 and 2 px of 230,400. No other level's golden is written.
+
+**Frame rate** (`tools/measure-display.mjs`, headed Chrome, ANGLE Metal, Apple M4 Max, the rig view at spawn,
+360 frames, both levels in one session):
+
+| Level | 2560 x 1440 | 5120 x 1440 | Cost of a frame, 2560 / 5120 |
+|---|---|---|---|
+| 01-lower-stair | 144.9 fps, 0 frames over 10 ms | 144.9 fps, 0 over 10 ms | 1.98 ms / 2.85 ms (2.81 ms on record, D-021) |
+| 02-cliff-seam | 144.9 fps, 0 over 10 ms | 144.9 fps, 0 over 10 ms | 2.02 ms / 3.04 ms |

@@ -288,10 +288,13 @@ export async function post(ctx: Ctx): Promise<StageResult> {
             if (d < G.nearM && x >= M && x < W - M && y >= M && y < H - M) { // M = 8 covers the 6px reach below
               // DEEP INSIDE a ground plane that recedes steeply (1/z changes > grazeSlope per row, hardly at all
               // along a row), and planar for 6px every way, so no real edge's stroke (<= 4px) can reach it.
+              // GROUND: nearer toward the foot of the frame (1/z rises down the rows). D-028: the slope is signed,
+              // because a plane that comes nearer toward the TOP of the frame is the underside of something
+              // overhead, seen from below (chapter 2: the rock's overhanging slab, a dark mass and not a line).
               // Nothing there is a silhouette: any ink is the line drawing a plane against itself.
               const iz = IZ[i]!, R = 6;
               const flat = (st: number): boolean => Math.abs(IZ[i - st * R]! + IZ[i + st * R]! - 2 * iz) / iz < G.planeLap * R * R;
-              if (Math.abs(IZ[i + W]! - IZ[i - W]!) / (2 * iz) > G.grazeSlope && Math.abs(IZ[i + 1]! - IZ[i - 1]!) / (2 * iz) < G.grazeSlope / 10 && flat(1) && flat(W)) {
+              if ((IZ[i + W]! - IZ[i - W]!) / (2 * iz) > G.grazeSlope && Math.abs(IZ[i + 1]! - IZ[i - 1]!) / (2 * iz) < G.grazeSlope / 10 && flat(1) && flat(W)) {
                 planeN++;
                 if (v <= vInkDeep + G.tol) planeInk++;
               }

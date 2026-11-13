@@ -2034,3 +2034,53 @@ ticks after the dash began on darwin and 15 on CI (runs 43485369808, 43485459420
 **What nobody has judged.** The gate's sound by ear; the gate's line on screen, in the courtyard, with three
 swordsmen coming.
 status: PROVISIONAL
+
+## OQ-082 — CH2-INK: the builder's calls on chapter 2's look, and one sign in a gate
+raised: 2026-11-13 by ch2-ink (claim CH2-INK). Brief: `00-start-here/PROMPT-CH2-INK.md`. Decision: D-028.
+Numbers: MEASUREMENTS "D-028 the seam's look", "D-028 the seam's cards", "D-028 every other level".
+took, each PROVISIONAL. **Nobody has played chapter 2 in this look; every call below was judged from frames.**
+
+1. **A top is marked by a lip, in the ink pass.** The top 0.3 u of every face is the top's own paper over one
+   dark band. It is the one thing that says "ground up there" from below, it is the same on every top, and it
+   has a depth (a card has none). A face too high to catch carries it too: what he can reach is still his to
+   judge by height, as in greybox. Revisit: if Tim wants catchable faces told apart from the rest.
+2. **Tops are paper, faces pale, and the paint carries the darks.** Measured both other ways first: darker faces
+   leave `post` 24/26; mist-pale tops put the paper share at 29.7% against a 41% floor. So a far top is the
+   paper's own value against a paper sky, as chapter 1's is, and is told only by the face under it.
+3. **One sign in `post`** (`tools/harness/post.ts`, the grazing check): its ground class now excludes a plane
+   seen from below. This is a change to a gate, made because the check failed on rock and not on a line
+   (chapter 2's 1.6% is on record since D-019 as "dark material"). The ceiling is untouched and D-019's mutation
+   still fails it on chapters 1 and 2. **Tim: say if a gate may be corrected this way, or if chapter 2 should
+   have been left red and the conflict raised instead.** Revert is one character.
+4. **The zone's name is `seam`**, and the look is keyed on it as the courtyard's is on `courtyard`. Chapters 3
+   and 4 would each get a zone or share this one; not decided here.
+5. **Pines under the ledges, not on them.** On the corner they hid 529 accent pixels from the overview camera.
+   Under it they cannot stand in front of a torii, and they still flag the corner. They are over the void:
+   nothing he can stand on, and the figure is drawn over them (D-021).
+6. **Three towers stand in the void**, thin (ink 0.36 to 0.42), 30 to 62 u off the path. STYLE §5 wants a bright
+   void; the paper share fell from 45.4% to 44.6%. They are the level's claim to "its own character" with the
+   pines; remove `SEAM.cliffs` rows 4 to 6 if the void should be as bare as chapter 1's.
+7. **The rock wall's two lowest ledges are drawn** as thin slivers of paper along the painted wall. They are
+   honest (he can stand there) and they are not pretty: seen along the wall they are pale scratches.
+8. **STYLE strains, not amended.** §3: a painted face keeps full ink at 60 u (so does chapter 1's wall). §6: the
+   lip's dark band is a line that is not a silhouette, laid as a value step. §4: the strokes on a face repeat.
+9. **The wall-jump corridor is not told apart.** Its walls are rock like any face; the teach line (D-025) is
+   what says "wall jump". A painted cue for "kick off this" was not found that did not also mark every wall.
+10. **No fal spend.** The brief allowed $2.50. Both new cards are cut from paintings already bought. Chapters 3
+    and 4 by this method: $0.00 each if the same two cards and this loader serve (chapter 3's drifting stones
+    are moving platforms and chapter 4's ridge has other kit pieces: each needs its own look at what an ink
+    level does not draw there, and may want one or two new paintings at $0.12 each).
+11. **Not done:** the Linux goldens come from CI's own frames (documented way); a phone was not held; the frame
+    rate was measured on one Mac.
+12. **A seam level draws a box with no collider.** `pitch-assist` holds the real rig to the linter's rule that a
+    render-only box hides a top, on a clone of chapter 2; as an ink level chapter 2 drew no such box and the
+    fixture went red (116/117). The look was changed, not the fixture. A TURNED box is still not drawn in the
+    seam (chapter 2 has none): a level that adds one would collide with something unseen.
+13. **`frame-hashes` is 24 or 25, not always 24.** One pixel of chapter 1's cam3 flips between runs of the same
+    build (B-115), on main's own source as on this branch (six runs there: four one way, two the other). The
+    brief asks that every differing value be chapter 2's; in a run where that pixel lands the other way it is
+    not, and I am reporting that rather than re-running until it is.
+14. **Self-review, as a player, on the real GPU at 5120 x 1440** (the one review the brief asks for). At the
+    first face the lip is unmistakable and the face is a painting; no striping or z-fight on a wash. In the
+    corridor both walls carry lips and nothing says which to kick off (item 9). In the harness's cam3 a pale
+    patch of a rock ledge shows through a gap between two wall cards (item 7).
