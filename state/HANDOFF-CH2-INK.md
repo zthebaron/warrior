@@ -53,3 +53,8 @@ last line of this file says COMPLETE.
   tops gave 29.7%). A painted thing may not come between a camera and a torii: the pines stand under their tops.
 - One playtest, frame or measure tool at a time; never edit `src/` or `levels/` during one.
 - `--update-goldens --level=02-cliff-seam` only. Never `--record`.
+
+**COMPLETE (2026-11-13, the same session).** Section 2 is done: chapter 2's Linux goldens are CI run
+43504604178's own frames (within 2 px of darwin), CI was 13 of 13 green on 0f56bbc (run 43506035272), PR 44 has
+its body and is ready for review, and the claim was released on main (0288956). Nothing is left but for the
+reviewer to merge. Not deployed.
