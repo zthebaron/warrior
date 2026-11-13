@@ -223,5 +223,35 @@ console.log('swordsmen (D-023): where one may stand');
   only('(B-79) a patrol that walks through a turned box standing on its ground', 'ENEMY_PATROL', (L) => { L.geometry.push({ asset: 'prim_box', pos: [49.5, 6, 1.5], rot: [0, 30, 0], scale: [0.8, 1, 0.8] }); });
 }
 
+// ---- the goal that waits (D-026): each rule seen to fail, alone, on a fixture that is otherwise fair -------------
+// tools/harness/fixtures/clear-goal.json is the level the `fight` playtest stage plays the rule on: one flat
+// pad, one swordsman, one door across the path, the goal behind it.
+console.log('the goal that waits (D-026): goal.once_clear and the gate');
+{
+  const fx = load('tools/harness/fixtures/clear-goal.json');
+  const base = lintLevel(fx, manifest);
+  check('the fixture has a goal that waits, one swordsman and one door, and lints clean', fx.goal.once_clear === true && fx.enemies.length === 1 && base.ok && base.warnings.length === 0, [...base.errors, ...base.warnings].join(' ') || 'clean');
+  const only = (name, want, change) => {
+    const L = structuredClone(fx);
+    change(L);
+    const got = [...new Set(codes(lintLevel(L, manifest)))].sort();
+    check(`${name} FAILS ${want.join(' and ')}, and nothing else`, got.join() === [...want].sort().join(), got.join(', ') || 'no errors');
+  };
+  const door = (L) => L.geometry[1];
+  only('a goal that waits on a level with no swordsman', ['CLEAR_NO_ENEMY'], (L) => { delete L.enemies; });
+  only('a goal that waits and no door to show it', ['CLEAR_NO_DOOR'], (L) => { L.geometry.splice(1, 1); });
+  // without the flag the door is a box like any other: it never opens, and the path walks into its face
+  only('a door on a level whose goal does not wait', ['DOOR_NO_CLEAR', 'FACE_RISE'], (L) => { delete L.goal.once_clear; L.chapter = 5; });
+  only('the same level with the goal waiting is a fair one, so this case', [], (L) => { L.chapter = 5; });
+  only('a door that is turned', ['BAD_DOOR'], (L) => { door(L).rot = [0, 20, 0]; });
+  only('a door with no collider', ['BAD_DOOR'], (L) => { door(L).collider = 'none'; });
+  only('a gate that is not across the path', ['DOOR_OFF_PATH'], (L) => { door(L).pos = [8, 1.5, 4]; door(L).scale = [0.5, 3, 1.5]; });
+  only('a swordsman on ground the path never crosses', ['CLEAR_FOE_OFF_PATH'], (L) => { L.geometry.push({ asset: 'prim_box', pos: [0, -0.5, -8], scale: [6, 1, 4] }); L.enemies[0].pos = [0, 0, -8]; });
+  // what FACE_RISE cannot see: a turned box, and a mesh, in the gateway behind the door
+  only('a turned box across the path past the door', ['CLEAR_BLOCKED'], (L) => { L.geometry.push({ asset: 'prim_box', pos: [10, 1, 0], rot: [0, 30, 0], scale: [0.6, 2, 3] }); });
+  only('rock across the path past the door', ['CLEAR_BLOCKED'], (L) => { L.geometry.push({ asset: 'kit_rock_mass', pos: [10, 0, 0], scale: 0.2 }); });
+  only('the same turned box beside the path is in nobody\'s way, so this case', [], (L) => { L.geometry.push({ asset: 'prim_box', pos: [10, 1, 4], rot: [0, 30, 0], scale: [0.6, 2, 1] }); });
+}
+
 console.log(fails ? `LINT-SELF FAIL  (${fails})` : 'LINT-SELF PASS');
 process.exit(fails ? 1 : 0);

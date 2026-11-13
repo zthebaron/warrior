@@ -61,7 +61,7 @@ const MOVE_TEXT: Readonly<Record<string, { name: string; line: string; more?: st
 };
 
 const RULES = {
-  goal: 'Reach the last torii gate of the chapter. There is nothing to collect and no clock to beat: arriving is the whole of it.',
+  goal: 'Reach the last torii gate of the chapter. There is nothing to collect and no clock to beat: arriving is the whole of it. In the courtyard the far gate stays shut until every swordsman is down.',
   read: 'The vermilion torii show where to go. A crow lifting off shows when: its flight is timed to a sliding stone.',
   checkpoint: 'Every torii you pass is a checkpoint: from then on, that is where you return.',
   fall: 'Fall off the path, or be caught by a sliding stone, and you stand at the furthest torii you reached {delay} later. Nothing else is taken from you.',

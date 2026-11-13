@@ -150,6 +150,18 @@ function run(): { checks: number; fails: string[] } {
     ok('ch2: coming back brings it up again', line(t.at(wall, 'idle')) === 'climb', line(t.teach.current()));
   }
 
+  // ---- chapter 5 (D-026), chosen from the list: the first swordsman of the visit is one of the courtyard's three
+  {
+    const l = byChapter(5);
+    const first = l.enemies![0]!;
+    const s = new Sim(l);
+    ok('ch5: at the spawn the line is how to move', line(s.tick()) === 'ground', line(s.teach.current()));
+    ok('ch5: he runs: no line on the terrace, the three are far off', line(s.at([0.5, 0, 0], 'run')) === 'none', line(s.teach.current()));
+    const near = s.at([15, 0, 0], 'run');
+    ok('ch5: past the torii, the fight\'s line, for the nearest of the three', line(near) === 'fight' && near?.spot === `foe:${first.id}`, `${line(near)} at ${near?.spot}`);
+    ok('ch5: it goes when the first of the three falls, with two still standing', line(s.fell(first.id)) === 'none' && s.teach.has('fight'), line(s.teach.current()));
+  }
+
   // ---- chapter 1: walking, the first swordsman, the first jump, in that order
   {
     const l = byChapter(1);

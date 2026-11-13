@@ -15,12 +15,13 @@ import { RAPIER, type Physics, type Vec3Like } from '../engine/physics';
 import { getLoadedAsset, preloadAssets } from './assets';
 import { buildBackdrop, preloadBackdrop } from './backdrop';
 import { buildCliffWall, type RockMass } from './cliff-wall';
+import { COURTYARD, buildCourtyard, preloadCourtyard, type YardBox } from './courtyard';
 import { buildPathWash, type WalkTop } from './path-wash';
 import { preloadCharacter } from './character';
 import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
 import { patrolFraction, patrolPosition } from '../systems/patrol';
-import type { EnemyDef } from '../systems/fight';
+import { GATE, type EnemyDef } from '../systems/fight';
 import { SWORDSMAN } from '../entities/swordsman-model';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
@@ -85,7 +86,8 @@ export interface LevelData {
   chapter: number;
   palette: string;
   spawn: { pos: Vec3; facing: number };
-  goal: { type: 'reach'; pos: Vec3; radius?: number };
+  /** once_clear (D-026): arriving does not count while a swordsman of the level stands */
+  goal: { type: 'reach'; pos: Vec3; radius?: number; once_clear?: boolean };
   bounds: { min: Vec3; max: Vec3 };
   fog?: { color?: string; near?: number; far?: number };
   geometry: Placement[];
@@ -253,6 +255,7 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
   await Promise.all([
     preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file, painted: a.class === 'hero' }))),
     isInk(data) ? preloadBackdrop() : null,
+    isInk(data) && data.lighting?.ambienceZone === COURTYARD.zone ? preloadCourtyard() : null, // D-026: its own cards, for it alone
     preloadCharacter(CHARACTER.asset),
     // D-023: the swordsman is decoded only for a level that places one, so every other level loads what it did
     data.enemies?.length ? preloadCharacter(SWORDSMAN.asset) : null,
@@ -356,6 +359,14 @@ export interface LevelInstance {
   hazardPositions(): { index: number; type: HazardDef['type']; pos: Vec3 }[];
   /** Crow cues by hazard index at the last posed tick: perched or airborne (harness; the bot reads lift-off). */
   crows(): { index: number; airborne: boolean; pos: Vec3 }[];
+  /** D-026: how many doors the level's gate has (placements tagged GATE.doorTag). 0: the level has no gate. */
+  readonly doors: number;
+  /**
+   * D-026: the gate as it stands after this tick, 0 shut to 1 open (src/systems/fight.ts stepGate). The doors
+   * collide until it is fully open. The level keeps no gate state of its own: src/main.ts tells it every tick.
+   * snap: no swing is drawn between the last tick and this one (a level's start, a respawn).
+   */
+  setGate(share: number, snap?: boolean): void;
   dispose(): void;
 }
 
@@ -478,6 +489,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   };
 
   const ink = isInk(data);
+  // D-026: an ink level in the courtyard is dressed by its boxes' tags (courtyard.ts), not by kit pieces
+  const yardLook = ink && data.lighting?.ambienceZone === COURTYARD.zone;
+  const yardBoxes: YardBox[] = [], doorBoxes: YardBox[] = [];
   // a kit mesh drawn in place of a hazard cube (INK): same pose and scale, so `size` stays the volume
   const inkMesh = (name: string): THREE.Mesh => {
     const part = getLoadedAsset(name)?.parts[0];
@@ -493,6 +507,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   // static geometry: one fixed body, one collider per placement
   const fixed = physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
 
+  // D-026: the gate's doors. Each is a collision box like any other, on the same fixed body, but its collider is
+  // kept so it can be switched off while the gate stands open. Greybox: its box is drawn while it collides.
+  const doors: { collider: Collider; mesh: THREE.Mesh | null }[] = [];
+  let gatePrev = 0, gateCurr = 0;
   const rockMasses: RockMass[] = []; // D-021: ink levels' undrawn rock, for the painted wall
   const walkTops: WalkTop[] = [];    // D-021: ink levels' box tops, for the path's dry-brush
   // mesh placement: one THREE.Mesh per part (the kit is one part = one draw call) sharing the cached
@@ -567,6 +585,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       return;
     }
     const size = sizeOf(a, p.scale);
+    const door = p.tag === GATE.doorTag; // D-026
+    let boxMesh: THREE.Mesh | null = null;
     if (!ink) { // INK: the box is collision only; its collider-none kit dressing is what is drawn
       const mesh = new THREE.Mesh(walkGeo((p.tag && V.tagColors[p.tag]) || V.topColor, V.defaultColor), walkMat);
       mesh.position.set(...p.pos);
@@ -574,17 +594,27 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       mesh.scale.copy(size);
       root.add(mesh);
       pickables.push(mesh);
+      boxMesh = mesh;
     }
 
+    if (yardLook && p.tag && !(p.rot ?? []).some((v) => v !== 0)) {
+      const b: YardBox = { x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2, tag: p.tag };
+      (door ? doorBoxes : yardBoxes).push(b);
+    }
     const kind = p.collider ?? a.collider;
-    if (kind === 'none') return;
-    // D-021: a top a player can stand on is brushed (an unturned box only: a turned one has no level top)
-    if (ink && !(p.rot ?? []).some((v) => v !== 0)) {
+    if (kind === 'none') {
+      if (door) throw new Error(`[level] geometry[${i}]: a "${GATE.doorTag}" is what stands in the gateway while the gate is shut: it needs a collider`);
+      return;
+    }
+    // D-021: a top a player can stand on is brushed (an unturned box only: a turned one has no level top).
+    // D-026: a door is not ground: nothing is brushed onto the top of it.
+    if (ink && !door && !(p.rot ?? []).some((v) => v !== 0)) {
       walkTops.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2, y: p.pos[1] + size.y / 2 });
     }
     const desc = colliderDesc(kind, size, `geometry[${i}]`);
     desc.setTranslation(...p.pos).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
-    physics.world.createCollider(desc, fixed);
+    const collider = physics.world.createCollider(desc, fixed);
+    if (door) doors.push({ collider, mesh: boxMesh });
   });
 
   // moving platforms
@@ -683,13 +713,15 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const byHandle = new Map<number, PlatformInstance>(platforms.map((p) => [p.collider.handle, p]));
 
   // D-020: an ink level's far field is painted (paint layer), under root so it leaves with the level
-  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1]))) : null;
+  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : undefined) : null;
   if (backdrop) root.add(backdrop.root);
   // D-021: the near rock is painted too, from the placements that collide and are not drawn
   const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses) : null;
   if (cliffWall) root.add(cliffWall.root);
-  const pathWash = ink && walkTops.length ? buildPathWash(walkTops) : null;
+  const pathWash = ink && !yardLook && walkTops.length ? buildPathWash(walkTops) : null; // the yard's floor is flags, not a brushed path
   if (pathWash) root.add(pathWash.root);
+  const courtyard = yardLook ? buildCourtyard(yardBoxes, doorBoxes) : null;
+  if (courtyard) root.add(courtyard.root);
 
   return {
     data,
@@ -724,6 +756,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       for (const p of platforms) p.mesh.position.lerpVectors(p.prev, p.curr, alpha);
       for (const h of volumes) h.mesh.position.lerpVectors(h.prev, h.curr, alpha);
       for (const c of crows) c.mesh.position.lerpVectors(c.prev, c.curr, alpha);
+      if (courtyard && doors.length) courtyard.setGate(gatePrev + (gateCurr - gatePrev) * alpha);
     },
     hazardHit(feet, radius, height) {
       for (const h of volumes) {
@@ -746,6 +779,17 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     crows() {
       return crows.map((c) => ({ index: c.index, airborne: c.airborne, pos: [c.curr.x, c.curr.y, c.curr.z] }));
     },
+    doors: doors.length,
+    setGate(share, snap = false) {
+      gatePrev = snap ? share : gateCurr;
+      gateCurr = share;
+      const shut = share < 1; // the doors stand in the gateway until the leaves have swung right back
+      for (const d of doors) {
+        if (d.collider.isEnabled() !== shut) d.collider.setEnabled(shut);
+        if (d.mesh) d.mesh.visible = shut; // greybox: the box is the door
+      }
+      if (snap) courtyard?.setGate(share);
+    },
     dispose() {
       physics.removeBody(fixed);
       for (const p of platforms) physics.removeBody(p.body);
@@ -761,6 +805,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       backdrop?.dispose();
       cliffWall?.dispose();
       pathWash?.dispose();
+      courtyard?.dispose();
     },
   };
 }

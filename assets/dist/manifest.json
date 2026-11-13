@@ -538,6 +538,44 @@
         "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
         "textures": "ktx2 uastc --level 2 --jobs 1 (resize cap 1024px, chroma cap 26)"
       }
+    },
+    {
+      "name": "gate",
+      "kind": "mesh",
+      "class": "hero",
+      "file": "gate.glb",
+      "source": "assets/hero/gate.glb",
+      "sha256": "0ecc2ad4967a5360f4ab71b2d26047c46093d64f7b0c4648ce8502c9797d3184",
+      "collider": "none",
+      "triangles": 29400,
+      "bytes": 1076744,
+      "bytes_export": 2237684,
+      "bbox": {
+        "min": [
+          -0.57334,
+          0,
+          -0.3712
+        ],
+        "max": [
+          0.57334,
+          0.99998,
+          0.37121
+        ]
+      },
+      "materials": 1,
+      "draw_calls": 1,
+      "textures": [
+        {
+          "name": "texture_pbr_20250901",
+          "mime": "image/ktx2",
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "compression": {
+        "geometry": "draco --method edgebreaker --quantize-position 14 --quantize-normal 10 --quantize-texcoord 12",
+        "textures": "ktx2 uastc --level 2 --jobs 1 (resize cap 1024px, chroma cap 26)"
+      }
     }
   ]
 }

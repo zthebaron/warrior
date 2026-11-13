@@ -2099,3 +2099,93 @@ Restored.
 
 The full local playtest at 7399844: 75 stages, 1,084 checks, all pass. No golden was updated and no trace re-recorded. The teach rule and its element are built only where the shell
 is (`src/main.ts`: `teach` is null on a bare page); `reachable` still holds every bare page to ids `app hud`.
+
+## D-026 the gate (2026-11-12)
+
+`src/systems/fight.ts` `GATE`, `goalCounts`, `stepGate`. Authored to the brief's words, PROVISIONAL (OQ-079).
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `GATE.openSec` | 1.2 s | authored | long enough to be seen opening, shorter than the walk to it; 72 ticks, measured below |
+| `GATE.doorTag` | `gate_door` | authored | the tag of a door's placement |
+| `COURTYARD.leaf.openDeg` | 100 deg | authored | the leaves stand just past square to the wall, out of the doorway |
+| `COURTYARD.leaf.thick`, `top` | 0.14 m, 4.15 m | authored, derived | `top` is under the gate model's tie beam (0.521 of its 8 m height = 4.17 m) |
+| `FIGHT_STAGE.gateLane`, `gateStandTicks`, `gatePushTicks` | 1.5 m, 60, 90 | authored | the fixture run: the lane round the door, 1 s on the goal, 1.5 s at the door |
+
+Measured (`check:fight`, `fight` stage, `nav`): the gate stands open on the 72nd tick after the last fall
+(`stepGate` snaps to 1 within 1e-9: 72 steps of 1/72 sum to 0.99999999); in the real game on the fixture the shut
+door held the warrior at x 8.61 (its face is at 8.25); on the level the last fell on tick 214, the gate stood
+open on tick 285 and the goal counted on tick 346.
+
+## D-026 the courtyard (2026-11-12)
+
+Positions are level data (`tools/levelgen/courtyard-05.mjs` `Y`, which writes `levels/05-courtyard.json`).
+
+| What | Value | Basis |
+|---|---|---|
+| terrace | x -3 to 10, 9 m wide | at 7 m `post` counted 53 moving pixels of the idle warrior against the void (OQ-079 item 7) |
+| yard | x 10 to 32, z -8 to 8: 22 by 16 m, one box | one box: a swordsman's ground is one box top; sized by the fight below |
+| walls | 1 m thick, top 4.8 m, abutting the yard's box | above `MOVE.climb.maxRise` 4.5; abutting, so no ground is cut (`groundRect`) |
+| way in | 7 m opening, posts 0.5 m, 6.6 m tall | the beam is out of the camera's frame from the checkpoint |
+| far gate | 6 m gap, doorway 4.4 m, door top 4.8 m, model 8 m tall, centred 1.2 m beyond the wall line, posts 0.8 m | the model's own measures at 8 m: posts 2.2 to 3.0 m either side, eaves 5.03 m, tie beam 4.17 m |
+| torii, checkpoint, goal | x 12; (14, 0, 0); (35.5, 0, 0) radius 1.5 | the checkpoint is 2 m past its torii, as every chapter's |
+
+Where the three stand, and what was tried (each run is `nav` on the real rig, ticks from the level's start):
+
+| Layout | notices (left, right, middle) | first falls | result |
+|---|---|---|---|
+| (20.5, -3.2) (21.5, 3.2) (25, 0.4), yard 24 by 18 | 151, 206, 220 | 191 | left alone; the other two after he fell |
+| (19.5, -2.4) (19.9, 2.4) (22.3, 0.3) | 138, 156, 184 | 178 | two together; the middle 6 ticks after the first fell |
+| **(19.5, -2.4) (19.9, 2.4) (21.9, 0.2), shipped** | **138, 156, 163** | **178** | **all three roused together** |
+
+Shipped run: 4 sword presses, 1.42 s fighting. `guard-right` began a wind-up on tick 191 and was staggered on 197,
+30 ticks before his blade would have been out; one slash staggered `guard-right` and `guard-middle` together
+(197) and the next felled both (213, 214). All down 76 ticks after the first notice. Never cut. Apart: left to
+right 4.82 m, left to middle 3.54 m, right to middle 2.97 m. From the respawn: 6.00, 6.37 and 7.90 m (his sight
+is 4.5 m). Goal on tick 346, 5.77 s of the 24 s budget. `PHASE_SWEEP` worst arrivals 1.78 s and 3.78 s of 12 s.
+`camera-room` 4 of 4 with no blocker listed for the level. `chaos` 7 of 7.
+
+Scene budget: 54 draw calls, 123,704 triangles, set at the measured peak (Tier 1: 300, 500,000).
+
+## D-026 the courtyard's look (2026-11-12)
+
+`src/loaders/courtyard.ts` `COURTYARD`; `tools/art/courtyard-cards.mjs` `CARDS`, `ROSE`. All authored against
+the painting and held by `post`, PROVISIONAL (OQ-079).
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `floor`, `wall`, `cap`, `frame`, `leaf` fills | ramp steps by name | authored | pale forms: OQ-079 items 8 and 9, measured below |
+| `cap.overhang`, `rise`, `eave` | 0.4, 0.75, 0.14 m | authored | the painting's wall caps |
+| `frame.beamDrop`, `beam`, `past`, `tieDrop`, `tie` | 0.5, 0.45, 0.9, 1.5, 0.3 m | authored | a post-and-beam gateway |
+| `flags.metres`, `plaster.metres`, `tiles.metres`, `leaf.plankMetres` | 16, 12, 4, 4 m | authored | the world size of one card |
+| `flags.ink`, `plaster.ink`, `tiles.ink`, `leaf.ink` | 0.9, 0.9, 0.85, 0.8 | authored | how much of a card's ink is laid |
+| `far.radius`, `topY`, `height`, `arc`, arcs | 70 m, 21 m, 27 m, 72 deg, five | authored | the mountains stand 3 to 13 degrees up from inside, over the far wall |
+| `sky.radius`, `baseY`, `height`, `arc` | 300 m, 12 m, 62 m, 120 deg | authored | a band low over the mountains |
+| `order` | -10, 90, 110 to 140 | authored | sky before the far ring, mountains after its mist, washes last |
+| `ROSE` | rgb 204, 184, 174 | derived | the paper is 202, 191, 172: value 188.3, chroma 30. This is value 187.3, chroma 30, hue 20 deg against 38 |
+| card sizes | far 2048 x 620, sky 1024 x 196, flags 2048 x 2048, plaster 1024 x 512 (two), tiles 512 x 256 | measured | `budgets.json` `courtyard`, at each file's size |
+
+`post` on the level, as built up: dark caps and timbers 99.6% of near silhouettes ink (limit 92%) and 44.8% mid
+lines (limit 35%); pale forms, outer plaster `mist-pale`: paper 36.4% (floor 41%); all plaster paper: 49.1% and
+121 stroke pixels (floor 200); shipped: **23 of 23, paper 44.9%, far field 20.1%, 341 stroke pixels, near dark
+mass 37.8%, ink-black mass 0.4%, 0 pixels over the hue limit**. The gate model at the way in: 2,169 accent pixels
+hidden and 39 over the hue limit, so it is not there.
+
+The gate asset: 29,400 triangles, 1,076,744 B, one 1024 px texture, one draw call (`budgets.json` `assets.gate`).
+The asset build's other outputs are byte-identical (`diff -rq` of a dry build: `gate.glb` and its manifest entry
+alone; both characters' shas unchanged).
+
+## D-026 the checks (2026-11-12)
+
+`lint:self`: the fixture clean, then 11 cases for the seven rules. `check:fight`: 6 rules, 16 broken fights
+caught. `fight` stage 15 of 15. `check:teach` 107 of 107 (5 chapters, 52 places), four of them chapter 5's:
+past the torii the fight's line is up for the nearest of the three, and goes when he falls. `reachable` 69 of 69 through
+five chapters. `lint:not-list` 22 rows, with row 9's new check. The level: 14 of 14 per-level stages.
+`frame-hashes` against origin/main (b3c12f3's tree): IDENTICAL, 191 values, 5 levels, with the engine change and
+no level using it; with the level in, 38 values differ and every one is `levels.05-courtyard`.
+fal: rows 94 to 96, $0.0398 (the gate's input image), $0.0200 (trellis shape test), $0.5250 (the model, Normal
+and PBR): $0.5848 of this task's $4.00. Ledger total $15.1848 of $20.00. fal's three price pages were read
+before the first call and matched the wrapper's table.
+Goldens: darwin by `--update-goldens` on the level alone. Linux are CI run 43352065074's own six frames (on
+that run `visual` was the only failing stage of `level (05-courtyard)`, for want of goldens); each is within 4
+pixels of its darwin golden at pixelmatch 0.1 (0, 3, 1, 4, 3, 0).

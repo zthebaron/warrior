@@ -21,6 +21,9 @@ mkdir -p assets/build/gen/out
 case "$n" in
   warrior) set -- --match "assets/hero/input/$n.png" ;;
   torii)   set -- --tint e34234 --pin-median ;;
+  # D-026: the courtyard's gate. Tone-matched to its input its posts came out paper-pale (the model's base colour
+  # is lighter than the painting's timbers), so it is one hue instead: a ramp whose median is ink-grey.
+  gate)    set -- --tint 534e4b --pin-median ;;
   pine)    set -- --match "assets/hero/input/$n.png" --elev 40 --tint 383838 --pin-median ;;
   *)       set -- --match "assets/hero/input/$n.png" --elev 25 --tint 827d76 --pin-median ;;
 esac

@@ -18,8 +18,16 @@
 //        3. every tick of both replays is identical to the live run and to each other: the warrior, the
 //           swordsman, the deaths, the checkpoints
 //
+//   D  (D-026) on tools/harness/fixtures/clear-goal.json: one swordsman, a door across the path, the goal behind
+//      it. The bot walks round the door and stands ON the goal with him standing; pushes at the shut door; fells
+//      him and watches the gate swing; steps off the pad, so a respawn stands him up; fells him again and walks
+//      to the goal THROUGH the gateway.
+//        5. arriving does not count while a swordsman stands, and counts once every one is down; the gate is
+//           shut until then, stands open GATE.openSec after the last falls, and is shut again by a respawn
+//
 // Then each rule is run against a fight broken in the way the rule exists to catch (the harness exposes the
-// live table), and must FAIL: a stage that only ever passes proves nothing. MEASUREMENTS "D-023 the checks".
+// live table; rule 5 is run on the same fixture with `once_clear` taken out), and must FAIL: a stage that only
+// ever passes proves nothing. MEASUREMENTS "D-023 the checks", "D-026 the checks".
 // Fixture, not a level: it is not nav-tested and not in levels/.
 
 import { readFileSync } from 'node:fs';
@@ -28,14 +36,20 @@ import type { Page } from '@playwright/test';
 import { EnvironmentError, FIXED_HZ, Stage, diagnose, guard, hdist, VIEWPORT, type Ctx, type Foe, type InputFrame, type StageResult, type Vec3 } from './lib.ts';
 import { launchBrowser } from './preflight.ts';
 import { NAV_CONFIG } from './nav.ts';
+import { GATE } from '../../src/systems/fight.ts';
 
 const FIXTURE = 'tools/harness/fixtures/swordsman.json';
+const GATE_FIXTURE = 'tools/harness/fixtures/clear-goal.json';
 
 export const FIGHT_STAGE = {
   standShare: 0.8,       // of the nearer of the two reaches: where the bot stops to be cut
   holdTicks: 300,        // 5 s: how long a fallen swordsman is watched staying down
   waitTicks: 900,        // 15 s: the longest any one wait may take before the scenario is called failed
   lowWindupSec: 0.05,    // windupSec set far under the minimum: the wind-up must not follow it down
+  // D: the goal that waits (D-026)
+  gateLane: 1.5,         // m beyond the door's end: the lane the bot walks round it in, out of his sight
+  gateStandTicks: 60,    // 1 s: how long it stands on the goal with him standing
+  gatePushTicks: 90,     // 1.5 s: how long it pushes at the shut door
   // the broken fights each rule must fail on
   broken: { hitsToFall: 1, reach: 0.1, closeSpeedTimes: 1.01, windupMinSec: 0.1 },
 };
@@ -124,6 +138,92 @@ function attempt(page: Page, a: { stand: number; press: number; hold: number; wa
   }, a);
 }
 
+/** D: what the bot saw of a goal that waits (D-026). */
+interface GateRun {
+  stopped: string | null;
+  /** standing on the goal with him standing, after standTicks there */
+  atGoal: { state: string; gate: number | null; standing: number; fromGoal: number } | null;
+  /** how far toward the gateway (x) it got pushing at the shut door */
+  pushedTo: number | null;
+  fellTick: number | null;
+  openTick: number | null;
+  rose: boolean;
+  afterRespawn: { gate: number | null; foe: Foe; deaths: number } | null;
+  /** the second time: the state it ended in, and how near the middle of the gateway (|z|) it crossed the door's x */
+  through: { state: string; crossedAtZ: number | null } | null;
+}
+
+function gateAttempt(page: Page, a: { goal: Vec3; doorX: number; lane: number; press: number; wait: number; standTicks: number; pushTicks: number }): Promise<GateRun> {
+  return page.evaluate((a) => {
+    const H = window.__HARNESS__!;
+    const N: InputFrame = { x: 0, y: 0, jump: false, dash: false, sprint: false, slash: false };
+    const out: GateRun = { stopped: null, atGoal: null, pushedTo: null, fellTick: null, openTick: null, rose: true, afterRespawn: null, through: null };
+    H.setInput(null);
+    let s = H.snapshot();
+    const step = (f: InputFrame): void => { s = H.step(f, false); };
+    const foe = (): Foe => s.enemies[0]!;
+    const to = (x: number, z: number): InputFrame => {
+      const dx = x - s.feet[0], dz = z - s.feet[2], l = Math.hypot(dx, dz) || 1;
+      return { ...N, x: dx / l, y: dz / l };
+    };
+    const far = (x: number, z: number): number => Math.hypot(x - s.feet[0], z - s.feet[2]);
+    const until = (cond: () => boolean, frame: () => InputFrame): boolean => {
+      for (let n = 0; !cond() && n < a.wait; n++) step(frame());
+      return cond();
+    };
+    const goTo = (x: number, z: number): boolean => until(() => far(x, z) <= 0.3 || s.state !== 'play', () => to(x, z)) && s.state === 'play';
+    const done = (why: string | null): GateRun => { out.stopped = why; return out; };
+    const fell = (): string | null => {
+      if (!until(() => far(foe().pos[0], foe().pos[2]) <= a.press, () => to(foe().pos[0], foe().pos[2]))) return 'never got near him';
+      for (let k = 0; k < 4 && foe().mode !== 'fallen'; k++) {
+        step({ ...N, slash: true });
+        if (!until(() => s.slash === null || foe().mode === 'fallen', () => N)) return 'a slash never ended';
+        // he reels back out of reach on a hit that does not fell him: close again
+        if (foe().mode !== 'fallen' && !until(() => far(foe().pos[0], foe().pos[2]) <= a.press, () => to(foe().pos[0], foe().pos[2]))) return 'never got near him again';
+      }
+      return foe().mode === 'fallen' ? null : 'he did not fall';
+    };
+
+    // --- round the door, out of his sight, and onto the goal while he stands ---
+    const [gx, , gz] = a.goal;
+    if (!goTo(s.feet[0] + 4, a.lane) || !goTo(gx, a.lane)) return done(`never got round the door: state ${s.state} at (${s.feet.map((v) => v.toFixed(2)).join(', ')})`);
+    until(() => far(gx, gz) <= 0.3 || s.state !== 'play', () => to(gx, gz));
+    for (let n = 0; n < a.standTicks && s.state === 'play'; n++) step(N);
+    out.atGoal = { state: s.state, gate: s.gate, standing: s.enemies.filter((e) => e.mode !== 'fallen').length, fromGoal: far(gx, gz) };
+    if (s.state !== 'play') return done('the arrival counted with him standing');
+    // --- at the shut door, from the goal's side ---
+    for (let n = 0; n < a.pushTicks; n++) step({ ...N, x: -1 });
+    out.pushedTo = s.feet[0];
+    // --- back round, fell him, watch the gate ---
+    if (!goTo(gx, a.lane) || !goTo(a.doorX - 4, a.lane)) return done('never got back round the door');
+    let why = fell();
+    if (why) return done(`first time: ${why}`);
+    out.fellTick = s.tick;
+    let last = s.gate ?? 0;
+    for (let n = 0; n < a.wait && s.gate !== 1; n++) { step(N); if ((s.gate ?? 0) < last) out.rose = false; last = s.gate ?? 0; }
+    if (s.gate !== 1) return done(`the gate never stood open: ${s.gate}`);
+    out.openTick = s.tick;
+    // --- off the side of the pad: a respawn stands him up ---
+    const deaths = s.deaths;
+    if (!until(() => s.deaths > deaths, () => ({ ...N, y: 1 }))) return done('never fell off the pad');
+    if (!until(() => s.state === 'play', () => N)) return done('never respawned');
+    out.afterRespawn = { gate: s.gate, foe: foe(), deaths: s.deaths };
+    // --- fell him again, and through the gateway to the goal ---
+    why = fell();
+    if (why) return done(`second time: ${why}`);
+    if (!until(() => s.gate === 1, () => N)) return done('the gate never stood open the second time');
+    if (!goTo(a.doorX - 3, gz)) return done('never got in front of the gateway');
+    let crossedAtZ: number | null = null;
+    for (let n = 0; n < a.wait && s.state === 'play'; n++) {
+      const before = s.feet[0];
+      step(to(gx, gz));
+      if (before < a.doorX && s.feet[0] >= a.doorX) crossedAtZ = Math.abs(s.feet[2] - gz);
+    }
+    out.through = { state: s.state, crossedAtZ };
+    return done(null);
+  }, a);
+}
+
 /** Play `frames` back in the page for `ticks` ticks and return the same log an attempt writes. */
 function replayOf(page: Page, frames: InputFrame[], ticks: number): Promise<string[]> {
   return page.evaluate(([fr, n]) => {
@@ -157,7 +257,7 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
      */
     const browsers: import('@playwright/test').Browser[] = [];
     const shut = async (page: Page): Promise<void> => { await page.context().browser()?.close().catch(() => {}); };
-    const open = async (set: Record<string, number> = {}, times: Record<string, number> = {}): Promise<Page> => {
+    const open = async (set: Record<string, number> = {}, times: Record<string, number> = {}, json: string = text): Promise<Page> => {
       const browser = await launchBrowser();
       browsers.push(browser);
       const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
@@ -171,7 +271,7 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
         const why = (err instanceof Error ? err.message : String(err)).split('\n')[0];
         throw new EnvironmentError(`fixture page ${browsers.length} did not load: ${why} | ${await diagnose({ ...ctx, browser } as Ctx)}`);
       }
-      const started = await page.evaluate((t) => window.__HARNESS__!.startJson(t), text);
+      const started = await page.evaluate((t) => window.__HARNESS__!.startJson(t), json);
       if (!started.ok) throw new Error(`fixture did not load: ${started.error ?? 'unknown'}`);
       await page.evaluate(([set, times]) => {
         const t = window.__HARNESS__!.fight.swordsman;
@@ -272,6 +372,40 @@ export async function fight(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const quickRun = await attempt(quick, args(true));
       await shut(quick);
       st.check(`seen to fail: rule 4 with the wind-up run at ${B.windupMinSec} s`, windupHolds(quickRun) !== null, windupHolds(quickRun) ?? 'PASSED: the rule does not measure the wind-up');
+
+      // ---------- D: the goal that waits (D-026) ----------
+      const gateText = readFileSync(join(ctx.root, GATE_FIXTURE), 'utf8');
+      const gfx = JSON.parse(gateText) as { goal: { pos: Vec3; once_clear?: boolean }; enemies: { pos: Vec3 }[]; geometry: { pos: Vec3; scale: Vec3; tag?: string }[] };
+      const door = gfx.geometry.find((g) => g.tag === GATE.doorTag)!;
+      const gateArgs = { goal: gfx.goal.pos, doorX: door.pos[0], lane: door.scale[2] / 2 + C.gateLane, press: W['reach']! * NAV_CONFIG.slashShare, wait: C.waitTicks, standTicks: C.gateStandTicks, pushTicks: C.gatePushTicks };
+      const openTicks = Math.ceil(GATE.openSec * FIXED_HZ - 1e-9);
+      const gatePost = gfx.enemies[0]!.pos;
+      /** rule 5 as a function of a run, so the same test is put to the level with the flag taken out */
+      const goalWaits = (r: GateRun): string | null => {
+        if (!r.atGoal) return r.stopped ?? 'never reached the goal';
+        if (r.atGoal.state !== 'play') return `standing on the goal (${r.atGoal.fromGoal.toFixed(2)} m from it) with ${r.atGoal.standing} swordsman standing, the state is ${r.atGoal.state}: the arrival counted`;
+        if (r.atGoal.standing !== 1 || r.atGoal.gate !== 0) return `on the goal: ${r.atGoal.standing} standing, gate ${r.atGoal.gate} (he must be standing and the gate shut)`;
+        if (r.stopped) return r.stopped;
+        if (r.pushedTo === null || r.pushedTo < door.pos[0] + door.scale[0] / 2) return `pushing at the shut door it got to x ${r.pushedTo?.toFixed(2)}, past the door's face at ${door.pos[0] + door.scale[0] / 2}`;
+        if (r.fellTick === null || r.openTick === null || !r.rose) return 'the gate did not swing open after he fell';
+        if (r.openTick - r.fellTick + 1 !== openTicks) return `the gate stood open ${secs(r.openTick - r.fellTick + 1)} after he fell, not GATE.openSec ${GATE.openSec} s (${openTicks} ticks)`;
+        const a = r.afterRespawn;
+        if (!a || a.gate !== 0 || a.foe.hits !== 0 || a.foe.mode !== 'guard' || a.foe.pos[0] !== gatePost[0] || a.foe.pos[2] !== gatePost[2]) return `after a respawn: gate ${a?.gate}, he ${JSON.stringify(a?.foe)} (the gate must be shut and he back on his post)`;
+        if (!r.through || r.through.state !== 'results') return `with him down again it walked at the goal and ended in ${r.through?.state}, not results`;
+        if (r.through.crossedAtZ === null || r.through.crossedAtZ > door.scale[2] / 2) return `it did not go through the gateway: crossed the door's x at |z| ${r.through.crossedAtZ}`;
+        return null;
+      };
+      const gatePage = await open({}, {}, gateText);
+      const gateRun = await gateAttempt(gatePage, gateArgs);
+      await shut(gatePage);
+      st.check('5. arriving does not count while a swordsman stands; the gate opens when the last one falls and a respawn shuts it (D-026)', goalWaits(gateRun) === null,
+        goalWaits(gateRun) ?? `on the goal with him standing: still play, gate 0; the shut door held at x ${gateRun.pushedTo!.toFixed(2)}; open ${secs(openTicks)} after he fell; shut and he on his post after a respawn; then results through the gateway (|z| ${gateRun.through!.crossedAtZ!.toFixed(2)})`);
+      const plain = JSON.parse(gateText) as { goal: { once_clear?: boolean } };
+      delete plain.goal.once_clear;
+      const plainPage = await open({}, {}, JSON.stringify(plain));
+      const plainRun = await gateAttempt(plainPage, gateArgs);
+      await shut(plainPage);
+      st.check('seen to fail: rule 5 on the same level with once_clear taken out', goalWaits(plainRun) !== null, goalWaits(plainRun) ?? 'PASSED: the rule does not catch a goal that does not wait');
 
       st.check('zero console errors', errors.length === 0, errors.slice(0, 3).join(' | ') || 'none');
       st.data['fight'] = { ticks: run.log.length, frames: run.frames.length, windupToCutTicks: cutTicks, windupSec: shipped.windup };

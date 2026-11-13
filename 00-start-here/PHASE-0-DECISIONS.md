@@ -72,6 +72,10 @@ implemented_by: 19234ab
 
 ## Q3 — End of segment: **A, progress only.** CLOSED
 
+**Narrowed (2026-11-12, D-026).** Option C, the gate puzzle, is still refused as a kind of level. One gate now
+exists, in chapter 5: it opens when every swordsman of the level is down, nothing is worked by the player, and
+it keeps no state. D-026 says what of this entry's reason it keeps.
+
 The torii is the checkpoint, the next torii comes into view, and the whole game is reading routes
 and timing. Zero new systems; every hour of the sprint goes into level quality.
 
@@ -108,6 +112,9 @@ is CI-checkable on the bot side.
 implemented_by: 19234ab (schema: `collectibles` and `interactables` cut), 1191a34 (NOT rows 6-8 and 12: no pickups, no ordered-state puzzles, no second route)
 
 ## Q4 — Win condition and session length: **A, with three amendments.** CLOSED
+
+**Narrowed (2026-11-12, D-026).** Win is still *arrive*. In chapter 5 the arrival counts once every swordsman of
+the level is down (`goal.once_clear`); no other goal type exists, and there are five chapters, not four.
 
 Win is *arrive*. No score, no par time, no rank screen, no unlocks in the sprint. The results state
 reads `complete` and nothing else. 5 segments per chapter, ~20 segments, 8-12 minutes for a
@@ -1678,3 +1685,88 @@ in the square" (the courtyard of Tim's painting) does not exist and is a separat
 (no text in the world): the line is on the page, not in the scene.
 
 implemented_by: 7cd56eb (step 1 and the move check: the probe), 3caf66b (the rule, the lines, the chapter list, check:teach, the reachable checks), 7399844 (a dash jump made off an edge counts as made), a35952b (what the list stands over is inert while it is open)
+
+## D-026 — chapter 5, the courtyard of the painting: three swordsmen at once, and a goal that waits until the yard is clear. Narrows NOT rows 8 and 9 and Q3's refusal of a gate; extends D-024 and D-025. DECIDED
+
+**Ruled by Tim** (2026-11-12, `PROMPT-COURTYARD.md`, from play on the live site: "when do i go to level in the
+square?"). The brief fixes: `05-courtyard`, "The Courtyard", chapter 5; "A short walk in through a gate, then one
+walled, flat, square courtyard of stone flags, about the proportions in the painting. The far side has the tiled
+gate"; three swordsmen "placed as the painting has them: one to the left, one to the right, one nearer the middle.
+They come at the warrior together"; a checkpoint torii just inside the entrance; the goal is the far gate. One
+new rule: "a level flag meaning the goal does not count until every swordsman in the level is down, and show it:
+the far gate is visibly shut, and visibly opens when the third one falls", with schema, lint ("a level with the
+flag has at least one swordsman; the goal is reachable once clear") and a check seen to fail; "Chapters 1 to 4 do
+not get the flag." The look: ink, "recognisably the painting", painted cards and textures, "a generated 3D model
+only for a compact object (the gate)", the far field "from the painting itself where you can", fal at most $4.00.
+"Chapter 4's goal leads to chapter 5. Chapter 5's goal ends the run the way chapter 4's does today"; the existing
+swordsman, fight rules and `FIGHT` table: "Do not retune. No new enemy type."
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-079):** the flag's name and where it lives, that the
+door is level geometry with a tag, every size of the yard, where the three stand, `GATE.openSec`, every value of
+the look, that the way in is not the gate model, the rose of the sky, and the two NOT rows as reworded.
+**Nobody has played it, and the look has been judged only from frames.**
+
+**What this narrows, and what it does not.**
+- **Q3** refused option C, the gate puzzle, because "ordered state turns a level's test from 'can this route be
+  walked' into 'can this route be walked in this order'". Tim has now asked for exactly one ordered thing: fell
+  them, then the gate. The reason is kept as far as it can be: the order is the one the bot already walks (`nav`
+  has failed since D-023 unless every swordsman is down at the goal), the gate keeps no state (it is asked of who
+  is standing, every tick), and nothing is worked by the player. No bell, plate, lever, rope or torch exists.
+- **SPEC §7 row 8** refused "interactables (bell, gate, plate, lever, door, ...)". It now names a gate or door
+  *the player works*; the gate of a goal that waits is allowed because nothing is worked. Its two schema checks
+  stand: `interactables` and a triggered platform are still rejected.
+- **Q4 / row 9**: win is still *arrive*, and `goal.type` is still `reach` alone (`defeat_all` is still rejected).
+  `goal.once_clear` says when the arrival counts. Row 9 gains a check: the flag on a level with no swordsman must
+  be rejected by the schema.
+- **Row 18** (nothing translates but the player, hazards and swordsmen): a door leaf turns about its hinge; its
+  position never changes. `ambient-motion` passes, but it idles at the spawn and never sees the gate open: that
+  the leaves only turn is how they are built (`src/loaders/courtyard.ts`), not something that stage measured.
+- **D-025** said "the four chapters by name": the list is built from the level files and now has five.
+- **Q5 / SPEC §5**: a fifth row. `CHAPTER_LENGTH` and the teach rules run on chapters 1 to 4 only; chapter 5
+  teaches nothing new and is two segments.
+
+**Built.**
+1. **The rule** (`src/systems/fight.ts`): `goalCounts(once_clear, swordsmen)` and `stepGate(share, clear, dt)`,
+   pure, beside the fight they depend on. `src/main.ts` asks both after each tick's fight and before the goal is
+   tested; nothing is latched, so a respawn, which stands every swordsman up, shuts the goal and the gate with no
+   state to undo. The gate swings open over `GATE.openSec` and is shut at once.
+2. **The door** (`src/loaders/level.ts`): a placement tagged `gate_door` is a collision box like any other whose
+   collider is switched off once the gate stands open. A door on a level without the flag never opens.
+3. **The level format** (`levels/level.schema.json`, `tools/lint-level.mjs`): `goal.once_clear`, refused by the
+   schema on a level with no swordsman. Lint: `CLEAR_NO_ENEMY`, `CLEAR_NO_DOOR`, `DOOR_NO_CLEAR`, `BAD_DOOR`,
+   `DOOR_OFF_PATH`, `CLEAR_FOE_OFF_PATH`, `CLEAR_BLOCKED`, each seen to fail alone in `lint:self`. `FACE_RISE`
+   walks the path as it is once the level is clear, with the doors out of the gateway: that is a lint exemption
+   for a tagged door, and it is the meaning of "reachable once clear"; without the flag the same box fails it.
+4. **The checks.** `check:fight` rule 6: three swordsmen stepped together, the goal and the gate asked every
+   tick, five broken versions each seen to fail. The `fight` playtest stage plays the rule in the real game on
+   `tools/harness/fixtures/clear-goal.json` (on the goal with him standing: still `play`; the shut door holds;
+   open 72 ticks after he falls; shut again after a respawn; then `results` through the gateway) and sees it
+   fail with `once_clear` taken out. `nav` holds the gate on the level itself.
+5. **The level** (`levels/05-courtyard.json`, laid out by `tools/levelgen/courtyard-05.mjs`, which `lint:levels`
+   holds it to): a terrace over the mist, an open post-and-beam gateway, the torii, one yard 22 by 16 m on one
+   box, walls 4.8 m with nothing standing on the yard's own box, the far gate and its door, the goal beyond it.
+6. **Three at once.** `guard-left`, `guard-right`, `guard-middle`. The bot fells all three and is never cut:
+   they notice on ticks 138, 156 and 163, all roused together; all are down 76 ticks after the first notice
+   with four presses. `FIGHT`, `SWORDSMAN` and `NAV_CONFIG` are untouched.
+7. **The look** (`src/loaders/courtyard.ts`, `tools/art/courtyard-cards.mjs`, `assets/courtyard/`): an ink level
+   whose `lighting.ambienceZone` is `courtyard` is dressed by its boxes' tags. The ink pass draws pale, simple
+   forms; the paint layer lays flagstones, plaster stains, tile rows and the door's planks over them. What
+   stands beyond the walls and the sky are cut from Tim's painting. The far gate is the hero asset `gate`,
+   generated from the painting's own gate.
+8. **The game.** Chapter 4's goal leads here and this goal returns to the title, by the level's `chapter` alone;
+   the Chapters list has a fifth row; `check:teach` covers five chapters; how to play says the gate's rule.
+
+**What it keeps.** `TUNING`, `MOVE`, `FIGHT`, `SWORDSMAN`, `NAV_CONFIG`, the camera and chapters 1 to 4 are
+untouched: `frame-hashes` against origin/main is IDENTICAL over 191 values with the engine change alone, and
+with the level in differs on `05-courtyard` only. No older trace or golden was written again.
+`src/engine/ink-post.ts` and `src/engine/renderer.ts` are not edited.
+
+**Known limits (OQ-079).** With his sight fixed at 4.5 m, three who are roused together stand within about 5 m
+of each other: nearer the middle of the yard than the painting has them. The harness's six cameras hang over the
+side wall's cap. Against a wall with the camera turned into it the arm is still pulled in (B-82). The painting's
+red sky, red timbers and cast shadows are not reproduced: the hue gate and STYLE §1 forbid them. The opening
+gate has no sound. The warrior passes through a swordsman still (B-77), but no longer through the level.
+
+**STYLE-BIBLE:** not amended. §2: the sky's wash has the paper's own value and chroma and is not the accent;
+recorded as a strain in OQ-079 for Tim to rule on.
+
+implemented_by: 9711fa0 (the rule, the door, the schema, the lint rules, check:fight rule 6, the fight stage's gate run), dc85f2a (the level, the three swordsmen, the ink forms, the painted cards and what stands beyond the walls), 1c48278 (the gate model, the door's planks, nav's gate check, the scene budget, the trace), 61aff4d (the mountains over the far wall, the darwin goldens)

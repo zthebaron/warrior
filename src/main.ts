@@ -30,7 +30,7 @@ import { Gamepad, GAMEPAD } from './engine/gamepad';
 import { SlashArc } from './entities/slash';
 import { Swordsmen, type SwordsmanSnapshot } from './entities/swordsmen';
 import { SWORDSMAN } from './entities/swordsman-model';
-import { FIGHT, windupSec, type FightEvent, type WarriorView } from './systems/fight';
+import { FIGHT, goalCounts, stepGate, windupSec, type FightEvent, type WarriorView } from './systems/fight';
 
 export const GAME_RULES = {
   startLevel: '01-lower-stair', // D-014: a player meets chapter 1; the gym is a test fixture (?level=00-gym)
@@ -86,6 +86,8 @@ export interface HarnessSnapshot {
   /** D-023: seconds into the warrior's slash, or null; and how many slashes have started */
   slash: number | null;
   slashes: number;
+  /** D-026: the level's gate, 0 shut to 1 open; null on a level with no gate */
+  gate: number | null;
   /** fixed ticks that consumed an input frame (every executed tick except `death` ticks) */
   inputTicks: number;
   checkpoints: number[];
@@ -309,6 +311,16 @@ async function boot(): Promise<void> {
   if (pad) input.setPad({ move: () => pad.move(), held: (a) => pad.held(a) });
   // D-023: the level's swordsmen, or null on a level with none (every level but chapter 1)
   let enemies: Swordsmen | null = null;
+  /** D-026: the gate of a level whose goal waits, 0 shut to 1 open. Derived every tick from who is standing. */
+  let gateShare = 0;
+  const NOBODY: readonly { mode: 'fallen' }[] = [];
+  /** One tick of the gate: it opens while every swordsman is down and is shut the tick one is standing again. */
+  const gateTick = (dt: number, snap = false): void => {
+    if (!level?.doors) return;
+    // a door on a level whose goal does not wait stays shut (lint DOOR_NO_CLEAR refuses that level)
+    gateShare = level.data.goal.once_clear ? stepGate(gateShare, goalCounts(true, enemies?.sims ?? NOBODY), dt) : 0;
+    level.setGate(gateShare, snap);
+  };
   let slashArc: SlashArc | null = null;
   /** The ink stroke, made the first time it is wanted: a page that never slashes has no such mesh. */
   const strokeOf = (p: Player): SlashArc => {
@@ -373,6 +385,8 @@ async function boot(): Promise<void> {
       enemies.root.userData['translates'] = 'enemy'; // NOT #18: a swordsman may translate (D-023)
       renderer.scene.add(enemies.root);
     }
+    gateShare = 0;
+    gateTick(0, true); // D-026: a level starts with its gate shut
     paintLayer.refresh();
     const lvl = level;
     player.groundMotion = (c) => lvl.platformDelta(c);
@@ -477,7 +491,9 @@ async function boot(): Promise<void> {
       }
     });
     const g = level.data.goal;
-    if (Math.hypot(f.x - g.pos[0], f.z - g.pos[2]) < (g.radius ?? GAME_RULES.goalRadiusDefault) && Math.abs(f.y - g.pos[1]) < GAME_RULES.goalHeightTolerance) {
+    // D-026: win is still arriving, but where the level says so the arrival waits for every swordsman to be down
+    if (Math.hypot(f.x - g.pos[0], f.z - g.pos[2]) < (g.radius ?? GAME_RULES.goalRadiusDefault) && Math.abs(f.y - g.pos[1]) < GAME_RULES.goalHeightTolerance &&
+        goalCounts(g.once_clear, enemies?.sims ?? NOBODY)) {
       player.slashTime = null; // D-023: nor does one hang over the results: no tick follows to finish it
       state.transition('results');
     }
@@ -522,10 +538,12 @@ async function boot(): Promise<void> {
       level.fixedUpdate(worldTime(), dt);
       physics.step(dt);
       enemies?.fixedUpdate(dt, warriorView(player, false)); // they finish what they were doing; nobody is there to see or cut
+      gateTick(dt); // D-026: an open gate stays open over a death; the respawn below shuts it
       if (--deathTicksLeft <= 0) {
         const [x, y, z] = respawn.pos;
         player.teleport({ x, y, z }, respawn.facing * DEG2RAD);
         enemies?.reset(); // D-023: a fallen swordsman comes back when the warrior does
+        gateTick(dt, true); // D-026: and the gate is shut again with them
         camRig.snap(player.feet(tmpFeet), player.facing);
         state.transition('play');
         tap?.respawned(checkpointLog.length);
@@ -548,6 +566,7 @@ async function boot(): Promise<void> {
     // to die, nothing else happens on contact). Only from `play`, as every rule transition is.
     const fight = enemies ? enemies.fixedUpdate(dt, warriorView(player, state.is('play'))) : NO_FIGHT;
     if (state.is('play') && fight.some((e) => e.kind === 'cut')) die(player.feet(tmpFeet), true);
+    gateTick(dt); // D-026: after the fight's tick, before the goal is asked
     rulesTick();
     tap?.afterTick(player, checkpointLog.length, fight); // D-022: reads the tick, writes nothing
     // D-025: the teach line, the same way: reads the tick, writes nothing. Not on a tick that ended the attempt
@@ -885,6 +904,7 @@ async function boot(): Promise<void> {
       enemies: enemies?.snapshot() ?? [],
       slash: player?.slashTime ?? null,
       slashes: player?.slashCount ?? 0,
+      gate: level?.doors ? gateShare : null,
     });
     // Fixed simulated clock: exactly one tick per frame, frameDt is always loop.dt, alpha 0.
     // Mirrors GameLoop.frame's gate: ticks run while the world runs (play AND death, D-004), not in pause.
@@ -924,6 +944,7 @@ async function boot(): Promise<void> {
         level.snapTo(worldTime(), loop.dt);
         player.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facing * DEG2RAD);
         enemies?.reset(); // as a real respawn does (D-023)
+        gateTick(loop.dt, true); // and its gate is shut again (D-026)
         respawn = { pos, facing };
         camRig.snap(player.feet(tmpFeet), player.facing);
         checkpointLog = [];

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// check:fight — the four rules of the fight the brief names (D-023), run under Node with no browser.
+// check:fight — the rules of the fight (D-023, B-79, D-026), run under Node with no browser.
 // It steps the REAL functions the game steps (src/systems/fight.ts: stepSwordsman for the swordsman,
 // stepSlash and slashCutting for the warrior's blade), not a copy, at the game's own fixed tick.
 //
@@ -13,6 +13,11 @@
 //                    random number, and imports nothing
 //   4. the wind-up   measured in ticks from the stepped fight, never from the table: whatever windupSec is set
 //                    to, the time from the start of the wind-up to his blade is never under windupMinSec
+//   5. his ground    (B-79) it stops at whatever stands on it: rock, a turned box
+//   6. the goal waits (D-026) with three swordsmen stepped together, a goal that carries once_clear does not count
+//                    while one of them stands, counts from the tick the last falls, and stops counting when a
+//                    respawn stands them up; the gate is shut until then, swings open over GATE.openSec and is
+//                    shut again at the respawn; a level without the flag is never held
 //
 //   npm run check:fight       --self-test first (each rule is run against a broken fight and must FAIL),
 //                             then the rules against the fight as shipped. exit 0 pass · 1 fail
@@ -22,7 +27,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  FIGHT, boxTops, groundRect, makeSwordsman, resetSwordsman, risers, slashCutting, stepSlash, stepSwordsman,
+  FIGHT, GATE, boxTops, goalCounts, groundRect, makeSwordsman, resetSwordsman, risers, slashCutting, stepGate, stepSlash, stepSwordsman,
   type EnemyDef, type FightAsset, type FightEvent, type FightLevel, type Rect, type Swordsman, type V3, type WarriorView,
 } from '../src/systems/fight.ts';
 // @ts-expect-error the linter is plain JavaScript: obstaclesOf and withColliders are documented where they are defined
@@ -372,12 +377,77 @@ function hisGround(step: Step, ground: Ground = shippedGround): string[] {
   return bad;
 }
 
+// ---------- 6. the goal waits for every swordsman, and the gate with it (D-026) ----------
+type Counts = typeof goalCounts;
+type Gate = typeof stepGate;
+/** Three on one floor, as the courtyard has them: one to each side and one ahead. Posts are shares of his sight. */
+const THREE: EnemyDef[] = [
+  { id: 'left', type: 'swordsman', pos: [F.sightRange, 0, -F.sightRange * 0.6], facing: 90 },
+  { id: 'right', type: 'swordsman', pos: [F.sightRange * 1.1, 0, F.sightRange * 0.6], facing: 90 },
+  { id: 'middle', type: 'swordsman', pos: [F.sightRange * 1.9, 0, 0], facing: 90 },
+];
+
+function theGoalWaits(step: Step, counts: Counts = goalCounts, gate: Gate = stepGate): string[] {
+  const bad: string[] = [];
+  const all = THREE.map((def) => makeSwordsman(def, FLOOR));
+  let time: number | null = null, slashes = 0, t = 0, share = 0;
+  const fellAt: number[] = [];
+  let openedAt = -1, lastShare = 0;
+  /** One tick of all three with the warrior at (x, z) facing `facing`, then the goal and the gate asked, as src/main.ts asks them. */
+  const tickAll = (x: number, z: number, facing: number, press: boolean, present = true): void => {
+    const sl = stepSlash(time, press, DT);
+    time = sl.time;
+    if (sl.started) slashes++;
+    const view: WarriorView = { present, x, y: 0, z, facing, cutting: present && slashCutting(time), slashId: slashes };
+    for (const s of all) for (const e of step(s, view, DT)) if (e.kind === 'fell') fellAt.push(t + 1);
+    t++;
+    share = gate(share, counts(true, all), DT);
+    const standing = all.filter((s) => s.mode !== 'fallen').length;
+    if (standing > 0 && counts(true, all)) bad.push(`tick ${t}: the goal counts with ${standing} of ${all.length} still standing`);
+    if (standing === 0 && !counts(true, all)) bad.push(`tick ${t}: every swordsman is down and the goal does not count`);
+    if (standing > 0 && share !== 0) bad.push(`tick ${t}: the gate is ${share.toFixed(3)} open with ${standing} still standing`);
+    if (standing === 0 && share < lastShare) bad.push(`tick ${t}: the gate swung back (${lastShare.toFixed(3)} to ${share.toFixed(3)}) with the level clear`);
+    if (standing === 0 && share === 1 && openedAt < 0) openedAt = t;
+    lastShare = share;
+    if (!counts(undefined, all) || !counts(false, all)) bad.push(`tick ${t}: a goal without once_clear is held back`);
+  };
+  // the warrior walks at each in turn and cuts him twice; the other two are stepped all the while
+  for (const target of all) {
+    let lastPress = false;
+    for (let k = 0; k < 900 && target.mode !== 'fallen'; k++) {
+      const dx = target.x - 0, dz = target.z - 0; // he stands at the origin and they come to him: nobody is chased
+      const d = Math.hypot(dx, dz), facing = Math.atan2(-dx, -dz);
+      const press = d <= W.reach * 0.85 && (time === null || time >= W.againSec) && !lastPress;
+      // out of his sight he is walked to; in it, the warrior stands and lets him come
+      const wx = d > F.sightRange ? (target.x - (dx / d) * F.sightRange * 0.9) : 0, wz = d > F.sightRange ? (target.z - (dz / d) * F.sightRange * 0.9) : 0;
+      tickAll(d > F.sightRange ? wx : 0, d > F.sightRange ? wz : 0, facing, press);
+      lastPress = press;
+      if (bad.length > 6) return bad;
+    }
+    if (target.mode !== 'fallen') { bad.push(`"${target.def.id}" was never felled: the scenario tests nothing`); return bad; }
+  }
+  if (fellAt.length !== all.length) bad.push(`${fellAt.length} fell, not ${all.length}`);
+  const lastFell = Math.max(...fellAt), want = Math.ceil(GATE.openSec / DT - 1e-9);
+  for (let k = 0; k < want + 30; k++) tickAll(0, 0, FACING_HIM, false);
+  if (openedAt < 0) bad.push(`the gate never stood open: ${share.toFixed(3)} after ${sec(t - lastFell)}`);
+  else if (openedAt - lastFell + 1 !== want) bad.push(`the gate stood open ${sec(openedAt - lastFell + 1)} after the last fell, not GATE.openSec ${GATE.openSec} s (${want} ticks)`);
+  // a respawn: every one back on his post. The goal and the gate are asked again and keep nothing.
+  for (const s of all) resetSwordsman(s);
+  share = gate(share, counts(true, all), DT);
+  if (counts(true, all)) bad.push('after a respawn the goal still counts');
+  if (share !== 0) bad.push(`after a respawn the gate is ${share.toFixed(3)} open, not shut`);
+  // nobody to fell: a goal that waits can never count (the schema and CLEAR_NO_ENEMY refuse such a level)
+  if (counts(true, [])) bad.push('a goal that waits counts on a level with no swordsman');
+  return bad;
+}
+
 const RULES: [string, (step: Step) => string[]][] = [
   ['a swordsman falls to two hits and not one', twoHits],
   ['his slash reaches a warrior who stands in front of him, and only one who does', hisCut],
   ['a fight replays the same, run to run', replays],
   ['the wind-up is never shorter than the configured minimum', windupFloor],
   ['his ground stops at whatever stands on it: rock, a turned box', hisGround],
+  ['the goal waits for every swordsman, and the gate with it', theGoalWaits],
 ];
 
 // ---------- the self-test: each rule against a fight broken in the way it exists to catch ----------
@@ -405,6 +475,11 @@ const MUTATIONS: [string, number, () => string[]][] = [
   ['his ground as it was before B-79: unturned boxes only, a rock or a turned box on it unseen', 4, () => hisGround(stepSwordsman, boxesOnlyGround)],
   ['a swordsman who is not held to his ground', 4, () => hisGround((s, w, dt) => { const g = s.ground; s.ground = FLOOR; try { return stepSwordsman(s, w, dt); } finally { s.ground = g; } })],
   ['a wind-up cut to a third whenever the warrior is close', 3, () => windupFloor((s, w, dt) => { if (s.mode === 'windup' && s.modeTime < dt * 1.5) s.modeTime += F.windupMinSec * 0.67; return stepSwordsman(s, w, dt); })],
+  ['a goal that counts once ANY swordsman is down', 5, () => theGoalWaits(stepSwordsman, (flag, list) => !flag || list.some((s) => s.mode === 'fallen'))],
+  ['a goal that counts where there is nobody to fell', 5, () => theGoalWaits(stepSwordsman, (flag, list) => !flag || list.every((s) => s.mode === 'fallen'))],
+  ['a goal that never waits', 5, () => theGoalWaits(stepSwordsman, () => true)],
+  ['a gate that stays open over a respawn', 5, () => theGoalWaits(stepSwordsman, goalCounts, (share, clear, dt) => (clear ? stepGate(share, true, dt) : share))],
+  ['a gate that stands open the tick the last one falls', 5, () => theGoalWaits(stepSwordsman, goalCounts, (_share, clear) => (clear ? 1 : 0))],
 ];
 
 function selfTest(): number {
