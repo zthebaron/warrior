@@ -1718,7 +1718,8 @@ the look, that the way in is not the gate model, the rose of the sky, and the tw
   `goal.once_clear` says when the arrival counts. Row 9 gains a check: the flag on a level with no swordsman must
   be rejected by the schema.
 - **Row 18** (nothing translates but the player, hazards and swordsmen): a door leaf turns about its hinge; its
-  position never changes. `ambient-motion` passes.
+  position never changes. `ambient-motion` passes, but it idles at the spawn and never sees the gate open: that
+  the leaves only turn is how they are built (`src/loaders/courtyard.ts`), not something that stage measured.
 - **D-025** said "the four chapters by name": the list is built from the level files and now has five.
 - **Q5 / SPEC §5**: a fifth row. `CHAPTER_LENGTH` and the teach rules run on chapters 1 to 4 only; chapter 5
   teaches nothing new and is two segments.

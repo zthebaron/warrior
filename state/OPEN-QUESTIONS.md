@@ -1888,8 +1888,8 @@ took, each PROVISIONAL:
     the critical path a lie.
 14. **Chapter 5 allows all eight moves and uses one.** `MOVES_ALLOWED` demands the chapter's running total.
 15. **Ultracode was on; one read-only fan-out was run** (six readers mapping the code before any edit), and one
-    web lookup of fal's three price pages. No review workflow, as the brief says. An advisor was consulted once
-    on the design. One focused self-review was done by me at the end.
+    web lookup of fal's three price pages. No review workflow, as the brief says. An advisor was consulted twice:
+    on the design before building, and on the finished work. One focused self-review was done by me at the end.
 16. **The claim was pushed to main by this session** (`b3c12f3`, the ledger line only), as CLAUDE.md prescribes.
 
 **What nobody has judged.** How three at once feels by hand; whether the fight is too short (the bot ends it in

@@ -2168,7 +2168,7 @@ the painting and held by `post`, PROVISIONAL (OQ-079).
 `post` on the level, as built up: dark caps and timbers 99.6% of near silhouettes ink (limit 92%) and 44.8% mid
 lines (limit 35%); pale forms, outer plaster `mist-pale`: paper 36.4% (floor 41%); all plaster paper: 49.1% and
 121 stroke pixels (floor 200); shipped: **23 of 23, paper 44.9%, far field 20.1%, 341 stroke pixels, near dark
-mass 37.3%, ink-black mass 0.4%, 0 pixels over the hue limit**. The gate model at the way in: 2,169 accent pixels
+mass 37.8%, ink-black mass 0.4%, 0 pixels over the hue limit**. The gate model at the way in: 2,169 accent pixels
 hidden and 39 over the hue limit, so it is not there.
 
 The gate asset: 29,400 triangles, 1,076,744 B, one 1024 px texture, one draw call (`budgets.json` `assets.gate`).
@@ -2178,7 +2178,8 @@ alone; both characters' shas unchanged).
 ## D-026 the checks (2026-11-12)
 
 `lint:self`: the fixture clean, then 11 cases for the seven rules. `check:fight`: 6 rules, 16 broken fights
-caught. `fight` stage 15 of 15. `check:teach` 103 of 103 (5 chapters, 52 places). `reachable` 69 of 69 through
+caught. `fight` stage 15 of 15. `check:teach` 107 of 107 (5 chapters, 52 places), four of them chapter 5's:
+past the torii the fight's line is up for the nearest of the three, and goes when he falls. `reachable` 69 of 69 through
 five chapters. `lint:not-list` 22 rows, with row 9's new check. The level: 14 of 14 per-level stages.
 `frame-hashes` against origin/main (b3c12f3's tree): IDENTICAL, 191 values, 5 levels, with the engine change and
 no level using it; with the level in, 38 values differ and every one is `levels.05-courtyard`.
