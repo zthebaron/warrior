@@ -215,11 +215,13 @@ export class Teach {
     // ---- the moves made this tick
     const made = new Set<TeachMove | 'pullup'>();
     if (v.grounded && (v.pstate === 'run' || v.pstate === 'sprint')) made.add('ground');
-    if (entered('jump')) {
-      made.add('jump');
-      if (this.sinceDash * this.rules.dt <= this.rules.dashJumpSec) made.add('dashjump');
-    }
+    // The dash jump is a jump that starts as a dash ends. Off an edge the dash carries him into the air, and the
+    // jump that follows is then the air jump: chapter 4's first dash jump is made that way (MEASUREMENTS "D-025
+    // the moves as the rig makes them"), so either jump counts.
+    const afterDash = this.sinceDash * this.rules.dt <= this.rules.dashJumpSec;
+    if (entered('jump')) made.add('jump');
     if (entered('double_jump')) made.add('double');
+    if ((entered('jump') || entered('double_jump')) && afterDash) made.add('dashjump');
     if (entered('wall_jump')) made.add('wall');
     if (entered('ledge_grab')) made.add('climb');
     if (entered('ledge_climb')) made.add('pullup');

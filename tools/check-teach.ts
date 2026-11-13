@@ -256,6 +256,14 @@ function run(): { checks: number; fails: string[] } {
     s.tick({ pstate: 'dash' });
     s.seconds(1, { pstate: 'run' });
     ok('ch4: a dash, then a jump a second later, is not the dash jump', line(s.tick({ pstate: 'jump', grounded: false })) === 'dashjump', line(s.teach.current()));
+    // as the rig makes it there: the dash carries him off the lip, so the jump as it ends is the air jump
+    const air = new Sim(l);
+    air.at([0.5, 0, 0], 'run');
+    for (const f of l.enemies ?? []) air.fell(f.id);
+    air.at(pos(l.critical_path[i - 1]!), 'run');
+    air.tick({ pstate: 'dash' });
+    air.tick({ pstate: 'fall', grounded: false });
+    ok('ch4: a dash off the lip, then the air jump as it ends, is the dash jump', line(air.tick({ pstate: 'double_jump', grounded: false })) === 'none' && air.teach.has('dashjump'), line(air.teach.current()));
   }
 
   // ---- where he is on the path
