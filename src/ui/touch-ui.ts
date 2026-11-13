@@ -19,6 +19,11 @@
 //     losing focus all let go of everything.
 //   - On the play surface the touch events are prevented, so the page does not scroll, bounce, zoom or select,
 //     and no click follows a tap: the canvas's click is what asks for the pointer lock, and a finger has none.
+//   - A button of the page (the pause button, the cards', the title's, the how-to-play page's, a chapter's row) is
+//     pressed by a touch that lifts on it without having travelled, and this module presses it. The browser makes
+//     no click of a tap while another finger is on the glass, and a thumb resting on the stick is the usual case:
+//     left to the browser, Pause and Resume would not answer it. The browser's own click is then prevented, so a
+//     button is never pressed twice. A touch that travels is a scroll, and presses nothing.
 
 import type { GameState } from '../engine/state';
 import { TOUCH, TouchSource, type TouchButton } from '../engine/touch';
@@ -50,11 +55,13 @@ type Role =
   | { kind: 'stick' }
   | { kind: 'button'; button: TouchButton }
   | { kind: 'look'; x: number; y: number }
+  /** a touch that began on a button of the page: a press of it if it lifts there without having travelled */
+  | { kind: 'tap'; el: HTMLButtonElement; x: number; y: number }
   /** a touch that is nothing: it began outside play, or on a control already held, or it has slid off a button */
   | { kind: 'none' };
 
-/** Where a touch may land without this module taking it: the shell's pages and anything pressed as a button. */
-const THE_BROWSERS = 'button, a, input, label, #title, #help, #chapters';
+/** Where a touch is left to the browser (the slider, a scroll of the how-to-play page or the chapter list). Buttons are not: see the header. */
+const THE_BROWSERS = 'a, input, label, #title, #help, #chapters';
 
 function div(className: string, parent: HTMLElement): HTMLDivElement {
   const e = document.createElement('div');
@@ -250,10 +257,17 @@ export class TouchUi {
   private readonly onStart = (e: TouchEvent): void => {
     this.host.touched();
     this.reconcile(e);
-    if (e.target instanceof Element && e.target.closest(THE_BROWSERS)) return;
-    if (e.cancelable) e.preventDefault();
     const live = this.live();
+    let mine = false;
     for (const t of Array.from(e.changedTouches)) {
+      const at = t.target instanceof Element ? t.target : null;
+      const press = at?.closest('button');
+      if (press) {
+        this.roles.set(t.identifier, { kind: 'tap', el: press, x: t.clientX, y: t.clientY });
+        continue;
+      }
+      if (at?.closest(THE_BROWSERS)) continue;
+      mine = true;
       const role: Role = live ? this.roleAt(t.clientX, t.clientY) : { kind: 'none' };
       this.roles.set(t.identifier, role);
       if (role.kind === 'stick') this.push(t);
@@ -263,6 +277,7 @@ export class TouchUi {
         else this.source.press(role.button, this.host.state() === 'play');
       }
     }
+    if (mine && e.cancelable) e.preventDefault();
   };
 
   private readonly onMove = (e: TouchEvent): void => {
@@ -271,6 +286,11 @@ export class TouchUi {
     for (const t of Array.from(e.changedTouches)) {
       const role = this.roles.get(t.identifier);
       if (!role) continue;
+      if (role.kind === 'tap') {
+        // a touch that began on a button and travels is a scroll: the browser's from here on, and no press
+        if (Math.hypot(t.clientX - role.x, t.clientY - role.y) > TOUCH.tapSlop) this.roles.delete(t.identifier);
+        continue;
+      }
       mine = true;
       if (role.kind === 'stick') this.push(t);
       else if (role.kind === 'button') {
@@ -288,18 +308,26 @@ export class TouchUi {
     if (mine && e.cancelable) e.preventDefault();
   };
 
-  /** touchend and touchcancel: the same to the game. */
+  /** touchend and touchcancel: the same to the game, but only an end presses a button. */
   private readonly onEnd = (e: TouchEvent): void => {
     let mine = false;
+    const pressed: HTMLButtonElement[] = [];
     for (const t of Array.from(e.changedTouches)) {
       const role = this.roles.get(t.identifier);
       if (!role) continue;
+      this.roles.delete(t.identifier);
+      if (role.kind === 'tap') {
+        const r = role.el.getBoundingClientRect();
+        const on = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+        if (e.type === 'touchend' && on && role.el.isConnected && role.el.getClientRects().length > 0) { pressed.push(role.el); mine = true; }
+        continue;
+      }
       mine = true;
       this.drop(role);
-      this.roles.delete(t.identifier);
     }
     this.reconcile(e);
-    if (mine && e.cancelable) e.preventDefault(); // no click follows a tap on the play surface
+    if (mine && e.cancelable) e.preventDefault(); // no click follows a tap: not on the play surface, and not on a button pressed below
+    for (const b of pressed) b.click(); // a disabled button ignores it, as it would a click; an inert one is never under a finger
   };
 
   /** A touch this module follows that the browser no longer lists has ended without telling us: let it go. */
@@ -331,11 +359,13 @@ export class TouchUi {
       this.buttons[role.button].classList.remove('on');
       if (role.button !== 'slash') this.source.release(role.button);
     }
+    // a 'tap' holds nothing: it presses its button only when it ends on it
   }
 
   /** Let go of everything. Fingers still on the screen are nothing until they are lifted and put down again. */
   letGo(): void {
     for (const [id, role] of this.roles) {
+      if (role.kind === 'tap') continue; // it holds nothing, and a button under a finger may still be pressed (Resume, under a card that just came)
       this.drop(role);
       this.roles.set(id, { kind: 'none' });
     }

@@ -106,7 +106,11 @@ export class Shell {
     need<HTMLButtonElement>('help-chapters').addEventListener('click', () => this.openChapters());
     need<HTMLButtonElement>('chapters-back').addEventListener('click', () => this.closeChapters());
     this.chapterList.addEventListener('click', (e) => {
-      const id = (e.target as Element | null)?.closest<HTMLElement>('[data-level]')?.dataset['level'];
+      // A chapter's own button, inside the list. Not any [data-level]: <body> carries the level being played
+      // (src/main.ts), so a click on the gap between two rows found it and started the current chapter again
+      // (found by D-027's touch stage, B-105).
+      const row = (e.target as Element | null)?.closest<HTMLButtonElement>('button[data-level]');
+      const id = row && this.chapterList.contains(row) ? row.dataset['level'] : undefined;
       if (id) this.choose(id);
     });
     need<HTMLButtonElement>('help-back').addEventListener('click', () => this.closeHelp());

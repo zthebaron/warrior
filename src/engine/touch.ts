@@ -41,6 +41,8 @@ export const TOUCH = {
   pressPad: 10,
   /** a finger this far past a button's edge has slid off it: the button is let go */
   slideOff: 30,
+  /** a touch on a button of the page that travels further than this is a scroll, not a press of it */
+  tapSlop: 12,
   /** the pause button: a square of this side, this far from the top and right edges of the safe area */
   pause: { size: 44, inset: 10 },
   /** a drag turns the camera as a mouse moved this many times as far would */

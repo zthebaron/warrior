@@ -173,6 +173,18 @@
       html.touch #hint { display: none; }
       /* the teach line moves to the top, clear of the thumbs, between the screen's corners */
       html.touch #teach { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; max-width: min(calc(100vw - 148px), 44em); }
+      /* The chapter list on a phone held sideways is taller than the screen with five chapters: Back was below the
+         fold, and a card centred in a box that overflows cannot be scrolled to its top. On touch the card is centred
+         by its own margins (which give way when it does not fit), and on a short screen the chapters stand in two
+         columns, so the whole list and Back are on screen at once. */
+      html.touch #chapters { place-items: start center; }
+      html.touch #chapters .card { margin: auto 0; }
+      @media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+        html.touch #chapters .card { width: min(100%, 44em); padding: 0.8em 1.1em 0.9em; }
+        html.touch #chapters h1 { margin-bottom: 0.6em; }
+        html.touch #chapters .list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em 0.7em; }
+        html.touch #chapters .foot { margin-top: 0.8em; }
+      }
       #touch { position: fixed; inset: 0; z-index: 6; pointer-events: none; font-family: var(--serif); color: var(--ink); }
       #touch[hidden], #touch-pause[hidden], #touch-card[hidden], #touch-turn[hidden] { display: none; }
       #touch .stick { position: absolute; box-sizing: border-box; border-radius: 50%; border: 2px solid rgba(32, 32, 30, 0.55);
