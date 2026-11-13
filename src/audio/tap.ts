@@ -21,8 +21,9 @@
 //   the fight (D-023)    what src/systems/fight.ts reported for the tick: a swordsman notices the warrior, the
 //                        warrior's blade lands (and, on the hit that fells him, he falls), a swordsman's blade lands
 //   the gate (POLISH-1)  the gate of a level whose goal waits (D-026) has begun to swing open: it was shut on the
-//                        tick before and is not now. That is the tick after the last swordsman falls, so it is
-//                        heard with that fall. A respawn shuts it again and it is heard again the next time.
+//                        tick before and is not now. That is the tick the last swordsman falls (the gate is
+//                        stepped after the fight), so it is heard with his fall. A respawn shuts it, and it is
+//                        heard again when it next opens.
 //
 // A teleport (a level starting, a respawn) drops the player from where it stands, which reads as a landing a
 // tick or two later. reset() is called at each teleport and the first landing after it makes no sound.

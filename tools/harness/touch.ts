@@ -623,7 +623,7 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const cam2 = await t.snap();
       st.check('and a drag down the screen tilts it', cam2.pitchDeg > cam1.pitchDeg + 2, `40 px down: pitch ${cam1.pitchDeg.toFixed(1)} to ${cam2.pitchDeg.toFixed(1)} deg`);
       // three fingers at once: the stick, Jump, and a drag. Each keeps its own.
-      // (the drag puts the camera back where the two above took it from, so up the screen is up the path again)
+      // (home puts the camera back behind him first, so up the screen is up the path again)
       await home();
       const tri0 = await t.snap();
       await h.stick('up', S.share.mid);
