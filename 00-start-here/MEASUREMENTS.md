@@ -1962,3 +1962,140 @@ golden of the same camera at the stage's own threshold; four of them differ by 0
 
 **B-78.** `hudText('death')` is `cut down` when a swordsman's cut ended the attempt and `fell` otherwise. The
 `fight` stage reads both off the page (13 of 13). `run-metric` 15 of 15: every death it causes is a fall.
+
+## D-025 the wall, as a player meets it (2026-11-12)
+
+Tim, from play on the live site: "level 2 can't jump the wall". The wall is chapter 2's first face:
+`critical_path[2]`, `via: climb`, from (10, 0, 0) to (13, 4.5, 0), a +4.5 face at x 12, which is exactly
+`MOVE.climb.maxRise`. `node tools/harness/teach-probe.ts --only=wall` drives the real rig at it through the
+harness's public input API: held states, one frame a fixed tick, the player put at the start of an attempt and
+never moved again. Walking in stops the feet at x 11.64. Nothing was changed before this was measured.
+
+The rig's numbers (`TUNING`): the ledge probe finds a top 1.40 to 2.30 m above the feet, so on this face the feet
+must be 2.20 to 3.10 m up, and the grab is tried only while falling, touching the wall, with the stick into it.
+
+| Tried, standing at the foot of the face | Caught | Peak |
+|---|---|---|
+| jump key down 1 tick (17 ms), pushing in | no | 1.00 m |
+| 4 ticks (67 ms) | no | 1.33 |
+| 8 ticks (133 ms) | no | 1.70 |
+| 12 ticks (200 ms) | no | 1.99 |
+| 16 ticks (267 ms) | no | 2.19 |
+| 18 ticks (300 ms) and every longer press | **yes** | 2.34, then the hang at 2.90 |
+| jump held, pushing in | **yes** | |
+| jump held, NOT pushing in | no | 2.34 |
+| jump held, pushing in only on the way up | no | 2.34 |
+| jump held, pushing in only on the way down | yes | |
+
+"Every time": a held jump, pushing in, from a run, with the takeoff every 0.25 m from the wall out to 7 m, at
+three places across the path (z -1.5, 0, 1.5): caught from every takeoff out to 3.0 m at a run and 4.5 m at a
+sprint, 96 catches, no miss inside either distance. Farther out he reaches the wall after the peak and slides.
+So **the move has no fault and the level is reachable; what was wrong is that nothing said how.** The margin
+is thin: 0.14 m of height, or 5 ticks of the 23 the rise lasts (B-89).
+
+What a player who does not know the move tries: a tap and a second press at the wall is a wall jump that kicks
+him away (no catch); mashing the key, eight presses, never catches. Hanging: with every key let go, or with the
+jump still held from the leap, he hangs for as long as measured (3 s); the pull-up needs the key let go and
+pressed again, and ends standing at (12.24, 4.51); pushing away drops him.
+
+## D-025 the moves as the rig makes them (2026-11-12)
+
+The brief: "Check every other move's line against what the rig really needs, the same way as step 1, and fix any
+that mislead." `node tools/harness/teach-probe.ts` (all sections), each at the step of its chapter that first
+needs the move. The lines are `src/ui/howto.ts` `MOVE_TEXT`: one table for the how-to-play page and the screen.
+
+| Move, where | What the rig did | The line before | Verdict |
+|---|---|---|---|
+| run, ch1 | 7.00 m/s; 10.00 with sprint held | "Move with {move}. Hold {sprint} to sprint." | true, kept |
+| jump, ch1 step 2 (+1.25) and step 11 (+1.75) | peak 1.00 m at 1 tick, 2.34 held. +1.25 is cleared by any press of 2 ticks or more. +1.75 needs 6 ticks (100 ms); under that he ends HANGING from the shelf (B-91) | "Press {jump}. Hold it longer to rise higher." | true; now also says a tap is a low hop |
+| ledge grab, ch2 step 2 | the section above | "Push into a ledge near its top to catch it. Press {jump} to pull yourself up, or push away to drop." | **misled**: no word of the jump, the hold, or that the pull-up is a second press |
+| wall jump, ch2 step 5 (+3.75) | a second press on touching the wall kicks him up and away, with or without the stick held and with or without a slide first; steering away after it lands him on the shelf; steering back into the wall does not | "Push into a wall while you fall and you slide down it. Press {jump} to kick away from it." | true but back to front: the kick needs no slide. Reordered |
+| double jump, ch2 step 9 (+2.8) | held jump from the takeoff, a second press at the peak: lands, peak +4.08. The second press while touching the face is a WALL JUMP and puts him back on the floor. A third press in the air does nothing | "Press {jump} again in the air for one more jump." | **misled** at a face, which is where this step is (B-90) |
+| drifting stone, ch3 step 7 | steps on, is carried 8.44 m in 101 ticks with no key down, steps off | "Some stones move on a steady beat. Step on, ride, step off." | true, kept |
+| dash, ch3 step 10 | crosses the gap; a jump there hits the lintel (peak +0.09); 3.99 m standing, the way he faces, or the way the stick points; one in the air; a second at once is refused for 0.35 s | "Press {dash} for a short burst of speed, on the ground or once in the air." | true, kept |
+| dash jump, ch4 step 6 | clears with the jump key down 4 to 22 ticks after the dash key. Made from the torii the dash carries him off the lip and the jump is the air jump. A jump and an air jump clear the same gap; so do a jump and an air dash | "Dash, then press {jump} just as the dash ends. It carries you over the widest gaps." | **false** in its second half: see the next table |
+| the fight, ch1 `guard-first` | at the spawn (4.6 m off) he does not see the warrior; walked up to and left alone he cuts, and the warrior stands at the spawn again; one slash staggers him (1 hit), a second fells him; a held key is one slash | (none on screen) | new line; its three claims hold |
+
+How far each carries over flat ground at a run (chapter 3's second floor, takeoff to where the feet come down):
+
+| Move | Metres |
+|---|---|
+| jump (held) | 5.00 |
+| jump, air jump at the peak | 8.38 |
+| dash | 3.32 |
+| dash, jump as it ends | 8.24 |
+| dash, jump as it ends, air jump at the peak | 11.63 |
+
+These agree with the `MOVE` budgets (5.0, 8.4, 2.6 as a gap, 8.0). The double carries farther than the dash
+jump, so "the widest gaps" was wrong. The dash jump's line now says what is true of it: the jump starts from
+where the dash carried you.
+
+Found on the way, reported and not changed (the brief: no change to moves or levels): four first-use places can
+be cleared without the move they teach (B-92); a tap at chapter 1's +1.75 risers ends in a hang chapter 1 does
+not teach (B-91); pushing into a wall on the ground flips the state between `idle` and `run` (B-93).
+
+## D-025 the teach prompts (2026-11-12)
+
+`src/systems/teach.ts` `TEACH` and the rule; `src/ui/howto.ts` `MOVE_TEXT` and `teachLine`; `src/ui/shell.ts`
+`showTeach`; `index.html` `#teach`. `npm run check:teach` runs the rule under Node on `levels/` itself: 98
+properties, and `--self-test` breaks it four ways and sees each caught. `--list` prints the 48 places (35 steps
+of the four paths, 13 swordsmen); none is typed in.
+
+**Every value is authored by the builder to the brief's words and is PROVISIONAL for Tim's feel (OQ-078).**
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `TEACH.approachM` | 6 m | authored | "as he approaches": at a run the line is up 0.86 s before the place the move is made from, and it is beyond a swordsman's sight (`FIGHT.swordsman.sightRange` 4.5), so the fight's line is up before he comes. At chapter 2's first face it comes up at x 4 of a 12 m walk |
+| `TEACH.lingerSec` | 5 s | authored | the brief's "several seconds" |
+| `TEACH.misses` | 2 | authored | the brief's "twice" |
+| `TEACH.riseM` | 0.34 m | derived | the measured autostep ceiling (`MOVE.ground.autostep`; "Autostep" above): a rise above it needs a move, and feet within it of the top are on top. `check:teach` fails if the two differ |
+| height band | 2.0 m | derived | `GAME_RULES.goalHeightTolerance`, handed to the rule: he is at a place within this above its higher end or below its lower |
+| dash jump window | 0.22 s (13 ticks) | derived | `TUNING.coyoteTimeSec` + `TUNING.jumpBufferSec`: a jump that starts this soon after a dash is the dash's. The probe's window at chapter 4 closes 12 ticks after the dash ends |
+| `SHELL.keys.chapters`, `up`, `down` | C, the up and down arrows | authored | the list's own keys; Enter and Space press the chapter in focus, Esc shuts it |
+| `GAMEPAD.buttons.chapters` | button 3 (Y / triangle) | authored | the one face button the game did not use |
+| `#teach` place | `bottom: clamp(40px, 9vh, 120px)`, centred, `max-width: min(92vw, 44em)` | authored | low, clear of the warrior (who stands at the middle of the screen) and above the hint. Two lines at most at 1920x1080 for the longest line |
+| `#teach` type | `clamp(15px, 1vw + 9px, 26px)/1.5`, weight 500, tracking 0.02em | authored | between the hint's 13 px and the HUD's one word (up to 30 px): it is read at a glance, and it is not the loudest thing on screen |
+| `#teach` ground | paper `#e0d4be` at 86%, radius 0.4em, a soft edge of the same paper 0.9em wide, 0.5em spread | authored | ink on a wash of paper with no line round it. No accent (STYLE §2: never on UI) |
+| `#chapters` | wash of paper at 80% over what it was opened from; card `min(100%, 25em)`; type `clamp(15px, 1.05vw + 9px, 21px)` (the how-to-play page's); 16 px margin; z-index 45 | authored | between the how-to-play page (40) and the error banner (50) |
+| the chapter in focus | outline 0.18em, offset 0.2em (the `.btn`'s own), on plain focus | authored | a pad has no other way to show which chapter A will start |
+
+## D-025 the chapter list and the title (2026-11-12)
+
+`node tools/harness/shell-shots.ts <dir>` (production bundle, Chromium), now with the chapter list at each size:
+
+| Size | Painting on screen | Keep zone | Title | Chapter list |
+|---|---|---|---|---|
+| 400x800 | y 0 to 349 | x 0 to 400 | whole; no button or credit line cut off | 4 chapters, every button on screen |
+| 1920x1080 | y 0 to 1080 | x 322 to 1560 | whole | the same |
+| 5120x1440 | y 0 to 1440 | x 1709 to 3360 | whole | the same |
+| 1000x900 | y 0 to 431 (511 before the fourth button) | x 245 to 739 | whole; nothing cut off | the same |
+| 810x1010 | y 0 to 556 (637 before) | x 81 to 719 | whole; nothing cut off | the same |
+
+The fourth button takes 80 px from the painting where the buttons stand under it (B-95). `reachable` holds the
+title and the list at 1000x900, 810x1010 and 400x800 in CI.
+
+`reachable` (67 checks locally, 85.4 s; 49 before D-025) on the production page with real keys and clicks:
+with the list open the title's buttons under it refuse the focus;
+the list by mouse, by C and the arrows and Enter, and by a faked pad (Y, D-pad down, A); the chosen chapter
+loads with one audio context running and the music started as a loop, none before the choice; Play after a
+chapter was chosen and left loads chapter 1; the list in the how-to-play page of a running game starts the
+chapter chosen, not paused; pressed before the game has loaded it opens with the four chapters. And the teach
+line at the wall: up at `step:2` with its keys equal to the binding table's; still up after 8 s of pushing in and
+after a held jump without pushing in; gone at the catch (first try), with the grab's sound started and the
+hang's line in its place; and after a second press the next line is the swordsman's who stands on top.
+
+It was mutated to prove it bites (one build, three faults: a jump counted as the climb, a chosen chapter started
+without waking the sound, Play starting the last chapter played): 62 of the then 66, red on "starts with sound", "the line
+stays ... through a held jump without pushing in", the grab's sound, and "Play starts the first chapter".
+Restored.
+
+## D-025 the harness sees none of it (2026-11-12)
+
+`node tools/harness/frame-hashes.ts <out.json> --build`, then `--diff`, on one machine (darwin, SwiftShader):
+
+| Compared | Result |
+|---|---|
+| main (be42133, before any edit) against the change (a35952b) | IDENTICAL: 191 values, 5 levels. All 30 frames, the counters, the renderables, the page's text and the element ids `app hud` |
+
+The full local playtest at 7399844: 75 stages, 1,084 checks, all pass. No golden was updated and no trace re-recorded. The teach rule and its element are built only where the shell
+is (`src/main.ts`: `teach` is null on a bare page); `reachable` still holds every bare page to ids `app hud`.
