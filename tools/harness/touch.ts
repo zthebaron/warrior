@@ -81,6 +81,8 @@ export const TOUCH_STAGE = {
   pressShort: { double: 1.5, dash: 1.2 },
   /** attempts at a hard move before it counts as not made */
   tries: 3,
+  /** chapter 2's first face: played ticks after Jump goes down within which the catch must come (it comes within about 40) */
+  catchWithin: 150,
   /** the wall jump and the double jump by thumb: frames Jump is held (with the stick pushed in, for the wall jump), then frames it (and that stick) is let go, before Jump goes down again (MEASUREMENTS "POLISH-1 the hard moves by thumb") */
   again: { holdFrames: 2, letGoFrames: 1 },
 };
@@ -397,9 +399,13 @@ export async function thumbMove(t: TouchPage, h: Awaited<ReturnType<typeof hands
   // after a death he stands at the place again (place made it his respawn), and the game plays on
   if (deaths > 0 || end.state !== 'play') await t.until((s) => s.state === 'play' && s.grounded, 15000);
   const both = log.filter((f) => (f.jump || f.dash) && (f.x || f.y)).length;
+  // the ticks Jump was read as down, counted from the first tick he left the ground: how the presses landed
+  const off = log.findIndex((f) => f.pstate !== 'idle' && f.pstate !== 'run' && f.pstate !== 'sprint');
+  const runs: string[] = [];
+  log.forEach((f, k) => { const prev = log[k - 1]; if (f.jump && !prev?.jump) runs.push(`${k - off}`); else if (!f.jump && prev?.jump) runs[runs.length - 1] += `..${k - 1 - off}`; });
   return {
     landed, made, deaths, both, jumpAfterDash: jumpAt < 0 ? null : jumpAt - dashAt,
-    note: `from (${from.map((v) => v.toFixed(1)).join(', ')}): ${landed ? 'LANDED' : 'did not land'} at (${end.feet.map((v) => v.toFixed(2)).join(', ')}), aiming at (${to.join(', ')}); ${deaths} death(s); states ${made.join(' > ')}${jumpAt >= 0 ? `; Jump down ${jumpAt - dashAt} ticks after the dash began` : ''}; a button and the stick read together on ${both} ticks`,
+    note: `from (${from.map((v) => v.toFixed(1)).join(', ')}): ${landed ? 'LANDED' : 'did not land'} at (${end.feet.map((v) => v.toFixed(2)).join(', ')}), aiming at (${to.join(', ')}); ${deaths} death(s); states ${made.join(' > ')}${jumpAt >= 0 ? `; Jump down ${jumpAt - dashAt} ticks after the dash began` : ''}; Jump read down on ticks ${runs.join(', ') || 'none'} (from the first in the air); a button and the stick read together on ${both} ticks`,
   };
 }
 /**
@@ -429,8 +435,9 @@ export async function nextFrame(t: TouchPage): Promise<void> {
 /** A move by thumb on a page that draws a few frames a second: up to TOUCH_STAGE.tries attempts, as reachable's ledge catch is pressed again. The note says which try it was. */
 export async function tries(move: () => Promise<Move>): Promise<Move> {
   let m = await move(), k = 1;
-  for (; k < TOUCH_STAGE.tries && !m.landed; k++) m = await move();
-  return { ...m, note: `${m.note} (try ${k} of up to ${TOUCH_STAGE.tries})` };
+  const missed: string[] = [];
+  for (; k < TOUCH_STAGE.tries && !m.landed; k++) { missed.push(m.note); m = await move(); }
+  return { ...m, note: `${m.note} (try ${k} of up to ${TOUCH_STAGE.tries}${missed.length ? `; the tries before: ${missed.map((n, i) => `[${i + 1}] ${n}`).join(' ')}` : ''})` };
 }
 
 function tuning(root: string): { runSpeed: number; sprintSpeed: number } {
@@ -874,9 +881,11 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, pa
         const base = await t.snap();
         await h2.stick('up', S.share.mid);
         // run at the face; from about three metres out Jump goes down and stays down, the stick still pushed in
-        await t.until((s) => s.feet[0] >= 9.2 || s.state !== 'play', 30000);
+        const atFace = (await t.until((s) => s.feet[0] >= 9.2 || s.state !== 'play', 30000)) ?? base;
         await h2.press('jump');
-        const grab = await t.until((s) => s.pstate === 'ledge_grab' || s.tick - base.tick > 400 || s.state !== 'play', 40000);
+        // a catch comes within about 40 ticks of the press; the wait is bounded from the press, not from the start
+        // of the run, so a face never caught (Jump broken) costs S.catchWithin ticks and not 400 (POLISH-1)
+        const grab = await t.until((s) => s.pstate === 'ledge_grab' || s.tick - atFace.tick > S.catchWithin || s.state !== 'play', 40000);
         const caught = grab?.pstate === 'ledge_grab';
         await h2.lift();
         let top = grab?.feet[1] ?? 0;
@@ -964,15 +973,15 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, pa
         `the list ${listOpen ? `opened: ${rows.n} buttons` : 'DID NOT OPEN'}${rows.faults.length ? `; ${rows.faults.join('; ')}` : ''}; ${chosen ? `playing ${chosen.level}` : `state ${(await t.snap()).state}, level ${(await t.snap()).level}`}`);
       // ================= 6b. chapter 4's first dash jump, by thumb (POLISH-1, B-107) =================
       // Run at the lip, tap Dash, and press Jump as the dash ends ("D-025 the moves as the rig makes them": the
-      // jump down 4 to 22 ticks after the dash clears it). Jump is sent a frame after Dash, with no poll between: a
-      // frame is 5 ticks here (the loop's cap binds on SwiftShader), and the check reads how many ticks it came to.
+      // jump down 4 to 22 ticks after the dash clears it). Jump is sent as soon as the tap on Dash is taken, with no
+      // poll between: that is at least a frame (5 ticks here), and the check reads how many ticks it came to. A frame
+      // more put it at 18 on darwin and 20 on CI, near the window's end.
       // A held jump alone carries 5 m and the gap is wider: broken Dash, no way over.
       const dj = firstVia(ch4, 'dashjump');
       const dashJump = (): Promise<Move> => thumbMove(t, h2, [dj.a[0] - 4, dj.a[1] + 0.05, dj.a[2]], dj.b, async (base) => {
         await h2.stick('up', S.share.mid);
         await t.until((s) => s.state !== 'play' || s.feet[0] >= dj.a[0] - S.pressShort.dash || s.tick > base.tick + S.moveTicks, S.waitMs + S.moveTicks * S.msPerTick);
         await h2.tapButton('dash');
-        await nextFrame(t);
         await h2.press('jump');
       });
       await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('dash'));
@@ -1054,7 +1063,9 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, pa
       await asked.close();
 
       // a laptop whose screen can be touched: nothing until the first touch, and no phone's cap on its canvas
-      const laptop = await page({ size: [1280, 720], dsf: 2, init: [FINE_POINTER] });
+      // the desktop harness's own window at a pixel ratio of 2: what is checked is the pointer and the ratio, not the
+      // size, and at 1280x720 this one page took 38 s of CI's 387 (POLISH-1)
+      const laptop = await page({ size: [640, 360], dsf: 2, init: [FINE_POINTER] });
       await titleReady(laptop);
       const lapBefore = await none(laptop.page);
       await laptop.thumbs.tap(6, 6);

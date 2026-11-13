@@ -1999,10 +1999,19 @@ took, each PROVISIONAL:
 6. **The chapter chosen from the list is now chapter 4** (it was 3), so that chapter 4's dash jump is played on the
    same page. The check is the same check.
 
+7. **The touch stage is three stages, three CI jobs side by side** (`touch`, `touch-release`, `touch-chapters`).
+   Placing home cut it from 537 s to 121 s on darwin, but CI ran it 5 to 5.8 times slower (611 and 702 s: jobs of
+   11 and 13 minutes), so one job could not be held under 10. The brief named "fewer page loads" and "checks that
+   share a visit" as fair; this adds two page loads instead, to run the visits side by side. Each check is in one
+   part, as it was; each part also checks its own start and that its page logged no error (6 checks more, 72 in
+   all). The cost is two more runners per pull request.
+8. **The double jump and the wall jump by thumb are paced by frames**, not by each touch being taken: on CI the
+   second press of a double paced by acknowledgements came late, at the face (a wall jump), and failed.
+
 **KNOWN LIMIT: the timings are the harness's.** The hard moves are paced to SwiftShader's frames (5 ticks each)
 and its touch latency. On a page that draws faster the same fingers press sooner; the stage has not been run there.
-**KNOWN LIMIT: the dash jump's margin.** Jump lands 18 or 19 ticks after the dash began, against a window that
-ends at 22.
+**KNOWN LIMIT: the dash jump's margin.** Jump lands 18 or 19 ticks after the dash began on darwin, against a window
+that ends at 22; it is paced by one frame after Dash is taken, so a slower runner may land it later.
 **What nobody has judged.** The gate's sound by ear; the gate's line on screen, in the courtyard, with three
 swordsmen coming.
 status: PROVISIONAL

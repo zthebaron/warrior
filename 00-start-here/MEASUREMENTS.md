@@ -2308,7 +2308,7 @@ committed), the stage on origin/main (`03b3988`) on this Mac, darwin SwiftShader
 | one `home()` | about 18 s: all 12 tries, every call | about 0.5 s | a probe of `home()` alone: he stopped at x 1.56 and x -2.04 by turns, never within 1.2 m of x 0 |
 | "nothing sticks: both fingers lifted" | 135.1 s | 2.8 s | the walk back after the stuck-input check; not seen again once home is placed |
 | everything else | 62.5 s | about the same | the timing lines |
-| the stage, CI | 28m20s (run 43374834353) | see "POLISH-1 the touch job on CI" | |
+| the stage, CI | 28m20s (run 43374834353) | three parts, three jobs: see "POLISH-1 the touch job on CI" | |
 
 Why: `home()` walked the warrior back to the middle of the first flat by the stick, and the thumb lets go a frame
 (5 played ticks, 0.6 m at a run) after the probe last showed him: he overshot by about 2.2 m either way, so every
@@ -2317,6 +2317,7 @@ facing up the path; a standing first swordsman is still felled first, by the thu
 
 | Constant | Value | Kind | Basis |
 |---|---|---|---|
+| the parts, darwin | one stage | `touch` 46.2 s (29 checks), `touch-release` 35.7 s (16), `touch-chapters` 49.3 s (27) | measured: one run, all three PASS; 66 distinct check names, 6 of them a part's own start and page-error checks |
 | `home` | (1.5, 0.05, 0) | measured | where the old walk always ended (x 1.56, its twelfth try), so every check runs over the ground it ran over before. At x 0 the slide-off check's 'down' hold carried him over the edge at x -6 (seen: one run, one death) |
 
 Every one of the 60 checks keeps its name, its condition and its "seen to fail"; the report's check names were
@@ -2335,10 +2336,10 @@ is the same on a slower runner); a tap (down and up sent together) is one tick.
 
 | Constant | Value | Kind | Basis |
 |---|---|---|---|
-| `kick` | hold 2 frames, let go 1 frame | measured | chapter 2 step 5: pushed in with Jump held, then stick and Jump let go together, then Jump again: 11 of 11 wall jumps onto the shelf (10 in a probe of the move alone, 1 in the stage). Held 3 frames, the lift was lost; let go 2 frames, he had left the wall (a double jump, 3 of 3); still pushing in as he came down, he caught the wall top's edge (B-92) every time |
+| `again` (was `kick`) | hold 2 frames, let go 1 frame | measured | chapter 2 step 5: pushed in with Jump held, then stick and Jump let go together, then Jump again: 11 of 11 wall jumps onto the shelf (10 in a probe of the move alone, 1 in the stage). Held 3 frames, the lift was lost; let go 2 frames, he had left the wall (a double jump, 3 of 3); still pushing in as he came down, he caught the wall top's edge (B-92) every time |
 | `pressShort` | double 1.5 m, dash 1.2 m | measured | the touch lands up to 2 frames (1.2 m at a run) after the probe showed him. Double: 4 of 4 onto the next floor, x 58.2 to 58.6 (3 in a probe, 1 in the stage). Dash: the lip's edge is near x 35.1, short of the torii at 36; with Dash sent 1 m short and Jump timed by polls he ran off the lip before the dash, 0 of 3 in the stage |
 | the dash jump's Jump | a frame after Dash | measured | Jump down 18 or 19 ticks after the dash began (the rig clears with 4 to 22): 4 of 4 (3 in a probe, 1 in the stage). By two polls of the probe it came 23 or 24 ticks after: 0 of 4 in a probe. 18 is near the window's far end: the margin is 4 ticks |
-| the double's presses | down, up, down, each as the last is taken | measured | about 15 ticks between: near the first peak. By a poll for the peak, the second press came at the face: a ledge grab and no double jump, 0 of 8 |
+| the double's presses | `again`: down 2 frames, up 1 frame, down | measured | 3 of 3 in a probe, and in the stage. Paced instead by each press being taken: 4 of 4 on darwin, but on CI run 43479377456 the second press came at the face (a wall jump), 3 tries failed. By a poll for the peak: a ledge grab and no double jump, 0 of 8 |
 | `moveTicks` | 150 | authored | a move's step gives up after this many played ticks; a move ends after twice this |
 | `tries` | 3 | authored | as `reachable`'s ledge catch is pressed again; the check says which try landed (all 1 of 3 on darwin) |
 
