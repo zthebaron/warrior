@@ -2423,6 +2423,7 @@ the number beside it. Every value is PROVISIONAL (OQ-082).
 | `ledge` | reach 6 u, up 0.9, paper-cream | derived | `kit_rock_mass` has level tops at 3.2, 5.8, 8.2, 10.2 and 12 u over its base, each stepped back up to 0.65 u; a mass stands with its base 2 u under the path. The two lowest (1.2 and 3.8 u over the path) are within a jump and a climb, and are drawn; the cards of the painted wall stand 6 u or more over the path and cover the rest |
 | `pine.rise` | 2.5 u | derived | a face caught from below: chapter 2's are +4.5, +6.25, +2.8 and +4 (four pines); its +1.5 step has none |
 | `pine.inset`, `pine.below` | 0.5 u, 0.3 u | measured | the card stands across the path 0.5 u past the face, its crown 0.3 u under the top. Standing ON the corner, the first cut failed the paint gate: 529 accent px hidden from the overview camera and 39 px off the ramp's chroma. Under the top: 0 and 0 |
+| `EPS` (in `buildSeam`) | 1e-6 u | derived | two boxes meet where one's x1 is the other's x0: the edges of chapter 2's slabs in x and z are multiples of 0.5 u (the two perches, at 69.7 and the like, are not slabs), so any tolerance far under that tells "meets" from "does not" |
 | `pine.cards` | pine_a 5.5, pine_c 5, pine_b 5.5 mirrored, pine_a 6 (u wide) | authored | chapter 1's wall pines are 6 to 7.5 wide; these grow from a face, not a cliff |
 | `cliffs` | 8 towers | authored | three behind the wall, 66, 84 and 98 u tall (taller as the path climbs 15.5 u), ink 0.5 to 0.55; three in the void 30 to 62 u off the path, 60 to 84 u tall, ink 0.36 to 0.42 (thinner: STYLE §3 mid band, and §5's bright void); two past the ends. The paper share with them: 44.6% (45.4% without) |
 
@@ -2494,7 +2495,10 @@ level with their counters, every visible renderable, the paint layer, the page's
 Chapter 1's cam3 is **not stable from run to run of one build**: hashed three times on the final tree it gave
 the baseline's value once (c7b29bc6) and another twice (881620c4). The two frames differ in ONE pixel of
 230,400, at (606, 91), by 51 levels in one channel. Nothing of the seam is loaded by chapter 1, and a run that
-reproduces the baseline's hash exactly shows the branch changed nothing there. Not traced further (B-115).
+reproduces the baseline's hash exactly shows the branch changed nothing there. **And main does it too:** the
+same tool run six times from a checkout of main's own source (the `polish-1` worktree at 0763225, whose `src`
+differs from this branch's only in `level.ts` and `seam.ts`) gave 881620c4 four times and c7b29bc6 twice.
+Not traced further (B-115).
 The gym and chapters 3, 4 and 5: identical in every run.
 
 **The grazing check after its sign** (the whole playtest, every level): gym 0 of 48,857 px; chapter 1 0 of
@@ -2508,6 +2512,12 @@ stages `reachable` 69/69, `run-metric` 15/15, `ambient-motion` 13/13, `fight` 15
 model rejects the top behind it (0.000 deg) and the rig read it (4.250 deg), because an ink level did not draw a
 box with no collider. A seam level now draws every unturned box; rerun: `pitch-assist` 117/117, and chapter 2's
 `visual` unchanged against its goldens (the level has no such box).
+
+**Linux goldens, chapter 2** (the documented way: CI's own frames). CI run 43504604178 on 0d7262b: every job
+green but `level (02-cliff-seam)`, red at `visual` alone (six cameras 31.2 to 56.7% off the greybox goldens);
+on Linux its `post` is 26/26 with darwin's numbers (ink-black mass 0.3%, paper 44.6%, grazing 0 of 48,098) and
+`counters` is at the ratchet (80 and 171,290). All six `camN.actual.png` taken; against the darwin goldens
+(pixelmatch, threshold 0.1) they differ in 0, 2, 1, 0, 1 and 2 px of 230,400. No other level's golden is written.
 
 **Frame rate** (`tools/measure-display.mjs`, headed Chrome, ANGLE Metal, Apple M4 Max, the rig view at spawn,
 360 frames, both levels in one session):

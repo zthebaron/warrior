@@ -2077,5 +2077,10 @@ took, each PROVISIONAL. **Nobody has played chapter 2 in this look; every call b
     fixture went red (116/117). The look was changed, not the fixture. A TURNED box is still not drawn in the
     seam (chapter 2 has none): a level that adds one would collide with something unseen.
 13. **`frame-hashes` is 24 or 25, not always 24.** One pixel of chapter 1's cam3 flips between runs of the same
-    build (B-115). The brief asks that every differing value be chapter 2's; in a run where that pixel lands the
-    other way it is not, and I am reporting that rather than re-running until it is.
+    build (B-115), on main's own source as on this branch (six runs there: four one way, two the other). The
+    brief asks that every differing value be chapter 2's; in a run where that pixel lands the other way it is
+    not, and I am reporting that rather than re-running until it is.
+14. **Self-review, as a player, on the real GPU at 5120 x 1440** (the one review the brief asks for). At the
+    first face the lip is unmistakable and the face is a painting; no striping or z-fight on a wash. In the
+    corridor both walls carry lips and nothing says which to kick off (item 9). In the harness's cam3 a pale
+    patch of a rock ledge shows through a gap between two wall cards (item 7).
