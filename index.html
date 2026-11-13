@@ -133,8 +133,6 @@
       #help input[type="range"] { width: min(16em, 60vw); accent-color: var(--ink); }
       #help .foot { margin-top: 2em; display: flex; gap: 1em; align-items: center; flex-wrap: wrap; position: sticky; bottom: 0;
                     padding: 0.9em 0 1em; background: linear-gradient(to bottom, rgba(224, 212, 190, 0), var(--paper) 38%); }
-      #help .touch { display: none; }
-      @media (hover: none) and (pointer: coarse) { #help .touch { display: block; } }
       @media (min-aspect-ratio: 3/2) and (min-height: 520px) {
         /* a wide screen: the painting whole on the left, the text in a column on the right */
         #help .sheet { max-width: none; width: fit-content; display: grid; grid-template-columns: min(100vh, 44vw) minmax(0, 46em); gap: 0 clamp(20px, 3vw, 64px); }
@@ -161,6 +159,64 @@
       #chapters .btn:focus { outline: 0.18em solid var(--ink); outline-offset: 0.2em; }
       #chapters .list .n { flex: none; font-size: 0.8em; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
       #chapters .foot { margin-top: 1.1em; }
+
+      /* ---- D-027: the touch controls. None of these elements is in the document unless the game's module put it
+         there (src/ui/touch-ui.ts): on a device whose main pointer is a finger, or on a first touch. <html class="touch">
+         is set at the same moment, so nothing below reaches a page with a mouse. Sizes and places are set from
+         TOUCH (src/engine/touch.ts); here is only the look: ink on paper, part see-through, no accent (STYLE 2).
+         Every number is in MEASUREMENTS.md "D-027 touch controls". ---- */
+      html.touch, html.touch body { overscroll-behavior: none; touch-action: manipulation; -webkit-touch-callout: none;
+                                    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      html.touch #app, html.touch #app canvas { touch-action: none; }
+      html.touch #help, html.touch #chapters { touch-action: pan-y; }
+      /* the hint's line names keys, and stands where the stick is: on touch the pause button is the way to all of it */
+      html.touch #hint { display: none; }
+      /* the teach line moves to the top, clear of the thumbs, between the screen's corners */
+      html.touch #teach { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; max-width: min(calc(100vw - 148px), 44em); }
+      /* The chapter list on a phone held sideways is taller than the screen with five chapters: Back was below the
+         fold, and a card centred in a box that overflows cannot be scrolled to its top. On touch the card is centred
+         by its own margins (which give way when it does not fit), and on a short screen the chapters stand in two
+         columns, so the whole list and Back are on screen at once. */
+      html.touch #chapters { place-items: start center; }
+      html.touch #chapters .card { margin: auto 0; }
+      @media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+        html.touch #chapters .card { width: min(100%, 44em); padding: 0.8em 1.1em 0.9em; }
+        html.touch #chapters h1 { margin-bottom: 0.6em; }
+        html.touch #chapters .list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em 0.7em; }
+        html.touch #chapters .foot { margin-top: 0.8em; }
+      }
+      #touch { position: fixed; inset: 0; z-index: 6; pointer-events: none; font-family: var(--serif); color: var(--ink); }
+      #touch[hidden], #touch-pause[hidden], #touch-card[hidden], #touch-turn[hidden] { display: none; }
+      #touch .stick { position: absolute; box-sizing: border-box; border-radius: 50%; border: 2px solid rgba(32, 32, 30, 0.55);
+                      background: rgba(224, 212, 190, 0.3); }
+      #touch .stick.sprint { border-color: var(--ink); }
+      #touch .knob { position: absolute; left: 50%; top: 50%; box-sizing: border-box; border-radius: 50%; will-change: transform;
+                     border: 2px solid rgba(224, 212, 190, 0.75); background: rgba(32, 32, 30, 0.5); }
+      #touch .stick.on .knob { background: rgba(32, 32, 30, 0.8); }
+      #touch .tb { position: absolute; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center;
+                   border: 2px solid rgba(32, 32, 30, 0.6); background: rgba(224, 212, 190, 0.42);
+                   font: 600 13px/1 var(--serif); letter-spacing: 0.07em; text-transform: uppercase;
+                   text-shadow: 0 0 0.4em var(--paper), 0 0 0.2em var(--paper); }
+      #touch .tb.jump { font-size: 16px; }
+      #touch .tb.on { background: rgba(32, 32, 30, 0.8); color: var(--paper); text-shadow: none; }
+      #touch-pause { position: fixed; z-index: 7; box-sizing: border-box; padding: 0; cursor: pointer; border-radius: 0.2em;
+                     border: 2px solid rgba(32, 32, 30, 0.6); background: rgba(224, 212, 190, 0.5);
+                     -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      /* two upright bars, drawn */
+      #touch-pause::before { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 16px; margin: -8px 0 0 -7px;
+                             border-left: 5px solid var(--ink); border-right: 5px solid var(--ink); box-sizing: content-box; }
+      #touch-pause:focus-visible { outline: 0.18em solid var(--ink); outline-offset: 0.2em; }
+      #touch-card { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; box-sizing: border-box; overflow: auto;
+                    padding: calc(12px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px));
+                    background: rgba(224, 212, 190, 0.6); color: var(--ink); font: 400 clamp(15px, 1.05vw + 9px, 21px)/1.5 var(--serif); }
+      #touch-card .card { box-sizing: border-box; max-width: 100%; padding: 1em 1.3em 1.2em; text-align: center; background: var(--paper);
+                          border: 0.12em solid var(--ink); border-radius: 0.3em; }
+      #touch-card h1 { font-size: 1.05em; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.9em;
+                       padding-bottom: 0.25em; border-bottom: 0.08em solid var(--ink); }
+      #touch-card .row { display: flex; flex-wrap: wrap; gap: 0.6em; justify-content: center; }
+      #touch-turn { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; box-sizing: border-box; padding: 24px;
+                    text-align: center; background: var(--paper); color: var(--ink);
+                    font: 500 clamp(18px, 5vw, 28px)/1.4 var(--serif); letter-spacing: 0.03em; }
     </style>
   </head>
   <body>

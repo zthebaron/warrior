@@ -69,7 +69,7 @@ export function diskLevelSources(root: string): Record<string, string> {
 }
 
 /** Strings that exist only inside the `__HARNESS__` block of src/main.ts. */
-const HARNESS_SENTINELS = ['HARNESS_API_V1', 'releaseCamera', 'rendererInfo'];
+const HARNESS_SENTINELS = ['HARNESS_API_V1', 'releaseCamera', 'rendererInfo', 'TOUCH_PROBE_V1', 'breakControl'];
 
 /** Chromium with the pinned SwiftShader args. One per browser stage (see run.mjs). */
 export function launchBrowser(): Promise<Browser> {

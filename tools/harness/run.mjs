@@ -38,6 +38,7 @@ import { pitchAssist } from './pitch-assist.ts';
 import { runMetric } from './run-metric.ts';
 import { ambientMotion } from './ambient-motion.ts';
 import { fight } from './fight.ts';
+import { touch } from './touch.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = Object.fromEntries(
@@ -218,9 +219,10 @@ for (const L of statics) {
 //   run-metric   (B-15, NOT #20): is the player-visible text the same whatever the run's deaths and time?
 //   ambient-motion (B-15, NOT #18): does anything translate except the player, hazards and platforms?
 //   fight        (D-023): the four rules of the fight, in the real game, each also seen to fail on a broken fight
+//   touch        (D-027): the game played by a thumb on the real page, by real touch events, each control also seen to fail broken
 const once = (name) => (typeof args.only === 'string' ? args.only.split(',').includes(name) : typeof args.level !== 'string');
 // Registered as ['name', fn] pairs: lint:not-list reads that form to prove NOT #18/#20 stages are wired.
-const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion], ['fight', fight]];
+const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion], ['fight', fight], ['touch', touch]];
 // B-22: merge-reports.mjs gates CI on ONCE_STAGES (lib.ts). If this list drifts from it, a stage would run unchecked.
 if (ONCE.map(([n]) => n).join() !== ONCE_STAGES.join()) throw new Error(`run.mjs once-stages ${ONCE.map(([n]) => n)} != lib.ts ONCE_STAGES ${ONCE_STAGES}`);
 for (const [name, fn] of ONCE) {

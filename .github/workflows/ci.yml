@@ -161,8 +161,49 @@ jobs:
           path: harness-report.json
           if-no-files-found: warn
 
+  touch:
+    runs-on: ubuntu-latest
+    # D-027: the game played by a thumb on the real page (its own frame loop, real touch events). 533 s on darwin
+    # SwiftShader, 28m20s on CI run 43374834353 (the runner draws the real page about 3 times slower), so a job of
+    # its own beside `game`, with room over that (B-108).
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium (+ headless shell, + system deps)
+        # The runner's apt mirrors can be unreachable. 2026-11-11, PR 38: azure.archive.ubuntu.com did not resolve
+        # for 90 min, and five attempts died here before any test ran. So: try the install with system deps, and
+        # if it fails, install the browser alone and say so in a warning. No check is relaxed: the browser then runs
+        # on the libraries and fonts the runner image already has, and a check or golden that fails for the lack of
+        # one is a real red.
+        # 180 s: a healthy install took 15-31 s on the last 18 green jobs; one against dead mirrors took 10 min of
+        # DNS timeouts, half of this job's timeout-minutes. A timed-out attempt leaves root's apt-get running, so it
+        # is stopped: it must not install a font halfway through the playtest.
+        run: |
+          if timeout 180 npx playwright install --with-deps chromium; then
+            echo "Chromium installed with system deps."
+          else
+            echo "::warning title=Chromium installed WITHOUT system deps::playwright install --with-deps chromium failed or ran past 180 s (apt could not fetch the system packages). Fell back to playwright install chromium. The browser uses the libraries and fonts already on the runner image. No check is relaxed - a failure after this step is real."
+            sudo pkill -x apt-get || true
+            npx playwright install chromium
+          fi
+      - run: npm run playtest -- --only=touch
+      - name: Upload harness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-report-touch
+          path: harness-report.json
+          if-no-files-found: warn
+
   playtest:
-    needs: [static, matrix, level, game]
+    needs: [static, matrix, level, game, touch]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -1414,6 +1414,9 @@ implemented_by: d03247e (the first cut: rock undrawn, the wall, the cards, the a
 
 ## D-022 — a title screen, a how-to-play page, sound, and a sword slash that cuts nothing. Narrows Q1 and NOT row 2 by one drawn move; Q7 stands. The slash's "drawn, never simulated" is superseded by D-023. DECIDED
 
+**Extended (2026-11-12, D-027).** The game now has touch controls. "The game has no touch controls" under Known
+limits, and the how-to-play page's line that a keyboard or a pad is needed, describe D-022 as it shipped.
+
 **Extended (2026-11-12, D-025).** The title has a third button, Chapters, and so does the how-to-play page; Play
 is always the first chapter; the pad's Y opens the chapter list; and the game now shows one line about a move
 while playing. "SPEC §7 row 15 ... the lint and row 15 are unchanged" in item 5 describes D-022 as it shipped:
@@ -1770,3 +1773,69 @@ gate has no sound. The warrior passes through a swordsman still (B-77), but no l
 recorded as a strain in OQ-079 for Tim to rule on.
 
 implemented_by: 9711fa0 (the rule, the door, the schema, the lint rules, check:fight rule 6, the fight stage's gate run), dc85f2a (the level, the three swordsmen, the ink forms, the painted cards and what stands beyond the walls), 1c48278 (the gate model, the door's planks, nav's gate check, the scene budget, the trace), 61aff4d (the mountains over the far wall, the darwin goldens)
+
+## D-027 — the game plays on a phone: a stick, three buttons, a pause button, and a page that behaves under a thumb. Closes B-56; extends D-022 and D-025. DECIDED
+
+**Ruled by Tim** (2026-11-12, `PROMPT-MOBILE-TOUCH.md`, after the courtyard went live): "Make it work on mobile
+and add a joystick control circle to move around and buttons for jump and fight." The brief fixes: the controls
+only on a touch device; a joystick circle bottom left with a knob that springs back; Jump (the largest), Sword and
+Dash bottom right in a thumb's arc; sprint as the stick at its outer ring; a drag anywhere else turns the camera
+"through the same call the mouse uses"; a pause button, and everything the keyboard can leave a finger can leave;
+ink on paper, drawn in CSS or SVG, never over the warrior, a teach line or the HUD line. Touch is "one more live
+source beside the keyboard and the pad, in the shape `PadSource` already has. `InputFrame` does not change";
+"past the dead zone the move intent has length 1"; real multi-touch where nothing sticks; no pointer lock on
+touch. No scroll, zoom, selection or callout during play; safe areas respected; landscape is how it is played,
+and upright play waits under a plain notice. The words name the touch controls "from one table". Desktop
+untouched: `frame-hashes` IDENTICAL, no golden rewritten. No level, movement number, camera rule or `FIGHT` change.
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-080):** every size, place and number in `TOUCH`, the
+fixed stick, the kept tap for Jump and Dash, the cards, the hidden hint and the teach line at the top, the
+pixel-ratio cap, the upright pause and resume, and the chapter list's two columns. **Nobody has held it on a
+phone** (B-106).
+
+**What this changes, and what it keeps.** No NOT row and no closed ruling is narrowed. D-022's known limit "The
+game has no touch controls ... the how-to-play page says a keyboard or a pad is needed" is ended here, and that
+line of the page is gone. D-025's teach lines are written in a third hand: a finger's, beside the keyboard's and
+the pad's. `InputFrame`, `TUNING`, `MOVE`, `FIGHT`, the camera, every level and every trace are untouched.
+
+**Built.**
+1. **The source** (`src/engine/touch.ts`): `TOUCH`, the one table, and `TouchSource`, the held states a thumb
+   makes, read by `InputSystem.setTouch` in the pad's shape on the live path only. The stick past its dead zone
+   is a direction of length 1; at its outer ring it is sprint. Jump and Dash are held states, and a press shorter
+   than a tick made while playing is kept for the one tick that reads it (OQ-080 item 3). The Sword is
+   `pressSlash`, as the pad's is.
+2. **The page** (`src/ui/touch-ui.ts`, `index.html`): every touch followed by its identifier from where it begins;
+   a touch begun outside play is nothing until it lifts; a second finger on a held control is swallowed; a finger
+   sliding off a button lets it go; `touchcancel`, a vanished touch, leaving play, a hidden tab and a lost focus
+   let go of everything. A page button is pressed by a touch that lifts on it unmoved, because the browser makes
+   no click of a tap while another finger is down (OQ-080 item 4). The pause and results cards; the upright
+   notice; no scroll, bounce, zoom, selection, callout or long-press menu during play; safe-area insets.
+3. **The game's wiring** (`src/main.ts`): the controls are built where the main pointer is a finger, on a first
+   touch, or with `?touch=on`; never under `?harness=1`, and on a bare page only when asked. A drag calls
+   `camRig.addLook`. No pointer lock is asked for by a touch. A phone's canvas is capped at a pixel ratio of 1.5
+   (`Renderer.setPixelRatioCap`); every other page keeps `RENDER_CONFIG`'s 2. Sound wakes on the Play tap.
+4. **The words** (`src/ui/howto.ts`): the teach lines and the how-to-play page name the stick, Jump, Sword and
+   Dash from `TOUCH.labels`, once a finger has touched; the controls table becomes the touch controls' table.
+5. **The proof** (`tools/harness/touch.ts`, the `touch` once-stage, its own CI job): the real page in 844x390 and
+   932x430 landscape with touch on, played by real touch events through Chrome's own input pipeline, several
+   fingers at once. Start by tap; the stick (dead zone, run, sprint ring); a held Jump to the measured 2.34 m and
+   a tap to a low hop; Dash with the stick held; a swordsman felled by the Sword button; the camera turned by a
+   drag, and three fingers at once; pause, how to play and resume by tap; a goal reached and the next chapter
+   taken by tap; chapter 2's first face caught and climbed; a chapter chosen from the list by tap; back to the
+   title. Each seen to fail with its control broken from outside, and a stuck-input check after every release
+   path. Upright, the pixel-ratio cap, and that a page with a mouse has none of it. 60 of 60.
+6. **Frames** for Tim: `docs/build-log/mobile-touch/` (`node tools/harness/touch-shots.ts`).
+
+**Found and fixed on the way (B-105).** A click on the chapter list's gap between two rows started the current
+chapter again: the list looked for any `[data-level]` and found `<body>`'s. On main since D-025, on desktop too.
+
+**Proof the desktop is untouched** (MEASUREMENTS "D-027 desktop is untouched"): `frame-hashes` against origin/main
+IDENTICAL over 229 values and 6 levels, after the first page change and on the finished source; no golden written;
+every static check and every existing stage green.
+
+**Known limits (OQ-080).** Only emulated: headless Chromium, SwiftShader, touch on. Not tried on a phone, in Safari,
+with a notch, or by a thumb (B-106). The stage does not play the double jump, wall jump or dash jump by thumb
+(B-107). It is slow: 28 minutes in CI, the slowest job (B-108). The controls have no settings (B-109).
+
+**STYLE-BIBLE:** not amended. §2: the controls are ink and paper, part see-through; no accent on UI.
+
+implemented_by: 2df48b3 (the touch source, the controls, the cards, the words, the cap), d9019eb (the touch stage and its CI job, a page button pressed with a thumb on the stick, the chapter list's gap)

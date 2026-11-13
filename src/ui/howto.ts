@@ -27,6 +27,8 @@ export interface HowtoData {
   keys: readonly (readonly [string, readonly string[]])[];
   /** action or label -> what the gamepad uses for it; null when the page has no gamepad support */
   pad: Readonly<Record<string, string>> | null;
+  /** D-027: action or label -> what the touch controls call it (TOUCH.labels), while a finger is what plays; else null */
+  touch: Readonly<Record<string, string>> | null;
   /** seconds between a fall and standing at the torii again */
   respawnDelaySec: number;
 }
@@ -70,8 +72,13 @@ const RULES = {
   fight: 'Swordsmen guard the path.',
   windup: 'Before a swordsman cuts he draws his blade back. Read it: cut him first, or step out of his reach.',
   cut: 'If his blade reaches you, you stand at the furthest torii you reached {delay} later, and every swordsman is on his feet again.',
-  touch: 'This game needs a keyboard or a gamepad. It has no touch controls.',
+  // D-027: said under the touch controls' table only
+  also: 'A keyboard or a gamepad works too.',
 };
+
+/** "Right trigger (hold)" and "the stick at its edge (hold)" are the tables'; a line of text already says hold. */
+const unheld = (label: string): string => label.replace(/ \(hold\)$/, '');
+const capital = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 const KEY_NAME: Readonly<Record<string, string>> = {
   ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→',
@@ -122,8 +129,9 @@ export function buildHowto(d: HowtoData): DocumentFragment {
     return out;
   };
   const fill = (name: string): Node | string => {
-    if (name === 'move') return moveKeys();
     if (name === 'delay') return `${d.respawnDelaySec} s`;
+    if (d.touch) return unheld(d.touch[name] ?? name); // D-027: a finger plays: the page names the stick and the buttons
+    if (name === 'move') return moveKeys();
     return bound(name).length ? keys(bound(name), ' or ') : name; // the sword has two (J or Left click); every other action has one name
   };
 
@@ -163,35 +171,37 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   page.append(el('h2', 'Controls'));
   const table = el('table');
   const head = el('tr');
-  head.append(el('th', 'Action'), el('th', 'Keyboard'));
-  if (d.pad) head.append(el('th', 'Gamepad'));
+  // D-027: with a finger playing, the table is the touch controls', from TOUCH.labels: the same rows in the same
+  // order, less the ones a finger has no control for (the sound keys: the slider is on this page).
+  head.append(el('th', 'Action'), el('th', d.touch ? 'Touch' : 'Keyboard'));
+  if (d.pad && !d.touch) head.append(el('th', 'Gamepad'));
   table.append(head);
-  const row = (label: string, keyboard: Node | string, pad: string | undefined): void => {
+  const row = (label: string, keyboard: Node | string, name: string): void => {
+    const touch = d.touch?.[name];
+    if (d.touch && touch === undefined) return;
     const tr = el('tr');
     const k = el('td');
-    k.append(keyboard);
+    k.append(touch !== undefined ? capital(touch) : keyboard);
     tr.append(el('td', label), k);
-    if (d.pad) tr.append(el('td', pad ?? ''));
+    if (d.pad && !d.touch) tr.append(el('td', d.pad[name] ?? ''));
     table.append(tr);
   };
-  row('Move', moveKeys(), d.pad?.['move']);
+  row('Move', moveKeys(), 'move');
   for (const [action, codes] of Object.entries(d.bindings)) {
     if ((MOVE_ACTIONS as readonly string[]).includes(action)) continue;
-    row(ACTION_LABEL[action] ?? action, keys(codes, ' or '), d.pad?.[action]);
+    row(ACTION_LABEL[action] ?? action, keys(codes, ' or '), action);
   }
-  row('Look around', 'Mouse (click the game first)', d.pad?.['look']);
-  for (const [label, codes] of d.keys) row(label, keys(codes, ' or '), d.pad?.[label]);
+  row('Look around', 'Mouse (click the game first)', 'look');
+  for (const [label, codes] of d.keys) row(label, keys(codes, ' or '), label);
   page.append(table);
-  const touch = el('p', RULES.touch);
-  touch.className = 'touch';
-  page.append(touch);
+  if (d.touch) page.append(el('p', RULES.also));
   return page;
 }
 
 /** What a line's {names} are filled from: the game's binding table, and the pad's labels when a pad is in his hands. */
 export interface LineKeys {
   bindings: Readonly<Record<string, readonly string[]>>;
-  /** GAMEPAD.labels while the last thing pressed was on a pad, else null */
+  /** GAMEPAD.labels while the last thing pressed was on a pad, TOUCH.labels while it was a finger on the screen (D-027), else null */
   pad: Readonly<Record<string, string>> | null;
 }
 
@@ -212,7 +222,7 @@ export function lineText(id: string): string {
 export function teachLine(id: string, k: LineKeys): DocumentFragment {
   const bound = (action: string): readonly string[] => k.bindings[action] ?? [];
   return filled(lineText(id), (name) => {
-    if (k.pad) return (k.pad[name] ?? name).replace(/ \(hold\)$/, ''); // "Right trigger (hold)" is the table's; the line already says hold
+    if (k.pad) return unheld(k.pad[name] ?? name);
     // W A S D: the first key of each direction. The arrows are on the how-to-play page.
     if (name === 'move') return keys(MOVE_ACTIONS.map((a) => bound(a)[0]).filter((c): c is string => !!c));
     return bound(name).length ? keys(bound(name), ' or ') : name;

@@ -38,7 +38,8 @@ export const INPUT_CONFIG = {
 
 type Action = keyof typeof INPUT_CONFIG.bindings;
 
-/** A gamepad as the input system reads it (src/engine/gamepad.ts): the same three held states and a move intent. */
+/** A gamepad as the input system reads it (src/engine/gamepad.ts): the same three held states and a move intent.
+ *  D-027: the touch controls are read in this shape too (src/engine/touch.ts). */
 export interface PadSource {
   /** screen-relative move intent, x right and y forward; length 0 or 1 */
   move(): { x: number; y: number };
@@ -55,6 +56,8 @@ export class InputSystem {
   /** Actions the keyboard is not believed about until their key has been seen up (holdOff). */
   private readonly heldOff = new Set<Action>();
   private pad: PadSource | null = null;
+  /** D-027: a thumb on the screen (src/engine/touch.ts), read exactly as the pad is */
+  private touch: PadSource | null = null;
   /** A slash press not yet sampled: a tap shorter than a tick, a mouse button, a pad button (pressSlash). */
   private slashLatch = false;
 
@@ -67,6 +70,11 @@ export class InputSystem {
   /** D-022: also read a gamepad, on the live path only (beside the keyboard; never under playback or the override). */
   setPad(pad: PadSource | null): void {
     this.pad = pad;
+  }
+
+  /** D-027: also read the touch controls, on the live path only, in the pad's own shape. InputFrame does not change. */
+  setTouch(touch: PadSource | null): void {
+    this.touch = touch;
   }
 
   /**
@@ -135,8 +143,14 @@ export class InputSystem {
 
   private sampleKeyboard(yaw: number): InputFrame {
     const stick = this.pad?.move();
-    const rx = (this.held('right') ? 1 : 0) - (this.held('left') ? 1 : 0) + (stick?.x ?? 0);
-    const ry = (this.held('forward') ? 1 : 0) - (this.held('back') ? 1 : 0) + (stick?.y ?? 0);
+    const thumb = this.touch?.move();
+    // every source is read every tick, whatever the others say: a thumb's kept tap is spent by its read (touch.ts)
+    const by = (a: 'jump' | 'dash' | 'sprint'): boolean => {
+      const key = this.pressed(a), pad = this.pad?.held(a) ?? false, touch = this.touch?.held(a) ?? false;
+      return key || pad || touch;
+    };
+    const rx = (this.held('right') ? 1 : 0) - (this.held('left') ? 1 : 0) + (stick?.x ?? 0) + (thumb?.x ?? 0);
+    const ry = (this.held('forward') ? 1 : 0) - (this.held('back') ? 1 : 0) + (stick?.y ?? 0) + (thumb?.y ?? 0);
     const len = Math.hypot(rx, ry);
     const nx = len > 1 ? rx / len : rx;
     const ny = len > 1 ? ry / len : ry;
@@ -146,10 +160,10 @@ export class InputSystem {
     return {
       x: c * nx - s * ny,
       y: -s * nx - c * ny,
-      jump: this.pressed('jump') || (this.pad?.held('jump') ?? false),
-      dash: this.pressed('dash') || (this.pad?.held('dash') ?? false),
-      sprint: this.pressed('sprint') || (this.pad?.held('sprint') ?? false),
-      slash: this.pressed('slash'), // the mouse and the pad come through pressSlash
+      jump: by('jump'),
+      dash: by('dash'),
+      sprint: by('sprint'),
+      slash: this.pressed('slash'), // the mouse, the pad and the Sword button come through pressSlash
     };
   }
 

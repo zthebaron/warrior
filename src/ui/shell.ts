@@ -88,6 +88,8 @@ export class Shell {
   private owesResume = false;
   private returnFocus: HTMLElement | null = null;
   private chaptersReturnFocus: HTMLElement | null = null;
+  /** D-027: what else the chapter list stands over when it is open (the touch controls' cards) */
+  private alsoUnder: HTMLElement[] = [];
 
   constructor(private readonly host: ShellHost) {
     this.hint.id = 'hint';
@@ -104,7 +106,11 @@ export class Shell {
     need<HTMLButtonElement>('help-chapters').addEventListener('click', () => this.openChapters());
     need<HTMLButtonElement>('chapters-back').addEventListener('click', () => this.closeChapters());
     this.chapterList.addEventListener('click', (e) => {
-      const id = (e.target as Element | null)?.closest<HTMLElement>('[data-level]')?.dataset['level'];
+      // A chapter's own button, inside the list. Not any [data-level]: <body> carries the level being played
+      // (src/main.ts), so a click on the gap between two rows found it and started the current chapter again
+      // (found by D-027's touch stage, B-105).
+      const row = (e.target as Element | null)?.closest<HTMLButtonElement>('button[data-level]');
+      const id = row && this.chapterList.contains(row) ? row.dataset['level'] : undefined;
       if (id) this.choose(id);
     });
     need<HTMLButtonElement>('help-back').addEventListener('click', () => this.closeHelp());
@@ -245,9 +251,11 @@ export class Shell {
    * Open the chapter list. Only from the title, or over the how-to-play page: so behind it the game is at the
    * title, or paused by that page, or finished, and never running. Every way in comes through here: the two
    * buttons, the key, the pad, and a press made before the game was ready.
+   * D-027: `fromPause` is the touch controls' pause card, which has a Chapters button of its own: the game
+   * behind it is paused, so the same holds. No key or pad button passes it.
    */
-  openChapters(): void {
-    if (this.chaptersOpen || !(this.helpOpen || this.host.state() === 'menu')) return;
+  openChapters(fromPause = false): void {
+    if (this.chaptersOpen || !(this.helpOpen || this.host.state() === 'menu' || (fromPause && this.host.state() === 'pause'))) return;
     this.chaptersReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.chapterBox.hidden = false;
     this.chapterBox.scrollTop = 0;
@@ -263,6 +271,12 @@ export class Shell {
   private under(inert: boolean): void {
     this.title.inert = inert;
     this.help.inert = inert;
+    for (const e of this.alsoUnder) e.inert = inert;
+  }
+
+  /** D-027: the chapter list also stands over these (the touch controls' cards), which it makes inert while open. */
+  standOver(elements: HTMLElement[]): void {
+    this.alsoUnder = elements;
   }
 
   /** Take the list off the screen and give back what was under it. */
