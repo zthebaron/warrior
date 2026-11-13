@@ -22,6 +22,8 @@ export class Renderer {
   /** STYLE §6 (D-018): every frame goes through it. */
   readonly post: InkPost;
   private contextLost = false;
+  /** D-027: a lower pixel-ratio cap, set only on a device whose main pointer is a finger. Null (every other page) leaves RENDER_CONFIG's. */
+  private pixelRatioCap: number | null = null;
 
   constructor(private readonly host: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -58,10 +60,16 @@ export class Renderer {
     return this.contextLost;
   }
 
+  /** D-027: cap the canvas's pixel ratio below RENDER_CONFIG's (a phone), or null to go back to it. Never called on a page with a mouse. */
+  setPixelRatioCap(cap: number | null): void {
+    this.pixelRatioCap = cap;
+    this.resize();
+  }
+
   resize(): void {
     const w = this.host.clientWidth || window.innerWidth;
     const h = this.host.clientHeight || window.innerHeight;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, RENDER_CONFIG.maxPixelRatio));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.pixelRatioCap ?? RENDER_CONFIG.maxPixelRatio));
     this.renderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();

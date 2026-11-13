@@ -27,6 +27,8 @@ import { TEACH, Teach, type TeachShown, type TeachView } from './systems/teach';
 import { AUDIO, GameAudio } from './audio/audio';
 import { SoundTap } from './audio/tap';
 import { Gamepad, GAMEPAD } from './engine/gamepad';
+import { TOUCH } from './engine/touch';
+import { TouchUi, type TouchHost } from './ui/touch-ui';
 import { SlashArc } from './entities/slash';
 import { Swordsmen, type SwordsmanSnapshot } from './entities/swordsmen';
 import { SWORDSMAN } from './entities/swordsman-model';
@@ -206,10 +208,51 @@ export interface AssetProbe {
   pixels: { covered: number; nearPalette: number; maxError: number };
 }
 
+/**
+ * D-027: what the touch playtest stage (tools/harness/touch.ts) reads and does on the REAL page: the game's front
+ * door with its own frame loop, driven by real touch events. Exists only in a `--mode harness` build opened
+ * with ?touchprobe=1 and without ?harness=1; the production bundle has none of it (preflight's sentinel).
+ */
+export interface TouchProbeSnapshot {
+  tick: number;
+  state: GameState;
+  level: string | null;
+  feet: Vec3;
+  vel: Vec3;
+  pstate: string;
+  grounded: boolean;
+  yawDeg: number;
+  pitchDeg: number;
+  slashes: number;
+  enemies: SwordsmanSnapshot[];
+  deaths: number;
+  /** whose words the page speaks in: the keyboard's, the pad's or the touch controls' */
+  hands: string;
+  /** do the touch controls exist on this page? */
+  touch: boolean;
+  /** the canvas's device pixels a CSS pixel */
+  pixelRatio: number;
+  /** the warrior's box on the page, in CSS pixels, or null with no warrior */
+  figure: { left: number; right: number; top: number; bottom: number } | null;
+}
+/** One played tick: the frame `input.sample` returned, and what the warrior was doing after it. */
+export interface TouchProbeTick { tick: number; x: number; y: number; jump: boolean; dash: boolean; sprint: boolean; slash: boolean; pstate: string; feetY: number; speed: number }
+interface TouchProbe {
+  version: string;
+  snapshot(): TouchProbeSnapshot;
+  /** every played tick after `sinceTick` (the last 6000 are kept) */
+  log(sinceTick: number): TouchProbeTick[];
+  /** Put the warrior here, facing this way, with the camera behind him, and make it where he returns to. The stage's one shortcut: see tools/harness/touch.ts. */
+  place(pos: Vec3, facingDeg: number): void;
+  /** Break one control, or mend them all (null): stick, jump, dash, sprint, slash, look, stuck. */
+  breakControl(name: string | null): void;
+}
+
 declare global {
   interface Window {
     __DEV__?: DevHook;
     __HARNESS__?: HarnessApi;
+    __TOUCH_PROBE__?: TouchProbe;
   }
 }
 
@@ -227,6 +270,8 @@ function seededRandom(seed: number): () => number {
 
 const HARNESS_SEED = 0x5eed1234;
 const HARNESS_MODE = __HARNESS__ && new URLSearchParams(location.search).get('harness') === '1';
+// D-027: the touch stage's probe, on the real page of a harness build (never with ?harness=1, whose page has no frame loop).
+const TOUCH_PROBE = __HARNESS__ && !HARNESS_MODE && new URLSearchParams(location.search).get('touchprobe') === '1';
 // B-17: ?instrument=on records per-segment play numbers (dev only, never drawn: NOT-list #20).
 const INSTRUMENT = new URLSearchParams(location.search).get('instrument') === 'on';
 // Feel-test flags follow the accent's ?accent=<name> precedent (D-007). Defaults are unchanged; each is
@@ -522,12 +567,17 @@ async function boot(): Promise<void> {
     }
     return null;
   };
-  /** Whose keys a teach line is written in: the pad's once a pad has been used, the keyboard's once a key has. */
-  let padInHand = false;
+  /**
+   * Whose words the page speaks in: the pad's once a pad has been used, the keyboard's once a key has, and the
+   * touch controls' once a finger has touched the screen (D-027). The teach line and the how-to-play page read it.
+   */
+  let hands: 'keys' | 'pad' | 'touch' = 'keys';
   /** Put what the rule says on the page. The key carries whose keys it is written in, so a change of hands rebuilds it. */
   const showTeach = (shown: TeachShown | null): void => {
-    shell?.showTeach(shown ? `${shown.line}|${padInHand ? 'pad' : 'keys'}` : null, shown?.line ?? null, shown?.spot ?? null);
+    shell?.showTeach(shown ? `${shown.line}|${hands}` : null, shown?.line ?? null, shown?.spot ?? null);
   };
+  // D-027: the touch stage's log of played ticks. Only ever filled in a harness build's probe page.
+  const probeLog: TouchProbeTick[] = [];
 
   const onFixedUpdate = (dt: number): void => {
     if (!level || !player) return;
@@ -557,6 +607,10 @@ async function boot(): Promise<void> {
     inputTicks++;
     level.fixedUpdate(worldTime(), dt);
     player.fixedUpdate(dt, frame);
+    if (__HARNESS__ && TOUCH_PROBE) {
+      if (probeLog.length >= 6000) probeLog.shift();
+      probeLog.push({ tick: loop.tickCount, ...frame, pstate: player.state, feetY: player.feet(tmpFeet).y, speed: Math.hypot(player.vel.x, player.vel.z) });
+    }
     profiler.end('gameplay');
     profiler.begin('physics');
     physics.step(dt);
@@ -718,7 +772,7 @@ async function boot(): Promise<void> {
         start: startGame,
         chapters: () => chapters,
         startChapter,
-        teachContent: (line) => teachLine(line, { bindings: INPUT_CONFIG.bindings, pad: padInHand ? GAMEPAD.labels : null }),
+        teachContent: (line) => teachLine(line, { bindings: INPUT_CONFIG.bindings, pad: hands === 'pad' ? GAMEPAD.labels : hands === 'touch' ? TOUCH.labels : null }),
         pause: () => { if (state.is('play')) state.transition('pause'); },
         resume: () => { if (state.is('pause')) state.transition('play'); },
         helpContent: () => buildHowto({
@@ -733,6 +787,7 @@ async function boot(): Promise<void> {
             ...(audio ? [['Sound on and off', [AUDIO.keys.mute]], ['Quieter, louder', [AUDIO.keys.quieter, AUDIO.keys.louder]]] as const : []),
           ],
           pad: GAMEPAD.labels,
+          touch: hands === 'touch' ? TOUCH.labels : null,
           respawnDelaySec: GAME_RULES.respawnDelaySec,
         }),
         hint: () => `${keyName(SHELL.keys.help)}  how to play` + (audio ? `     ${keyName(AUDIO.keys.mute)}  sound: ${audio.muted ? 'off' : 'on'}` : ''),
@@ -758,16 +813,18 @@ async function boot(): Promise<void> {
       case 'menu': return shell ? '' : 'WARRIOR\n\nEnter: start\nclick: mouse look   ~: debug + dev tools';
       case 'loading': return 'loading…';
       case 'play': return '';
-      case 'pause': return 'PAUSED\nP / Esc: resume   M: menu';
+      // D-027: with the touch controls on the page a card says it, with buttons a finger can press, and this line names no key
+      case 'pause': return touch ? '' : 'PAUSED\nP / Esc: resume   M: menu';
       case 'death': return deathByCut ? 'cut down' : 'fell'; // B-78: a swordsman's blade is not a fall
       // Q4: win is *arrive*. The results state reads `complete` and nothing else — no time, score,
       // par or rank. Run time stays on the ~ debug overlay, which is dev tooling, not the game.
-      case 'results': return nextId ? 'COMPLETE\nEnter: next chapter' : 'COMPLETE\nEnter: menu';
+      case 'results': return touch ? '' : nextId ? 'COMPLETE\nEnter: next chapter' : 'COMPLETE\nEnter: menu';
     }
   };
   state.onChange((to) => {
     hud.textContent = hudText(to);
     shell?.onState(to);
+    touch?.sync(); // D-027: the controls are for a game being played; the cards for one paused or finished
     // the music is at full in the game and quieter under the title and while paused
     audio?.setScene(to === 'play' || to === 'death' || to === 'results' ? 'game' : 'title');
     if (to === 'results') tap?.goal();
@@ -786,7 +843,7 @@ async function boot(): Promise<void> {
   // D-022: the pad's buttons that are not moves, once a render frame. The moves go through the input system.
   function padFrame(p: Gamepad, frameDt: number): void {
     p.poll();
-    if (p.active()) padInHand = true; // D-025: a teach line names the pad's buttons from here on, until a key is pressed
+    if (p.active()) hands = 'pad'; // D-025: a teach line names the pad's buttons from here on, until a key is pressed
     if (shell?.chaptersOpen) {
       // D-025: the chapter list. The stick or the D-pad moves between chapters, A (or Start) chooses the one in
       // focus, and B, Back or Y shuts the list. startChapter holds A off, as Play does: choosing is not a jump.
@@ -820,7 +877,7 @@ async function boot(): Promise<void> {
 
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
-    padInHand = false; // D-025: a teach line names the keyboard's keys again
+    hands = 'keys'; // D-025: a teach line names the keyboard's keys again
     if (audio) {
       audio.nudge();
       if (!e.repeat && e.code === AUDIO.keys.mute) audio.setMuted(!audio.muted);
@@ -838,11 +895,16 @@ async function boot(): Promise<void> {
   });
 
   if (audio) window.addEventListener('pointerdown', () => audio.nudge());
+  // D-027: a finger lifting is the gesture some phones count, where a finger landing is not
+  if (audio) window.addEventListener('touchend', () => audio.nudge(), { passive: true });
   // the left button is the sword once the mouse is the camera's (the click that captures it is not a slash)
   renderer.canvas.addEventListener('mousedown', (e) => {
     if (INPUT_CONFIG.bindings.slash.includes(`Mouse${e.button}`) && document.pointerLockElement === renderer.canvas) slash();
   });
-  renderer.canvas.addEventListener('click', () => {
+  renderer.canvas.addEventListener('click', (e) => {
+    // D-027: a finger has no pointer to lock, and a phone's browser may have no such call. (The touch controls
+    // also prevent the tap's click from ever being made; this is for a touch they did not see.)
+    if ((e as PointerEvent).pointerType === 'touch' || typeof renderer.canvas.requestPointerLock !== 'function') return;
     if (state.is('play') && !overlay.visible) void renderer.canvas.requestPointerLock();
   });
   document.addEventListener('mousemove', (e) => {
@@ -853,6 +915,71 @@ async function boot(): Promise<void> {
   document.addEventListener('pointerlockchange', () => {
     if (!document.pointerLockElement && state.is('play') && !overlay.visible) state.transition('pause');
   });
+
+  // ---------- touch controls (D-027) ----------
+  // Built where the device's main pointer is a finger, or on the first touch, or where the URL asks (?touch=on, for
+  // a test or for looking at them with a mouse). Never in the harness's test mode, and never on a bare page that
+  // did not ask: so a page with a mouse and no touch has none of it in its document, and the harness's page is
+  // the page it was. ?touch=off keeps them away everywhere.
+  const touchParam = new URLSearchParams(location.search).get('touch');
+  const fingerIsMainPointer = (): boolean => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+  /** The stage's broken control, or null. Only ever set through the probe, in a harness build. */
+  let broken: string | null = null;
+  const touchHost: TouchHost = {
+    state: () => state.get(),
+    slash,
+    look: (dx, dy) => { if (!tools.freeCamActive) camRig.addLook(dx, dy); }, // the call the mouse makes
+    pause: () => { if (state.is('play')) state.transition('pause'); },
+    resume: () => { if (state.is('pause')) state.transition('play'); },
+    menu: () => { if (state.is('pause')) state.transition('menu'); },
+    next: () => { if (state.is('results')) afterResults(); },
+    hasNext: () => nextId !== null,
+    help: shell ? () => shell.openHelp() : null,
+    chapters: shell ? () => shell.openChapters(true) : null,
+    covered: () => !!shell && (shell.helpOpen || shell.chaptersOpen),
+    touched: () => { hands = 'touch'; },
+  };
+  if (__HARNESS__ && TOUCH_PROBE) {
+    // a control broken from outside, for the stage to see its check fail: the controls themselves carry no switch
+    const { slash: realSlash, look: realLook } = touchHost;
+    touchHost.slash = () => { if (broken !== 'slash') realSlash(); };
+    touchHost.look = (dx, dy) => { if (broken !== 'look') realLook(dx, dy); };
+  }
+  let touch: TouchUi | null = null;
+  /** `phone`: the main pointer is a finger, so this is a phone or a tablet and not a laptop whose screen was touched once. */
+  const startTouch = (phone: boolean): void => {
+    if (touch) return;
+    touch = new TouchUi(touchHost);
+    const source = touch.source;
+    if (__HARNESS__ && TOUCH_PROBE) {
+      // `stuck`: every control reads as it last did when held, as one that never heard its finger lift would
+      const kept = { x: 0, y: 0, jump: false, dash: false, sprint: false };
+      input.setTouch({
+        move: () => {
+          const m = source.move();
+          if (broken === 'stick') return { x: 0, y: 0 };
+          if (m.x || m.y || broken !== 'stuck') { kept.x = m.x; kept.y = m.y; }
+          return { x: kept.x, y: kept.y };
+        },
+        held: (a) => {
+          const v = source.held(a);
+          if (broken === a) return false;
+          if (v || broken !== 'stuck') kept[a] = v;
+          return kept[a];
+        },
+      });
+    } else input.setTouch(source);
+    shell?.standOver(touch.overlays);
+    document.documentElement.classList.add('touch');
+    hands = 'touch';
+    // A phone's screen has three device pixels to a CSS pixel and a small GPU: MEASUREMENTS "D-027 the phone's canvas".
+    if (phone) renderer.setPixelRatioCap(TOUCH.maxPixelRatio);
+    hud.textContent = hudText(state.get());
+  };
+  if (!HARNESS_MODE && touchParam !== 'off' && (shell || touchParam === 'on')) {
+    if (touchParam === 'on' || fingerIsMainPointer()) startTouch(fingerIsMainPointer());
+    else window.addEventListener('touchstart', () => startTouch(false), { once: true, passive: true });
+  }
 
   // ---------- dev hook (stripped from production builds) ----------
   if (import.meta.env.DEV) {
@@ -1209,6 +1336,56 @@ async function boot(): Promise<void> {
     };
     state.transition('menu');
     return; // deterministic mode: the harness drives every frame; the rAF loop never starts
+  }
+
+  // ---------- the touch stage's probe (dead code outside `--mode harness` builds) ----------
+  if (__HARNESS__ && TOUCH_PROBE) {
+    const v3 = (v: THREE.Vector3): Vec3 => [v.x, v.y, v.z];
+    window.__TOUCH_PROBE__ = {
+      version: 'TOUCH_PROBE_V1',
+      snapshot: () => {
+        let figure: TouchProbeSnapshot['figure'] = null;
+        if (player) {
+          const c = renderer.camera;
+          c.updateMatrixWorld(true);
+          const f = player.feet(new THREE.Vector3()), r = TUNING.capsuleRadius, h = 2 * player.feetOffset(), q = new THREE.Vector3();
+          figure = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+          for (const dx of [-r, r]) for (const dy of [0, h]) for (const dz of [-r, r]) {
+            q.set(f.x + dx, f.y + dy, f.z + dz).project(c);
+            const x = (q.x + 1) / 2 * window.innerWidth, y = (1 - q.y) / 2 * window.innerHeight;
+            figure.left = Math.min(figure.left, x); figure.right = Math.max(figure.right, x);
+            figure.top = Math.min(figure.top, y); figure.bottom = Math.max(figure.bottom, y);
+          }
+        }
+        return {
+          tick: loop.tickCount,
+          state: state.get(),
+          level: level?.data.id ?? null,
+          feet: player ? v3(player.feet(new THREE.Vector3())) : [0, 0, 0],
+          vel: player ? v3(player.vel) : [0, 0, 0],
+          pstate: player?.state ?? 'none',
+          grounded: player?.grounded ?? false,
+          yawDeg: camRig.yaw * RAD2DEG,
+          pitchDeg: camRig.viewPitch() * RAD2DEG,
+          slashes: player?.slashCount ?? 0,
+          enemies: enemies?.snapshot() ?? [],
+          deaths,
+          hands,
+          touch: touch !== null,
+          pixelRatio: renderer.renderer.getPixelRatio(),
+          figure,
+        };
+      },
+      log: (sinceTick) => probeLog.filter((e) => e.tick > sinceTick),
+      place: (pos, facingDeg) => {
+        if (!player) return;
+        player.teleport({ x: pos[0], y: pos[1], z: pos[2] }, facingDeg * DEG2RAD);
+        respawn = { pos, facing: facingDeg };
+        camRig.setYaw(facingDeg * DEG2RAD);
+        camRig.snap(player.feet(tmpFeet), player.facing);
+      },
+      breakControl: (name) => { broken = name; },
+    };
   }
 
   state.transition('menu');
