@@ -1896,3 +1896,76 @@ took, each PROVISIONAL:
 1.42 s); the look in motion; the gate's 1.2 s; the rose of the sky; the yard's size from inside. Nothing was
 judged by ear: the gate opens in silence (B-98).
 status: PROVISIONAL
+
+## OQ-080 — MOBILE-TOUCH: the builder's calls on a phone nobody has held
+raised: 2026-11-12 by mobile-touch (claim MOBILE-TOUCH). Brief: `00-start-here/PROMPT-MOBILE-TOUCH.md`. Decision: D-027.
+Numbers: MEASUREMENTS "D-027 touch controls", "D-027 the phone's canvas", "D-027 the touch stage", "D-027 desktop is untouched".
+took, each PROVISIONAL:
+
+1. **Where the stick lives.** Options: A, a floating stick that appears under the thumb | B, a fixed ring that a
+   touch anywhere near takes. Took B: Tim asked for a circle he can see. A touch within 104 px of its centre takes
+   it, so a thumb need not land on the ring.
+2. **Sprint has no button (the brief).** The stick pushed past 0.85 of its radius is sprint, held until it comes
+   back inside 0.7. Every MOVE budget was measured at run speed, and no chapter needs sprint (all six traces reach
+   their goals with none), so a thumb that never reaches the ring loses nothing. The touch stage shows both bands:
+   mid ring runs at 7 m/s with sprint off on every tick, the ring sprints at 10. No measured move became
+   unreachable, so the brief's way was kept.
+3. **A tap shorter than a tick, for Jump and Dash too (not only the Sword).** The brief names the latch for the
+   Sword. A phone that draws 6 frames a second runs several ticks a frame, and a quick tap can begin and end
+   between two of them: without the latch it was not a jump at all. So `TouchSource` keeps a Jump or Dash press
+   made while playing for the one tick that reads it, as `pressSlash` does. It is inside the touch source, only
+   for a press made in `play`, and the keyboard and pad are unchanged. A deviation from the letter of the brief.
+4. **A page button is pressed by the touch controls, not by the browser's click.** Chrome makes no click of a tap
+   while another finger is down (seen in the stage: Pause and Resume did not answer while a thumb rested on the
+   stick). So any button (the pause button, the cards', the title's, the how-to-play page's, a chapter's row) is
+   pressed when a touch lifts on it having travelled no more than 12 px; the browser's own click is prevented, so
+   none is pressed twice. A touch that travels is the browser's: the how-to-play page and the list still scroll.
+5. **Pause and results are cards with buttons, and the HUD's line naming keys is left empty on touch.** Pause offers
+   Resume, How to play, Chapters and Menu; results offers Next chapter (Menu after the last). The keyboard's
+   PAUSED and COMPLETE lines are unchanged on every page with no touch controls. The chapter list opens over the
+   pause card (`openChapters(true)`); no key or pad button reaches that path.
+6. **The hint's line is hidden on touch, and the teach line moves to the top.** The hint names keys and stood
+   where the stick is; the pause card reaches all of it. The teach line, low and centred on a desktop, would sit
+   between the thumbs on a 390 px screen; at the top it is clear of the controls and of the warrior at both sizes.
+7. **Upright.** A game being played, paused or loading waits under "Turn your phone sideways to play."; the title,
+   the how-to-play page and the chapter list keep their own upright layouts and stand over it. Turned back, a game
+   the notice paused resumes by itself; one the player paused does not.
+8. **The pixel-ratio cap is 1.5 on a device whose main pointer is a finger.** Measured on SwiftShader only (6.3
+   against 4.6 frames a second at 844x390, ratio 3). A phone's GPU was not measured. The cap is not set on a
+   laptop whose screen was touched once, and desktop keeps 2.
+9. **When the controls exist.** Where `(pointer: coarse)` matches, from the first frame; elsewhere, on the first
+   touch; `?touch=on` builds them on any page (for a test, or to look at them with a mouse), `?touch=off` never.
+   Never under `?harness=1`, and on a bare page only when asked. Whose words the page speaks is now three-way:
+   a finger's once one touches, a pad's once one is used, the keyboard's once a key is pressed.
+10. **The chapter list on a phone held sideways** stands in two columns on a screen under 520 px tall, and is
+    centred by its own margins, so Back is on screen: with five chapters in one column it was below the fold and
+    could not be scrolled to. Only on touch pages.
+11. **The touch stage's one shortcut, and how it breaks things.** It places the warrior 5.8 m short of chapter
+    1's goal (no goal with a next chapter is nearer than 101 m of platforming), then fights the swordsman there
+    and walks in by thumb. It breaks each control from outside the controls (`breakControl`, a harness build's
+    `?touchprobe=1` page only; preflight refuses a `dist/` carrying its marker), and a real button by taking the
+    pointer from it.
+12. **The touch stage has its own CI job** beside `game` (533 s on this Mac; about 16 min on a slow runner), with
+    a 30 minute limit. merge-reports gates it as it gates every once-stage.
+13. **B-105, found and fixed:** a click or tap on the chapter list's gap between two rows found `<body
+    data-level>` and started the current chapter again. On main since D-025, on desktop as well. The list now
+    takes only its own rows. The one change a desktop player can notice.
+14. **Ultracode was on; one read-only fan-out was run** (three readers: the harness, the records, the levels) at
+    the start. No review workflow (the brief); one focused self-review before the report.
+15. **The session changed model halfway** (the reviewer switched it when a weekly limit stopped the first). The
+    work continued from the same worktree and the same claim.
+16. **The claim was pushed to main by this session** (`a13cbc6`, the ledger line only). The branch's own commits
+    go to `origin/mobile-touch` only.
+
+**KNOWN LIMIT: nobody has held it.** Everything above ran in headless Chromium with touch emulated and real touch
+events. Not tried: a real phone, Safari (its gesture events and audio rules are handled from the documentation
+and not seen), the notch on either side (the safe-area insets are in the CSS and not seen), thumb reach, the
+stick's feel, a real GPU's frame rate (B-106).
+**KNOWN LIMIT: the stage plays the first moves, not every move.** It walks, sprints, jumps held and tapped, dashes,
+fights, turns the camera and climbs chapter 2's first face. The double jump, the wall jump and the dash jump by
+thumb are not played (B-107).
+
+**What nobody has judged.** The look of the controls on a real screen, whether 0.3 of the radius is a dead zone a
+thumb feels, whether 1.5 px of mouse a pixel of drag turns the camera at the right speed, and whether the buttons
+sit under the thumb.
+status: PROVISIONAL

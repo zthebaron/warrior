@@ -2189,3 +2189,90 @@ before the first call and matched the wrapper's table.
 Goldens: darwin by `--update-goldens` on the level alone. Linux are CI run 43352065074's own six frames (on
 that run `visual` was the only failing stage of `level (05-courtyard)`, for want of goldens); each is within 4
 pixels of its darwin golden at pixelmatch 0.1 (0, 3, 1, 4, 3, 0).
+
+## D-027 touch controls (2026-11-12)
+
+`src/engine/touch.ts` `TOUCH`, drawn by `src/ui/touch-ui.ts`, looked by `index.html` ("D-027: the touch
+controls"). Lengths are CSS pixels. **Every value is authored by the builder to the brief's words and is
+PROVISIONAL for Tim's thumb (OQ-080). Nothing here was tried on a phone:** the touch stage plays it in headless
+Chromium with touch emulated and real touch events (Chrome's own input pipeline), which proves what a finger
+does to the game, not how it feels in a hand.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `stick.radius` | 60 | authored | the ring a thumb's tip travels: 120 px across, about 2 cm on a 3x phone |
+| `stick.knob` | 26 | authored | the knob, a thumb's pad under it |
+| `stick.reach` | 104 | authored | a touch beginning this near the ring's centre takes the stick: a thumb does not land on a circle it cannot see under itself |
+| `stick.inset` | x 92, y 88 | authored | the ring's centre from the left and bottom edges of the safe area: the ring and its reach on screen at 390 px tall |
+| `stick.deadzone` | 0.3 of the radius (18 px) | authored | a thumb at rest on the knob is not a push. Past it the move intent has length 1 (`readStick`), as the pad's has: no part speed reaches the simulation |
+| `stick.sprintFrom` | 0.85 of the radius (51 px) | authored | sprint has no button (the brief): the stick pushed into its outer ring is sprint |
+| `stick.sprintUntil` | 0.7 of the radius (42 px) | authored | once sprinting it holds until the stick comes back inside this, so a thumb resting on the ring's edge does not flicker between run and sprint |
+| `buttons.jump` | radius 40, centre 70 and 64 in from the right and bottom | authored | the largest, under the thumb's rest in the corner (the brief) |
+| `buttons.slash` | radius 31, centre 166 and 50 | authored | left of Jump along the thumb's arc |
+| `buttons.dash` | radius 31, centre 60 and 160 | authored | above Jump along the same arc |
+| button sizes | 80, 62, 62 across | derived | every one over the 44 px a finger needs (D-022's `min-height`) |
+| `pressPad` | 10 | authored | a touch this far outside a button's edge still presses it |
+| `slideOff` | 30 | authored | a finger this far past a held button's edge has slid off: the button is let go |
+| `tapSlop` | 12 | authored | a touch on a page button that travels further is a scroll, and presses nothing |
+| `pause` | 44 square, 10 in from the top and right | authored | the smallest target a finger needs, in the corner nothing else uses |
+| `lookScale` | 1.5 | authored | a drag of 1 px turns the camera as a mouse moved 1.5 px (`CAMERA_TUNING.mouseSensitivity` 0.0025 rad/px): a 120 px drag is 25.8 degrees, measured by the touch stage |
+| `maxPixelRatio` | 1.5 | authored | see "D-027 the phone's canvas" |
+| opacities | ring 0.3 paper / 0.55 ink edge; buttons 0.42 paper / 0.6 ink edge; held 0.8 ink | authored | part see-through, ink on paper, no accent (STYLE §2) |
+| z-index | controls 6, pause button 7, cards 20, the upright notice 25 | authored | over the hint and teach line (5), under the title (30), the how-to-play page (40) and the chapter list (45) |
+| the teach line on touch | top 10 px under the safe area, at most the screen less 148 px wide | authored | clear of the stick, the buttons and the pause button; the touch stage holds it clear of the warrior at both sizes |
+
+Where the controls land, measured by the touch stage on its pages (stick, Jump, Sword, Dash, pause; left, top,
+width, height): 844x390: (32, 242, 120, 120), (734, 286, 80, 80), (647, 309, 62, 62), (753, 199, 62, 62),
+(790, 10, 44, 44). None covers another, the warrior or the teach line at 844x390 or 932x430.
+
+## D-027 the phone's canvas (2026-11-12)
+
+`TOUCH.maxPixelRatio` 1.5, set by `Renderer.setPixelRatioCap` only where the device's main pointer is a finger
+(`(pointer: coarse)`); a page with a mouse keeps `RENDER_CONFIG.maxPixelRatio` 2, so desktop rendering does not
+change (frame-hashes below). **What was measured is SwiftShader on this Mac, not a phone's GPU.** It says how
+the cost grows with the drawing buffer; a phone's frame rate is for Tim to see.
+
+The game's own frame loop at the start of chapter 1, 4 s of frames, harness bundle at the front door (darwin,
+SwiftShader):
+
+| Viewport, device pixel ratio | Canvas (device px) | Frames a second | The simulation's share of the wall clock (5 ticks a frame at most) |
+|---|---|---|---|
+| 640x360, 1 | 640x360 | 11.4 | 95% |
+| 844x390, 1 | 844x390 | 8.6 | 72% |
+| 932x430, 1 | 932x430 | 8.1 | 67% |
+| 844x390, 2 | 1688x780 | 4.7 | 39% |
+| 844x390, 3 (desktop cap 2) | 1688x780 | 4.6 | 39% |
+| 844x390, 3 (touch cap 1.5) | 1266x585 | 6.3 | 52% |
+| 932x430, 3 (touch cap 1.5) | 1398x645 | 5.7 | 48% |
+
+At ratio 3 a phone without the cap draws 4.0 times the pixels of ratio 1, and with it 2.25 times. 1.5 keeps
+the ink's line at its 360-line weight or above (`InkPost` supersamples any buffer over 360 lines) and is the
+largest round step under 2. PROVISIONAL (OQ-080): on a real phone it may be too much or too little.
+
+## D-027 the touch stage (2026-11-12)
+
+`tools/harness/touch.ts` `TOUCH_STAGE`: once per run (`ONCE_STAGES`), in CI's `game` job.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `phones` | 844x390, 932x430 | authored | the brief's two landscape phones |
+| `minTarget` | 44 px | authored | D-022's button `min-height` |
+| `fullRise` | 2.34 m | measured | "Measured": a single jump held to its full height |
+| `catchTicks` | 18 | measured | "D-025 the wall": the shortest held Jump that catches chapter 2's first face from its foot |
+| `riseTol`, `tapUnder` | 0.1 m, 0.4 m | authored | a held jump within 0.1 of 2.34; a tap at least 0.4 under it (a tap is 1.0, "D-025 the wall") |
+| `speedTol` | 0.3 m/s | authored | top speed against `TUNING.runSpeed` 7 and `sprintSpeed` 10 |
+| `turnTol` | 0.6 degrees | authored | a drag's turn against what the mouse's call gives for the same pixels |
+| `share` | dead 0.15, mid 0.55, outer 1.0 of the radius | authored | inside the dead zone, between it and the outer ring, and at the edge |
+| `fight` | approach 3.9 m, cut at 1.85 m, again after 16 ticks | derived | inside `FIGHT.swordsman.sightRange` 4.5, inside `FIGHT.warrior.reach` 1.9, over `againSec` 0.24 s |
+| `home` | x 0 on chapter 1's first flat, within 1.2 m | derived | 6 m from the edge (x -6) and from the step (x 6) |
+| `goalStart` | (95.2, 9.05, 0) | authored | the stage's one shortcut: chapter 1's last flat, 5.8 m short of the goal and before its swordsman |
+| `settleTicks`, `neutralTicks` | 8, 3 | authored | a release must show in the frames within 8 ticks, and the last 3 must be neutral |
+| `msPerTick`, `waitMs` | 120, 20000 | authored | a wait for n ticks gives up after 20 s + 120 ms a tick (a CI runner draws about 4 frames a second) |
+
+## D-027 desktop is untouched (2026-11-12)
+
+`node tools/harness/frame-hashes.ts <out.json> --build` on origin/main (`4635605`, taken in this worktree before
+the first change) and on this branch, then `--diff`, one machine (darwin, SwiftShader): **IDENTICAL: 229 values,
+6 levels**, after the first `index.html` change and again on the finished source. No golden was written. A page
+with a mouse has no touch element in its document, playing or paused (the touch stage's check); a bare page has
+none even on a touch device, unless the URL asks (`?touch=on`).
