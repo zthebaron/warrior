@@ -127,7 +127,7 @@ export function cardPlane(width: number, height: number, mirror: boolean): THREE
  * lowestLanding: the lowest y the critical path stands on. The mist is paper drawn over whatever is below it,
  * and it is on the paint layer, which the linter's sightline rules do not see: so it may never reach a landing.
  */
-export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: number): { root: THREE.Group; dispose(): void } {
+export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: number, cliffs: readonly (typeof BACKDROP.cliffs)[number][] = BACKDROP.cliffs): { root: THREE.Group; dispose(): void } {
   if (BACKDROP.mist.topY >= lowestLanding) {
     throw new Error(`[backdrop] the mist tops out at y ${BACKDROP.mist.topY}, at or above the level's lowest landing (y ${lowestLanding}): it would cover the path`);
   }
@@ -170,7 +170,8 @@ export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: n
   // farthest first, so a nearer peak is laid over a farther one
   for (const p of [...BACKDROP.peaks].sort((a, b) => b[2] - a[2])) ringCard('backdrop:peak', p, BACKDROP.peakSquash);
 
-  for (const [card, x, z, height, yaw, ink, mirror] of BACKDROP.cliffs) {
+  // the mid cliffs stand at chapter 1's own places: a level that is not on that mountainside passes none
+  for (const [card, x, z, height, yaw, ink, mirror] of cliffs) {
     const cliff = add('backdrop:cliff', cardPlane(height * cardAspect(card), height, mirror), paintMaterial({ map: texture(card), opacity: ink, wash: true, side: THREE.DoubleSide }));
     cliff.position.set(x, BACKDROP.cliffFootY + height / 2, z);
     cliff.rotation.y = (yaw * Math.PI) / 180;

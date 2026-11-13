@@ -213,6 +213,33 @@
       "bytes": 33170
     }
   },
+  "courtyard_basis": "D-026 the courtyard's painted cards (assets/courtyard/*.png, made by tools/art/courtyard-cards.mjs: what stands beyond the walls and the sky are cut from Tim's painting, the flags, the plaster and the tiles are drawn from a seed). Each set AT its measured longest side and file size. Checked by tools/assets/paint-budget.mjs inside npm run assets:budget, which also requires each card to be exactly what the script gives. Raise a line only with the new measurement and the reason recorded in 00-start-here/MEASUREMENTS.md, section 'D-026 the courtyard's look'.",
+  "courtyard": {
+    "yard_far": {
+      "px": 2048,
+      "bytes": 578509
+    },
+    "yard_flags": {
+      "px": 2048,
+      "bytes": 383041
+    },
+    "yard_plaster_lit": {
+      "px": 1024,
+      "bytes": 58608
+    },
+    "yard_plaster_shade": {
+      "px": 1024,
+      "bytes": 69851
+    },
+    "yard_sky": {
+      "px": 1024,
+      "bytes": 34729
+    },
+    "yard_tiles": {
+      "px": 512,
+      "bytes": 29102
+    }
+  },
   "characters_basis": "D-020 rigged characters (assets/char/*.glb, imported from assets/hero by npm run assets:build: unlit, base colour only, chroma cap, 1024 px KTX2, skin and clips as delivered). Each set AT its measured value and checked by tools/assets/paint-budget.mjs inside npm run assets:budget; the clip list must match exactly. A character is held to the hero class ceilings as well. Record a raise in 00-start-here/MEASUREMENTS.md, section 'D-020 hero assets'.",
   "characters": {
     "warrior_anim": {

@@ -1,0 +1,358 @@
+{
+  "id": "05-courtyard",
+  "title": "The Courtyard",
+  "chapter": 5,
+  "palette": "ink",
+  "spawn": {
+    "pos": [
+      0,
+      0,
+      0
+    ],
+    "facing": -90
+  },
+  "goal": {
+    "type": "reach",
+    "pos": [
+      35.5,
+      0,
+      0
+    ],
+    "radius": 1.5,
+    "once_clear": true
+  },
+  "bounds": {
+    "min": [
+      -20,
+      -15,
+      -18
+    ],
+    "max": [
+      48,
+      40,
+      18
+    ]
+  },
+  "lighting": {
+    "preset": "ink",
+    "ambienceZone": "courtyard"
+  },
+  "difficulty": 3,
+  "moves_allowed": [
+    "ground",
+    "jump",
+    "wall",
+    "double",
+    "climb",
+    "platform",
+    "dash",
+    "dashjump"
+  ],
+  "geometry": [
+    {
+      "asset": "prim_box",
+      "pos": [
+        3.5,
+        -4,
+        0
+      ],
+      "scale": [
+        13,
+        8,
+        9
+      ],
+      "tag": "causeway"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        21,
+        -4,
+        0
+      ],
+      "scale": [
+        22,
+        8,
+        16
+      ],
+      "tag": "yard"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        35,
+        -4,
+        0
+      ],
+      "scale": [
+        6,
+        8,
+        7
+      ],
+      "tag": "landing"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        21,
+        -1.6,
+        -8.5
+      ],
+      "scale": [
+        24,
+        12.8,
+        1
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        21,
+        -1.6,
+        8.5
+      ],
+      "scale": [
+        24,
+        12.8,
+        1
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        9.5,
+        -1.6,
+        -5.75
+      ],
+      "scale": [
+        1,
+        12.8,
+        4.5
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        9.5,
+        -1.6,
+        5.75
+      ],
+      "scale": [
+        1,
+        12.8,
+        4.5
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        32.5,
+        -1.6,
+        -5.5
+      ],
+      "scale": [
+        1,
+        12.8,
+        5
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        32.5,
+        -1.6,
+        5.5
+      ],
+      "scale": [
+        1,
+        12.8,
+        5
+      ],
+      "tag": "wall"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        9.5,
+        -0.7000000000000002,
+        -3.25
+      ],
+      "scale": [
+        0.5,
+        14.6,
+        0.5
+      ],
+      "tag": "gate_post"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        9.5,
+        -0.7000000000000002,
+        3.25
+      ],
+      "scale": [
+        0.5,
+        14.6,
+        0.5
+      ],
+      "tag": "gate_post"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        32.5,
+        -1.6,
+        -2.3
+      ],
+      "scale": [
+        1,
+        12.8,
+        1.4
+      ],
+      "tag": "gate_side"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        32.5,
+        -1.6,
+        2.3
+      ],
+      "scale": [
+        1,
+        12.8,
+        1.4
+      ],
+      "tag": "gate_side"
+    },
+    {
+      "asset": "prim_box",
+      "pos": [
+        32.5,
+        2.4,
+        0
+      ],
+      "scale": [
+        1,
+        4.8,
+        3.2
+      ],
+      "tag": "gate_door"
+    },
+    {
+      "asset": "kit_torii",
+      "pos": [
+        12,
+        0,
+        0
+      ],
+      "tag": "torii"
+    }
+  ],
+  "hazards": [
+    {
+      "type": "fall",
+      "y": -10
+    }
+  ],
+  "enemies": [
+    {
+      "id": "guard-left",
+      "type": "swordsman",
+      "pos": [
+        19.5,
+        0,
+        -2.4
+      ],
+      "facing": 90
+    },
+    {
+      "id": "guard-right",
+      "type": "swordsman",
+      "pos": [
+        19.9,
+        0,
+        2.4
+      ],
+      "facing": 90
+    },
+    {
+      "id": "guard-middle",
+      "type": "swordsman",
+      "pos": [
+        21.9,
+        0,
+        0.2
+      ],
+      "facing": 90
+    }
+  ],
+  "checkpoints": [
+    {
+      "pos": [
+        14,
+        0,
+        0
+      ],
+      "facing": -90
+    }
+  ],
+  "critical_path": [
+    [
+      0,
+      0,
+      0
+    ],
+    {
+      "pos": [
+        9.5,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "through the entrance gate"
+    },
+    {
+      "pos": [
+        14,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "T1, just inside: the yard is ahead"
+    },
+    {
+      "pos": [
+        21,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "the middle of the yard: three swordsmen"
+    },
+    {
+      "pos": [
+        31,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "before the far gate, shut until the yard is clear"
+    },
+    {
+      "pos": [
+        35.5,
+        0,
+        0
+      ],
+      "via": "ground",
+      "note": "through the gate: the goal"
+    }
+  ]
+}
