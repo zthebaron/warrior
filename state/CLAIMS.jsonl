@@ -265,3 +265,4 @@
 {"id":"POLISH-1","agent":"polish-1","ts":"2026-11-13T19:36:00.485Z","released":true}
 {"id":"CH2-INK","agent":"ch2-ink","ts":"2026-11-13T19:54:16.717Z","ttl_min":600}
 {"id":"CH2-INK","agent":"ch2-ink","ts":"2026-11-13T21:04:19.299Z","released":true}
+{"id":"CH3-INK","agent":"ch3-ink","ts":"2026-11-13T21:14:45.111Z","ttl_min":600}
