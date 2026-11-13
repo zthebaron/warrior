@@ -2,7 +2,7 @@
   "id": "04-summit-ridge",
   "title": "The Summit Ridge",
   "chapter": 4,
-  "palette": "greybox",
+  "palette": "ink",
   "spawn": {
     "pos": [
       0,
@@ -33,7 +33,8 @@
     ]
   },
   "lighting": {
-    "preset": "greybox"
+    "preset": "ink",
+    "ambienceZone": "summit"
   },
   "difficulty": 4,
   "moves_allowed": [

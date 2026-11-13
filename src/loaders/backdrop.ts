@@ -72,6 +72,13 @@ export const BACKDROP = {
   ] as [string, number, number, number, number, number, boolean][],
 } as const;
 
+/**
+ * A level's own far field (D-030: the summit, where the far peaks stand below him). ridgeDrop: u the horizon ring
+ * stands lower; peaks, bands: its own rows, in BACKDROP.peaks' and BACKDROP.bands' columns. Without it: chapters
+ * 1, 2 and 3, exactly as they were built.
+ */
+export interface FarField { ridgeDrop: number; peaks: readonly (typeof BACKDROP.peaks)[number][]; bands: readonly (typeof BACKDROP.bands)[number][] }
+
 const URLS = {
   ...import.meta.glob<string>('../../assets/backdrop/*.png', { query: '?url', import: 'default', eager: true }),
   // D-021: the painted cards (tools/art/backdrop-cards.mjs, from ART-GEN's paintings in assets/backdrop/gen)
@@ -127,7 +134,7 @@ export function cardPlane(width: number, height: number, mirror: boolean): THREE
  * lowestLanding: the lowest y the critical path stands on. The mist is paper drawn over whatever is below it,
  * and it is on the paint layer, which the linter's sightline rules do not see: so it may never reach a landing.
  */
-export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: number, cliffs: readonly (typeof BACKDROP.cliffs)[number][] = BACKDROP.cliffs, mistY: { baseY: number; topY: number } = BACKDROP.mist, peakSquash: number = BACKDROP.peakSquash): { root: THREE.Group; dispose(): void } {
+export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: number, cliffs: readonly (typeof BACKDROP.cliffs)[number][] = BACKDROP.cliffs, mistY: { baseY: number; topY: number } = BACKDROP.mist, peakSquash: number = BACKDROP.peakSquash, far?: FarField): { root: THREE.Group; dispose(): void } {
   if (mistY.topY >= lowestLanding) {
     throw new Error(`[backdrop] the mist tops out at y ${mistY.topY}, at or above the level's lowest landing (y ${lowestLanding}): it would cover the path`);
   }
@@ -163,12 +170,12 @@ export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: n
     map.needsUpdate = true;
     ringMaps.push(map);
     const ring = add('backdrop:ridge', new THREE.CylinderGeometry(r.radius, r.radius, r.height, BACKDROP.ringSegments, 1, true), paintMaterial({ map, opacity: r.ink, wash: true, side: THREE.BackSide }));
-    ring.position.set(cx, r.baseY + r.height / 2, cz);
+    ring.position.set(cx, r.baseY - (far?.ridgeDrop ?? 0) + r.height / 2, cz);
     ring.rotation.y = r.turn * Math.PI * 2;
   }
 
   // farthest first, so a nearer peak is laid over a farther one
-  for (const p of [...BACKDROP.peaks].sort((a, b) => b[2] - a[2])) ringCard('backdrop:peak', p, peakSquash);
+  for (const p of [...(far?.peaks ?? BACKDROP.peaks)].sort((a, b) => b[2] - a[2])) ringCard('backdrop:peak', p, peakSquash);
 
   // the mid cliffs stand at chapter 1's own places: a level that is not on that mountainside passes none
   for (const [card, x, z, height, yaw, ink, mirror] of cliffs) {
@@ -192,7 +199,7 @@ export function buildBackdrop(bounds: { min: Vec3; max: Vec3 }, lowestLanding: n
     root.add(sheet);
   }
 
-  for (const b of [...BACKDROP.bands].sort((a, c) => c[2] - a[2])) ringCard('backdrop:band', b, 1);
+  for (const b of [...(far?.bands ?? BACKDROP.bands)].sort((a, c) => c[2] - a[2])) ringCard('backdrop:band', b, 1);
 
   paint(root);
   return {

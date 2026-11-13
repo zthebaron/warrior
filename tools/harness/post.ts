@@ -133,8 +133,8 @@ export const STONE_GATE = {
 // stretched nor sheared. Reported on every dressed level; judged in `zones`. It measures the card, not the view:
 // a true card seen along its length is still foreshortened (B-52). MEASUREMENTS "D-029 proportion".
 export const PROPORTION_GATE = {
-  zones: ['drift'],
-  cards: ['cliff:', 'drift:', 'seam:', 'backdrop:', 'path:', 'courtyard:'], // name prefixes of the level's painted cards
+  zones: ['drift', 'summit'], // D-030: and the summit (chapter 4). More is judged; no number moved
+  cards: ['cliff:', 'drift:', 'seam:', 'backdrop:', 'path:', 'courtyard:', 'summit:'], // name prefixes of the level's painted cards
   max: 1.02,          // the two scales' ratio: 1.004 shipped at the worst (the far ridge's ring); 1.667 with the far
                       // peaks squashed as chapters 1 and 2 have them, 1.29 with the seam's 7 x 9 u face card
 };
