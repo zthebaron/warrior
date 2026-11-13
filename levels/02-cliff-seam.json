@@ -9,7 +9,7 @@
     "double",
     "climb"
   ],
-  "palette": "greybox",
+  "palette": "ink",
   "spawn": {
     "pos": [0, 0, 0],
     "facing": -90
@@ -269,7 +269,8 @@
     }
   ],
   "lighting": {
-    "preset": "greybox"
+    "preset": "ink",
+    "ambienceZone": "seam"
   },
   "critical_path": [
     [0, 0, 0],

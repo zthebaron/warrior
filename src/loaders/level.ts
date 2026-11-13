@@ -17,6 +17,7 @@ import { buildBackdrop, preloadBackdrop } from './backdrop';
 import { buildCliffWall, type RockMass } from './cliff-wall';
 import { COURTYARD, buildCourtyard, preloadCourtyard, type YardBox } from './courtyard';
 import { buildPathWash, type WalkTop } from './path-wash';
+import { SEAM, buildSeam, preloadSeam, type SeamBox } from './seam';
 import { preloadCharacter } from './character';
 import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
@@ -256,6 +257,7 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
     preloadAssets(meshes.map((a) => ({ name: a.name, file: a.file, painted: a.class === 'hero' }))),
     isInk(data) ? preloadBackdrop() : null,
     isInk(data) && data.lighting?.ambienceZone === COURTYARD.zone ? preloadCourtyard() : null, // D-026: its own cards, for it alone
+    isInk(data) && data.lighting?.ambienceZone === SEAM.zone ? preloadSeam() : null, // D-028: likewise
     preloadCharacter(CHARACTER.asset),
     // D-023: the swordsman is decoded only for a level that places one, so every other level loads what it did
     data.enemies?.length ? preloadCharacter(SWORDSMAN.asset) : null,
@@ -492,6 +494,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   // D-026: an ink level in the courtyard is dressed by its boxes' tags (courtyard.ts), not by kit pieces
   const yardLook = ink && data.lighting?.ambienceZone === COURTYARD.zone;
   const yardBoxes: YardBox[] = [], doorBoxes: YardBox[] = [];
+  // D-028: an ink level in the cliff seam has no dressing placed over its boxes: they are the rock, and seam.ts draws them
+  const seamLook = ink && data.lighting?.ambienceZone === SEAM.zone;
+  const seamBoxes: SeamBox[] = [];
   // a kit mesh drawn in place of a hazard cube (INK): same pose and scale, so `size` stays the volume
   const inkMesh = (name: string): THREE.Mesh => {
     const part = getLoadedAsset(name)?.parts[0];
@@ -610,6 +615,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     // D-026: a door is not ground: nothing is brushed onto the top of it.
     if (ink && !door && !(p.rot ?? []).some((v) => v !== 0)) {
       walkTops.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2, y: p.pos[1] + size.y / 2 });
+      if (seamLook) seamBoxes.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2 });
     }
     const desc = colliderDesc(kind, size, `geometry[${i}]`);
     desc.setTranslation(...p.pos).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
@@ -722,6 +728,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   if (pathWash) root.add(pathWash.root);
   const courtyard = yardLook ? buildCourtyard(yardBoxes, doorBoxes) : null;
   if (courtyard) root.add(courtyard.root);
+  const seam = seamLook ? buildSeam(seamBoxes) : null; // D-028
+  if (seam) root.add(seam.root);
 
   return {
     data,
@@ -806,6 +814,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       cliffWall?.dispose();
       pathWash?.dispose();
       courtyard?.dispose();
+      seam?.dispose();
     },
   };
 }
