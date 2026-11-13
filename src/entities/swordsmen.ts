@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 
 import type { CharacterAsset } from '../loaders/character';
-import { boxTops, groundRect, inRect, makeSwordsman, noGroundWhy, resetSwordsman, risers, stepSwordsman, type EnemyDef, type FightAsset, type FightEvent, type FightLevel, type Swordsman, type SwordsmanMode, type WarriorView } from '../systems/fight';
+import { allFallen, boxTops, groundRect, inRect, makeSwordsman, noGroundWhy, resetSwordsman, risers, stepSwordsman, type EnemyDef, type FightAsset, type FightEvent, type FightLevel, type Swordsman, type SwordsmanMode, type WarriorView } from '../systems/fight';
 import { SWORDSMAN, SwordsmanModel } from './swordsman-model';
 
 export interface SwordsmanSnapshot {
@@ -55,6 +55,8 @@ export function swordsmanGrounds(level: FightLevel & { id?: string }, assets: re
 export class Swordsmen {
   readonly root = new THREE.Group();
   private readonly all: Entry[];
+  /** the same swordsmen as `all`, as the rules see them (D-026: what the goal and the gate are asked of) */
+  readonly sims: readonly Swordsman[];
 
   constructor(level: FightLevel & { id?: string }, asset: CharacterAsset, assets: readonly FightAsset[]) {
     this.root.name = 'swordsmen';
@@ -67,11 +69,17 @@ export class Swordsmen {
       const at = new THREE.Vector3(sim.x, sim.ground.y, sim.z);
       return { sim, model, prev: at.clone(), curr: at, prevFacing: sim.facing };
     });
+    this.sims = this.all.map((e) => e.sim);
     this.render(0, null);
   }
 
   get count(): number {
     return this.all.length;
+  }
+
+  /** D-026: every swordsman of the level is down. Asked each tick; false again once a respawn has stood them up. */
+  allDown(): boolean {
+    return allFallen(this.sims);
   }
 
   /** Every swordsman back on his post, on his feet: a level's start and every respawn. */

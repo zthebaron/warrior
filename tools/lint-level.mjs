@@ -23,7 +23,7 @@ import { CAMERA_TUNING, allowedArm } from '../src/engine/camera-tuning.ts';
 import { RENDER_CONFIG } from '../src/engine/render-config.ts';
 import { visibleTopBand } from './visible-top.mjs';
 // D-023: where a swordsman may stand is the game's own rule, imported, never retyped (src/systems/fight.ts is import-free).
-import { FIGHT, boxTops, groundRect, inRect, noGroundWhy, risers } from '../src/systems/fight.ts';
+import { FIGHT, GATE, boxTops, groundRect, inRect, noGroundWhy, risers } from '../src/systems/fight.ts';
 
 // standoffM and minBandDeg: D-015b's ruling, recorded in MEASUREMENTS.md "D-015 readable rise".
 export const READABLE_RISE = { standoffM: 2.0, minBandDeg: 2.0 };
@@ -413,7 +413,10 @@ export function lintLevel(level, manifest){
   }
 
   // move-aware reachability
-  const faceBoxes=boxesOf(level); // FACE_RISE (B-19)
+  // FACE_RISE (B-19). D-026: where the goal waits for the level to be clear, the path is walked as it is THEN, with
+  // the gate's doors out of the gateway. On any other level a box tagged as a door is a box like any other.
+  const waits=level.goal?.once_clear===true, isDoor=g=>g&&g.tag===GATE.doorTag;
+  const faceBoxes=boxesOf(level).filter(bx=>!(waits&&isDoor(level.geometry[bx.gi])));
   for(let i=1;i<cp.length;i++){
     const a=P(cp[i-1]), c=P(cp[i]);
     const via=(typeof cp[i]==='object'&&cp[i].via)||null;
@@ -577,6 +580,68 @@ export function lintLevel(level, manifest){
       for(const {i,w} of landings) pts.forEach((p,j)=>{
         if(d(p,w.pos)<PL.landClear&&Math.abs(p[1]-w.pos[1])<R.heightTolerance) E('ENEMY_ON_LANDING',`${tag}: ${nameOf(j)} ${JSON.stringify(p)} is ${d(p,w.pos).toFixed(2)}u from critical_path[${i}], where a required ${w.via} lands; it must be at least ${PL.landClear}u clear (D-023)`); });
     });
+  }
+
+  // The goal that waits (D-026). `goal.once_clear`: arriving does not count while a swordsman of the level stands,
+  // and the gate (placements tagged gate_door) is shut until the last one is down. What can go wrong is a level
+  // that can never be finished, or one whose gate says nothing:
+  //   CLEAR_NO_ENEMY      the goal waits and the level places no swordsman (the schema refuses it too)
+  //   CLEAR_NO_DOOR       the goal waits and nothing shows it: the level has no gate_door
+  //   DOOR_NO_CLEAR       a gate_door on a level whose goal does not wait: a door that never opens
+  //   BAD_DOOR            a gate_door that is not an unturned collision prim_box (the loader builds nothing else)
+  //   DOOR_OFF_PATH       no door of the gate stands across the critical path: the gate is not on the way
+  //   CLEAR_FOE_OFF_PATH  a swordsman whose ground the critical path never crosses: he cannot be come to, so the
+  //                       level can never be clear
+  //   CLEAR_BLOCKED       past the last checkpoint, something that is not a door still stands across the path once
+  //                       the level is clear (a turned box or a mesh, by the box that bounds it: what FACE_RISE,
+  //                       which measures unturned boxes only, cannot see). Checked from the last checkpoint on,
+  //                       because before it the path walks through torii, whose bounding box spans the gate
+  {
+    const geo=level.geometry??[], doorIdx=geo.map((g,gi)=>isDoor(g)?gi:-1).filter(gi=>gi>=0);
+    const feetAt=(a,c,t,L)=>a[1]+(c[1]-a[1])*(L>0?t/L:0);
+    // does the ground segment a->c pass through this box (xz), with the box standing in a body's way there?
+    const across=(bx,a,c)=>{
+      const L=Math.hypot(c[0]-a[0],c[2]-a[2]); if(L<1e-9) return false;
+      const s=slab(bx,a,[(c[0]-a[0])/L,(c[2]-a[2])/L]); if(!s) return false;
+      const t0=Math.max(0,s[0]), t1=Math.min(L,s[1]); if(t0>t1) return false;
+      const y=feetAt(a,c,(t0+t1)/2,L);
+      return bx.top>y+MOVE.ground.autostep&&bx.bot<y+R.bodyHeight;
+    };
+    const segsOf=()=>cp.slice(1).map((w,k)=>({i:k+1,a:P(cp[k]),c:P(w),via:typeof w==='object'&&!Array.isArray(w)?w.via:null}));
+    if(waits){
+      if(!(level.enemies??[]).length) E('CLEAR_NO_ENEMY','goal.once_clear is set and the level places no swordsman: the goal waits for every swordsman to be down, and with none it would wait for ever (D-026)');
+      if(!doorIdx.length) E('CLEAR_NO_DOOR',`goal.once_clear is set and no placement is tagged "${GATE.doorTag}": the gate is what shows a player that the goal is waiting (D-026)`);
+    } else for(const gi of doorIdx) E('DOOR_NO_CLEAR',`geometry[${gi}] is tagged "${GATE.doorTag}" and goal.once_clear is not set: a door that never opens (D-026)`);
+    const doorBoxes=[];
+    for(const gi of doorIdx){
+      const g=geo[gi], bx=boxesOf({geometry:[g]})[0];
+      if(!bx||(g.collider??'trimesh')==='none'){ E('BAD_DOOR',`geometry[${gi}]: a "${GATE.doorTag}" must be an unturned prim_box with three scales and a collider: it is what stands in the gateway while the gate is shut (D-026)`); continue; }
+      doorBoxes.push({...bx,gi});
+    }
+    if(waits&&doorBoxes.length){
+      const S=segsOf();
+      if(!doorBoxes.some(bx=>S.some(s=>across(bx,s.a,s.c)))) E('DOOR_OFF_PATH',`no "${GATE.doorTag}" (geometry[${doorBoxes.map(b=>b.gi).join(', ')}]) stands across the critical path: the gate must be on the way to the goal, so that it is the gate a player is stopped by and sees open (D-026)`);
+      // the swordsmen: each on ground the path crosses
+      const tops=boxTops(level), standing=risers(level,manifest.assets);
+      (level.enemies??[]).forEach((e,k)=>{
+        const g=groundRect(tops,e.pos,standing); if(!g) return; // ENEMY_OFF_GROUND has said so
+        const rect={x0:g.x0,x1:g.x1,z0:g.z0,z1:g.z1};
+        const crossed=S.some(s=>{
+          if(Math.abs(s.a[1]-g.y)>R.heightTolerance&&Math.abs(s.c[1]-g.y)>R.heightTolerance) return false;
+          const L=Math.hypot(s.c[0]-s.a[0],s.c[2]-s.a[2]); if(L<1e-9) return under(rect,s.a[0],s.a[2]);
+          const t=slab(rect,s.a,[(s.c[0]-s.a[0])/L,(s.c[2]-s.a[2])/L]);
+          return !!t&&Math.max(0,t[0])<=Math.min(L,t[1]);
+        });
+        if(!crossed) E('CLEAR_FOE_OFF_PATH',`enemies[${k}] "${e.id}": the critical path never crosses the ground he stands on (x ${g.x0.toFixed(2)}..${g.x1.toFixed(2)}, z ${g.z0.toFixed(2)}..${g.z1.toFixed(2)}, y ${g.y}). The goal waits for him to be down, and nothing brings the warrior to him (D-026)`);
+      });
+      // past the last checkpoint: nothing but a door across the path
+      const last=level.checkpoints?.length?level.checkpoints[level.checkpoints.length-1].pos:level.spawn.pos;
+      let from=0, best=Infinity;
+      cp.forEach((w,i)=>{ const q=d(P(w),last); if(q<best){ best=q; from=i; } });
+      for(const s of S){ if(s.i<=from) continue;
+        for(const rb of standing){ if(across(rb,s.a,s.c)) E('CLEAR_BLOCKED',`seg ${s.i-1}->${s.i}: the box around ${rb.what} (x ${rb.x0.toFixed(2)}..${rb.x1.toFixed(2)}, z ${rb.z0.toFixed(2)}..${rb.z1.toFixed(2)}) stands across the path past the last checkpoint and is not a "${GATE.doorTag}": once the level is clear the goal still could not be reached (D-026)`); }
+      }
+    }
   }
 
   const segs=segmentsOf(level), CL=CHAPTER_SEGMENTS, ch=level.chapter;

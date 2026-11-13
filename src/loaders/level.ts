@@ -20,7 +20,7 @@ import { preloadCharacter } from './character';
 import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
 import { patrolFraction, patrolPosition } from '../systems/patrol';
-import type { EnemyDef } from '../systems/fight';
+import { GATE, type EnemyDef } from '../systems/fight';
 import { SWORDSMAN } from '../entities/swordsman-model';
 
 // ---------- types (mirror levels/level.schema.json; ajv is the source of truth) ----------
@@ -85,7 +85,8 @@ export interface LevelData {
   chapter: number;
   palette: string;
   spawn: { pos: Vec3; facing: number };
-  goal: { type: 'reach'; pos: Vec3; radius?: number };
+  /** once_clear (D-026): arriving does not count while a swordsman of the level stands */
+  goal: { type: 'reach'; pos: Vec3; radius?: number; once_clear?: boolean };
   bounds: { min: Vec3; max: Vec3 };
   fog?: { color?: string; near?: number; far?: number };
   geometry: Placement[];
@@ -356,6 +357,14 @@ export interface LevelInstance {
   hazardPositions(): { index: number; type: HazardDef['type']; pos: Vec3 }[];
   /** Crow cues by hazard index at the last posed tick: perched or airborne (harness; the bot reads lift-off). */
   crows(): { index: number; airborne: boolean; pos: Vec3 }[];
+  /** D-026: how many doors the level's gate has (placements tagged GATE.doorTag). 0: the level has no gate. */
+  readonly doors: number;
+  /**
+   * D-026: the gate as it stands after this tick, 0 shut to 1 open (src/systems/fight.ts stepGate). The doors
+   * collide until it is fully open. The level keeps no gate state of its own: src/main.ts tells it every tick.
+   * snap: no swing is drawn between the last tick and this one (a level's start, a respawn).
+   */
+  setGate(share: number, snap?: boolean): void;
   dispose(): void;
 }
 
@@ -493,6 +502,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   // static geometry: one fixed body, one collider per placement
   const fixed = physics.world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
 
+  // D-026: the gate's doors. Each is a collision box like any other, on the same fixed body, but its collider is
+  // kept so it can be switched off while the gate stands open. Greybox: its box is drawn while it collides.
+  const doors: { collider: Collider; mesh: THREE.Mesh | null }[] = [];
+  let gatePrev = 0, gateCurr = 0;
   const rockMasses: RockMass[] = []; // D-021: ink levels' undrawn rock, for the painted wall
   const walkTops: WalkTop[] = [];    // D-021: ink levels' box tops, for the path's dry-brush
   // mesh placement: one THREE.Mesh per part (the kit is one part = one draw call) sharing the cached
@@ -567,6 +580,8 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       return;
     }
     const size = sizeOf(a, p.scale);
+    const door = p.tag === GATE.doorTag; // D-026
+    let boxMesh: THREE.Mesh | null = null;
     if (!ink) { // INK: the box is collision only; its collider-none kit dressing is what is drawn
       const mesh = new THREE.Mesh(walkGeo((p.tag && V.tagColors[p.tag]) || V.topColor, V.defaultColor), walkMat);
       mesh.position.set(...p.pos);
@@ -574,17 +589,23 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       mesh.scale.copy(size);
       root.add(mesh);
       pickables.push(mesh);
+      boxMesh = mesh;
     }
 
     const kind = p.collider ?? a.collider;
-    if (kind === 'none') return;
-    // D-021: a top a player can stand on is brushed (an unturned box only: a turned one has no level top)
-    if (ink && !(p.rot ?? []).some((v) => v !== 0)) {
+    if (kind === 'none') {
+      if (door) throw new Error(`[level] geometry[${i}]: a "${GATE.doorTag}" is what stands in the gateway while the gate is shut: it needs a collider`);
+      return;
+    }
+    // D-021: a top a player can stand on is brushed (an unturned box only: a turned one has no level top).
+    // D-026: a door is not ground: nothing is brushed onto the top of it.
+    if (ink && !door && !(p.rot ?? []).some((v) => v !== 0)) {
       walkTops.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2, y: p.pos[1] + size.y / 2 });
     }
     const desc = colliderDesc(kind, size, `geometry[${i}]`);
     desc.setTranslation(...p.pos).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
-    physics.world.createCollider(desc, fixed);
+    const collider = physics.world.createCollider(desc, fixed);
+    if (door) doors.push({ collider, mesh: boxMesh });
   });
 
   // moving platforms
@@ -745,6 +766,16 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     },
     crows() {
       return crows.map((c) => ({ index: c.index, airborne: c.airborne, pos: [c.curr.x, c.curr.y, c.curr.z] }));
+    },
+    doors: doors.length,
+    setGate(share, snap = false) {
+      gatePrev = snap ? share : gateCurr;
+      gateCurr = share;
+      const shut = share < 1; // the doors stand in the gateway until the leaves have swung right back
+      for (const d of doors) {
+        if (d.collider.isEnabled() !== shut) d.collider.setEnabled(shut);
+        if (d.mesh) d.mesh.visible = shut; // greybox: the box is the door
+      }
     },
     dispose() {
       physics.removeBody(fixed);

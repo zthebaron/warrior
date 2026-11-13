@@ -129,6 +129,8 @@ export interface Snapshot {
   /** seconds into the warrior's slash, or null; and how many slashes have started */
   slash: number | null;
   slashes: number;
+  /** D-026: the level's gate, 0 shut to 1 open; null on a level with no gate */
+  gate: number | null;
 }
 
 export interface Waypoint {
@@ -144,7 +146,7 @@ export interface LevelJson {
   id: string;
   chapter: number;
   spawn: { pos: Vec3; facing: number };
-  goal: { pos: Vec3; radius?: number };
+  goal: { pos: Vec3; radius?: number; once_clear?: boolean };
   bounds: { min: Vec3; max: Vec3 };
   critical_path: (Vec3 | Waypoint)[];
   checkpoints: { pos: Vec3; facing?: number }[];

@@ -317,6 +317,44 @@ export function resetSwordsman(s: Swordsman): void {
   s.landed = false;
 }
 
+// ---------- the goal that waits (D-026) ----------
+
+/**
+ * Is the level clear: has it swordsmen, and is every one of them down? A level with none is never clear, so a
+ * level that asks for a clear goal and places nobody can never be finished: the linter refuses that level
+ * (CLEAR_NO_ENEMY) and the schema does too.
+ */
+export function allFallen(list: readonly { mode: SwordsmanMode }[]): boolean {
+  return list.length > 0 && list.every((s) => s.mode === 'fallen');
+}
+
+/**
+ * Does arriving at the goal count on this tick? (D-026.) Win is still arriving (Q4): a level whose goal carries
+ * `once_clear` holds the arrival back while a swordsman of the level stands. It is asked afresh every tick and
+ * keeps nothing, so a respawn, which stands every swordsman up again, shuts the goal again with no state to undo.
+ */
+export function goalCounts(onceClear: boolean | undefined, list: readonly { mode: SwordsmanMode }[]): boolean {
+  return !onceClear || allFallen(list);
+}
+
+/** The gate of a goal that waits (D-026). Recorded in MEASUREMENTS.md "D-026 the gate". */
+export const GATE = {
+  /** s the leaves take to swing from shut to open once the last swordsman is down */
+  openSec: 1.2,
+  /** the tag of a level placement that is one of the gate's doors: it collides while the gate is shut */
+  doorTag: 'gate_door',
+};
+
+/**
+ * The gate, one fixed tick: how far open it is, 0 shut to 1 open. It swings open over GATE.openSec while the
+ * level is clear and is shut at once when it is not (a respawn: nobody is in the gateway to be caught by it).
+ */
+export function stepGate(share: number, clear: boolean, dt: number): number {
+  if (!clear) return 0;
+  const next = share + dt / GATE.openSec;
+  return next >= 1 - EPS ? 1 : next; // ticks of 1/60 s do not sum to exactly 1: open on the tick openSec is up
+}
+
 /** Is `b` within `reach` of `a` and inside the arc `arcDeg` wide centred on `facing`? XZ only. */
 export function inArc(ax: number, az: number, facing: number, bx: number, bz: number, reach: number, arcDeg: number): boolean {
   const dx = bx - ax, dz = bz - az, d = Math.hypot(dx, dz);
