@@ -112,8 +112,20 @@ declare global {
     __TOUCH_PROBE__?: { version: string; snapshot(): Snap; log(since: number): Tick[]; place(pos: Vec3, facingDeg: number): void; breakControl(name: string | null): void };
     __touchAudio?: { contexts: number; ctx: AudioContext | null };
     __canvasClicks?: number;
+    __tapSeen?: { type: string; tick: number }[];
   }
 }
+
+/**
+ * Runs in the page before any of its scripts: the played tick at which each touchstart and touchend reached the
+ * page, before the game's own listeners (window, capture, passive: it reads, and stops and prevents nothing). It is
+ * how the stage knows a tap's down and up really met the page with no tick between them, which `Thumbs.tap` asks
+ * for and cannot force: on CI run 43485459420 a frame of 5 ticks came between the two.
+ */
+const TAP_SEEN = `(() => {
+  const seen = (window.__tapSeen = []);
+  for (const type of ['touchstart', 'touchend']) window.addEventListener(type, () => { const p = window.__TOUCH_PROBE__; seen.push({ type, tick: p ? p.snapshot().tick : -1 }); }, { capture: true, passive: true });
+})()`;
 
 /** Runs in the page before any of its scripts: counts the audio contexts opened and keeps the last. */
 const AUDIO_COUNT = `(() => {
@@ -198,7 +210,7 @@ export async function openTouch(baseUrl: string, o: { size: readonly [number, nu
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
-  for (const s of [AUDIO_COUNT, ...(o.init ?? [])]) await page.addInitScript(s);
+  for (const s of [AUDIO_COUNT, TAP_SEEN, ...(o.init ?? [])]) await page.addInitScript(s);
   try {
     await page.goto(`${baseUrl}/${o.query ?? '?touchprobe=1'}`);
   } catch (err) {
@@ -642,8 +654,30 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, pa
         const full = await jump(true);
         st.check('a held Jump reaches full height', Math.abs(full.rise - S.fullRise) <= S.riseTol && full.held >= S.catchTicks, `rose ${full.rise.toFixed(2)} m (measured full rise ${S.fullRise}); Jump read as held for ${full.held} ticks`);
         await t.ticks(S.settleTicks);
-        const hop = await jump(false);
-        st.check('a tap on Jump, down and up with no frame between, is still a jump, and a low one', hop.held === 1 && hop.rise > 0.5 && hop.rise <= full.rise - S.tapUnder, `rose ${hop.rise.toFixed(2)} m; Jump read as held for ${hop.held} tick(s)`);
+        // The tap's down and up must meet the page with no tick between them, or this is a short hold and not the
+        // tap the check names. Thumbs.tap sends them together but cannot force it: on a runner a frame can come
+        // between (CI run 43485459420: 5 ticks, 1.43 m). Whether it did is read from the page (TAP_SEEN), apart from
+        // the hop: a tap that met the page within one tick is judged at once, pass or fail; only one a frame split
+        // is sent again, up to S.tries; if every try was split the check fails.
+        const tapAt = async (): Promise<{ hop: { rise: number; held: number }; down: number; up: number }> => {
+          await t.page.evaluate(() => { window.__tapSeen!.length = 0; });
+          const hop = await jump(false);
+          const seen = await t.page.evaluate(() => window.__tapSeen!.slice());
+          const down = seen.find((e) => e.type === 'touchstart')?.tick ?? NaN;
+          const up = seen.find((e) => e.type === 'touchend')?.tick ?? NaN;
+          return { hop, down, up };
+        };
+        const split: string[] = [];
+        let tap = await tapAt();
+        while (tap.down !== tap.up && split.length + 1 < S.tries) {
+          split.push(`[${split.length + 1}] down on tick ${tap.down}, up on tick ${tap.up}: held ${tap.hop.held}, rose ${tap.hop.rise.toFixed(2)} m`);
+          await t.ticks(S.settleTicks);
+          tap = await tapAt();
+        }
+        const hop = tap.hop;
+        const whole = tap.down === tap.up;
+        st.check('a tap on Jump, down and up with no frame between, is still a jump, and a low one', whole && hop.held === 1 && hop.rise > 0.5 && hop.rise <= full.rise - S.tapUnder,
+          `rose ${hop.rise.toFixed(2)} m; Jump read as held for ${hop.held} tick(s); ${whole ? `down and up both met the page at tick ${tap.down}` : `down on tick ${tap.down}, up on tick ${tap.up}: a frame came between on every try, so no tap was ever made`} (try ${split.length + 1} of up to ${S.tries}${split.length ? `; the tries a frame split: ${split.join(' ')}` : ''})`);
 
         // --- Dash, with the stick held: two controls at once. Down the screen again, away from the step.
         const dash = async (): Promise<{ dashed: number; both: number; moved: number }> => {
