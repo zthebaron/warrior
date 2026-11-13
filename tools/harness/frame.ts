@@ -5,7 +5,8 @@
 //                               [--paint=off] [--settle=N] [--build] [--gpu]
 //
 //   --cam/--target   a fixed camera (the six visual cameras are printed by --list)
-//   --at/--yaw       put the player's FEET at a point, turn the follow rig to face yaw degrees, let it settle
+//   --at/--yaw       put the player's FEET at a point, turn the follow rig to face yaw degrees, let it settle.
+//                    With --cam/--target as well: the player is put there and the frame is taken from that camera
 //   --paint=off      the ink pass alone (D-020)
 //   --build          rebuild the bundles first; otherwise dist-harness/ must already match the source
 //   --list           print the level's visual cameras and critical path, then exit
@@ -67,6 +68,7 @@ if (at) {
     H.cameraYaw(y);
     H.advance(n, 0); // let the player land and the spring arm come to rest; draws the last frame
   }, [at, yaw, settle] as const);
+  if (cam && target) await page.evaluate((v) => { window.__HARNESS__!.setCamera(v.pos, v.target); window.__HARNESS__!.advance(1); }, { pos: cam, target });
 } else {
   const c = cam && target ? { pos: cam, target } : cameras(level)[2]!;
   await page.evaluate((v) => { window.__HARNESS__!.setCamera(v.pos, v.target); window.__HARNESS__!.advance(1); }, c);

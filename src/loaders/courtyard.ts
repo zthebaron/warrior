@@ -52,12 +52,13 @@ export const COURTYARD = {
   plaster: { lit: 'yard_plaster_lit', shade: 'yard_plaster_shade', metres: 12, ink: 0.9 },
   /** tile rows on every roof slope: the card covers this many metres along the roof */
   tiles: { card: 'yard_tiles', metres: 4, ink: 0.85 },
-  // What stands beyond the walls: the painting's own mountains and pines, three times round the yard, each on
+  // What stands beyond the walls: the painting's own mountains and pines, five times round the yard, each on
   // an arc of a cylinder about the yard's centre. bearing: degrees from +x (the way in) toward +z; radius, top y,
-  // height: m; arc: degrees; ink; mirrored. The first faces the way in, with the painting's valley behind the gate.
+  // height: m; arc: degrees; ink; mirrored. The first faces the way in, with the painting's valley behind the gate
+  // and its two mountains rising over the far wall to either side of it, as the painting has them.
   far: {
-    card: 'yard_far', radius: 70, topY: 20, height: 42, arc: 114, segments: 24,
-    arcs: [[0, 0.85, false], [120, 0.7, true], [240, 0.7, true]] as [number, number, boolean][],
+    card: 'yard_far', radius: 70, topY: 21, height: 27, arc: 72, segments: 16,
+    arcs: [[0, 0.85, false], [72, 0.7, true], [144, 0.6, false], [216, 0.6, true], [288, 0.7, false]] as [number, number, boolean][],
   },
   // The sky's rose wash, low over the mountains: the same three arcs, farther out.
   sky: { card: 'yard_sky', radius: 300, baseY: 12, height: 62, arc: 120, segments: 16, ink: 1, arcs: [0, 120, 240] },
