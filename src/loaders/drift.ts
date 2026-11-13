@@ -101,6 +101,23 @@ export const DRIFT = {
   adriftOrder: 40,
 } as const;
 
+/**
+ * What buildDrift reads of a look (D-030): the drift's own (DRIFT, the default) or another zone's on the same
+ * method (summit.ts). hang: a box whose foot stands above the mist's top hangs in the air, and is drawn with its
+ * underside and, under that, a root of rock narrowing from `inset` u inside the underside down to a ridge at the
+ * mist's base, where the mist takes it; steps: its two sides' values. Without `hang`: the drift, as D-029 built it.
+ */
+export interface RockLook {
+  top: RampName; face: RampName; brink: { depth: number; step: RampName }; minSlab: number; under: RampName;
+  tile: number; cycle: readonly (readonly [string, boolean])[]; ink: number; order: number;
+  ledge: { reach: number; up: number; step: RampName };
+  mist: { baseY: number; topY: number };
+  channel: { card: string; beyond: number; over: number; ink: number; order: number };
+  adrift: readonly (readonly [string, number, number, number, number, number, number, boolean])[];
+  adriftOrder: number;
+  hang?: { inset: number; steps: readonly RampName[] };
+}
+
 /** Where a moving stone travels: the two ends of its path (its centre) and its size. */
 export interface DriftTravel { from: Vec3; to: Vec3; size: Vec3 }
 
@@ -133,23 +150,37 @@ export function buildDriftStone(size: THREE.Vector3): { mesh: THREE.Mesh; dispos
 
 /**
  * Dress a drift level. `boxes`: every unturned box of the level; `rocks`: the rock masses it collides with and
- * does not draw; `travels`: its moving stones' paths. Static: built once, never moved.
+ * does not draw; `travels`: its moving stones' paths; `L`: the look (the drift's own unless another zone passes
+ * its own: D-030). Static: built once, never moved.
  */
-export function buildDrift(boxes: SeamBox[], rocks: SeamRock[], travels: DriftTravel[]): { root: THREE.Group; dispose(): void } {
+export function buildDrift(boxes: SeamBox[], rocks: SeamRock[], travels: DriftTravel[], L: RockLook = DRIFT): { root: THREE.Group; dispose(): void } {
   const root = new THREE.Group();
   root.name = 'drift';
   const ink = new Quads();
   const washes = new Map<string, Quads>();
   const washOf = (card: string): Quads => washes.get(card) ?? (washes.set(card, new Quads()), washes.get(card)!);
-  const cTop = col(D.top), cFace = col(D.face), cBrink = col(D.brink.step), cUnder = col(D.under);
-  const S = D.tile;
+  const cTop = col(L.top), cFace = col(L.face), cBrink = col(L.brink.step), cUnder = col(L.under);
+  const S = L.tile;
 
   boxes.forEach((b, bi) => {
     const { x0, x1, y0, y1, z0, z1 } = b;
     ink.flat([x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], cTop);
-    const slab = y1 - y0 >= D.minSlab;
-    const yBrink = slab ? y1 - D.brink.depth : y0;
+    const slab = y1 - y0 >= L.minSlab;
+    const yBrink = slab ? y1 - L.brink.depth : y0;
     if (!slab) ink.flat([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], cUnder); // it hangs: its underside is seen
+    if (slab && L.hang && y0 > L.mist.topY) {
+      // D-030: its foot is over the mist, so it hangs too: its underside, and a root of rock under it. The four
+      // sides wind as the stone's keel does (outward, seen from beside it); the ridge runs along the box's long way.
+      ink.flat([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], cUnder);
+      const i0 = L.hang.inset, yr = L.mist.baseY, zc = (z0 + z1) / 2, half = Math.min(x1 - x0, z1 - z0) / 2 - i0;
+      const base: Vec3[] = [[x0 + i0, y0, z1 - i0], [x1 - i0, y0, z1 - i0], [x1 - i0, y0, z0 + i0], [x0 + i0, y0, z0 + i0]];
+      const r0: Vec3 = [x0 + i0 + half, yr, zc], r1: Vec3 = [x1 - i0 - half, yr, zc];
+      const c = L.hang.steps.map(col);
+      ink.flat(base[1]!, base[0]!, r0, r1, c[0]!);             // +z
+      ink.flat(base[3]!, base[2]!, r1, r0, c[1 % c.length]!);  // -z
+      ink.tri(base[0]!, base[3]!, r0, c[1 % c.length]!);       // -x
+      ink.tri(base[2]!, base[1]!, r1, c[0]!);                  // +x
+    }
     // The four faces, each from its left end to its right as seen from outside. at: a point of the face from its
     // coordinate along the face and its height; from, to: that coordinate at the two ends; origin: where its
     // tiles count from (across the path, the box's own edge; along it, the world's x 0: the strokes carry on
@@ -171,7 +202,7 @@ export function buildDrift(boxes: SeamBox[], rocks: SeamRock[], travels: DriftTr
       for (let k = Math.floor((lo - f.origin) / S); f.origin + k * S < hi; k++) {
         const c0 = Math.max(lo, f.origin + k * S), c1 = Math.min(hi, f.origin + (k + 1) * S);
         if (c1 - c0 <= 0) continue;
-        const [card, mirror] = D.cycle[(((k + f.turn) % D.cycle.length) + D.cycle.length) % D.cycle.length]!;
+        const [card, mirror] = L.cycle[(((k + f.turn) % L.cycle.length) + L.cycle.length) % L.cycle.length]!;
         const [a, c] = f.from < f.to ? [c0, c1] : [c1, c0];
         const tileAt = f.origin + k * S;
         washOf(card).wash(...band(y0, yBrink, a, c), (p) => {
@@ -183,7 +214,7 @@ export function buildDrift(boxes: SeamBox[], rocks: SeamRock[], travels: DriftTr
   });
 
   // the rock wall's reachable ledges, as level ground
-  rockLedges(ink, rocks, D.ledge);
+  rockLedges(ink, rocks, L.ledge);
 
   const disposables: { dispose(): void }[] = [];
   const inkGeo = ink.geometry();
@@ -196,26 +227,26 @@ export function buildDrift(boxes: SeamBox[], rocks: SeamRock[], travels: DriftTr
   for (const [card, q] of washes) {
     if (!q.idx.length) continue;
     const geo = q.geometry();
-    const mat = paintMaterial({ map: seamCard(card), opacity: D.ink, wash: true });
+    const mat = paintMaterial({ map: seamCard(card), opacity: L.ink, wash: true });
     mat.polygonOffset = true; // the wash lies exactly on the face the ink pass drew (as the path's dry-brush does)
     mat.polygonOffsetFactor = -1;
     mat.polygonOffsetUnits = -1;
     const mesh = paint(new THREE.Mesh(geo, mat));
     mesh.name = `drift:face:${card}`;
-    mesh.renderOrder = D.order;
+    mesh.renderOrder = L.order;
     root.add(mesh);
     disposables.push(geo, mat); // the decoded textures stay cached
   }
 
   // rocks adrift in the void
-  D.adrift.forEach(([card, x, footY, z, height, yaw, inkShare, mirror], i) => {
+  L.adrift.forEach(([card, x, footY, z, height, yaw, inkShare, mirror], i) => {
     const geo = cardPlane(height * cardAspect(card), height, mirror);
     const mat = paintMaterial({ map: cardTexture(card), opacity: inkShare, wash: true, side: THREE.DoubleSide });
     const mesh = paint(new THREE.Mesh(geo, mat));
     mesh.name = 'drift:adrift';
     mesh.position.set(x, footY + height / 2, z);
     mesh.rotation.y = (yaw * Math.PI) / 180;
-    mesh.renderOrder = D.adriftOrder + i;
+    mesh.renderOrder = L.adriftOrder + i;
     root.add(mesh);
     disposables.push(geo, mat);
   });
@@ -225,15 +256,15 @@ export function buildDrift(boxes: SeamBox[], rocks: SeamRock[], travels: DriftTr
     const dx = t.to[0] - t.from[0], dz = t.to[2] - t.from[2], run = Math.hypot(dx, dz);
     if (run === 0) return; // a stone that only rises has no channel
     const along = Math.abs(dx) >= Math.abs(dz) ? t.size[0] : t.size[2];
-    const length = run + along + 2 * D.channel.beyond, width = length / cardAspect(D.channel.card);
+    const length = run + along + 2 * L.channel.beyond, width = length / cardAspect(L.channel.card);
     const geo = cardPlane(length, width, i % 2 === 1);
     geo.rotateX(-Math.PI / 2); // flat, its painted side up
-    const mat = paintMaterial({ map: cardTexture(D.channel.card), opacity: D.channel.ink, wash: true, side: THREE.DoubleSide });
+    const mat = paintMaterial({ map: cardTexture(L.channel.card), opacity: L.channel.ink, wash: true, side: THREE.DoubleSide });
     const mesh = paint(new THREE.Mesh(geo, mat));
     mesh.name = 'drift:channel';
-    mesh.position.set((t.from[0] + t.to[0]) / 2, D.mist.topY + D.channel.over, (t.from[2] + t.to[2]) / 2);
+    mesh.position.set((t.from[0] + t.to[0]) / 2, L.mist.topY + L.channel.over, (t.from[2] + t.to[2]) / 2);
     mesh.rotation.y = Math.atan2(-dz, dx);
-    mesh.renderOrder = D.channel.order + i;
+    mesh.renderOrder = L.channel.order + i;
     root.add(mesh);
     disposables.push(geo, mat);
   });

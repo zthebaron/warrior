@@ -2626,3 +2626,56 @@ its `post` is 28/28. All six `camN.actual.png` taken; against the darwin goldens
 differ in 0, 2, 0, 1, 0 and 0 px of 230,400. No other level's golden is written.
 
 **fal:** no call. The ledger stands at $15.1968 of $20.00.
+
+## D-030 the summit's look (2026-11-13)
+
+Chapter 4, `04-summit-ridge`, zone `summit`. Machine: Apple M4 Max, darwin; harness Chromium 158.0.8127.18, SwiftShader. Constants in `src/loaders/summit.ts` (SUMMIT), each with what it was set against.
+
+| Number | Value | Where it comes from |
+|---|---|---|
+| follow camera over his feet, settled | 3.67 u (6.66 u behind) | `tools/harness/frame.ts --at` prints it; STONE_GATE.up, .back (D-029) |
+| tallest rise on chapter 4's critical path | 1.75 u (x 96 to 99.25, and 99.25 to 102) | `levels/04-summit-ridge.json` critical_path |
+| least height of his eye over the top he is going to | 0.17 u (the y 7 top from x 93.5, eye 7.17) | the two rows above |
+| tops taking the dark brink / the paper lip | 13 / 0 | every unturned box; B-120's rule read from the camera |
+| brink, tiles, cycle, face ink, ledges | the drift's (DRIFT.brink 0.5 u ink-grey, tile 7 u, ink 0.85) | D-029, unchanged |
+| mist | base -5.5, top -1.5 | the drift's; the lowest landing is y 0 |
+| boxes that hang (foot above the mist's top) | 3: feet at y -1, 0, 1.5 | the level's boxes |
+| hang.inset, root ridge | 0.35 u; at the mist's base (-5.5) | the drift's keel inset; where the mist is solid paper |
+| rock mass, as it collides | 12 u tall, 10 u over the path | `assets/dist/manifest.json` kit_rock_mass bbox |
+| wall.cap | 18 u | D-021's "undrawn rock is drawn over" (floor 90%): 90.2% at 15, 97.1% at 18, 99.7% uncapped with the back row |
+| wall.back | false | the back row stands 46 to 64 u |
+| far.ridgeDrop | 14 u: the ring's crest at y 3 | the ring is 30 u tall on a base at -13 |
+| far.peaks | 7 cards, 18 to 29 u wide, 5.1 to 5.6 u tall, foot -2, 120 to 330 u out | each at its painting's proportion; heads at 3.1 to 3.62 |
+| islands (look.adrift) | 7: five cliff cards 17 to 21 u tall on feet at -13.5 to -17.5, two peaks 5.7 u tall on -2.2 | every head at or under y 3.5; 22 u and more from the path's edge |
+| far.bands | 3 mist cards 46 to 70 u wide, feet -7 and -8 | low across the islands' feet |
+| lane: length, width | sweep + stone = 12 u; 12 / 4 = 3 u (path_wash is 4:1), cropped to the top (7 u) | the card's own proportion, never scaled |
+| lane.step, lane.lift, lane.washLift, lane.ink | mist-pale; -2; -3; 0.95 | the drift's stone top and its lift (-2); one more than it for the brushwork over it |
+| lane.order | 50 | the paint layer's draw order: after the far field and the mist sheets (0 to 40), before the wall (100 and up) |
+| a top "under" a stone (EPS) | 0.01 u | the stones' feet are exactly on their tops (2.5 and 3.5) |
+
+## D-030 the gates on chapter 4 (2026-11-13)
+
+Darwin, one run each. `post` 27/27, no check edited.
+
+| Gate | Chapter 4, summit | Chapter 4 in the drift's zone (the trial) | Need |
+|---|---|---|---|
+| near field dark as mass | 24.6% | 24.6% | >= 10% |
+| mist: the void is bare paper | 50.9% (46.1% of the frame he sees) | 49.5% (42.5%) | >= 41% |
+| painted near field where the rock stands | 8.7% | 8.7% | >= 4% |
+| undrawn rock drawn over | 97.1% | 99.7% | >= 90% |
+| grazing ground carries no line | 0.1% | 0.1% | <= 1% |
+| proportion, worst card | backdrop:ridge 1.003 | backdrop:ridge 1.003 | <= 1.02 |
+
+Seen red. Proportion on chapter 4, the lane's card 1.3 too wide for its length: `post` 26/27, "summit:lane 1.300 ... 1 over 1.02"; the file restored byte-identical. NO_GREYBOX_CHAPTER with chapter 4's palette put back to greybox: exit 1, "04-summit-ridge (palette: "greybox")"; restored. Its self-test: a greybox chapter fails, a chapter with no palette fails, the gym passes, an ink chapter passes.
+
+Chapter 4's per-level suite, darwin: schema 2/2, lint-level 1/1, preflight 10/10, nav 7/7, phase-sweep 14/14, replay 6/6 (the committed trace), chaos 7/7, hazards 7/7, counters 8/8, assets 78/78, accent 6/6, visual 7/7 (new goldens), post 27/27, camera-room 5/5. `check:teach`, `check:fight`, `lint:levels`, `lint:self`, `lint:not-list`, `lint:pack`, typecheck: pass.
+
+Chapter 4's Linux goldens are CI run 43525329870's own frames (head bd28a42, where `visual` was the one red stage: 9.1% to 50.0% against the greybox goldens). Against darwin, pixelmatch 0.1, of 230,400 px: cam0 0, cam1 0, cam2 1, cam3 0, cam4 1, cam5 3.
+
+The first stone from the torii he respawns at (T2, x 52), 1920x1080, the harness's Chromium, one frame each. Its sweep is 240 ticks (10 u at 5 u/s each way), its centre at z -5 at tick 0 and 240, +5 at tick 120; the top it crosses is 7 u wide. Feet at 54, 2.5, 0, ticks 30, 120, 150, 240, and feet at 56.5, 2.5, 0, ticks 30, 120, 150, 228, 234, 240: the posts cover no part of the lane and no part of the stone while it is over the top; at tick 120 from x 54 the right post covers part of the stone, which is then past the edge. From x 56.5 the painted wall covers part of the stone at tick 228, all but a sliver at 234 and all of it at 240: out of sight for under 12 ticks (0.2 s) of 240. Greybox (origin/main), x 56.5, tick 240: about half of it shows (B-128).
+
+## D-030 every other level (2026-11-13)
+
+`tools/harness/frame-hashes.ts`, this branch against origin/main's source (7fae5e2), same machine. After the shared builders took their optional parameters and before the look was tuned: 25 values differ, 24 of them chapter 4's, the 25th chapter 1's cam3 (main c7b29bc6, branch 881620c4: B-115's pixel). On the final source: 24 values, all chapter 4's. The gym and chapters 2, 3 and 5 are identical in both runs.
+
+fal: $0.00 spent of $1.00 allowed. The ledger stands at $15.1968 of $20.00.

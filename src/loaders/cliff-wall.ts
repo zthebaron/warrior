@@ -130,7 +130,12 @@ const W = CLIFF_WALL;
  * not the row's `width`, which lays cliff_a and cliff_c up to a third too narrow. Without it: chapters 1 and 2,
  * exactly as they were built.
  */
-export function buildCliffWall(masses: RockMass[], proportion = false): { root: THREE.Group; dispose(): void } {
+/**
+ * `shape` (D-030, the summit): back: false leaves out the tall row behind; cap: no card stands taller than this
+ * (u), so nothing painted towers over him but the rock that is really there (a mass is 12 u tall). Without it:
+ * the wall as chapters 1, 2 and 3 have it.
+ */
+export function buildCliffWall(masses: RockMass[], proportion = false, shape?: { back: boolean; cap: number }): { root: THREE.Group; dispose(): void } {
   const true0 = <T extends { card: string; width: number; height: number }>(s: T): T => (proportion ? { ...s, width: s.height * cardAspect(s.card) } : s);
   const root = new THREE.Group();
   root.name = 'cliff-wall';
@@ -158,7 +163,7 @@ export function buildCliffWall(masses: RockMass[], proportion = false): { root: 
   sorted.forEach((m, i) => {
     const frontZ = m.frontZ - W.frontBehind;
     const end = Math.min(i, sorted.length - 1 - i); // how far this mass is from the nearer end of the wall
-    const tall = <T extends { card: string; width: number; height: number }>(s: T, row: keyof typeof W.taper, from = end): T => true0({ ...s, height: s.height * (W.taper[row][from] ?? 1) });
+    const tall = <T extends { card: string; width: number; height: number }>(s: T, row: keyof typeof W.taper, from = end): T => true0({ ...s, height: Math.min(s.height * (W.taper[row][from] ?? 1), shape?.cap ?? Infinity) });
 
     // Where no rock stands beside this mass (the wall's end, or a gap wider than a bay card: chapter 1 has one,
     // x 36 to 40.5, with nothing to collide with at the path's height), no front card may reach past the rock's
@@ -180,7 +185,7 @@ export function buildCliffWall(masses: RockMass[], proportion = false): { root: 
       const b = tall(W.bay[i % W.bay.length]!, 'bay', Math.min(i, sorted.length - 2 - i));
       plane('bay', b, (m.x + n.x) / 2, Math.min(m.baseY, n.baseY) - W.bayFoot, Math.min(m.frontZ, n.frontZ) - W.frontBehind - W.bayBehind, 0.5, 0);
     }
-    if (i % W.backEvery === 0) {
+    if (i % W.backEvery === 0 && shape?.back !== false) {
       const b = tall(W.back[(i / W.backEvery) % W.back.length]!, 'back');
       plane('back', b, m.x + b.dx, m.baseY - W.backFoot, frontZ - b.dz, 0.5, 0);
     }

@@ -19,6 +19,7 @@ import { COURTYARD, buildCourtyard, preloadCourtyard, type YardBox } from './cou
 import { DRIFT, buildDrift, buildDriftStone, type DriftTravel } from './drift';
 import { buildPathWash, type WalkTop } from './path-wash';
 import { SEAM, buildSeam, preloadSeam, type SeamBox, type SeamRock } from './seam';
+import { SUMMIT, buildSummit } from './summit';
 import { preloadCharacter } from './character';
 import { CHARACTER } from '../entities/character-model';
 import { PAINT_LAYER } from '../engine/paint-layer';
@@ -262,6 +263,7 @@ export async function prepareLevel(data: LevelData): Promise<PreparedLevel> {
     isInk(data) && data.lighting?.ambienceZone === COURTYARD.zone ? preloadCourtyard() : null, // D-026: its own cards, for it alone
     isInk(data) && data.lighting?.ambienceZone === SEAM.zone ? preloadSeam() : null, // D-028: likewise
     isInk(data) && data.lighting?.ambienceZone === DRIFT.zone ? preloadSeam() : null, // D-029: the drift lays the seam's two cards
+    isInk(data) && data.lighting?.ambienceZone === SUMMIT.zone ? preloadSeam() : null, // D-030: so does the summit
     preloadCharacter(CHARACTER.asset),
     // D-023: the swordsman is decoded only for a level that places one, so every other level loads what it did
     data.enemies?.length ? preloadCharacter(SWORDSMAN.asset) : null,
@@ -502,7 +504,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const seamLook = ink && data.lighting?.ambienceZone === SEAM.zone;
   // D-029: an ink level in the drift is drawn from its own boxes too (drift.ts), and its moving stones with them
   const driftLook = ink && data.lighting?.ambienceZone === DRIFT.zone;
-  const rockLook = seamLook || driftLook; // either way: every unturned box is drawn as rock, by its own loader
+  // D-030: an ink level on the summit ridge is drawn from its own boxes by the drift's method, with its own look (summit.ts)
+  const summitLook = ink && data.lighting?.ambienceZone === SUMMIT.zone;
+  const rockLook = seamLook || driftLook || summitLook; // any of the three: every unturned box is drawn as rock, by its own loader
   const seamBoxes: SeamBox[] = [];
   const seamRocks: SeamRock[] = [];
   // a kit mesh drawn in place of a hazard cube (INK): same pose and scale, so `size` stays the volume
@@ -648,7 +652,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (kind === 'none') throw new Error(`[level] platforms[${i}]: a platform needs a collider`);
     const collider = physics.world.createCollider(colliderDesc(kind, size, `platforms[${i}]`), body);
     // D-029: in the drift a moving stone is drawn as one (drift.ts): the same slab, at its own size, in the ink pass
-    const stone = driftLook ? buildDriftStone(size) : null;
+    const stone = driftLook || summitLook ? buildDriftStone(size) : null; // D-030: on the summit as in the drift (chapter 4 has none)
     if (stone) stones.push(stone);
     const mesh = stone ? stone.mesh : new THREE.Mesh(walkGeo(V.platformTopColor, V.platformColor), walkMat);
     mesh.userData['translates'] = 'platform'; // NOT #18: a moving platform is the `platform` move (Q2), not ambience
@@ -738,10 +742,10 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const byHandle = new Map<number, PlatformInstance>(platforms.map((p) => [p.collider.handle, p]));
 
   // D-020: an ink level's far field is painted (paint layer), under root so it leaves with the level
-  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : seamLook ? SEAM.cliffs : driftLook ? DRIFT.cliffs : undefined, driftLook ? DRIFT.mist : undefined, driftLook ? 1 : undefined) : null; // D-029: the drift's far peaks are not squashed
+  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : seamLook ? SEAM.cliffs : driftLook ? DRIFT.cliffs : summitLook ? SUMMIT.cliffs : undefined, driftLook ? DRIFT.mist : summitLook ? SUMMIT.look.mist : undefined, driftLook || summitLook ? 1 : undefined, summitLook ? SUMMIT.far : undefined) : null; // D-029: the drift's far peaks are not squashed; D-030: the summit has its own far field, below him
   if (backdrop) root.add(backdrop.root);
   // D-021: the near rock is painted too, from the placements that collide and are not drawn
-  const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses, driftLook) : null; // D-029: the drift's wall keeps its paintings' proportion
+  const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses, driftLook || summitLook, summitLook ? SUMMIT.wall : undefined) : null; // D-029: the drift's wall keeps its paintings' proportion; D-030: the summit's too, and stands lower
   if (cliffWall) root.add(cliffWall.root);
   const pathWash = ink && !yardLook && walkTops.length ? buildPathWash(walkTops) : null; // the yard's floor is flags, not a brushed path
   if (pathWash) root.add(pathWash.root);
@@ -751,6 +755,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   if (seam) root.add(seam.root);
   const drift = driftLook ? buildDrift(seamBoxes, seamRocks, travels) : null; // D-029
   if (drift) root.add(drift.root);
+  // D-030: the summit ridge, and the lane of every stone that slides across it
+  const summit = summitLook ? buildSummit(seamBoxes, seamRocks, (data.hazards ?? []).filter((h) => h.type === 'patroller' && h.path && h.size).map((h) => ({ from: h.path![0]!, to: h.path![h.path!.length - 1]!, size: h.size! }))) : null;
+  if (summit) root.add(summit.root);
 
   return {
     data,
@@ -837,6 +844,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
       courtyard?.dispose();
       seam?.dispose();
       drift?.dispose();
+      summit?.dispose();
       for (const st of stones) st.dispose();
     },
   };
