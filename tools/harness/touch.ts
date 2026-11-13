@@ -81,8 +81,8 @@ export const TOUCH_STAGE = {
   pressShort: { double: 1.5, dash: 1.2 },
   /** attempts at a hard move before it counts as not made */
   tries: 3,
-  /** the wall jump by thumb: frames Jump is held with the stick pushed in, then frames with both let go before Jump goes down again (MEASUREMENTS "POLISH-1 the hard moves by thumb") */
-  kick: { holdFrames: 2, letGoFrames: 1 },
+  /** the wall jump and the double jump by thumb: frames Jump is held (with the stick pushed in, for the wall jump), then frames it (and that stick) is let go, before Jump goes down again (MEASUREMENTS "POLISH-1 the hard moves by thumb") */
+  again: { holdFrames: 2, letGoFrames: 1 },
 };
 
 // ---------- what the probe gives (src/main.ts TouchProbeSnapshot, TouchProbeTick) ----------
@@ -403,6 +403,21 @@ export async function thumbMove(t: TouchPage, h: Awaited<ReturnType<typeof hands
   };
 }
 /**
+ * Two presses of Jump by thumb: `first` sent, TOUCH_STAGE.again.holdFrames frames, `letGo` sent, letGoFrames frames,
+ * then `second`. Paced by the page's frames (5 played ticks each here, on any runner: the loop's cap binds), not by
+ * each touch being taken: a touch is taken about 3 frames after it is sent on darwin and later on CI, so a wait for
+ * it puts the second press wherever the runner's speed puts it.
+ */
+export async function pressTwice(t: TouchPage, first: Promise<void>[], letGo: () => Promise<void>[], second: () => Promise<void>): Promise<void> {
+  const sent = [...first];
+  for (let f = 0; f < TOUCH_STAGE.again.holdFrames; f++) await nextFrame(t);
+  sent.push(...letGo());
+  for (let f = 0; f < TOUCH_STAGE.again.letGoFrames; f++) await nextFrame(t);
+  await second();
+  await Promise.all(sent);
+}
+
+/**
  * Resolves on the page's next animation frame, after the game's own loop has played that frame's ticks (its
  * callback was asked for first). A wait of one frame without a poll of the probe: each poll costs a frame of its
  * own on a page that draws a few frames a second, and a hard move has no frames to spare.
@@ -427,6 +442,15 @@ function tuning(root: string): { runSpeed: number; sprintSpeed: number } {
 export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): Promise<StageResult> {
   const st = new Stage('touch');
   const S = TOUCH_STAGE;
+  // POLISH-1: each check's own time (ms since the check before it), kept in the report so a CI run shows where its
+  // time goes (MEASUREMENTS "POLISH-1 the touch job on CI"). It changes no check.
+  const checkMs: number[] = [];
+  st.data['checkMs'] = checkMs;
+  {
+    const check = st.check.bind(st);
+    let last = Date.now();
+    st.check = (name: string, ok: boolean, detail = ''): boolean => { const now = Date.now(); checkMs.push(now - last); last = now; return check(name, ok, detail); };
+  }
   const open: TouchPage[] = [];
   const page = async (o: Parameters<typeof openTouch>[1]): Promise<TouchPage> => {
     const t = await openTouch(ctx.baseUrl, o);
@@ -858,12 +882,7 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       // Each step waits whole frames of the page (a frame is 5 played ticks here: the loop's cap binds on SwiftShader).
       const kickIn = wall.a[2] > wall.b[2] ? 'right' : 'left', kickOut = kickIn === 'left' ? 'right' : 'left';
       const kick = (): Promise<Move> => thumbMove(t, h2, [wall.a[0], wall.a[1] + 0.05, wall.a[2]], wall.b, async () => {
-        const sent = [h2.stick(kickIn, S.share.mid), h2.press('jump')];
-        for (let f = 0; f < S.kick.holdFrames; f++) await nextFrame(t);
-        sent.push(h2.stickOff(), h2.lift());
-        for (let f = 0; f < S.kick.letGoFrames; f++) await nextFrame(t);
-        await h2.press('jump');
-        await Promise.all(sent);
+        await pressTwice(t, [h2.stick(kickIn, S.share.mid), h2.press('jump')], () => [h2.stickOff(), h2.lift()], () => h2.press('jump'));
         await h2.stick(kickOut, S.share.mid);
       });
       await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('jump'));
@@ -873,16 +892,14 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const kicked = await tries(kick);
       st.check(`chapter 2's first wall jump by thumb (step ${wall.i}): Jump at the wall pushing in, Jump again as he touches it, the stick steering away, onto the shelf`,
         kicked.landed && kicked.made.includes('wall_jump') && kicked.both >= 1, kicked.note);
-      // the double jump: run at it, a held Jump at the takeoff, Jump again at the peak: Jump down, up and down, each
-      // sent as the last is taken (about 15 ticks, the time a full jump takes to its peak). Jump goes down short of
-      // the takeoff (TOUCH_STAGE.pressShort): both presses must come before the face that stands 2 m short of the
-      // landing ("4u short of the face", the level's own note; at the face a second press is a wall jump, B-90).
+      // the double jump: run at it, a held Jump at the takeoff, Jump again near the peak, paced as the wall jump's
+      // presses are. Jump goes down short of the takeoff (TOUCH_STAGE.pressShort): both presses must come before the
+      // face that stands 2 m short of the landing ("4u short of the face", the level's own note; at the face a
+      // second press is a wall jump, B-90). Paced by each press being taken, the second came at the face on CI.
       const twice = (): Promise<Move> => thumbMove(t, h2, [dbl.a[0] - 2, dbl.a[1] + 0.05, dbl.a[2]], dbl.b, async (base) => {
         await h2.stick('up', S.share.mid);
         await t.until((s) => s.state !== 'play' || s.feet[0] >= dbl.a[0] - S.pressShort.double || s.tick > base.tick + S.moveTicks, S.waitMs + S.moveTicks * S.msPerTick);
-        await h2.press('jump');
-        await h2.lift();
-        await h2.press('jump');
+        await pressTwice(t, [h2.press('jump')], () => [h2.lift()], () => h2.press('jump'));
       });
       await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('jump'));
       const noTwice = await twice();
