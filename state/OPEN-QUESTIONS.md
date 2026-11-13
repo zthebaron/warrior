@@ -2007,11 +2007,30 @@ took, each PROVISIONAL:
    all). The cost is two more runners per pull request.
 8. **The double jump and the wall jump by thumb are paced by frames**, not by each touch being taken: on CI the
    second press of a double paced by acknowledgements came late, at the face (a wall jump), and failed.
+9. **One of the original 60 checks now re-sends its tap, on proof only.** "a tap on Jump, down and up with no frame
+   between, is still a jump, and a low one" failed on CI run 43485459420 (head `eb5970d`, a commit of two documents):
+   rose 1.43 m, Jump read as held for 5 ticks. It had passed on the five CI runs before (0.99 m, 1 tick), and
+   `Thumbs.tap` is as it is on main. The harness sends the down and the up together but cannot make the page take
+   both before its next frame; that once, a frame of 5 ticks came between, so what was judged was a short hold, not
+   the tap the check names. Now an init script of the stage (`TAP_SEEN`, window, capture, passive; nothing in `src/`)
+   records the played tick at which the touchstart and the touchend reach the page. A tap taken within one tick is
+   judged at once by the unchanged condition, pass or fail. Only a tap a frame split is sent again, up to `tries` (3),
+   and if every try is split the check fails. Its detail says which try and both ticks, on a pass too. Forced on
+   darwin: one split try was seen and re-sent (passed on try 2); every try split, the check failed. The Sword's tap
+   needs none of this: its slash is started by the touchstart, so the finger's length does not change the check.
+10. **The nothing-sticks holds start at the back of the first flat and push up the path** (`releaseAt`, x -5),
+   where they alternated up and down from home (x 1.5). A hold lasts as long as the round trips it waits on. On
+   CI runs 43485369808 and 43485459420 one check took 286 and 294 s, against 12.6 s on 43483354272: the chapter's
+   swordsman stood again, which only a respawn does, and `home()` fought him three times (its 3 calls of a 90 s
+   `fell`). On a page slowed 6 times on darwin the slide-off check's down hold ran from x 1.5 over the edge at x -6;
+   the respawn stood the swordsman up again. From x -5, his jump comes down short of the stair tread at x 6, and its
+   face holds him: a 250-tick hold ended at x 5.64, running, no death. The checks read only the input frames, so
+   what they assert is unchanged; the ground under the holds is the same flat, nearer its back.
 
 **KNOWN LIMIT: the timings are the harness's.** The hard moves are paced to SwiftShader's frames (5 ticks each)
 and its touch latency. On a page that draws faster the same fingers press sooner; the stage has not been run there.
-**KNOWN LIMIT: the dash jump's margin.** Jump lands 18 or 19 ticks after the dash began on darwin, against a window
-that ends at 22; it is paced by one frame after Dash is taken, so a slower runner may land it later.
+**KNOWN LIMIT: the dash jump's margin.** Jump is sent as soon as the tap on Dash is taken (`d3357b7`): it lands 14
+ticks after the dash began on darwin and 15 on CI (runs 43485369808, 43485459420), against a window of 4 to 22.
 **What nobody has judged.** The gate's sound by ear; the gate's line on screen, in the courtyard, with three
 swordsmen coming.
 status: PROVISIONAL

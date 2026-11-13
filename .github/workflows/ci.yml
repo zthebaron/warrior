@@ -171,10 +171,11 @@ jobs:
         part: [touch, touch-release, touch-chapters]
     name: ${{ matrix.part }}
     runs-on: ubuntu-latest
-    # D-027: the game played by a thumb on the real page (its own frame loop, real touch events). 533 s on darwin
-    # SwiftShader, 28m20s on CI run 43374834353 (the runner draws the real page about 3 times slower), so a job of
-    # its own beside `game`, with room over that (B-108).
-    timeout-minutes: 45
+    # D-027: the game played by a thumb on the real page (its own frame loop, real touch events). Was one job of
+    # 28m20s (CI run 43374834353) under a 45-minute limit. Now each part is a job; the slowest measured on the
+    # code it now runs was touch-chapters at 6m32s (43485369808); x1.8 for a slow runner, as `game` is given, is
+    # 11.8 min, so 12 (MEASUREMENTS "POLISH-1 the touch job on CI").
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:

@@ -2320,8 +2320,50 @@ facing up the path; a standing first swordsman is still felled first, by the thu
 | the parts, darwin | one stage | `touch` 46.2 s (29 checks), `touch-release` 35.7 s (16), `touch-chapters` 49.3 s (27) | measured: one run, all three PASS; 66 distinct check names, 6 of them a part's own start and page-error checks |
 | `home` | (1.5, 0.05, 0) | measured | where the old walk always ended (x 1.56, its twelfth try), so every check runs over the ground it ran over before. At x 0 the slide-off check's 'down' hold carried him over the edge at x -6 (seen: one run, one death) |
 
+| `releaseAt` | (-5, 0.05, 0) | measured | where each nothing-sticks hold starts, pushing up the path: his one jump comes down short of the stair tread at x 6 (farthest seen, x 4.43), and its 1.25 m face holds him: a 250-tick hold ended at x 5.64, running, no death. From `home` a down hold ran over the edge at x -6 on a page slowed 6 times (see "POLISH-1 the touch job on CI") |
+
 Every one of the 60 checks keeps its name, its condition and its "seen to fail"; the report's check names were
 compared before and after: none missing.
+
+## POLISH-1 the touch job on CI (2026-11-13)
+
+B-108. `.github/workflows/ci.yml` job `touch`, a matrix of the three parts. Each job's time is GitHub's, from
+start to end, setup included (the playtest itself is the report's `ms`).
+
+| Run (head) | Shape | touch | touch-release | touch-chapters | Note |
+|---|---|---|---|---|---|
+| 43374834353 (main) | one job | 28m20s | | | before POLISH-1 |
+| 43479377456 | one job, home by place | 11m03s, FAILED | | | the double jump (since paced by frames) |
+| 43479707998 | one job | 12m39s | | | stage 611 s |
+| 43482156143 | one job | 10m09s | | | stage 702 s |
+| 43483354272 (`aece61e`) | three jobs | 3m00s | 4m12s | 7m21s | |
+| 43485369808 (`d3357b7`) | three jobs | 2m52s | 8m11s | 6m32s | release: one check 286 s |
+| 43485459420 (`eb5970d`) | three jobs | 5m41s, FAILED | 8m53s | 6m06s | release: one check 294 s; touch: the Jump tap |
+| 43489321160 (`ea9e79d`) | three jobs | 2m52s | 3m05s | 5m18s | both fixed: stages 134.0, 136.9, 255.3 s |
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| the job's `timeout-minutes` | 12 (was 45) | measured | the slowest part on the code it now runs: touch-chapters 6m32s (43485369808), x1.8 for a slow runner as `game` is given, 11.8 min |
+
+**The release part's slow check.** On 43485369808 and 43485459420 "nothing sticks: the window loses focus" took
+286 and 294 s (12.6 s on 43483354272), and the played ticks over it jumped by 3610 and 2415. Only a respawn stands a
+fallen swordsman up; the next `home()` found chapter 1's first swordsman standing and called `fell` three times (90 s
+each at most). On darwin with the CPU slowed 6 times the slide-off check's down hold ran from x 1.5 over the edge at
+x -6, a death, and the swordsman stood again: a hold lasts as long as the round trips it waits on, so on a slow page
+it can run 7.5 m (64 ticks at 7 m/s). Fixed by `releaseAt` (above): on 43489321160 the part's slowest check is its
+first, 30.5 s, which fells him.
+
+**The Jump tap.** On 43485459420 "a tap on Jump, down and up with no frame between, is still a jump, and a low one"
+read Jump held for 5 ticks and rose 1.43 m; the five CI reports before it read 1 tick, 0.99 m, and `Thumbs.tap` is
+as on main. The two touches are sent together, but a frame (5 ticks) came between them at the page. The stage now
+records the played tick each touch reaches the page at (`TAP_SEEN`); a tap taken within one tick is judged at once,
+and only a split one is sent again, up to `tries` (OQ-081 item 9). 43489321160: both at tick 945, try 1. Forced on
+darwin: one split, sent again and passed on try 2; every try split, the check failed.
+
+**The hard moves on CI**, paced by frames (43485369808, 43485459420, 43489321160): the double and the dash jump land
+on try 1 every time (the dash jump's Jump 15 ticks after the dash began, window 4 to 22); the wall jump on try 1, 1
+and 2. Its miss: Jump read down unbroken from ticks 0 to 59, so the one frame let go between its two presses played
+no tick.
 
 ## POLISH-1 the hard moves by thumb (2026-11-13)
 
@@ -2342,7 +2384,7 @@ is the same on a slower runner); a tap (down and up sent together) is one tick.
 | the double's presses | `again`: down 2 frames, up 1 frame, down | measured | 3 of 3 in a probe, and in the stage. Paced instead by each press being taken: 4 of 4 on darwin, but on CI run 43479377456 the second press came at the face (a wall jump), 3 tries failed. By a poll for the peak: a ledge grab and no double jump, 0 of 8 |
 | `moveTicks` | 150 | authored | a move's step gives up after this many played ticks; a move ends after twice this |
 | `catchWithin` | 150 ticks | authored | chapter 2's first face: the catch must come within this many played ticks of Jump going down (it comes within about 40). Was 400 from the start of the run: the broken check waited it out, 52.7 s on CI |
-| `tries` | 3 | authored | as `reachable`'s ledge catch is pressed again; the check says which try landed (all 1 of 3 on darwin) |
+| `tries` | 3 | authored | as `reachable`'s ledge catch is pressed again; the check says which try landed (all 1 of 3 on darwin). Also the most times the Jump tap is sent, and only when a frame split its touches ("POLISH-1 the touch job on CI") |
 
 With its control broken: Jump broken, neither the wall jump nor the double leaves the ground; Dash broken, a jump
 and an air jump reach the far side of chapter 4's gap and he hangs from its edge (B-92), not on top.

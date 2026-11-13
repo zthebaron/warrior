@@ -41,3 +41,11 @@ CI static job: all green locally and on CI.
   `run.mjs` ONCE list and `lib.ts` ONCE_STAGES must stay equal (run.mjs throws otherwise).
 - Every number in code must be in MEASUREMENTS: the new ones are in "POLISH-1 the touch stage" and "POLISH-1 the
   hard moves by thumb" (`home`, `again`, `pressShort`, `moveTicks`, `catchWithin`, `tries`).
+
+## Closed by the resuming session (2026-11-13)
+
+- CI run 43485459420 (`eb5970d`): the `touch` job failed on "a tap on Jump, down and up with no frame between":
+  a frame came between the two touches at the page (5 ticks). Fixed in `0b6b1e3` (OQ-081 item 9).
+- `touch-release` had grown to 8m11s and 8m53s: a hold ran off the flat, the respawned swordsman was fought three
+  times. Fixed in `ea9e79d` (OQ-081 item 10). Run 43489321160: 2m52s / 3m05s / 5m18s.
+- Items 1 to 3 done: MEASUREMENTS "POLISH-1 the touch job on CI", the job's limit 12 minutes, B-107 and B-108 rows.
