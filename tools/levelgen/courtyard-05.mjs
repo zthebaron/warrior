@@ -20,10 +20,15 @@ const Y = {
   causeway: { x0: -3, x1: 10, half: 4.5 },   // the walk in: a terrace 9 wide, open over the mist on both sides
   yard: { x0: 10, x1: 32, half: 8 },         // the flags: 22 deep, 16 wide, ONE box (a swordsman's ground is one box top)
   wall: { thick: 1, top: 4.8 },              // above the highest catch a climb makes (MOVE.climb.maxRise 4.5)
-  gate: { half: 3, door: 1.6, doorTop: 4.8 },// the far gate fills a 6 m gap in its wall; the doorway in it is 3.2 m wide
-  // the way in: an open gateway as wide as the causeway, two tall posts and a beam far overhead. No roof and no
+  // The far gate is the hero asset `gate`, 8 m tall: at that height its eaves (5.0 m) clear the wall's top, its
+  // doorway is 4.4 m wide between posts whose outer faces are 6 m apart, and its tie beam is 4.17 m up. It has
+  // four posts, two in the wall's line and two 2.4 m out from it: `out` is how far the model's centre stands
+  // from the wall's line, and `post` the depth of a post's collision. Its doorway holds the door.
+  gate: { half: 3, door: 2.2, doorTop: 4.8, height: 8, out: 1.2, post: 0.8 },
+  // The way in: an open gateway 7 m wide, two tall posts and a beam far overhead, drawn in ink. No roof and no
   // doorway to look through: the follow camera is 6.7 m behind the warrior, so it is still outside this wall
-  // when he stands at the checkpoint, and it has to see the yard from there
+  // when he stands at the checkpoint, and it has to see the yard from there. And not the gate model: a painted
+  // thing may not stand in front of a torii (D-020), and the checkpoint torii is just inside.
   entrance: { half: 3.5, post: 0.5, postTop: 6.6 },
   landing: { x1: 38, half: 3.5 },            // beyond the far gate: where the goal is
   torii: 12,                                 // the checkpoint torii, just inside the entrance
@@ -50,17 +55,20 @@ const geometry = [
   // the two end walls, each with a gap for its gate
   wallBox(nearX - Y.wall.thick / 2, nearX + Y.wall.thick / 2, -Y.yard.half, -Y.entrance.half),
   wallBox(nearX - Y.wall.thick / 2, nearX + Y.wall.thick / 2, Y.entrance.half, Y.yard.half),
+  // the way in: its two posts, at the ends of the near wall
+  box(nearX - Y.entrance.post / 2, nearX + Y.entrance.post / 2, -Y.entrance.half, -Y.entrance.half + Y.entrance.post, -Y.deep, Y.entrance.postTop, 'gate_frame'),
+  box(nearX - Y.entrance.post / 2, nearX + Y.entrance.post / 2, Y.entrance.half - Y.entrance.post, Y.entrance.half, -Y.deep, Y.entrance.postTop, 'gate_frame'),
   wallBox(farX - Y.wall.thick / 2, farX + Y.wall.thick / 2, -Y.yard.half, -Y.gate.half),
   wallBox(farX - Y.wall.thick / 2, farX + Y.wall.thick / 2, Y.gate.half, Y.yard.half),
-  // the entrance's two posts, at the ends of the near wall
-  box(nearX - Y.entrance.post / 2, nearX + Y.entrance.post / 2, -Y.entrance.half, -Y.entrance.half + Y.entrance.post, -Y.deep, Y.entrance.postTop, 'gate_post'),
-  box(nearX - Y.entrance.post / 2, nearX + Y.entrance.post / 2, Y.entrance.half - Y.entrance.post, Y.entrance.half, -Y.deep, Y.entrance.postTop, 'gate_post'),
-  // the far gate: a panel either side of the doorway. They stand in the wall's line, off the yard's own box.
-  wallBox(farX - Y.wall.thick / 2, farX + Y.wall.thick / 2, -Y.gate.half, -Y.gate.door, 'gate_side'),
-  wallBox(farX - Y.wall.thick / 2, farX + Y.wall.thick / 2, Y.gate.door, Y.gate.half, 'gate_side'),
+  // the far gate's four posts, as collision: two in the wall's line (off the yard's own box, so no swordsman's
+  // ground is cut by them) and two on the landing beyond it. What is drawn is the gate model below.
+  ...[farX, farX + 2 * Y.gate.out].flatMap((px) => [-1, 1].map((side) =>
+    box(px - Y.gate.post / 2, px + Y.gate.post / 2, side > 0 ? Y.gate.door : -Y.gate.half, side > 0 ? Y.gate.half : -Y.gate.door, 0, Y.gate.doorTop, 'gate_post'))),
   // the far gate's door: it stands in the doorway until every swordsman is down (D-026)
   box(farX - Y.wall.thick / 2, farX + Y.wall.thick / 2, -Y.gate.door, Y.gate.door, 0, Y.gate.doorTop, 'gate_door'),
   { asset: 'kit_torii', pos: [Y.torii, 0, 0], tag: 'torii' },
+  // the far gate: the model's front is +z and it is as wide as it is along x, so it is turned a quarter
+  { asset: 'gate', pos: [farX + Y.gate.out, 0, 0], rot: [0, 90, 0], scale: Y.gate.height, collider: 'none', tag: 'gate' },
 ];
 
 const level = {

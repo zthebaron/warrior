@@ -187,6 +187,9 @@ export interface WalkResult {
   slashes: number;
   /** D-023: every change of a swordsman's mode, as [ticks since the walk began, id, mode] (the trace keeps it: replay.ts) */
   fightLog: [number, string, string][];
+  /** D-026: ticks on which the gate was not shut with a swordsman standing; the tick it first stood open (-1 never) */
+  gateEarly: number;
+  gateOpenTick: number;
 }
 
 /**
@@ -208,6 +211,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
   const t0 = snap.tick;
   const modes = new Map((snap.enemies ?? []).map((e) => [e.id, e.mode]));
   const fightLog: [number, string, string][] = [];
+  let gateEarly = 0, gateOpenTick = -1;
   let i = opts.startIndex; // waypoint index being sought
   const cueOf = (k: number): number | undefined => (opts.ignoreCues ? undefined : path[k]?.cue);
   let seg = newSeg(cueOf(i) !== undefined);
@@ -265,6 +269,10 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       modes.set(e.id, e.mode);
       fightLog.push([snap.tick - t0, e.id, e.mode]);
     }
+    if (snap.gate !== null && snap.gate !== undefined) { // D-026: the gate, watched every tick of the walk
+      if (snap.gate > 0 && (snap.enemies ?? []).some((e) => e.mode !== 'fallen')) gateEarly++;
+      if (snap.gate === 1 && gateOpenTick < 0) gateOpenTick = snap.tick - t0;
+    }
     minYSeen = Math.min(minYSeen, snap.feet[1]);
     if (traceSeg === i) {
       ctx.log(`      [seg ${i} t${snap.tick - segStartTick}] in(${frame.x.toFixed(2)},${frame.y.toFixed(2)})${frame.jump ? ' J' : ''}${frame.dash ? ' D' : ''} feet ${fmt(snap.feet)} vel ${fmt(snap.vel)} ${snap.pstate}${snap.grounded ? ' G' : ''}`);
@@ -301,7 +309,7 @@ export async function walk(ctx: Ctx, page: import('@playwright/test').Page, opts
       if (lastJump) seg.pressed.add('heldIn');
     }
   }
-  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks, fightTicks, slashes, fightLog };
+  return { failure, reached, ticks: snap.tick - t0, snap, i, minYSeen, movesDone, cueWaitTicks, fightTicks, slashes, fightLog, gateEarly, gateOpenTick };
 }
 
 async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage): Promise<NavOutcome> {
@@ -344,6 +352,12 @@ async function drive(ctx: Ctx, page: import('@playwright/test').Page, st: Stage)
   if (L.enemies?.length) {
     const up = snap.enemies.filter((e) => e.mode !== 'fallen').map((e) => e.id);
     st.check('every swordsman fought and down', up.length === 0 && snap.enemies.length === L.enemies.length, up.length ? `still standing: ${up.join(', ')}` : `${snap.enemies.length} down, ${w.slashes} sword presses, ${(w.fightTicks / FIXED_HZ).toFixed(2)}s fighting`);
+  }
+  // D-026: where the goal waits, the gate is shut for as long as a swordsman stands and open when the goal counts
+  if (L.goal.once_clear) {
+    const lastFell = Math.max(-1, ...w.fightLog.filter(([, , mode]) => mode === 'fallen').map(([t]) => t));
+    st.check('the gate stayed shut until the last swordsman fell, and stood open before the goal counted', snap.gate !== null && w.gateEarly === 0 && w.gateOpenTick > lastFell && w.gateOpenTick <= ticks,
+      snap.gate === null ? 'the level has no gate' : `${w.gateEarly} ticks open with a swordsman standing; the last fell on tick ${lastFell}, the gate stood open on tick ${w.gateOpenTick}, the goal counted on tick ${ticks}`);
   }
   st.data['moves'] = Object.fromEntries(movesDone);
   const frames = await page.evaluate(() => window.__HARNESS__!.record());

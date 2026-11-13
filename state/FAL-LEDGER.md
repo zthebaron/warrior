@@ -103,3 +103,6 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 91 | 2026-11-11T03:17:14Z | fal-ai/elevenlabs/sound-effects/v3 | audio: fell | $0.0020 | $0.0020 | 01a1c89c-1606-7740-89d0-7d70133a65ab | done | $14.5960 |
 | 92 | 2026-11-11T03:17:20Z | fal-ai/elevenlabs/sound-effects/v3 | audio: cut | $0.0020 | $0.0020 | 01a1c89c-2c98-77c1-8d83-1d65d0c8b356 | done | $14.5980 |
 | 93 | 2026-11-11T03:17:46Z | fal-ai/elevenlabs/sound-effects/v3 | audio: hit-b | $0.0020 | $0.0020 | 01a1c89c-9165-7442-9ead-70321b43c967 | done | $14.6000 |
+| 94 | 2026-11-13T02:02:56Z | fal-ai/nano-banana/edit | COURTYARD: the gate's input image, from the painting | $0.0398 | $0.0398 | 01a1d2a4-c866-7283-ad07-0a58a448d912 | done | $14.6398 |
+| 95 | 2026-11-13T02:03:29Z | fal-ai/trellis | COURTYARD: trellis shape test: gate | $0.0200 | $0.0200 | 01a1d2a5-4827-7292-9a48-9f326786da88 | done | $14.6598 |
+| 96 | 2026-11-13T02:04:24Z | fal-ai/hunyuan3d-v3/image-to-3d | COURTYARD: final: gate (Normal + PBR) | $0.5250 | $0.5250 | 01a1d2a6-1fb0-7691-848e-2fb6a637cec2 | done | $15.1848 |

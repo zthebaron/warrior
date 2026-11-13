@@ -1,6 +1,6 @@
 {
   "level": "05-courtyard",
-  "recordedAt": "2026-11-13T01:51:46.195Z",
+  "recordedAt": "2026-11-13T02:15:30.412Z",
   "source": "nav bot (tools/harness/nav.ts), green run",
   "expect": {
     "ticks": 346,

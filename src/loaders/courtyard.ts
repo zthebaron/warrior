@@ -5,11 +5,16 @@
 //
 //   causeway, yard, landing   a stone floor: paper on top, stone on its faces (ink pass), and over the top the
 //                             painted flagstones (paint layer, as the path's dry-brush is laid in chapter 1)
-//   wall, gate_side           a plastered wall: a flat fill, paler on the side the light is (ink pass), a painted
-//                             wash of stains on its inner face, and a tiled cap along its top
-//   gate_side (a pair)        a roofed gate between the two: posts, a lintel, a tiled roof
-//   gate_post (a pair)        the way in: two tall posts and a beam between them, far overhead
+//   wall                      a plastered wall: a flat fill, paler on the side the light is (ink pass), a painted
+//                             wash of stains on its two long faces, and a tiled cap along its top
 //   gate_door                 two leaves on hinges in the doorway, swung by the gate's own state (D-026)
+//
+//   gate_frame (a pair)       the way in: two tall posts, drawn as timber, and a beam across them far overhead
+//
+// The far gate itself is not drawn here: it is the hero asset `gate` (a painted model, placed by the level as
+// any hero asset is), and the boxes tagged gate_post are its posts' collision and nothing more. The way in is
+// ink and not that model, because a painted thing may not stand in front of a torii (D-020: paint hides no
+// accent), and the checkpoint torii is just inside it.
 //
 // RENDER ONLY. Not one collider is made or changed here: every box above collides exactly as src/loaders/level.ts
 // built it, and is simply drawn as what it stands for. Nothing here translates: a leaf turns about its hinge.
@@ -26,9 +31,10 @@ export const COURTYARD = {
   /** `lighting.ambienceZone` of a level drawn this way */
   zone: 'courtyard',
   floorTags: ['causeway', 'yard', 'landing'],
-  wallTags: ['wall', 'gate_side'],
-  gateTag: 'gate_side',
-  postTag: 'gate_post',
+  wallTags: ['wall'],
+  frameTag: 'gate_frame',
+  /** the way in: a beam across its two posts: how far under the post tops it hangs, its depth, how far past them it runs; a tie under it (m) */
+  frame: { beamDrop: 0.5, beam: 0.45, past: 0.9, tieDrop: 1.5, tie: 0.3, timber: 'stone-mid' },
   yardTag: 'yard',
   // ramp steps (STYLE §2). A wall is a flat fill (§4 Buildings); the side the light is on is paper.
   floor: { top: 'paper-cream', side: 'wash-mid' },
@@ -39,14 +45,6 @@ export const COURTYARD = {
   wall: { lit: 'paper-cream', shade: 'mist-pale', near: 'paper-cream', outer: 'paper-cream', end: 'mist-pale', top: 'wash-light' },
   /** the tiled cap along a wall: how far it overhangs each face, how high its ridge stands, its eave's depth (m) */
   cap: { overhang: 0.4, rise: 0.75, eave: 0.14, slope: 'wash-light', under: 'wash-mid' },
-  /** the gate between a pair of gate sides (m) */
-  gate: {
-    post: 0.5, postTop: 5.3, lintelY: [4.25, 4.8], timber: 'stone-mid',
-    /** the roof: how far it runs past the gate's sides (along the wall), how far out it reaches (across), eave and ridge heights */
-    roof: { past: 1.3, reach: 2.3, eaveY: 5.2, ridgeY: 6.9, eave: 0.2, slope: 'wash-light', under: 'wash-mid' },
-  },
-  /** the entrance: a beam across its two posts: how far under the post tops it hangs, its depth, how far past them it runs (m) */
-  entrance: { beamDrop: 0.5, beam: 0.45, past: 0.9, tieDrop: 1.5, tie: 0.3, timber: 'stone-mid' },
   // ---- the paint layer (cards from tools/art/courtyard-cards.mjs, in assets/courtyard) ----
   /** flagstones over every floor top: the card covers this many metres before it repeats; how much of its ink is laid */
   flags: { card: 'yard_flags', metres: 16, ink: 0.9 },
@@ -65,8 +63,8 @@ export const COURTYARD = {
   sky: { card: 'yard_sky', radius: 300, baseY: 12, height: 62, arc: 120, segments: 16, ink: 1, arcs: [0, 120, 240] },
   /** draw order on the paint layer: the sky before the far ring's own layers (0 up), the mountains after its mist, then the yard's washes */
   order: { sky: -10, far: 90, flags: 110, plaster: 120, tiles: 130 },
-  /** a door leaf: thickness (m), the height it reaches (the lintel), how far it swings (degrees), its fill */
-  leaf: { thick: 0.14, top: 4.25, openDeg: 100, fill: 'stone-mid' },
+  /** a door leaf: thickness (m), the height it reaches (under the gate model's tie beam), how far it swings (degrees), its fill */
+  leaf: { thick: 0.14, top: 4.15, openDeg: 100, fill: 'stone-mid', planks: 'yard_tiles', plankMetres: 4, ink: 0.8, order: 140 },
 } as const;
 
 /** A level placement this file dresses: a collision box, by its corners, and its tag. */
@@ -252,7 +250,6 @@ export function buildCourtyard(boxes: YardBox[], doors: YardBox[]): Courtyard {
       shadeW.quad([b.x1, y0, b.z1], [b.x1, y0, b.z0], [b.x1, b.y1, b.z0], [b.x1, b.y1, b.z1], [b.z1 / pm, 0], [b.z0 / pm, 0], [b.z0 / pm, 1], [b.z1 / pm, 1]);
       shadeW.quad([b.x0, y0, b.z0], [b.x0, y0, b.z1], [b.x0, b.y1, b.z1], [b.x0, b.y1, b.z0], [b.z0 / pm, 0], [b.z1 / pm, 0], [b.z1 / pm, 1], [b.z0 / pm, 1]);
     }
-    if (b.tag === C.gateTag) continue; // a gate's sides stand under the gate's own roof
     const a0 = alongX ? b.x0 : b.z0, a1 = alongX ? b.x1 : b.z1;
     const mid = alongX ? wz : wx, half = (alongX ? b.z1 - b.z0 : b.x1 - b.x0) / 2 + K.overhang;
     caps.roof(alongX ? 'x' : 'z', a0 - K.overhang, a1 + K.overhang, mid, half, b.y1, b.y1 + K.rise, K.eave, slope, under);
@@ -261,43 +258,25 @@ export function buildCourtyard(boxes: YardBox[], doors: YardBox[]): Courtyard {
   addInk('courtyard:wall', walls);
   addInk('courtyard:cap', caps);
 
-  // ---- the gates: one between each pair of gate sides that share a wall line ----
-  const G = C.gate, R = G.roof;
-  const timber = col(G.timber), rSlope = col(R.slope), rUnder = col(R.under);
-  const sides = boxes.filter((b) => b.tag === C.gateTag);
-  const lines = new Map<number, YardBox[]>();
-  for (const s of sides) {
-    const x = (s.x0 + s.x1) / 2;
-    lines.set(x, [...(lines.get(x) ?? []), s]);
-  }
-  const gates = new Flats();
-  for (const [x, pair] of lines) {
-    if (pair.length !== 2) throw new Error(`[courtyard] a gate stands between two "${C.gateTag}" boxes on one wall line: found ${pair.length} at x ${x}`);
-    const [a, b] = pair[0]!.z0 < pair[1]!.z0 ? [pair[0]!, pair[1]!] : [pair[1]!, pair[0]!];
-    const z0 = a.z0, z1 = b.z1, d0 = a.z1, d1 = b.z0, y0 = Math.max(a.y0, 0), p = G.post / 2;
-    for (const z of [d0, d1]) gates.box({ x0: x - p, x1: x + p, y0, y1: G.postTop, z0: z - p, z1: z + p }, () => timber);
-    for (const z of [z0, z1]) gates.box({ x0: x - p, x1: x + p, y0, y1: G.postTop, z0: z - p, z1: z + p }, () => timber);
-    gates.box({ x0: x - p * 0.8, x1: x + p * 0.8, y0: G.lintelY[0], y1: G.lintelY[1], z0: z0 - p, z1: z1 + p }, () => timber);
-    gates.roof('z', z0 - R.past, z1 + R.past, x, R.reach, R.eaveY, R.ridgeY, R.eave, rSlope, rUnder);
-    tileRoof('z', z0 - R.past, z1 + R.past, x, R.reach, R.eaveY, R.ridgeY);
-  }
-  // ---- the entrance: a beam across each pair of gate posts on one wall line ----
-  const E = C.entrance, eTimber = col(E.timber);
-  const posts = boxes.filter((b) => b.tag === C.postTag);
+
+  // ---- the way in: each pair of frame posts on one wall line, and the beam across them ----
+  const E = C.frame, eTimber = col(E.timber);
+  const posts = boxes.filter((b) => b.tag === C.frameTag);
   const postLines = new Map<number, YardBox[]>();
   for (const s of posts) {
     const x = (s.x0 + s.x1) / 2;
     postLines.set(x, [...(postLines.get(x) ?? []), s]);
   }
+  const frames = new Flats();
   for (const [x, pair] of postLines) {
-    if (pair.length !== 2) throw new Error(`[courtyard] an entrance is two "${C.postTag}" boxes on one wall line: found ${pair.length} at x ${x}`);
+    if (pair.length !== 2) throw new Error(`[courtyard] a way in is two "${C.frameTag}" boxes on one wall line: found ${pair.length} at x ${x}`);
     const [a, b] = pair[0]!.z0 < pair[1]!.z0 ? [pair[0]!, pair[1]!] : [pair[1]!, pair[0]!];
-    for (const s of [a, b]) gates.box({ ...s, y0: Math.max(s.y0, 0) }, () => eTimber);
+    for (const s of [a, b]) frames.box({ ...s, y0: Math.max(s.y0, 0) }, () => eTimber);
     const top = Math.min(a.y1, b.y1);
-    gates.box({ x0: x - E.beam / 2, x1: x + E.beam / 2, y0: top - E.beamDrop - E.beam, y1: top - E.beamDrop, z0: a.z0 - E.past, z1: b.z1 + E.past }, () => eTimber);
-    gates.box({ x0: x - E.tie / 2, x1: x + E.tie / 2, y0: top - E.tieDrop - E.tie, y1: top - E.tieDrop, z0: a.z0, z1: b.z1 }, () => eTimber);
+    frames.box({ x0: x - E.beam / 2, x1: x + E.beam / 2, y0: top - E.beamDrop - E.beam, y1: top - E.beamDrop, z0: a.z0 - E.past, z1: b.z1 + E.past }, () => eTimber);
+    frames.box({ x0: x - E.tie / 2, x1: x + E.tie / 2, y0: top - E.tieDrop - E.tie, y1: top - E.tieDrop, z0: a.z0, z1: b.z1 }, () => eTimber);
   }
-  if (sides.length || posts.length) addInk('courtyard:gate', gates);
+  if (posts.length) addInk('courtyard:frame', frames);
 
   // ---- the doors: two leaves to a doorway, each turning about its own hinge ----
   const L = C.leaf, fill = col(L.fill);
@@ -312,6 +291,21 @@ export function buildCourtyard(boxes: YardBox[], doors: YardBox[]): Courtyard {
       const mesh = addInk('courtyard:leaf', f);
       mesh.position.set(x, d.y0, hinge); // the hinge: this never changes, the leaf only turns
       leaves.push({ mesh, sign });
+      // its planks and rails, painted on both faces: a child of the leaf, so it turns with it about the same hinge
+      const w = new Washes(), h = L.top - d.y0, z0 = Math.min(0, reach), z1 = Math.max(0, reach), e = t + 0.004, m = L.plankMetres;
+      w.quad([e, 0, z1], [e, 0, z0], [e, h, z0], [e, h, z1], [z1 / m, 0], [z0 / m, 0], [z0 / m, 1], [z1 / m, 1]);
+      w.quad([-e, 0, z0], [-e, 0, z1], [-e, h, z1], [-e, h, z0], [z0 / m, 0], [z1 / m, 0], [z1 / m, 1], [z0 / m, 1]);
+      const pg = w.geometry();
+      geos.push(pg);
+      const pm = paintMaterial({ map: texture(L.planks), opacity: L.ink, wash: true });
+      pm.polygonOffset = true;
+      pm.polygonOffsetFactor = -1;
+      pm.polygonOffsetUnits = -1;
+      mats.push(pm);
+      const planks = paint(new THREE.Mesh(pg, pm));
+      planks.name = 'courtyard:planks';
+      planks.renderOrder = L.order;
+      mesh.add(planks);
     }
   }
 
