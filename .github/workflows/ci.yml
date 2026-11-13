@@ -173,9 +173,9 @@ jobs:
     runs-on: ubuntu-latest
     # D-027: the game played by a thumb on the real page (its own frame loop, real touch events). Was one job of
     # 28m20s (CI run 43374834353) under a 45-minute limit. Now each part is a job; the slowest measured on the
-    # code it now runs was touch-chapters at 6m32s (43485369808); x1.8 for a slow runner, as `game` is given, is
-    # 11.8 min, so 12 (MEASUREMENTS "POLISH-1 the touch job on CI").
-    timeout-minutes: 12
+    # code it now runs was touch-chapters at 6m32s (43485369808). The slowest runner seen ran a part's every check
+    # 2.01 times as long (43485459420), so 13.1 min, and 14 (MEASUREMENTS "POLISH-1 the touch job on CI").
+    timeout-minutes: 14
     steps:
       - uses: actions/checkout@v4
         with:

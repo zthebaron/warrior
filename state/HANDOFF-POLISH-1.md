@@ -48,4 +48,4 @@ CI static job: all green locally and on CI.
   a frame came between the two touches at the page (5 ticks). Fixed in `0b6b1e3` (OQ-081 item 9).
 - `touch-release` had grown to 8m11s and 8m53s: a hold ran off the flat, the respawned swordsman was fought three
   times. Fixed in `ea9e79d` (OQ-081 item 10). Run 43489321160: 2m52s / 3m05s / 5m18s.
-- Items 1 to 3 done: MEASUREMENTS "POLISH-1 the touch job on CI", the job's limit 12 minutes, B-107 and B-108 rows.
+- Items 1 to 3 done: MEASUREMENTS "POLISH-1 the touch job on CI", the job's limit 14 minutes (first 12; a runner seen at 2.01 times raised it), B-107 and B-108 rows.

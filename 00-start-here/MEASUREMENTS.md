@@ -2340,10 +2340,11 @@ start to end, setup included (the playtest itself is the report's `ms`).
 | 43485369808 (`d3357b7`) | three jobs | 2m52s | 8m11s | 6m32s | release: one check 286 s |
 | 43485459420 (`eb5970d`) | three jobs | 5m41s, FAILED | 8m53s | 6m06s | release: one check 294 s; touch: the Jump tap |
 | 43489321160 (`ea9e79d`) | three jobs | 2m52s | 3m05s | 5m18s | both fixed: stages 134.0, 136.9, 255.3 s |
+| 43490541860 (`deb4b9b`) | three jobs | 2m52s | 3m19s | 4m10s | stage `touch` 132.1 s; every tap and hard move on try 1 |
 
 | Constant | Value | Kind | Basis |
 |---|---|---|---|
-| the job's `timeout-minutes` | 12 (was 45) | measured | the slowest part on the code it now runs: touch-chapters 6m32s (43485369808), x1.8 for a slow runner as `game` is given, 11.8 min |
+| the job's `timeout-minutes` | 14 (was 45) | measured | the slowest part on the code it now runs: touch-chapters 6m32s (43485369808), times the slowest runner seen, 2.01: the `touch` part's stage took 269.8 s on 43485459420 against 134.0 s on 43489321160, every check about twice as long (a slow runner, not a slow check). 13.1 min, so 14 |
 
 **The release part's slow check.** On 43485369808 and 43485459420 "nothing sticks: the window loses focus" took
 286 and 294 s (12.6 s on 43483354272), and the played ticks over it jumped by 3610 and 2415. Only a respawn stands a
@@ -2360,9 +2361,9 @@ records the played tick each touch reaches the page at (`TAP_SEEN`); a tap taken
 and only a split one is sent again, up to `tries` (OQ-081 item 9). 43489321160: both at tick 945, try 1. Forced on
 darwin: one split, sent again and passed on try 2; every try split, the check failed.
 
-**The hard moves on CI**, paced by frames (43485369808, 43485459420, 43489321160): the double and the dash jump land
-on try 1 every time (the dash jump's Jump 15 ticks after the dash began, window 4 to 22); the wall jump on try 1, 1
-and 2. Its miss: Jump read down unbroken from ticks 0 to 59, so the one frame let go between its two presses played
+**The hard moves on CI**, paced by frames (43485369808, 43485459420, 43489321160, 43490541860): the double and the
+dash jump land on try 1 every time (the dash jump's Jump 15 ticks after the dash began, window 4 to 22); the wall
+jump on try 1, 1, 2 and 1. Its miss: Jump read down unbroken from ticks 0 to 59, so the one frame let go between its two presses played
 no tick.
 
 ## POLISH-1 the hard moves by thumb (2026-11-13)
@@ -2380,7 +2381,7 @@ is the same on a slower runner); a tap (down and up sent together) is one tick.
 |---|---|---|---|
 | `again` (was `kick`) | hold 2 frames, let go 1 frame | measured | chapter 2 step 5: pushed in with Jump held, then stick and Jump let go together, then Jump again: 11 of 11 wall jumps onto the shelf (10 in a probe of the move alone, 1 in the stage). Held 3 frames, the lift was lost; let go 2 frames, he had left the wall (a double jump, 3 of 3); still pushing in as he came down, he caught the wall top's edge (B-92) every time |
 | `pressShort` | double 1.5 m, dash 1.2 m | measured | the touch lands up to 2 frames (1.2 m at a run) after the probe showed him. Double: 4 of 4 onto the next floor, x 58.2 to 58.6 (3 in a probe, 1 in the stage). Dash: the lip's edge is near x 35.1, short of the torii at 36; with Dash sent 1 m short and Jump timed by polls he ran off the lip before the dash, 0 of 3 in the stage |
-| the dash jump's Jump | a frame after Dash | measured | Jump down 18 or 19 ticks after the dash began (the rig clears with 4 to 22): 4 of 4 (3 in a probe, 1 in the stage). By two polls of the probe it came 23 or 24 ticks after: 0 of 4 in a probe. 18 is near the window's far end: the margin is 4 ticks |
+| the dash jump's Jump | as soon as the tap on Dash is taken (`d3357b7`) | measured | Jump down 14 ticks after the dash began on darwin and 15 on CI (runs 43485369808, 43485459420, 43489321160, 43490541860), against a window of 4 to 22; it lands on try 1 each time. Was a frame after Dash: 18 or 19 on darwin, 20 on CI, near the window's end. By two polls of the probe it came 23 or 24 ticks after: 0 of 4 in a probe |
 | the double's presses | `again`: down 2 frames, up 1 frame, down | measured | 3 of 3 in a probe, and in the stage. Paced instead by each press being taken: 4 of 4 on darwin, but on CI run 43479377456 the second press came at the face (a wall jump), 3 tries failed. By a poll for the peak: a ledge grab and no double jump, 0 of 8 |
 | `moveTicks` | 150 | authored | a move's step gives up after this many played ticks; a move ends after twice this |
 | `catchWithin` | 150 ticks | authored | chapter 2's first face: the catch must come within this many played ticks of Jump going down (it comes within about 40). Was 400 from the start of the run: the broken check waited it out, 52.7 s on CI |
