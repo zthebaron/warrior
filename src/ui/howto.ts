@@ -60,6 +60,8 @@ const MOVE_TEXT: Readonly<Record<string, { name: string; line: string; more?: st
   dash: { name: 'Dash', line: 'Press {dash} for a short burst of speed, on the ground or once in the air.' },
   dashjump: { name: 'Dash jump', line: 'Dash, then press {jump} as the dash ends: the jump starts from where the dash carried you, so together they cross a wide gap.' },
   fight: { name: 'Swordsmen', line: 'Press {slash} to cut. Two cuts fell a swordsman. His cut sends you back.' },
+  // POLISH-1 (B-99): at the courtyard's shut gate while a swordsman stands (D-026). Not a move: the page says it in RULES.goal.
+  gate: { name: 'The shut gate', line: 'This gate opens when every swordsman is down. Press {slash} to cut.' },
 };
 
 const RULES = {

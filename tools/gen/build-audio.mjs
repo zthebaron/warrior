@@ -2,6 +2,9 @@
 //
 //   node tools/gen/build-audio.mjs            write assets/audio/*.mp3 and assets/audio/audio.json
 //   node tools/gen/build-audio.mjs --check    measure the shipped files against LIMITS and write nothing
+//   node tools/gen/build-audio.mjs --only=gate   cut only the named effects, and write their lines into the shipped
+//                                               audio.json beside the others: every other shipped file is left as
+//                                               it is, so only the named takes need to be downloaded (POLISH-1)
 //
 // Nobody building this can hear it, so every choice here is one that can be measured and is checked:
 //
@@ -51,6 +54,8 @@ export const AUDIO_BUILD = {
     hit: { take: 'hit-b.mp3', seconds: 0.32, fadeOut: 0.1 },      // the first take was a low thud with no steel in it; this one rings, and is silent after 0.29 s
     fell: { take: 'fell.mp3', seconds: 0.8, fadeOut: 0.2 },       // 188 ms of silence before the body lands, cut
     cut: { take: 'cut.mp3', seconds: 0.6, fadeOut: 0.15 },
+    // POLISH-1 (B-98): the courtyard's far gate swinging open (MEASUREMENTS "POLISH-1 the gate's sound")
+    gate: { take: 'gate-b.mp3', seconds: 2.2, fadeOut: 0.3 },  // the first take is quiet broadband rumble (-32.8 LUFS); this one creaks for 1.6 s and knocks once at 1.82 s
   },
   music: {
     take: 'music-s11.wav',   // seed 29 clips (peak +1.7 dB) and swings 14 LU; this one swings 7.7
@@ -168,14 +173,21 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!existsSync(SRC)) { console.error(`${SRC} does not exist: the takes are git-ignored downloads (sh tools/gen/run-audio.sh, or fal-call.mjs fetch <request id>)`); process.exit(2); }
     mkdirSync(OUT, { recursive: true });
     const dir = mkdtempSync(join(tmpdir(), 'build-audio-'));
-    const effects = Object.fromEntries(Object.entries(B.effects).map(([name, e]) => [name, buildEffect(name, e, dir)]));
-    const music = buildMusic(dir);
+    const onlyArg = process.argv.find((a) => a.startsWith('--only='));
+    const only = onlyArg ? onlyArg.slice('--only='.length).split(',') : null;
+    const unknown = (only ?? []).filter((n) => !B.effects[n]);
+    if (unknown.length) { console.error(`no effect named ${unknown.join(', ')} in AUDIO_BUILD.effects`); process.exit(2); }
+    const effects = Object.fromEntries(Object.entries(B.effects).filter(([name]) => !only || only.includes(name)).map(([name, e]) => [name, buildEffect(name, e, dir)]));
+    // --only: the music and every effect not named stay as shipped, their lines read back from audio.json
+    const shipped = only ? JSON.parse(readFileSync(join(OUT, 'audio.json'), 'utf8')) : null;
+    const music = shipped ? shipped.music : buildMusic(dir);
+    const lines = { ...(shipped?.effects ?? {}), ...Object.fromEntries(Object.entries(effects).map(([n, e]) => [n, { file: e.file, seconds: e.seconds }])) };
     writeFileSync(join(OUT, 'audio.json'), JSON.stringify({
       _doc: 'D-022, D-023. Written by tools/gen/build-audio.mjs: what src/audio/audio.ts loads. music.loopStart and loopSeconds are the window the music loops over (the file carries the loop continued on both sides). Not typed by hand.',
-      music, effects: Object.fromEntries(Object.entries(effects).map(([n, e]) => [n, { file: e.file, seconds: e.seconds }])),
+      music, effects: Object.fromEntries(Object.keys(B.effects).filter((n) => lines[n]).map((n) => [n, lines[n]])),
     }, null, 2) + '\n');
     for (const [n, e] of Object.entries(effects)) console.log(`${n.padEnd(11)} from ${B.effects[n].take}, cut from ${e.cutFromMs} ms, ${e.seconds} s, ${statSync(join(OUT, e.file)).size} B`);
-    console.log(`music       from ${B.music.take} [${B.music.from}, ${B.music.to}) s + ${B.music.bed} at ${B.music.bedDb} dB, loop ${music.loopSeconds} s, ${statSync(join(OUT, music.file)).size} B`);
+    if (!only) console.log(`music       from ${B.music.take} [${B.music.from}, ${B.music.to}) s + ${B.music.bed} at ${B.music.bedDb} dB, loop ${music.loopSeconds} s, ${statSync(join(OUT, music.file)).size} B`);
   }
   process.exit(check() ? 0 : 1);
 }

@@ -106,3 +106,5 @@ but counted as $0.0000. `failed`, `pending` and `unknown` rows count in full.
 | 94 | 2026-11-13T02:02:56Z | fal-ai/nano-banana/edit | COURTYARD: the gate's input image, from the painting | $0.0398 | $0.0398 | 01a1d2a4-c866-7283-ad07-0a58a448d912 | done | $14.6398 |
 | 95 | 2026-11-13T02:03:29Z | fal-ai/trellis | COURTYARD: trellis shape test: gate | $0.0200 | $0.0200 | 01a1d2a5-4827-7292-9a48-9f326786da88 | done | $14.6598 |
 | 96 | 2026-11-13T02:04:24Z | fal-ai/hunyuan3d-v3/image-to-3d | COURTYARD: final: gate (Normal + PBR) | $0.5250 | $0.5250 | 01a1d2a6-1fb0-7691-848e-2fb6a637cec2 | done | $15.1848 |
+| 97 | 2026-11-13T17:29:14Z | fal-ai/elevenlabs/sound-effects/v3 | POLISH-1: audio: gate | $0.0060 | $0.0060 | 01a1d5f4-d65e-73e1-801e-4e57708addea | done | $15.1908 |
+| 98 | 2026-11-13T17:29:20Z | fal-ai/elevenlabs/sound-effects/v3 | POLISH-1: audio: gate-b | $0.0060 | $0.0060 | 01a1d5f4-edb5-7992-82d6-0b936cd012ce | done | $15.1968 |

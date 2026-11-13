@@ -40,6 +40,10 @@ const EFFECTS = {
   cut: [0.7, 'A blade cuts through cloth: one fast sharp slicing rip, then a low dark dull thump. Final. Dry, close. No voice, no music.'],
   // Second take: the first hit came back as a low thud (54% of its energy under 200 Hz, centroid 367 Hz), no steel in it.
   'hit-b': [0.6, 'Two steel sword blades meet once: a single bright high ringing metallic clang, sharp and clean. Only metal on metal. No thud, no bass, no voice, no music.'],
+  // POLISH-1 (B-98): the courtyard's far gate swings open when the last swordsman falls (D-026, GATE.openSec 1.2 s).
+  // Wood and weight, no music sting. Two takes, so there is a choice that can be measured.
+  gate: [2.5, 'A heavy old wooden temple gate swings open: a thick timber bar knocks once as it is lifted, then two great wooden doors groan on their pivots and creak slowly open, scraping over stone. Weighty, dry, close. No voice, no music, no bell.'],
+  'gate-b': [2.5, 'Two massive wooden doors of an old gatehouse are pushed open: a deep low wooden creak and groan of heavy timber turning on its hinge, ending in a dull soft wooden knock. Slow and heavy, dry, close. No voice, no music, no metal ring.'],
 };
 /** Under the music: the model made flute, koto and drum and left out the weather the brief asks for. */
 const BED = { text: 'Steady light rain falling on stone with a low mountain wind. Even and continuous. No thunder, no birds, no voices, no music.', duration_seconds: 30, prompt_influence: 0.6, output_format: 'mp3_44100_192', loop: true };

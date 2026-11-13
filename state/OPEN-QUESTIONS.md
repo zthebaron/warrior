@@ -1969,3 +1969,68 @@ thumb are not played (B-107).
 thumb feels, whether 1.5 px of mouse a pixel of drag turns the camera at the right speed, and whether the buttons
 sit under the thumb.
 status: PROVISIONAL
+
+## OQ-081 — POLISH-1: the builder's calls on four small rows
+raised: 2026-11-13 by polish-1 (claim POLISH-1). Brief: `00-start-here/PROMPT-POLISH-1.md`. Rows: B-98, B-99, B-107, B-108. No new decision: each row was named by D-025, D-026 or D-027.
+Numbers: MEASUREMENTS "POLISH-1 the gate's sound", "POLISH-1 the gate's line", "POLISH-1 the touch stage", "POLISH-1 the hard moves by thumb", "POLISH-1 the touch job on CI", "POLISH-1 desktop is untouched".
+took, each PROVISIONAL:
+
+1. **The gate's sound is one sound, at the gate.** B-98 said "a sound for it (and for the last fall)"; the last fall
+   already has `hit` and `fell`, so only the gate is new. It starts on the tick the gate leaves shut, which is the
+   tick the last swordsman falls: the two are heard together. Of two takes, `gate-b` ships: the other is quiet
+   rumble. Its level in the mix, `AUDIO.gain.gate` 0.7, is a guess. **Nobody has heard it.**
+2. **The gate's line.** "This gate opens when every swordsman is down. Press {slash} to cut." It is a place read
+   from the level (a `gate_door` box on a level whose goal waits), up within 6 m of the door while any swordsman
+   stands, gone when the last falls, and back whenever he comes to the shut gate again: it is not a move, so it is
+   never "learned". A swordsman close by whose fight has not been learned comes first (his line says how to cut).
+   The how-to-play page already says the rule (`RULES.goal`), so the line is not added to its list of moves.
+3. **home by place.** Between the checks on chapter 1's first flat, the warrior is put back by the probe's `place`
+   instead of walked back by the stick. The walk was never one of the checks, never settled (18 s a call, 324 s of
+   537), and once ran into a death. Every check that moves him starts as before; `place` was already the stage's
+   shortcut for the goal. Home is x 1.5, where the old walk always ended.
+4. **The wall jump by thumb lets go of the stick at the wall.** A finger's press lands about 3 frames after it is
+   sent on this page (14 to 18 played ticks); a warrior still pushing into chapter 2's first wall as he comes down
+   catches the edge of its top first (B-92). The kick needs no stick ("D-025 the moves as the rig makes them"), so the
+   thumb lets go of both, then presses Jump again. On a real phone a press lands in a frame or less, so this says
+   nothing about what a player must do. The line for the wall jump is unchanged.
+5. **The three hard moves are placed at their takeoffs**, as the goal is: walking there by thumb from a chapter's
+   start would be a bot, and the brief asks for the move at the place, not the route to it. Each is tried up to 3
+   times, as `reachable` presses the ledge catch again; the check says which try landed.
+6. **The chapter chosen from the list is now chapter 4** (it was 3), so that chapter 4's dash jump is played on the
+   same page. The check is the same check.
+
+7. **The touch stage is three stages, three CI jobs side by side** (`touch`, `touch-release`, `touch-chapters`).
+   Placing home cut it from 537 s to 121 s on darwin, but CI ran it 5 to 5.8 times slower (611 and 702 s: jobs of
+   11 and 13 minutes), so one job could not be held under 10. The brief named "fewer page loads" and "checks that
+   share a visit" as fair; this adds two page loads instead, to run the visits side by side. Each check is in one
+   part, as it was; each part also checks its own start and that its page logged no error (6 checks more, 72 in
+   all). The cost is two more runners per pull request.
+8. **The double jump and the wall jump by thumb are paced by frames**, not by each touch being taken: on CI the
+   second press of a double paced by acknowledgements came late, at the face (a wall jump), and failed.
+9. **One of the original 60 checks now re-sends its tap, on proof only.** "a tap on Jump, down and up with no frame
+   between, is still a jump, and a low one" failed on CI run 43485459420 (head `eb5970d`, a commit of two documents):
+   rose 1.43 m, Jump read as held for 5 ticks. It had passed on the five CI runs before (0.99 m, 1 tick), and
+   `Thumbs.tap` is as it is on main. The harness sends the down and the up together but cannot make the page take
+   both before its next frame; that once, a frame of 5 ticks came between, so what was judged was a short hold, not
+   the tap the check names. Now an init script of the stage (`TAP_SEEN`, window, capture, passive; nothing in `src/`)
+   records the played tick at which the touchstart and the touchend reach the page. A tap taken within one tick is
+   judged at once by the unchanged condition, pass or fail. Only a tap a frame split is sent again, up to `tries` (3),
+   and if every try is split the check fails. Its detail says which try and both ticks, on a pass too. Forced on
+   darwin: one split try was seen and re-sent (passed on try 2); every try split, the check failed. The Sword's tap
+   needs none of this: its slash is started by the touchstart, so the finger's length does not change the check.
+10. **The nothing-sticks holds start at the back of the first flat and push up the path** (`releaseAt`, x -5),
+   where they alternated up and down from home (x 1.5). A hold lasts as long as the round trips it waits on. On
+   CI runs 43485369808 and 43485459420 one check took 286 and 294 s, against 12.6 s on 43483354272: the chapter's
+   swordsman stood again, which only a respawn does, and `home()` fought him three times (its 3 calls of a 90 s
+   `fell`). On a page slowed 6 times on darwin the slide-off check's down hold ran from x 1.5 over the edge at x -6;
+   the respawn stood the swordsman up again. From x -5, his jump comes down short of the stair tread at x 6, and its
+   face holds him: a 250-tick hold ended at x 5.64, running, no death. The checks read only the input frames, so
+   what they assert is unchanged; the ground under the holds is the same flat, nearer its back.
+
+**KNOWN LIMIT: the timings are the harness's.** The hard moves are paced to SwiftShader's frames (5 ticks each)
+and its touch latency. On a page that draws faster the same fingers press sooner; the stage has not been run there.
+**KNOWN LIMIT: the dash jump's margin.** Jump is sent as soon as the tap on Dash is taken (`d3357b7`): it lands 14
+ticks after the dash began on darwin and 15 on CI (runs 43485369808, 43485459420), against a window of 4 to 22.
+**What nobody has judged.** The gate's sound by ear; the gate's line on screen, in the courtyard, with three
+swordsmen coming.
+status: PROVISIONAL

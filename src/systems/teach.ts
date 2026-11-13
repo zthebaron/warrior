@@ -14,8 +14,13 @@
 //               on screen as he comes up to the place. It goes when he makes the move.
 //   stuck       a move he HAS made gets its line back at a place where he has missed twice, or has stood for
 //               several seconds without making it. It then stays until he is past the place.
-//   one line    at a time: how to walk first, then a swordsman close by, then the earliest place on the path.
+//   one line    at a time: how to walk first, then a swordsman close by, then a shut gate, then the earliest
+//               place on the path.
 //   the hang    catching a ledge is half of the climb: while he hangs, a second line says how to get up.
+//   the gate    (POLISH-1, B-99) on a level whose goal waits until every swordsman is down (D-026), a line at the
+//               shut gate says why it is shut. It is not a move: it shows every time he comes to the gate while a
+//               swordsman of the level still stands, and goes when the last one falls. It is read from the
+//               level too: the door is its `gate_door` box, and only a level with `goal.once_clear` has one.
 //
 // "This visit" is memory and nothing else: a reload starts with every move unmade. Nothing is stored (SPEC §7
 // row 15), and nothing here is read by the simulation: it is told what happened after each tick, as the sound
@@ -25,8 +30,8 @@
 
 export type V3 = [number, number, number];
 
-/** The eight moves a path can ask for (`via`), and the fight. */
-export type TeachMove = 'ground' | 'jump' | 'double' | 'dash' | 'dashjump' | 'wall' | 'climb' | 'platform' | 'fight';
+/** The eight moves a path can ask for (`via`), the fight, and the shut gate of a level whose goal waits (not a move: it is never made). */
+export type TeachMove = 'ground' | 'jump' | 'double' | 'dash' | 'dashjump' | 'wall' | 'climb' | 'platform' | 'fight' | 'gate';
 /** What a line is about: a move, or hanging from a ledge. */
 export type TeachLine = TeachMove | 'hang';
 
@@ -56,15 +61,22 @@ export interface TeachRules {
 export interface TeachLevel {
   critical_path: (V3 | { pos: V3; via?: string; platform?: string })[];
   enemies?: { id: string; pos: V3 }[];
+  /** D-026: `once_clear` makes the goal wait until every swordsman is down */
+  goal?: { once_clear?: boolean };
+  /** D-026: the gate's door is a box tagged GATE_DOOR_TAG (src/systems/fight.ts GATE.doorTag) */
+  geometry?: { pos: V3; scale?: V3 | number; tag?: string }[];
 }
+
+/** src/systems/fight.ts GATE.doorTag, which this file cannot import; check:teach holds the two the same. */
+export const GATE_DOOR_TAG = 'gate_door';
 
 /** One place a line can show. */
 export interface TeachSpot {
   key: string;
   move: TeachMove;
-  /** index into critical_path of the step that needs the move; -1 for a swordsman */
+  /** index into critical_path of the step that needs the move; -1 for a swordsman or a gate */
   step: number;
-  /** where the move is made from, and where it lands. For a swordsman: his post, twice. */
+  /** where the move is made from, and where it lands. For a swordsman: his post, twice. For a gate: the foot of its door, twice. */
   from: V3;
   to: V3;
   foe?: string;
@@ -102,6 +114,14 @@ export function teachSpots(level: TeachLevel): TeachSpot[] {
     out.push(spot);
   }
   for (const e of level.enemies ?? []) out.push({ key: `foe:${e.id}`, move: 'fight', step: -1, from: e.pos, to: e.pos, foe: e.id });
+  if (level.goal?.once_clear) {
+    (level.geometry ?? []).forEach((g, k) => {
+      if (g.tag !== GATE_DOOR_TAG) return;
+      const tall = typeof g.scale === 'number' ? g.scale : g.scale?.[1] ?? 1;
+      const foot: V3 = [g.pos[0], g.pos[1] - tall / 2, g.pos[2]]; // a box's pos is its centre
+      out.push({ key: `gate:${k}`, move: 'gate', step: -1, from: foot, to: foot });
+    });
+  }
   return out;
 }
 
@@ -192,6 +212,7 @@ export class Teach {
 
   private isPast(s: TeachSpot, v: TeachView, stretch: number): boolean {
     if (s.move === 'fight') return v.foes.find((f) => f.id === s.foe)?.down ?? true;
+    if (s.move === 'gate') return v.foes.every((f) => f.down); // the gate is open: there is nothing to say
     if (stretch >= s.step) return true; // nearest a stretch of the path beyond this step's own
     if (s.to[1] - s.from[1] > TEACH.riseM) return v.grounded && v.feet[1] >= s.to[1] - TEACH.riseM; // up it
     const a = along(v.feet, s.from, s.to);
@@ -241,7 +262,7 @@ export class Teach {
       if (!this.isNear(s, v)) { st.leapt = false; st.linger = 0; continue; }
       if (this.isPast(s, v, stretch)) { st.misses = 0; st.linger = 0; st.stuck = false; st.leapt = false; continue; }
       at.push(s);
-      if (s.move === 'ground') continue; // walking has no miss, and standing still is not being stuck
+      if (s.move === 'ground' || s.move === 'gate') continue; // walking has no miss, standing still is not being stuck, and the gate is not a move
       if (leaving) st.leapt = true;
       else if (landed && st.leapt) {
         // he went up by a move and came down still short of it: a miss that costs him nothing but the try
@@ -256,15 +277,15 @@ export class Teach {
     this.before = { pstate: v.pstate, grounded: v.grounded };
 
     // ---- the one line
-    const wants = (s: TeachSpot): boolean => !this.used.has(s.move) || (s.move !== 'ground' && this.state.get(s.key)!.stuck);
+    const wants = (s: TeachSpot): boolean => s.move === 'gate' || !this.used.has(s.move) || (s.move !== 'ground' && this.state.get(s.key)!.stuck);
     if (v.pstate === 'ledge_grab') {
       const climb = at.find((s) => s.move === 'climb');
       this.shown = !this.used.has('pullup') || (climb && this.state.get(climb.key)!.stuck) ? { line: 'hang', spot: climb?.key ?? null } : null;
       return this.shown;
     }
     // how to walk comes before everything (nothing else can be done without it), then a swordsman close by, then
-    // the path in its own order: the sort is stable, and the places are already in the level's order
-    const turn = (s: TeachSpot): number => (s.move === 'ground' ? 0 : s.move === 'fight' ? 1 : 2);
+    // the shut gate, then the path in its own order: the sort is stable, and the places are already in the level's order
+    const turn = (s: TeachSpot): number => (s.move === 'ground' ? 0 : s.move === 'fight' ? 1 : s.move === 'gate' ? 2 : 3);
     const pick = at.filter(wants).sort((a, b) => turn(a) - turn(b))[0];
     this.shown = pick ? { line: pick.move, spot: pick.key } : null;
     return this.shown;
@@ -277,7 +298,7 @@ export class Teach {
   died(feet: V3, cut: boolean, foes: readonly { id: string; pos: V3; down: boolean }[]): void {
     let hit: TeachSpot | null = null, best = Infinity;
     for (const s of this.spots) {
-      if (cut !== (s.move === 'fight') || s.move === 'ground') continue;
+      if (cut !== (s.move === 'fight') || s.move === 'ground' || s.move === 'gate') continue;
       let d: number;
       if (s.move === 'fight') {
         const f = foes.find((e) => e.id === s.foe);

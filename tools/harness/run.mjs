@@ -220,9 +220,11 @@ for (const L of statics) {
 //   ambient-motion (B-15, NOT #18): does anything translate except the player, hazards and platforms?
 //   fight        (D-023): the four rules of the fight, in the real game, each also seen to fail on a broken fight
 //   touch        (D-027): the game played by a thumb on the real page, by real touch events, each control also seen to fail broken
+//   touch-release, touch-chapters (POLISH-1, B-108): the same stage's other two parts (nothing sticks, pause and resume;
+//                a goal, chapters 2 and 4 and their hard moves, the other pages), each in a CI job of its own beside touch's
 const once = (name) => (typeof args.only === 'string' ? args.only.split(',').includes(name) : typeof args.level !== 'string');
 // Registered as ['name', fn] pairs: lint:not-list reads that form to prove NOT #18/#20 stages are wired.
-const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion], ['fight', fight], ['touch', touch]];
+const ONCE = [['reachable', reachable], ['pitch-assist', pitchAssist], ['run-metric', runMetric], ['ambient-motion', ambientMotion], ['fight', fight], ['touch', (c) => touch(c, 'controls')], ['touch-release', (c) => touch(c, 'release')], ['touch-chapters', (c) => touch(c, 'chapters')]];
 // B-22: merge-reports.mjs gates CI on ONCE_STAGES (lib.ts). If this list drifts from it, a stage would run unchecked.
 if (ONCE.map(([n]) => n).join() !== ONCE_STAGES.join()) throw new Error(`run.mjs once-stages ${ONCE.map(([n]) => n)} != lib.ts ONCE_STAGES ${ONCE_STAGES}`);
 for (const [name, fn] of ONCE) {

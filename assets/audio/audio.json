@@ -53,6 +53,10 @@
     "cut": {
       "file": "cut.mp3",
       "seconds": 0.6
+    },
+    "gate": {
+      "file": "gate.mp3",
+      "seconds": 2.2
     }
   }
 }

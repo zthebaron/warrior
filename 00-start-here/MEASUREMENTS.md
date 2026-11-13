@@ -2264,7 +2264,7 @@ largest round step under 2. PROVISIONAL (OQ-080): on a real phone it may be too 
 | `turnTol` | 0.6 degrees | authored | a drag's turn against what the mouse's call gives for the same pixels |
 | `share` | dead 0.15, mid 0.55, outer 1.0 of the radius | authored | inside the dead zone, between it and the outer ring, and at the edge |
 | `fight` | approach 3.9 m, cut at 1.85 m, again after 16 ticks | derived | inside `FIGHT.swordsman.sightRange` 4.5, inside `FIGHT.warrior.reach` 1.9, over `againSec` 0.24 s |
-| `home` | x 0 on chapter 1's first flat, within 1.2 m | derived | 6 m from the edge (x -6) and from the step (x 6) |
+| `home` | x 0 on chapter 1's first flat, within 1.2 m | derived | 6 m from the edge (x -6) and from the step (x 6). **Superseded by POLISH-1** ("POLISH-1 the touch stage"): the walk to it never settled |
 | `goalStart` | (95.2, 9.05, 0) | authored | the stage's one shortcut: chapter 1's last flat, 5.8 m short of the goal and before its swordsman |
 | `settleTicks`, `neutralTicks` | 8, 3 | authored | a release must show in the frames within 8 ticks, and the last 3 must be neutral |
 | `msPerTick`, `waitMs` | 120, 20000 | authored | a wait for n ticks gives up after 20 s + 120 ms a tick (a CI runner draws about 4 frames a second) |
@@ -2279,3 +2279,126 @@ the first change) and on this branch, then `--diff`, one machine (darwin, SwiftS
 6 levels**, after the first `index.html` change and again on the finished source. No golden was written. A page
 with a mouse has no touch element in its document, playing or paused (the touch stage's check); a bare page has
 none even on a touch device, unless the URL asks (`?touch=on`).
+
+## POLISH-1 the gate's sound (2026-11-13)
+
+B-98. `assets/audio/gate.mp3`, `assets/audio/audio.json` `effects.gate`, `src/audio/audio.ts` `AUDIO.gain.gate`,
+`src/audio/tap.ts` (the gate's event), `tools/gen/build-audio.mjs` `AUDIO_BUILD.effects.gate`.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| the takes' length | 2.5 s | authored | asked of the model: `GATE.openSec` 1.2 s of swing and a tail; $0.002 a second, priced $0.0060 a take |
+| the take that ships | `gate-b.mp3` | measured | `tools/gen/audio-stats.mjs`: `gate.mp3` peaks at -17.9 dB, -32.8 LUFS, broadband rumble with no creak in its spectrogram; `gate-b.mp3` peaks at -6 dB, -21.4 LUFS, a creak of regular wooden pulses for 1.6 s and one knock at 1.82 s; 43.5% of its energy under 200 Hz, 1.0% over 4 kHz (no ring of metal) |
+| `seconds`, `fadeOut` | 2.2 s, 0.3 s | authored | keeps the knock at 1.82 s and lets it ring out; cut from its onset at 7 ms as every effect is |
+| shipped | 27,271 B, 2.20 s, peak -3.4 dB, -20.8 LUFS, lead silence 1 ms | measured | `build-audio.mjs --check`: inside `LIMITS` (50,000 B an effect, peak -6 to 0 dB, lead under 40 ms) |
+| `AUDIO.gain.gate` | 0.7 | authored | between the slash (0.7) and the fall (0.8) it starts with; **to be judged by ear** |
+| when | the tick the gate leaves shut | derived | `check:fight` rule 6: heard once, on tick 579, the tick the last of three fell, with his `fell`; not again when a respawn shuts the gate |
+
+Cost: $0.0120 in ledger rows 97 and 98; the ledger stands at $15.1968 of $20.00.
+
+## POLISH-1 the touch stage (2026-11-13)
+
+B-108. `tools/harness/touch.ts`. Where the time went, measured before any change: a timing line per check (not
+committed), the stage on origin/main (`03b3988`) on this Mac, darwin SwiftShader.
+
+| What | Before | After | Basis |
+|---|---|---|---|
+| the stage, darwin | 537.5 s, 60/60 | 121.4 s, 66/66 | `npm run playtest -- --only=touch`, the stage's own `ms` |
+| the 17 checks that walk him home first | 474.8 s | about 2 s each | the timing lines |
+| one `home()` | about 18 s: all 12 tries, every call | about 0.5 s | a probe of `home()` alone: he stopped at x 1.56 and x -2.04 by turns, never within 1.2 m of x 0 |
+| "nothing sticks: both fingers lifted" | 135.1 s | 2.8 s | the walk back after the stuck-input check; not seen again once home is placed |
+| everything else | 62.5 s | about the same | the timing lines |
+| the stage, CI | 28m20s (run 43374834353) | three parts, three jobs: see "POLISH-1 the touch job on CI" | |
+
+Why: `home()` walked the warrior back to the middle of the first flat by the stick, and the thumb lets go a frame
+(5 played ticks, 0.6 m at a run) after the probe last showed him: he overshot by about 2.2 m either way, so every
+call ran out its 12 tries. It now puts him there with the probe's `place` (as the goal's shortcut already did),
+facing up the path; a standing first swordsman is still felled first, by the thumb.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| the parts, darwin | one stage | `touch` 46.2 s (29 checks), `touch-release` 35.7 s (16), `touch-chapters` 49.3 s (27) | measured: one run, all three PASS; 66 distinct check names, 6 of them a part's own start and page-error checks |
+| `home` | (1.5, 0.05, 0) | measured | where the old walk always ended (x 1.56, its twelfth try), so every check runs over the ground it ran over before. At x 0 the slide-off check's 'down' hold carried him over the edge at x -6 (seen: one run, one death) |
+
+| `releaseAt` | (-5, 0.05, 0) | measured | where each nothing-sticks hold starts, pushing up the path: his one jump comes down short of the stair tread at x 6 (farthest seen, x 4.43), and its 1.25 m face holds him: a 250-tick hold ended at x 5.64, running, no death. From `home` a down hold ran over the edge at x -6 on a page slowed 6 times (see "POLISH-1 the touch job on CI") |
+
+Every one of the 60 checks keeps its name, its condition and its "seen to fail"; the report's check names were
+compared before and after: none missing.
+
+## POLISH-1 the touch job on CI (2026-11-13)
+
+B-108. `.github/workflows/ci.yml` job `touch`, a matrix of the three parts. Each job's time is GitHub's, from
+start to end, setup included (the playtest itself is the report's `ms`).
+
+| Run (head) | Shape | touch | touch-release | touch-chapters | Note |
+|---|---|---|---|---|---|
+| 43374834353 (main) | one job | 28m20s | | | before POLISH-1 |
+| 43479377456 | one job, home by place | 11m03s, FAILED | | | the double jump (since paced by frames) |
+| 43479707998 | one job | 12m39s | | | stage 611 s |
+| 43482156143 | one job | 10m09s | | | stage 702 s |
+| 43483354272 (`aece61e`) | three jobs | 3m00s | 4m12s | 7m21s | |
+| 43485369808 (`d3357b7`) | three jobs | 2m52s | 8m11s | 6m32s | release: one check 286 s |
+| 43485459420 (`eb5970d`) | three jobs | 5m41s, FAILED | 8m53s | 6m06s | release: one check 294 s; touch: the Jump tap |
+| 43489321160 (`ea9e79d`) | three jobs | 2m52s | 3m05s | 5m18s | both fixed: stages 134.0, 136.9, 255.3 s |
+| 43490541860 (`deb4b9b`) | three jobs | 2m52s | 3m19s | 4m10s | stage `touch` 132.1 s; every tap and hard move on try 1 |
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| the job's `timeout-minutes` | 14 (was 45) | measured | the slowest part on the code it now runs: touch-chapters 6m32s (43485369808), times the slowest runner seen, 2.01: the `touch` part's stage took 269.8 s on 43485459420 against 134.0 s on 43489321160, every check about twice as long (a slow runner, not a slow check). 13.1 min, so 14 |
+
+**The release part's slow check.** On 43485369808 and 43485459420 "nothing sticks: the window loses focus" took
+286 and 294 s (12.6 s on 43483354272), and the played ticks over it jumped by 3610 and 2415. Only a respawn stands a
+fallen swordsman up; the next `home()` found chapter 1's first swordsman standing and called `fell` three times (90 s
+each at most). On darwin with the CPU slowed 6 times the slide-off check's down hold ran from x 1.5 over the edge at
+x -6, a death, and the swordsman stood again: a hold lasts as long as the round trips it waits on, so on a slow page
+it can run 7.5 m (64 ticks at 7 m/s). Fixed by `releaseAt` (above): on 43489321160 the part's slowest check is its
+first, 30.5 s, which fells him.
+
+**The Jump tap.** On 43485459420 "a tap on Jump, down and up with no frame between, is still a jump, and a low one"
+read Jump held for 5 ticks and rose 1.43 m; the five CI reports before it read 1 tick, 0.99 m, and `Thumbs.tap` is
+as on main. The two touches are sent together, but a frame (5 ticks) came between them at the page. The stage now
+records the played tick each touch reaches the page at (`TAP_SEEN`); a tap taken within one tick is judged at once,
+and only a split one is sent again, up to `tries` (OQ-081 item 9). 43489321160: both at tick 945, try 1. Forced on
+darwin: one split, sent again and passed on try 2; every try split, the check failed.
+
+**The hard moves on CI**, paced by frames (43485369808, 43485459420, 43489321160, 43490541860): the double and the
+dash jump land on try 1 every time (the dash jump's Jump 15 ticks after the dash began, window 4 to 22); the wall
+jump on try 1, 1, 2 and 1. Its miss: Jump read down unbroken from ticks 0 to 59, so the one frame let go between its two presses played
+no tick.
+
+## POLISH-1 the hard moves by thumb (2026-11-13)
+
+B-107. `tools/harness/touch.ts` sections 5b and 6b, `thumbMove`. Each move is placed at its step's takeoff (from
+the level's `critical_path`, as `check:teach` reads it), played by real touch events, and judged from the probe's
+tick log by teach-probe's `landedOn` (on his feet, no death, within 0.3 m of the landing's height). Each is seen to
+fail with its control broken.
+
+What a touch costs on this page, read from the probe's tick log: an awaited touch is taken about 14 to 18 played
+ticks (3 frames) after it is sent; a frame is 5 ticks (the loop's `maxStepsPerFrame` binds on SwiftShader, so this
+is the same on a slower runner); a tap (down and up sent together) is one tick.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| `again` (was `kick`) | hold 2 frames, let go 1 frame | measured | chapter 2 step 5: pushed in with Jump held, then stick and Jump let go together, then Jump again: 11 of 11 wall jumps onto the shelf (10 in a probe of the move alone, 1 in the stage). Held 3 frames, the lift was lost; let go 2 frames, he had left the wall (a double jump, 3 of 3); still pushing in as he came down, he caught the wall top's edge (B-92) every time |
+| `pressShort` | double 1.5 m, dash 1.2 m | measured | the touch lands up to 2 frames (1.2 m at a run) after the probe showed him. Double: 4 of 4 onto the next floor, x 58.2 to 58.6 (3 in a probe, 1 in the stage). Dash: the lip's edge is near x 35.1, short of the torii at 36; with Dash sent 1 m short and Jump timed by polls he ran off the lip before the dash, 0 of 3 in the stage |
+| the dash jump's Jump | as soon as the tap on Dash is taken (`d3357b7`) | measured | Jump down 14 ticks after the dash began on darwin and 15 on CI (runs 43485369808, 43485459420, 43489321160, 43490541860), against a window of 4 to 22; it lands on try 1 each time. Was a frame after Dash: 18 or 19 on darwin, 20 on CI, near the window's end. By two polls of the probe it came 23 or 24 ticks after: 0 of 4 in a probe |
+| the double's presses | `again`: down 2 frames, up 1 frame, down | measured | 3 of 3 in a probe, and in the stage. Paced instead by each press being taken: 4 of 4 on darwin, but on CI run 43479377456 the second press came at the face (a wall jump), 3 tries failed. By a poll for the peak: a ledge grab and no double jump, 0 of 8 |
+| `moveTicks` | 150 | authored | a move's step gives up after this many played ticks; a move ends after twice this |
+| `catchWithin` | 150 ticks | authored | chapter 2's first face: the catch must come within this many played ticks of Jump going down (it comes within about 40). Was 400 from the start of the run: the broken check waited it out, 52.7 s on CI |
+| `tries` | 3 | authored | as `reachable`'s ledge catch is pressed again; the check says which try landed (all 1 of 3 on darwin). Also the most times the Jump tap is sent, and only when a frame split its touches ("POLISH-1 the touch job on CI") |
+
+With its control broken: Jump broken, neither the wall jump nor the double leaves the ground; Dash broken, a jump
+and an air jump reach the far side of chapter 4's gap and he hangs from its edge (B-92), not on top.
+
+## POLISH-1 the gate's line (2026-11-13)
+
+B-99. `src/systems/teach.ts` (a `gate` place), `src/ui/howto.ts` `MOVE_TEXT.gate`. No new number: the line is up
+within `TEACH.approachM` (6 m) of the foot of the door, as every place's is, while any swordsman of the level
+stands. `check:teach`: 126 properties (5 chapters, 53 places), 6 mutations caught. Chapters 1 to 4 have no gate
+place. The line: "This gate opens when every swordsman is down. Press {slash} to cut."
+
+## POLISH-1 desktop is untouched (2026-11-13)
+
+`node tools/harness/frame-hashes.ts --build` on a copy of origin/main (`03b3988`) and on this branch after the
+gate's sound and line, one machine (darwin, SwiftShader), then `--diff`: **IDENTICAL: 229 values, 6 levels**,
+chapter 5 included. The harness's bare page shows no teach line and plays no sound. No golden was written.

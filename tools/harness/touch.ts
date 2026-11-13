@@ -10,10 +10,17 @@
 // What it reads is the touch probe (src/main.ts `__TOUCH_PROBE__`): a harness build's page opened with
 // ?touchprobe=1 and WITHOUT ?harness=1. The probe reads the game (the state, the warrior, the camera, and the
 // frame input.sample returned on every played tick) and does two things a player cannot:
-//   place(pos, facing)   put the warrior somewhere. Used ONCE, for the goal: no chapter that has a next chapter
-//                        has its goal nearer than 101 m of platforming, and a scripted thumb on a page that
-//                        draws eight frames a second is not a bot. He is placed short of chapter 1's goal; the
-//                        fight with the swordsman there, the walk in and the tap on Next chapter are the thumb's.
+//   place(pos, facing)   put the warrior somewhere (and make it where a fall returns him), facing up the path with
+//                        the camera behind him. Used for three things, none of them a check:
+//                        - the goal: no chapter that has a next chapter has its goal nearer than 101 m of
+//                          platforming, and a scripted thumb on a page that draws eight frames a second is not a
+//                          bot. He is placed short of chapter 1's goal; the fight with the swordsman there, the
+//                          walk in and the tap on Next chapter are the thumb's.
+//                        - home, between the checks on chapter 1's first flat (POLISH-1: a walk back by the stick
+//                          never settled, and cost 18 s a call).
+//                        - the takeoffs of chapter 2's first wall jump and double jump and chapter 4's first dash
+//                          jump (POLISH-1, B-107): he is put where the level's path makes each from; the move
+//                          is the thumb's.
 //   breakControl(name)   break one control from OUTSIDE the controls, so each check below is seen to fail with
 //                        its control broken. A control that is a real button (Play, pause, the cards, a
 //                        chapter's row) is broken by taking the pointer from the element instead.
@@ -55,14 +62,36 @@ export const TOUCH_STAGE = {
   goalStart: [95.2, 9.05, 0] as Vec3,
   /** the scripted fight: walk until he is this near (inside FIGHT.swordsman.sightRange 4.5), cut when he is this near (inside FIGHT.warrior.reach 1.9), and not again for this many ticks (over FIGHT.warrior.againSec 0.24 s) */
   fight: { approach: 3.9, cutAt: 1.85, againTicks: 16 },
-  /** where the warrior is walked back to between checks: the middle of chapter 1's first flat (x -6 to 6), 6 m from the edge he can fall from and from the step that stops him */
-  home: { x: 0, within: 1.2 },
+  /**
+   * where the warrior is put back between checks (by the probe's place, facing up the path): on chapter 1's first
+   * flat (x -6 to 6), 7.5 m from the edge he can fall from and 4.5 m from the step that stops him. It is where the
+   * old walk back by the stick always ended (x 1.56, its twelfth try), so every check runs over the same ground as
+   * before; at x 0 a 'down' hold of the nothing-sticks checks carries him over the edge.
+   */
+  home: [1.5, 0.05, 0] as Vec3,
+  /**
+   * where each nothing-sticks hold starts (the stick pushed up the path, Jump held): the back of the same flat,
+   * 11 m short of the stair tread at x 6, whose 1.25 m face he cannot walk up. His one jump comes down well before
+   * it, and the face holds him there however long the hold (a 250-tick hold from here ended at x 5.64, running,
+   * against it). From S.home a hold of either way can run off the flat.
+   */
+  releaseAt: [-5, 0.05, 0] as Vec3,
   /** ticks a release is given to show in the frames, and how many frames at the end must be neutral */
   settleTicks: 8,
   neutralTicks: 3,
   /** a wait for n played ticks gives up after this many ms a tick, plus the fixed part (a CI runner draws about 4 frames a second) */
   msPerTick: 120,
   waitMs: 20000,
+  /** POLISH-1 (B-107): a hard move by thumb gives up after this many played ticks at each step of it */
+  moveTicks: 150,
+  /** Jump (the double) or Dash (the dash jump) is sent this far (m) short of the takeoff the level names: a touch lands a frame (5 ticks, 0.6 m at a run) after the probe last showed him, so up to 1.2 m later */
+  pressShort: { double: 1.5, dash: 1.2 },
+  /** attempts at a hard move before it counts as not made */
+  tries: 3,
+  /** chapter 2's first face: played ticks after Jump goes down within which the catch must come (it comes within about 40) */
+  catchWithin: 150,
+  /** the wall jump and the double jump by thumb: frames Jump is held (with the stick pushed in, for the wall jump), then frames it (and that stick) is let go, before Jump goes down again (MEASUREMENTS "POLISH-1 the hard moves by thumb") */
+  again: { holdFrames: 2, letGoFrames: 1 },
 };
 
 // ---------- what the probe gives (src/main.ts TouchProbeSnapshot, TouchProbeTick) ----------
@@ -90,8 +119,20 @@ declare global {
     __TOUCH_PROBE__?: { version: string; snapshot(): Snap; log(since: number): Tick[]; place(pos: Vec3, facingDeg: number): void; breakControl(name: string | null): void };
     __touchAudio?: { contexts: number; ctx: AudioContext | null };
     __canvasClicks?: number;
+    __tapSeen?: { type: string; tick: number }[];
   }
 }
+
+/**
+ * Runs in the page before any of its scripts: the played tick at which each touchstart and touchend reached the
+ * page, before the game's own listeners (window, capture, passive: it reads, and stops and prevents nothing). It is
+ * how the stage knows a tap's down and up really met the page with no tick between them, which `Thumbs.tap` asks
+ * for and cannot force: on CI run 43485459420 a frame of 5 ticks came between the two.
+ */
+const TAP_SEEN = `(() => {
+  const seen = (window.__tapSeen = []);
+  for (const type of ['touchstart', 'touchend']) window.addEventListener(type, () => { const p = window.__TOUCH_PROBE__; seen.push({ type, tick: p ? p.snapshot().tick : -1 }); }, { capture: true, passive: true });
+})()`;
 
 /** Runs in the page before any of its scripts: counts the audio contexts opened and keeps the last. */
 const AUDIO_COUNT = `(() => {
@@ -176,7 +217,7 @@ export async function openTouch(baseUrl: string, o: { size: readonly [number, nu
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
-  for (const s of [AUDIO_COUNT, ...(o.init ?? [])]) await page.addInitScript(s);
+  for (const s of [AUDIO_COUNT, TAP_SEEN, ...(o.init ?? [])]) await page.addInitScript(s);
   try {
     await page.goto(`${baseUrl}/${o.query ?? '?touchprobe=1'}`);
   } catch (err) {
@@ -337,15 +378,119 @@ export async function fell(t: TouchPage, id: string, toward: 'up' | 'down', trie
   }
 }
 
+export interface Level { id: string; chapter: number; goal: { pos: Vec3 }; enemies?: { id: string; pos: Vec3 }[]; critical_path: (Vec3 | { pos: Vec3; via?: string })[] }
+/** The first step of a level's path made by `via`: its index, where it is made from (a) and where it lands (b). */
+export function firstVia(l: Level, via: string): { i: number; a: Vec3; b: Vec3 } {
+  const at = (w: Level['critical_path'][number]): Vec3 => (Array.isArray(w) ? w : w.pos);
+  const i = l.critical_path.findIndex((w) => !Array.isArray(w) && w.via === via);
+  if (i < 1) throw new Error(`${l.id} has no step by ${via}`);
+  return { i, a: at(l.critical_path[i - 1]!), b: at(l.critical_path[i]!) };
+}
+
+/** What a move by thumb came to, read from the probe. */
+export interface Move { landed: boolean; made: string[]; both: number; jumpAfterDash: number | null; deaths: number; note: string }
+/**
+ * One move by thumb: place him at `from`, let him stand, play `fingers` (which lifts nothing), then wait until he
+ * is down again (or dead, or out of time) and let every finger go. Landed is teach-probe's `landedOn`: on his feet
+ * with no death on the way, within 0.3 m of the height of `to` (each of the three steps is a rise).
+ */
+export async function thumbMove(t: TouchPage, h: Awaited<ReturnType<typeof hands>>, from: Vec3, to: Vec3, fingers: (base: Snap) => Promise<void>): Promise<Move> {
+  const S = TOUCH_STAGE;
+  await t.until((s) => s.state === 'play', 15000);
+  await t.page.evaluate((p) => window.__TOUCH_PROBE__!.place(p, -90), from);
+  await t.until((s) => s.state === 'play' && s.grounded && Math.hypot(s.vel[0], s.vel[2]) < 0.05, 15000);
+  await t.ticks(S.settleTicks);
+  const start = await t.snap();
+  await fingers(start);
+  // down again: on the ground after having left it, hanging from a ledge (not a landing), dead, or out of time
+  const end = (await t.until((s) => s.state !== 'play' || s.deaths !== start.deaths || s.pstate === 'ledge_grab' || s.tick > start.tick + 2 * S.moveTicks
+    || (s.grounded && s.tick > start.tick + 6 && s.pstate !== 'jump' && Math.abs(s.vel[1]) < 0.05), S.waitMs + 2 * S.moveTicks * S.msPerTick)) ?? (await t.snap());
+  await h.lift();
+  await h.stickOff();
+  const log = await t.log(start.tick);
+  const made = [...new Set(log.map((f) => f.pstate))];
+  const dashAt = log.findIndex((f) => f.pstate === 'dash');
+  const jumpAt = dashAt < 0 ? -1 : log.findIndex((f, k) => k > dashAt && f.jump);
+  const deaths = end.deaths - start.deaths;
+  // teach-probe's landedOn: up a rise its height says it; across a gap, past half of it
+  const landed = deaths === 0 && end.state === 'play' && end.grounded && Math.abs(end.feet[1] - to[1]) < 0.3
+    && (to[1] - from[1] > 0.3 || Math.hypot(end.feet[0] - from[0], end.feet[2] - from[2]) > 0.5 * Math.hypot(to[0] - from[0], to[2] - from[2]));
+  // after a death he stands at the place again (place made it his respawn), and the game plays on
+  if (deaths > 0 || end.state !== 'play') await t.until((s) => s.state === 'play' && s.grounded, 15000);
+  const both = log.filter((f) => (f.jump || f.dash) && (f.x || f.y)).length;
+  // the ticks Jump was read as down, counted from the first tick he left the ground: how the presses landed
+  const off = log.findIndex((f) => f.pstate !== 'idle' && f.pstate !== 'run' && f.pstate !== 'sprint');
+  const runs: string[] = [];
+  log.forEach((f, k) => { const prev = log[k - 1]; if (f.jump && !prev?.jump) runs.push(`${k - off}`); else if (!f.jump && prev?.jump) runs[runs.length - 1] += `..${k - 1 - off}`; });
+  return {
+    landed, made, deaths, both, jumpAfterDash: jumpAt < 0 ? null : jumpAt - dashAt,
+    note: `from (${from.map((v) => v.toFixed(1)).join(', ')}): ${landed ? 'LANDED' : 'did not land'} at (${end.feet.map((v) => v.toFixed(2)).join(', ')}), aiming at (${to.join(', ')}); ${deaths} death(s); states ${made.join(' > ')}${jumpAt >= 0 ? `; Jump down ${jumpAt - dashAt} ticks after the dash began` : ''}; Jump read down on ticks ${runs.join(', ') || 'none'} (from the first in the air); a button and the stick read together on ${both} ticks`,
+  };
+}
+/**
+ * Two presses of Jump by thumb: `first` sent, TOUCH_STAGE.again.holdFrames frames, `letGo` sent, letGoFrames frames,
+ * then `second`. Paced by the page's frames (5 played ticks each here, on any runner: the loop's cap binds), not by
+ * each touch being taken: a touch is taken about 3 frames after it is sent on darwin and later on CI, so a wait for
+ * it puts the second press wherever the runner's speed puts it.
+ */
+export async function pressTwice(t: TouchPage, first: Promise<void>[], letGo: () => Promise<void>[], second: () => Promise<void>): Promise<void> {
+  const sent = [...first];
+  for (let f = 0; f < TOUCH_STAGE.again.holdFrames; f++) await nextFrame(t);
+  sent.push(...letGo());
+  for (let f = 0; f < TOUCH_STAGE.again.letGoFrames; f++) await nextFrame(t);
+  await second();
+  await Promise.all(sent);
+}
+
+/**
+ * Resolves on the page's next animation frame, after the game's own loop has played that frame's ticks (its
+ * callback was asked for first). A wait of one frame without a poll of the probe: each poll costs a frame of its
+ * own on a page that draws a few frames a second, and a hard move has no frames to spare.
+ */
+export async function nextFrame(t: TouchPage): Promise<void> {
+  await t.page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => r())));
+}
+
+/** A move by thumb on a page that draws a few frames a second: up to TOUCH_STAGE.tries attempts, as reachable's ledge catch is pressed again. The note says which try it was. */
+export async function tries(move: () => Promise<Move>): Promise<Move> {
+  let m = await move(), k = 1;
+  const missed: string[] = [];
+  for (; k < TOUCH_STAGE.tries && !m.landed; k++) { missed.push(m.note); m = await move(); }
+  return { ...m, note: `${m.note} (try ${k} of up to ${TOUCH_STAGE.tries}${missed.length ? `; the tries before: ${missed.map((n, i) => `[${i + 1}] ${n}`).join(' ')}` : ''})` };
+}
+
 function tuning(root: string): { runSpeed: number; sprintSpeed: number } {
   const text = readFileSync(join(root, 'src/entities/player.ts'), 'utf8');
   const num = (name: string): number => Number(new RegExp(`\\b${name}:\\s*([0-9.]+)`).exec(text)?.[1] ?? NaN);
   return { runSpeed: num('runSpeed'), sprintSpeed: num('sprintSpeed') };
 }
 
-export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): Promise<StageResult> {
-  const st = new Stage('touch');
+/**
+ * POLISH-1 (B-108): the stage is three once-stages, each its own CI job, run side by side. Each part is a visit of
+ * its own to the phone page, started by a tap on Play; each check is in exactly one part, as it was, and each part
+ * also checks that its own page logged no error.
+ *   'touch'           (controls)  section 1: the title, Play, the sound, the layout, the Sword, the stick, Jump,
+ *                                 Dash, the camera, three fingers, a tap on the game. On chapter 1's first flat.
+ *   'touch-release'   (release)   sections 2 and 3: nothing sticks, however a finger leaves; pause, how to play and
+ *                                 resume by tap. On chapter 1's first flat (its first swordsman felled by thumb first).
+ *   'touch-chapters'  (chapters)  sections 4 to 9: a goal and the next chapter, chapter 2's face and its wall jump
+ *                                 and double jump, the chapter list and chapter 4's dash jump, the menu; then the
+ *                                 second phone size, upright, and the pages that must have no touch controls.
+ */
+export type TouchPart = 'controls' | 'release' | 'chapters';
+
+export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, part: TouchPart = 'controls'): Promise<StageResult> {
+  const st = new Stage(part === 'controls' ? 'touch' : `touch-${part}`);
   const S = TOUCH_STAGE;
+  // POLISH-1: each check's own time (ms since the check before it), kept in the report so a CI run shows where its
+  // time goes (MEASUREMENTS "POLISH-1 the touch job on CI"). It changes no check.
+  const checkMs: number[] = [];
+  st.data['checkMs'] = checkMs;
+  {
+    const check = st.check.bind(st);
+    let last = Date.now();
+    st.check = (name: string, ok: boolean, detail = ''): boolean => { const now = Date.now(); checkMs.push(now - last); last = now; return check(name, ok, detail); };
+  }
   const open: TouchPage[] = [];
   const page = async (o: Parameters<typeof openTouch>[1]): Promise<TouchPage> => {
     const t = await openTouch(ctx.baseUrl, o);
@@ -355,8 +500,8 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
   return guard(st, async () => {
     try {
       const T = tuning(ctx.root);
-      const levels = (id: string): { id: string; chapter: number; goal: { pos: Vec3 }; enemies?: { id: string; pos: Vec3 }[] } => JSON.parse(readFileSync(join(ctx.root, 'levels', `${id}.json`), 'utf8'));
-      const ch1 = levels('01-lower-stair'), ch2 = levels('02-cliff-seam'), ch3 = levels('03-drifting-stones');
+      const levels = (id: string): Level => JSON.parse(readFileSync(join(ctx.root, 'levels', `${id}.json`), 'utf8'));
+      const ch1 = levels('01-lower-stair'), ch2 = levels('02-cliff-seam'), ch4 = levels('04-summit-ridge');
 
       // ================= 1. the phone, landscape, the whole game by thumb =================
       const t = await page({ size: S.phones[0] });
@@ -367,303 +512,7 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
         st.check('the touch probe is on the page', false, `__TOUCH_PROBE__ is ${probe}: the bundle was not built with --mode harness`);
         return;
       }
-      const atTitle = await t.page.evaluate(() => ({ cls: document.documentElement.className, layer: !!document.getElementById('touch'), layerShown: (document.getElementById('touch')?.getClientRects().length ?? 0) > 0, audio: window.__touchAudio?.contexts ?? -1 }));
-      st.check('on a touch device the controls are in the document, and not shown over the title', atTitle.layer && !atTitle.layerShown && /\btouch\b/.test(atTitle.cls), `<html class="${atTitle.cls}">, #touch ${atTitle.layer ? (atTitle.layerShown ? 'SHOWN over the title' : 'present, hidden') : 'MISSING'}`);
-      const titleButtons = await buttonFaults(t, '#title button');
-      st.check(`every button on the title can be pressed by a finger (${S.minTarget} px, on screen)`, titleButtons.n >= 4 && titleButtons.faults.length === 0, titleButtons.faults.join('; ') || `${titleButtons.n} buttons`);
-
-      // --- start from the title by tap; the tap wakes the sound and is not a jump
-      await t.page.evaluate(() => { (document.getElementById('title-play') as HTMLElement).style.pointerEvents = 'none'; });
-      await t.tapOn('#title-play');
-      await t.page.waitForTimeout(600);
-      const deadPlay = await t.snap();
-      st.check('seen to fail: with Play out of reach the same tap starts nothing', deadPlay.state === 'menu', `state ${deadPlay.state}`);
-      await t.page.evaluate(() => { (document.getElementById('title-play') as HTMLElement).style.pointerEvents = ''; });
-      await t.tapOn('#title-play');
-      const started = await t.until((s) => s.state === 'play', 60000);
-      if (!st.check('a tap on Play starts the first chapter', started?.level === ch1.id, started ? `playing ${started.level}` : `state ${(await t.snap()).state} after 60 s`)) return;
-      const sound = await t.page.waitForFunction(() => window.__touchAudio?.ctx?.state === 'running', null, { timeout: 8000 }).then(() => true).catch(() => false);
-      const audio = await t.page.evaluate(() => ({ n: window.__touchAudio?.contexts ?? -1, state: window.__touchAudio?.ctx?.state ?? 'none' }));
-      st.check('sound starts on that first touch: none before it, one running context after', atTitle.audio === 0 && audio.n === 1 && sound, `${atTitle.audio} contexts before the tap; after: ${audio.n}, ${audio.state}`);
-      await t.ticks(10);
-      const first = await t.log(0);
-      st.check('the tap that starts the game is not a jump', first.length > 0 && first.every(neutral), first.find((f) => !neutral(f)) ? show(first.find((f) => !neutral(f))) : `${first.length} ticks, every frame neutral`);
-
-      // --- the layout: nothing covers the warrior or the teach line, everything is a finger's size and on screen
-      const lay = await layoutFaults(t);
-      st.check(`the controls at ${S.phones[0].join('x')}: on screen, a finger's size, clear of the warrior and the teach line`, lay.length === 0, lay.join('; ') || 'the stick, Jump, Sword, Dash and the pause button');
-      const teach = await t.page.evaluate(() => { const e = document.getElementById('teach'); return { shown: !!e && e.getClientRects().length > 0, text: e?.textContent ?? '', kbd: e?.querySelectorAll('kbd').length ?? 0 }; });
-      st.check('the teach line names the touch controls, not keys', teach.shown && teach.text.includes(TOUCH.labels['move']!) && teach.kbd === 0, `"${teach.text}" (${teach.kbd} key caps)`);
-
-      const h = await hands(t);
-
-      // --- a swordsman felled with the Sword button (chapter 1's first, up the path from the spawn)
-      const fight = await fell(t, ch1.enemies![0]!.id, 'up');
-      st.check('a swordsman is felled with the stick and the Sword button', fight.down, fight.note);
-      await t.until((s) => s.state === 'play' && s.grounded, 15000);
-
-      // --- the Sword: a tap shorter than a tick still slashes; broken, it does not
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('slash'));
-      let before = await t.ticks(20); // clear of the last slash (FIGHT.warrior.againSec)
-      await h.tapButton('slash');
-      let after = await t.ticks(12);
-      st.check('seen to fail: with the Sword broken a tap starts no slash', after.slashes === before.slashes, `${after.slashes - before.slashes} slashes`);
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-      before = await t.snap();
-      await h.tapButton('slash');
-      after = await t.ticks(12);
-      const slashTicks = (await t.log(before.tick)).filter((f) => f.slash).length;
-      st.check('a tap on Sword, down and up with no frame between, starts one slash', after.slashes === before.slashes + 1 && slashTicks === 1, `${after.slashes - before.slashes} slashes; the sword read as held on ${slashTicks} tick`);
-
-      // --- the stick: the dead zone, the mid ring (run), the outer ring (sprint), and release
-      /** Push the stick one way for `ticks` played ticks, then let it go: the frames of those ticks, and where he was before and after. */
-      const walk = async (dir: 'up' | 'down', share: number, ticks: number): Promise<{ log: Tick[]; from: Snap; to: Snap }> => {
-        const from = await t.snap();
-        await h.stick(dir, share);
-        const to = (await t.until((s) => s.tick - from.tick >= ticks || s.state !== 'play', S.waitMs + ticks * S.msPerTick)) ?? (await t.snap());
-        const log = await t.log(from.tick);
-        await h.stickOff();
-        return { log, from, to };
-      };
-      /**
-       * Walk the warrior back to the middle of the first flat, by the stick (the camera looks up the path here, so
-       * up the screen is +X and right is +Z). Every check that moves him starts from here, so none walks him off
-       * the edge; and if a fall has stood the first swordsman up again, he is felled again first.
-       */
-      const home = async (x = S.home.x): Promise<void> => {
-        for (let i = 0; i < 12; i++) {
-          const s = (await t.until((v) => v.state === 'play' && v.grounded, 15000)) ?? (await t.snap());
-          if (s.enemies[0] && s.enemies[0].mode !== 'fallen') { await fell(t, s.enemies[0].id, 'up'); continue; }
-          const dx = x - s.feet[0], dz = -s.feet[2];
-          const far = Math.abs(dx) > S.home.within ? (dx > 0 ? 'up' : 'down') : Math.abs(dz) > S.home.within ? (dz > 0 ? 'right' : 'left') : null;
-          if (!far) return;
-          await h.stick(far, S.share.mid);
-          await t.until((v) => v.state !== 'play' || (far === 'up' ? v.feet[0] >= x - 0.6 : far === 'down' ? v.feet[0] <= x + 0.6 : Math.abs(v.feet[2]) < 0.6), 10000);
-          await h.stickOff();
-          await t.ticks(S.settleTicks);
-        }
-      };
-      const fastest = (log: Tick[]): number => Math.max(0, ...log.map((f) => f.speed));
-      const unit = (log: Tick[]): boolean => log.filter((f) => f.x || f.y).every((f) => Math.abs(Math.hypot(f.x, f.y) - 1) < 1e-9);
-
-      await home();
-      const dead = await walk('up', S.share.dead, 12);
-      st.check('inside the dead zone the stick says nothing', dead.log.length >= 10 && dead.log.every(neutral), `${S.share.dead} of the radius for ${dead.log.length} ticks: ${dead.log.find((f) => !neutral(f)) ? show(dead.log.find((f) => !neutral(f))) : 'every frame neutral'}`);
-
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('stick'));
-      const noStick = await walk('up', S.share.mid, 15);
-      st.check('seen to fail: with the stick broken a push moves nothing', noStick.log.every(neutral) && Math.abs(noStick.to.feet[0] - noStick.from.feet[0]) < 0.05, `${noStick.log.length} ticks, moved ${(noStick.to.feet[0] - noStick.from.feet[0]).toFixed(2)} m`);
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-
-      // up the screen is up the path (world +X while the camera looks up it): toward the step that stops him, away from the edge
-      const run = await walk('up', S.share.mid, 30);
-      const runMoved = run.to.feet[0] - run.from.feet[0];
-      const runFrames = run.log.filter((f) => f.x || f.y);
-      st.check('the stick at mid ring walks the warrior: full deflection, run speed, no sprint',
-        runFrames.length >= 15 && unit(run.log) && runFrames.every((f) => !f.sprint && f.x > 0.99) && runMoved > 1 && Math.abs(fastest(run.log) - T.runSpeed) <= S.speedTol,
-        `${S.share.mid} of the radius: ${runFrames.length} ticks of move, every one of length 1 toward +X: ${unit(run.log)}; sprint on ${runFrames.filter((f) => f.sprint).length}; top speed ${fastest(run.log).toFixed(2)} (run ${T.runSpeed}); moved ${runMoved.toFixed(2)} m`);
-
-      await home();
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('sprint'));
-      const noSprint = await walk('up', S.share.outer, 12);
-      st.check('seen to fail: with the outer ring broken the stick at its edge does not sprint', noSprint.log.every((f) => !f.sprint), `${noSprint.log.filter((f) => f.sprint).length} sprint ticks`);
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-      await home();
-      const sprint = await walk('up', S.share.outer, 22);
-      const sprintFrames = sprint.log.filter((f) => f.x || f.y);
-      st.check('the stick at its outer ring is sprint: full deflection, sprint speed',
-        sprintFrames.length >= 12 && unit(sprint.log) && sprintFrames.every((f) => f.sprint && f.x > 0.99) && Math.abs(fastest(sprint.log) - T.sprintSpeed) <= S.speedTol,
-        `${S.share.outer} of the radius: ${sprintFrames.length} ticks, sprint on ${sprintFrames.filter((f) => f.sprint).length}; top speed ${fastest(sprint.log).toFixed(2)} (sprint ${T.sprintSpeed}, run ${T.runSpeed})`);
-      const still = await t.ticks(S.settleTicks + 20);
-      const afterStick = (await t.log(still.tick - S.neutralTicks));
-      st.check('the stick let go: the frame is neutral', afterStick.length >= S.neutralTicks && afterStick.every(neutral), show(afterStick.find((f) => !neutral(f)) ?? afterStick.at(-1)));
-
-      // --- Jump: held is the full height, a tap is a low hop, broken is nothing
-      const jump = async (hold: boolean): Promise<{ rise: number; held: number }> => {
-        const base = await t.until((s) => s.state === 'play' && s.grounded && Math.hypot(s.vel[0], s.vel[2]) < 0.05, 15000) ?? (await t.snap());
-        if (hold) await h.press('jump'); else await h.tapButton('jump');
-        // up and down again: a full jump is about 47 ticks in the air
-        await t.until((s) => s.tick - base.tick >= 60, S.waitMs + 60 * S.msPerTick);
-        if (hold) await h.lift();
-        const log = await t.log(base.tick);
-        return { rise: Math.max(...log.map((f) => f.feetY)) - base.feet[1], held: log.filter((f) => f.jump).length };
-      };
-      await home();
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('jump'));
-      const noJump = await jump(true);
-      st.check('seen to fail: with Jump broken a held press does not leave the ground', noJump.rise < 0.05, `rose ${noJump.rise.toFixed(2)} m`);
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-      await t.ticks(S.settleTicks);
-      const full = await jump(true);
-      st.check('a held Jump reaches full height', Math.abs(full.rise - S.fullRise) <= S.riseTol && full.held >= S.catchTicks, `rose ${full.rise.toFixed(2)} m (measured full rise ${S.fullRise}); Jump read as held for ${full.held} ticks`);
-      await t.ticks(S.settleTicks);
-      const hop = await jump(false);
-      st.check('a tap on Jump, down and up with no frame between, is still a jump, and a low one', hop.held === 1 && hop.rise > 0.5 && hop.rise <= full.rise - S.tapUnder, `rose ${hop.rise.toFixed(2)} m; Jump read as held for ${hop.held} tick(s)`);
-
-      // --- Dash, with the stick held: two controls at once. Down the screen again, away from the step.
-      const dash = async (): Promise<{ dashed: number; both: number; moved: number }> => {
-        await home();
-        const base = await t.snap();
-        await h.stick('up', S.share.mid);
-        await h.tapButton('dash');
-        await h.stickOff();
-        const end = await t.ticks(24);
-        const log = await t.log(base.tick);
-        return { dashed: log.filter((f) => f.pstate === 'dash').length, both: log.filter((f) => f.dash && (f.x || f.y)).length, moved: end.feet[0] - base.feet[0] };
-      };
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('dash'));
-      const noDash = await dash();
-      st.check('seen to fail: with Dash broken the same press is no dash', noDash.dashed === 0, `${noDash.dashed} ticks in the dash`);
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-      await t.ticks(30); // the dash's own wait between two (TUNING.dashCooldownSec)
-      const dashed = await dash();
-      st.check('Dash dashes, tapped while the stick is held', dashed.dashed >= 5 && dashed.both >= 1, `${dashed.dashed} ticks in the dash; the stick and Dash read together on ${dashed.both} tick(s); moved ${dashed.moved.toFixed(2)} m`);
-
-      // --- the camera: a drag anywhere that is not a control, through the mouse's own call
-      const [W, H] = S.phones[0];
-      const drag = async (dx: number, dy: number): Promise<void> => {
-        await t.thumbs.down(3, W / 2, H * 0.3);
-        for (let i = 1; i <= 4; i++) await t.thumbs.move(3, W / 2 + (dx * i) / 4, H * 0.3 + (dy * i) / 4);
-        await t.thumbs.up(3);
-        await t.page.waitForTimeout(150);
-      };
-      const turnOf = (px: number): number => (-px * TOUCH.lookScale * CAMERA_TUNING.mouseSensitivity * 180) / Math.PI;
-      await home();
-      const cam0 = await t.snap();
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('look'));
-      await drag(120, 0);
-      const camDead = await t.snap();
-      st.check('seen to fail: with the look broken a drag turns nothing', Math.abs(camDead.yawDeg - cam0.yawDeg) < 1e-6, `yaw moved ${(camDead.yawDeg - cam0.yawDeg).toFixed(2)} deg`);
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-      await drag(120, 0);
-      const cam1 = await t.snap();
-      st.check('a drag off the controls turns the camera, as a mouse would', Math.abs(cam1.yawDeg - cam0.yawDeg - turnOf(120)) <= S.turnTol, `120 px across: yaw ${(cam1.yawDeg - cam0.yawDeg).toFixed(2)} deg (a mouse moved ${120 * TOUCH.lookScale} px: ${turnOf(120).toFixed(2)})`);
-      await drag(0, 40);
-      const cam2 = await t.snap();
-      st.check('and a drag down the screen tilts it', cam2.pitchDeg > cam1.pitchDeg + 2, `40 px down: pitch ${cam1.pitchDeg.toFixed(1)} to ${cam2.pitchDeg.toFixed(1)} deg`);
-      // three fingers at once: the stick, Jump, and a drag. Each keeps its own.
-      // (the drag puts the camera back where the two above took it from, so up the screen is up the path again)
-      await home();
-      const tri0 = await t.snap();
-      await h.stick('up', S.share.mid);
-      await h.press('jump');
-      await t.thumbs.down(3, W / 2, H * 0.3);
-      await t.thumbs.move(3, W / 2 - 120, H * 0.3 - 40);
-      await h.stickOff();
-      const tri1 = await t.snap();
-      await t.thumbs.up(3);
-      await h.lift();
-      const triLog = await t.log(tri0.tick);
-      st.check('three fingers at once: the stick, Jump and a camera drag each keep their own touch',
-        triLog.some((f) => f.jump && (f.x || f.y)) && Math.abs(tri1.yawDeg - tri0.yawDeg - turnOf(-120)) <= S.turnTol,
-        `the stick and Jump read together on ${triLog.filter((f) => f.jump && (f.x || f.y)).length} ticks; the drag turned the camera ${(tri1.yawDeg - tri0.yawDeg).toFixed(2)} deg (asked ${turnOf(-120).toFixed(2)})`);
-      await home();
-
-      // --- a tap on the game itself: no click, no pointer lock, no pause
-      await t.page.evaluate(() => { window.__canvasClicks = 0; document.querySelector('canvas')!.addEventListener('click', () => { window.__canvasClicks = (window.__canvasClicks ?? 0) + 1; }); });
-      await t.thumbs.tap(W / 2, H * 0.3);
-      await t.page.waitForTimeout(500);
-      const tapped = await t.page.evaluate(() => ({ clicks: window.__canvasClicks ?? -1, lock: document.pointerLockElement !== null }));
-      const stillPlay = await t.snap();
-      st.check('a tap on the game is not a click: no pointer lock is asked for, and nothing pauses', tapped.clicks === 0 && !tapped.lock && stillPlay.state === 'play', `${tapped.clicks} clicks reached the canvas; pointer lock ${tapped.lock ? 'HELD' : 'none'}; state ${stillPlay.state}`);
-
-      // ================= 2. nothing sticks: after every way a finger can leave, the live frame is neutral =================
-      // Each: the stick pushed and Jump held (two fingers), seen in the frames; then the release; then the last
-      // frames of the ticks that follow must be neutral. The direction alternates so the warrior stays on the flat.
-      let flip = false;
-      const held = async (): Promise<Snap> => {
-        await home();
-        flip = !flip;
-        const from = await t.snap();
-        await h.stick(flip ? 'up' : 'down', S.share.mid);
-        await h.press('jump');
-        await t.until((s) => s.tick > from.tick + 2, 8000);
-        return from;
-      };
-      const settled = async (name: string, from: Snap, fingersStillDown = false): Promise<void> => {
-        const end = await t.ticks(S.settleTicks);
-        const log = await t.log(from.tick);
-        const tail = log.filter((f) => f.tick > end.tick - S.neutralTicks);
-        const wasHeld = log.some((f) => f.jump && (f.x || f.y));
-        st.check(`nothing sticks: ${name}`, wasHeld && tail.length >= S.neutralTicks && tail.every(neutral),
-          `${wasHeld ? 'the stick and Jump were read as held' : 'THE HOLD WAS NEVER READ'}; ${fingersStillDown ? 'with the fingers still down, ' : ''}the last frames: ${show(tail.find((f) => !neutral(f)) ?? tail.at(-1))}`);
-      };
-
-      let from = await held();
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('stuck'));
-      await h.lift();
-      await h.stickOff();
-      {
-        const end = await t.ticks(S.settleTicks);
-        const tail = (await t.log(from.tick)).filter((f) => f.tick > end.tick - S.neutralTicks);
-        st.check('seen to fail: with the releases broken the frame stays held after both fingers lift', tail.length > 0 && tail.some((f) => !neutral(f)), show(tail.find((f) => !neutral(f)) ?? tail.at(-1)));
-      }
-      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
-
-      from = await held();
-      await h.lift();
-      await h.stickOff();
-      await settled('both fingers lifted', from);
-
-      from = await held();
-      await t.thumbs.cancel();
-      await h.stickOff(); // the driver's own book-keeping: the page was already told by the cancel
-      await settled('touchcancel takes both fingers', from);
-
-      // a finger sliding off Jump lets Jump go; the stick, under another finger, is still held
-      from = await held();
-      const j = h.centre('jump');
-      await t.thumbs.move(2, j.x - (TOUCH.buttons.jump.radius + TOUCH.slideOff + 12), j.y - 30);
-      {
-        const end = await t.ticks(S.settleTicks);
-        const tail = (await t.log(from.tick)).filter((f) => f.tick > end.tick - S.neutralTicks);
-        st.check('a finger that slides off Jump lets it go, and the stick under the other finger is still held', tail.length >= S.neutralTicks && tail.every((f) => !f.jump && (f.x !== 0 || f.y !== 0)), show(tail.at(-1)));
-      }
-      await h.lift();
-      await h.stickOff();
-      await settled('the slid-off finger and the stick lifted', from);
-
-      // a second finger on Jump is swallowed: lifting the first lets go, whatever the second does
-      from = await held();
-      await t.thumbs.down(4, j.x + 6, j.y + 4);
-      await t.ticks(3);
-      await h.lift(); // the first finger
-      await h.stickOff();
-      await settled('a second finger on Jump, the first one lifted', from, true);
-      await t.thumbs.up(4);
-
-      // the window loses focus, and the tab is hidden, with both fingers still on the glass
-      from = await held();
-      await t.page.evaluate(() => window.dispatchEvent(new Event('blur')));
-      await settled('the window loses focus', from, true);
-      await h.lift();
-      await h.stickOff();
-      from = await held();
-      await t.page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
-      await settled('the tab is hidden', from, true);
-      await t.page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
-      await h.lift();
-      await h.stickOff();
-
-      // ================= 3. everything the keyboard can leave, a finger can leave =================
-      // --- pause and resume by tap, with the stick still held under another finger
-      await home();
-      await t.page.evaluate(() => { (document.getElementById('touch-pause') as HTMLElement).style.pointerEvents = 'none'; });
-      await t.tapOn('#touch-pause');
-      await t.page.waitForTimeout(500);
-      st.check('seen to fail: with the pause button out of reach the same tap pauses nothing', (await t.snap()).state === 'play', `state ${(await t.snap()).state}`);
-      await t.page.evaluate(() => { (document.getElementById('touch-pause') as HTMLElement).style.pointerEvents = ''; });
-      await h.stick('up', S.share.mid);
-      await t.tapOn('#touch-pause');
-      const paused = await t.until((s) => s.state === 'pause', 8000);
-      const card = await t.page.evaluate(() => ({ shown: (document.getElementById('touch-card')?.getClientRects().length ?? 0) > 0, title: document.querySelector('#touch-card h1')?.textContent ?? '', buttons: [...document.querySelectorAll('#touch-card button')].map((b) => b.textContent ?? ''), hud: document.getElementById('hud')?.textContent ?? '', controls: (document.getElementById('touch')?.getClientRects().length ?? 0) > 0 }));
       const W_ = TOUCH.words;
-      const cardButtons = await buttonFaults(t, '#touch-card button');
-      st.check('a tap on the pause button pauses, under a card that offers resume, how to play, the chapters and the menu',
-        !!paused && card.shown && card.title === W_.paused && [W_.resume, W_.help, W_.chapters, W_.menu].every((b) => card.buttons.includes(b)) && cardButtons.faults.length === 0 && card.hud === '' && !card.controls,
-        `state ${paused?.state ?? (await t.snap()).state}; card "${card.title}": ${card.buttons.join(', ')}${cardButtons.faults.length ? `; ${cardButtons.faults.join('; ')}` : ''}; the HUD's line: "${card.hud}"; the controls ${card.controls ? 'STILL SHOWN' : 'hidden'}`);
-
-      // --- how to play, from the card: the page names the touch controls
       const tapText = async (scope: string, text: string): Promise<boolean> => {
         const c = await t.page.evaluate(({ scope, text }) => {
           const b = [...document.querySelectorAll<HTMLElement>(`${scope} button`)].find((e) => (e.textContent ?? '').trim() === text);
@@ -674,33 +523,371 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
         await t.thumbs.tap(c.x, c.y);
         return true;
       };
-      await tapText('#touch-card', W_.help);
-      await t.page.waitForFunction(() => !document.getElementById('help')?.hidden, null, { timeout: 8000 }).catch(() => null);
-      const help = await t.page.evaluate(() => {
-        const e = document.getElementById('help-content');
-        return { open: !document.getElementById('help')?.hidden, text: e?.textContent ?? '', heads: [...(e?.querySelectorAll('th') ?? [])].map((x) => x.textContent ?? ''), cells: [...(e?.querySelectorAll('td') ?? [])].map((x) => x.textContent ?? ''), kbd: e?.querySelectorAll('kbd').length ?? 0 };
-      });
-      const L = TOUCH.labels;
-      const named = [L['jump']!, L['dash']!, L['slash']!].every((n) => help.cells.includes(n)) && help.cells.some((c) => c.toLowerCase() === L['move']!.toLowerCase());
-      st.check('the how-to-play page, opened by tap from the pause card, names the stick, Jump, Sword and Dash, and no key',
-        help.open && help.heads.includes('Touch') && !help.heads.includes('Keyboard') && named && help.kbd === 0 && !/needs a keyboard/i.test(help.text) && help.text.includes(`Move with ${L['move']}`),
-        `${help.open ? 'open' : 'NOT open'}; columns: ${help.heads.join(' | ')}; ${help.kbd} key caps; ${/needs a keyboard/i.test(help.text) ? 'STILL says it needs a keyboard' : 'no "needs a keyboard" line'}`);
-      const helpButtons = await buttonFaults(t, '#help .foot button');
-      st.check('its Back and Chapters buttons can be pressed by a finger', helpButtons.n >= 2 && helpButtons.faults.length === 0, helpButtons.faults.join('; ') || `${helpButtons.n} buttons`);
-      await t.tapOn('#help-back');
-      await t.page.waitForFunction(() => document.getElementById('help')?.hidden, null, { timeout: 8000 }).catch(() => null);
-      const backAtCard = await t.page.evaluate(() => (document.getElementById('touch-card')?.getClientRects().length ?? 0) > 0);
 
-      // --- resume by tap: the finger that was on the stick all along is nothing until it is lifted
-      const pausedAt = await t.snap();
-      await tapText('#touch-card', W_.resume);
-      const resumed = await t.until((s) => s.state === 'play', 8000);
-      const afterResume = await t.ticks(S.settleTicks);
-      const resumeLog = await t.log(pausedAt.tick);
-      st.check('a tap on Resume resumes; the tap is not a jump, and the stick held through the pause is let go',
-        backAtCard && !!resumed && resumeLog.length >= S.neutralTicks && resumeLog.every(neutral) && afterResume.state === 'play',
-        `${backAtCard ? 'Back returned to the card' : 'BACK DID NOT RETURN TO THE CARD'}; state ${resumed?.state ?? 'never play'}; ${resumeLog.length} ticks since: ${show(resumeLog.find((f) => !neutral(f)) ?? resumeLog.at(-1))}`);
-      await h.stickOff();
+      if (part === 'controls') {
+        const atTitle = await t.page.evaluate(() => ({ cls: document.documentElement.className, layer: !!document.getElementById('touch'), layerShown: (document.getElementById('touch')?.getClientRects().length ?? 0) > 0, audio: window.__touchAudio?.contexts ?? -1 }));
+        st.check('on a touch device the controls are in the document, and not shown over the title', atTitle.layer && !atTitle.layerShown && /\btouch\b/.test(atTitle.cls), `<html class="${atTitle.cls}">, #touch ${atTitle.layer ? (atTitle.layerShown ? 'SHOWN over the title' : 'present, hidden') : 'MISSING'}`);
+        const titleButtons = await buttonFaults(t, '#title button');
+        st.check(`every button on the title can be pressed by a finger (${S.minTarget} px, on screen)`, titleButtons.n >= 4 && titleButtons.faults.length === 0, titleButtons.faults.join('; ') || `${titleButtons.n} buttons`);
+
+        // --- start from the title by tap; the tap wakes the sound and is not a jump
+        await t.page.evaluate(() => { (document.getElementById('title-play') as HTMLElement).style.pointerEvents = 'none'; });
+        await t.tapOn('#title-play');
+        await t.page.waitForTimeout(600);
+        const deadPlay = await t.snap();
+        st.check('seen to fail: with Play out of reach the same tap starts nothing', deadPlay.state === 'menu', `state ${deadPlay.state}`);
+        await t.page.evaluate(() => { (document.getElementById('title-play') as HTMLElement).style.pointerEvents = ''; });
+        await t.tapOn('#title-play');
+        const started = await t.until((s) => s.state === 'play', 60000);
+        if (!st.check('a tap on Play starts the first chapter', started?.level === ch1.id, started ? `playing ${started.level}` : `state ${(await t.snap()).state} after 60 s`)) return;
+        const sound = await t.page.waitForFunction(() => window.__touchAudio?.ctx?.state === 'running', null, { timeout: 8000 }).then(() => true).catch(() => false);
+        const audio = await t.page.evaluate(() => ({ n: window.__touchAudio?.contexts ?? -1, state: window.__touchAudio?.ctx?.state ?? 'none' }));
+        st.check('sound starts on that first touch: none before it, one running context after', atTitle.audio === 0 && audio.n === 1 && sound, `${atTitle.audio} contexts before the tap; after: ${audio.n}, ${audio.state}`);
+        await t.ticks(10);
+        const first = await t.log(0);
+        st.check('the tap that starts the game is not a jump', first.length > 0 && first.every(neutral), first.find((f) => !neutral(f)) ? show(first.find((f) => !neutral(f))) : `${first.length} ticks, every frame neutral`);
+
+        // --- the layout: nothing covers the warrior or the teach line, everything is a finger's size and on screen
+        const lay = await layoutFaults(t);
+        st.check(`the controls at ${S.phones[0].join('x')}: on screen, a finger's size, clear of the warrior and the teach line`, lay.length === 0, lay.join('; ') || 'the stick, Jump, Sword, Dash and the pause button');
+        const teach = await t.page.evaluate(() => { const e = document.getElementById('teach'); return { shown: !!e && e.getClientRects().length > 0, text: e?.textContent ?? '', kbd: e?.querySelectorAll('kbd').length ?? 0 }; });
+        st.check('the teach line names the touch controls, not keys', teach.shown && teach.text.includes(TOUCH.labels['move']!) && teach.kbd === 0, `"${teach.text}" (${teach.kbd} key caps)`);
+      } else {
+        // parts 'release' and 'chapters': a visit of their own, started by a tap on Play (its checks are part 'controls')
+        await t.tapOn('#title-play');
+        const begun = await t.until((s) => s.state === 'play', 60000);
+        if (!st.check('a tap on Play starts the first chapter', begun?.level === ch1.id, begun ? `playing ${begun.level}` : `state ${(await t.snap()).state} after 60 s`)) return;
+      }
+
+      const h = await hands(t);
+      /** Push the stick one way for `ticks` played ticks, then let it go: the frames of those ticks, and where he was before and after. */
+      const walk = async (dir: 'up' | 'down', share: number, ticks: number): Promise<{ log: Tick[]; from: Snap; to: Snap }> => {
+        const from = await t.snap();
+        await h.stick(dir, share);
+        const to = (await t.until((s) => s.tick - from.tick >= ticks || s.state !== 'play', S.waitMs + ticks * S.msPerTick)) ?? (await t.snap());
+        const log = await t.log(from.tick);
+        await h.stickOff();
+        return { log, from, to };
+      };
+      /**
+       * Put the warrior back on the middle of the first flat, facing up the path with the camera behind him (so up
+       * the screen is +X and right is +Z). Every check that moves him starts from here, so none walks him off the
+       * edge. If a fall has stood the first swordsman up again, he is felled again first, by the thumb.
+       * By the probe's place, not by the stick (POLISH-1): the walk back never settled. The thumb lets go a frame
+       * late and he overshoots by about 2 m either way against a 1.2 m mark, so every call ran out its 12 tries,
+       * about 18 s a call and 324 s of the stage's 537 (MEASUREMENTS "POLISH-1 the touch stage"); and the walk was
+       * never one of the checks. Placing also puts the camera back behind him, which the walk did not.
+       */
+      const home = async (at: Vec3 = S.home): Promise<void> => {
+        for (let i = 0; i < 3; i++) {
+          const s = (await t.until((v) => v.state === 'play', 15000)) ?? (await t.snap());
+          if (s.enemies[0] && s.enemies[0].mode !== 'fallen') { await fell(t, s.enemies[0].id, 'up'); continue; }
+          break;
+        }
+        await t.page.evaluate((p) => window.__TOUCH_PROBE__!.place(p, -90), at);
+        await t.ticks(S.settleTicks);
+      };
+      const fastest = (log: Tick[]): number => Math.max(0, ...log.map((f) => f.speed));
+      const unit = (log: Tick[]): boolean => log.filter((f) => f.x || f.y).every((f) => Math.abs(Math.hypot(f.x, f.y) - 1) < 1e-9);
+
+      if (part === 'controls') {
+        // --- a swordsman felled with the Sword button (chapter 1's first, up the path from the spawn)
+        const fight = await fell(t, ch1.enemies![0]!.id, 'up');
+        st.check('a swordsman is felled with the stick and the Sword button', fight.down, fight.note);
+        await t.until((s) => s.state === 'play' && s.grounded, 15000);
+
+        // --- the Sword: a tap shorter than a tick still slashes; broken, it does not
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('slash'));
+        let before = await t.ticks(20); // clear of the last slash (FIGHT.warrior.againSec)
+        await h.tapButton('slash');
+        let after = await t.ticks(12);
+        st.check('seen to fail: with the Sword broken a tap starts no slash', after.slashes === before.slashes, `${after.slashes - before.slashes} slashes`);
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+        before = await t.snap();
+        await h.tapButton('slash');
+        after = await t.ticks(12);
+        const slashTicks = (await t.log(before.tick)).filter((f) => f.slash).length;
+        st.check('a tap on Sword, down and up with no frame between, starts one slash', after.slashes === before.slashes + 1 && slashTicks === 1, `${after.slashes - before.slashes} slashes; the sword read as held on ${slashTicks} tick`);
+
+        // --- the stick: the dead zone, the mid ring (run), the outer ring (sprint), and release
+        await home();
+        const dead = await walk('up', S.share.dead, 12);
+        st.check('inside the dead zone the stick says nothing', dead.log.length >= 10 && dead.log.every(neutral), `${S.share.dead} of the radius for ${dead.log.length} ticks: ${dead.log.find((f) => !neutral(f)) ? show(dead.log.find((f) => !neutral(f))) : 'every frame neutral'}`);
+
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('stick'));
+        const noStick = await walk('up', S.share.mid, 15);
+        st.check('seen to fail: with the stick broken a push moves nothing', noStick.log.every(neutral) && Math.abs(noStick.to.feet[0] - noStick.from.feet[0]) < 0.05, `${noStick.log.length} ticks, moved ${(noStick.to.feet[0] - noStick.from.feet[0]).toFixed(2)} m`);
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+
+        // up the screen is up the path (world +X while the camera looks up it): toward the step that stops him, away from the edge
+        const run = await walk('up', S.share.mid, 30);
+        const runMoved = run.to.feet[0] - run.from.feet[0];
+        const runFrames = run.log.filter((f) => f.x || f.y);
+        st.check('the stick at mid ring walks the warrior: full deflection, run speed, no sprint',
+          runFrames.length >= 15 && unit(run.log) && runFrames.every((f) => !f.sprint && f.x > 0.99) && runMoved > 1 && Math.abs(fastest(run.log) - T.runSpeed) <= S.speedTol,
+          `${S.share.mid} of the radius: ${runFrames.length} ticks of move, every one of length 1 toward +X: ${unit(run.log)}; sprint on ${runFrames.filter((f) => f.sprint).length}; top speed ${fastest(run.log).toFixed(2)} (run ${T.runSpeed}); moved ${runMoved.toFixed(2)} m`);
+
+        await home();
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('sprint'));
+        const noSprint = await walk('up', S.share.outer, 12);
+        st.check('seen to fail: with the outer ring broken the stick at its edge does not sprint', noSprint.log.every((f) => !f.sprint), `${noSprint.log.filter((f) => f.sprint).length} sprint ticks`);
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+        await home();
+        const sprint = await walk('up', S.share.outer, 22);
+        const sprintFrames = sprint.log.filter((f) => f.x || f.y);
+        st.check('the stick at its outer ring is sprint: full deflection, sprint speed',
+          sprintFrames.length >= 12 && unit(sprint.log) && sprintFrames.every((f) => f.sprint && f.x > 0.99) && Math.abs(fastest(sprint.log) - T.sprintSpeed) <= S.speedTol,
+          `${S.share.outer} of the radius: ${sprintFrames.length} ticks, sprint on ${sprintFrames.filter((f) => f.sprint).length}; top speed ${fastest(sprint.log).toFixed(2)} (sprint ${T.sprintSpeed}, run ${T.runSpeed})`);
+        const still = await t.ticks(S.settleTicks + 20);
+        const afterStick = (await t.log(still.tick - S.neutralTicks));
+        st.check('the stick let go: the frame is neutral', afterStick.length >= S.neutralTicks && afterStick.every(neutral), show(afterStick.find((f) => !neutral(f)) ?? afterStick.at(-1)));
+
+        // --- Jump: held is the full height, a tap is a low hop, broken is nothing
+        const jump = async (hold: boolean): Promise<{ rise: number; held: number }> => {
+          const base = await t.until((s) => s.state === 'play' && s.grounded && Math.hypot(s.vel[0], s.vel[2]) < 0.05, 15000) ?? (await t.snap());
+          if (hold) await h.press('jump'); else await h.tapButton('jump');
+          // up and down again: a full jump is about 47 ticks in the air
+          await t.until((s) => s.tick - base.tick >= 60, S.waitMs + 60 * S.msPerTick);
+          if (hold) await h.lift();
+          const log = await t.log(base.tick);
+          return { rise: Math.max(...log.map((f) => f.feetY)) - base.feet[1], held: log.filter((f) => f.jump).length };
+        };
+        await home();
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('jump'));
+        const noJump = await jump(true);
+        st.check('seen to fail: with Jump broken a held press does not leave the ground', noJump.rise < 0.05, `rose ${noJump.rise.toFixed(2)} m`);
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+        await t.ticks(S.settleTicks);
+        const full = await jump(true);
+        st.check('a held Jump reaches full height', Math.abs(full.rise - S.fullRise) <= S.riseTol && full.held >= S.catchTicks, `rose ${full.rise.toFixed(2)} m (measured full rise ${S.fullRise}); Jump read as held for ${full.held} ticks`);
+        await t.ticks(S.settleTicks);
+        // The tap's down and up must meet the page with no tick between them, or this is a short hold and not the
+        // tap the check names. Thumbs.tap sends them together but cannot force it: on a runner a frame can come
+        // between (CI run 43485459420: 5 ticks, 1.43 m). Whether it did is read from the page (TAP_SEEN), apart from
+        // the hop: a tap that met the page within one tick is judged at once, pass or fail; only one a frame split
+        // is sent again, up to S.tries; if every try was split the check fails.
+        const tapAt = async (): Promise<{ hop: { rise: number; held: number }; down: number; up: number }> => {
+          await t.page.evaluate(() => { window.__tapSeen!.length = 0; });
+          const hop = await jump(false);
+          const seen = await t.page.evaluate(() => window.__tapSeen!.slice());
+          const down = seen.find((e) => e.type === 'touchstart')?.tick ?? NaN;
+          const up = seen.find((e) => e.type === 'touchend')?.tick ?? NaN;
+          return { hop, down, up };
+        };
+        const split: string[] = [];
+        let tap = await tapAt();
+        while (tap.down !== tap.up && split.length + 1 < S.tries) {
+          split.push(`[${split.length + 1}] down on tick ${tap.down}, up on tick ${tap.up}: held ${tap.hop.held}, rose ${tap.hop.rise.toFixed(2)} m`);
+          await t.ticks(S.settleTicks);
+          tap = await tapAt();
+        }
+        const hop = tap.hop;
+        const whole = tap.down === tap.up;
+        st.check('a tap on Jump, down and up with no frame between, is still a jump, and a low one', whole && hop.held === 1 && hop.rise > 0.5 && hop.rise <= full.rise - S.tapUnder,
+          `rose ${hop.rise.toFixed(2)} m; Jump read as held for ${hop.held} tick(s); ${whole ? `down and up both met the page at tick ${tap.down}` : `down on tick ${tap.down}, up on tick ${tap.up}: a frame came between on every try, so no tap was ever made`} (try ${split.length + 1} of up to ${S.tries}${split.length ? `; the tries a frame split: ${split.join(' ')}` : ''})`);
+
+        // --- Dash, with the stick held: two controls at once. Down the screen again, away from the step.
+        const dash = async (): Promise<{ dashed: number; both: number; moved: number }> => {
+          await home();
+          const base = await t.snap();
+          await h.stick('up', S.share.mid);
+          await h.tapButton('dash');
+          await h.stickOff();
+          const end = await t.ticks(24);
+          const log = await t.log(base.tick);
+          return { dashed: log.filter((f) => f.pstate === 'dash').length, both: log.filter((f) => f.dash && (f.x || f.y)).length, moved: end.feet[0] - base.feet[0] };
+        };
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('dash'));
+        const noDash = await dash();
+        st.check('seen to fail: with Dash broken the same press is no dash', noDash.dashed === 0, `${noDash.dashed} ticks in the dash`);
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+        await t.ticks(30); // the dash's own wait between two (TUNING.dashCooldownSec)
+        const dashed = await dash();
+        st.check('Dash dashes, tapped while the stick is held', dashed.dashed >= 5 && dashed.both >= 1, `${dashed.dashed} ticks in the dash; the stick and Dash read together on ${dashed.both} tick(s); moved ${dashed.moved.toFixed(2)} m`);
+
+        // --- the camera: a drag anywhere that is not a control, through the mouse's own call
+        const [W, H] = S.phones[0];
+        const drag = async (dx: number, dy: number): Promise<void> => {
+          await t.thumbs.down(3, W / 2, H * 0.3);
+          for (let i = 1; i <= 4; i++) await t.thumbs.move(3, W / 2 + (dx * i) / 4, H * 0.3 + (dy * i) / 4);
+          await t.thumbs.up(3);
+          await t.page.waitForTimeout(150);
+        };
+        const turnOf = (px: number): number => (-px * TOUCH.lookScale * CAMERA_TUNING.mouseSensitivity * 180) / Math.PI;
+        await home();
+        const cam0 = await t.snap();
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('look'));
+        await drag(120, 0);
+        const camDead = await t.snap();
+        st.check('seen to fail: with the look broken a drag turns nothing', Math.abs(camDead.yawDeg - cam0.yawDeg) < 1e-6, `yaw moved ${(camDead.yawDeg - cam0.yawDeg).toFixed(2)} deg`);
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+        await drag(120, 0);
+        const cam1 = await t.snap();
+        st.check('a drag off the controls turns the camera, as a mouse would', Math.abs(cam1.yawDeg - cam0.yawDeg - turnOf(120)) <= S.turnTol, `120 px across: yaw ${(cam1.yawDeg - cam0.yawDeg).toFixed(2)} deg (a mouse moved ${120 * TOUCH.lookScale} px: ${turnOf(120).toFixed(2)})`);
+        await drag(0, 40);
+        const cam2 = await t.snap();
+        st.check('and a drag down the screen tilts it', cam2.pitchDeg > cam1.pitchDeg + 2, `40 px down: pitch ${cam1.pitchDeg.toFixed(1)} to ${cam2.pitchDeg.toFixed(1)} deg`);
+        // three fingers at once: the stick, Jump, and a drag. Each keeps its own.
+        // (home puts the camera back behind him first, so up the screen is up the path again)
+        await home();
+        const tri0 = await t.snap();
+        await h.stick('up', S.share.mid);
+        await h.press('jump');
+        await t.thumbs.down(3, W / 2, H * 0.3);
+        await t.thumbs.move(3, W / 2 - 120, H * 0.3 - 40);
+        await h.stickOff();
+        const tri1 = await t.snap();
+        await t.thumbs.up(3);
+        await h.lift();
+        const triLog = await t.log(tri0.tick);
+        st.check('three fingers at once: the stick, Jump and a camera drag each keep their own touch',
+          triLog.some((f) => f.jump && (f.x || f.y)) && Math.abs(tri1.yawDeg - tri0.yawDeg - turnOf(-120)) <= S.turnTol,
+          `the stick and Jump read together on ${triLog.filter((f) => f.jump && (f.x || f.y)).length} ticks; the drag turned the camera ${(tri1.yawDeg - tri0.yawDeg).toFixed(2)} deg (asked ${turnOf(-120).toFixed(2)})`);
+        await home();
+
+        // --- a tap on the game itself: no click, no pointer lock, no pause
+        await t.page.evaluate(() => { window.__canvasClicks = 0; document.querySelector('canvas')!.addEventListener('click', () => { window.__canvasClicks = (window.__canvasClicks ?? 0) + 1; }); });
+        await t.thumbs.tap(W / 2, H * 0.3);
+        await t.page.waitForTimeout(500);
+        const tapped = await t.page.evaluate(() => ({ clicks: window.__canvasClicks ?? -1, lock: document.pointerLockElement !== null }));
+        const stillPlay = await t.snap();
+        st.check('a tap on the game is not a click: no pointer lock is asked for, and nothing pauses', tapped.clicks === 0 && !tapped.lock && stillPlay.state === 'play', `${tapped.clicks} clicks reached the canvas; pointer lock ${tapped.lock ? 'HELD' : 'none'}; state ${stillPlay.state}`);
+        st.check('the phone page logged no error', t.errors.length === 0, t.errors.slice(0, 3).join(' | '));
+        await t.close();
+        return;
+      }
+
+      if (part === 'release') {
+        // ================= 2. nothing sticks: after every way a finger can leave, the live frame is neutral =================
+        // Each: the stick pushed and Jump held (two fingers), seen in the frames; then the release; then the last
+        // frames of the ticks that follow must be neutral. Each hold starts at S.releaseAt and pushes up the path: his
+        // one jump comes down short of chapter 1's first stair tread, whose face then stops him for as long as the
+        // fingers stay. A hold is as long as the round trips it waits on, not a count of ticks, and on a slow page
+        // that is enough to run off the flat: on a page slowed 6 times a down hold from S.home went over the edge at
+        // x -6, the respawn stood chapter 1's swordsman up again, and the next home() fought him. On CI runs
+        // 43485369808 and 43485459420 that cost one check 286 and 294 s (MEASUREMENTS "POLISH-1 the touch job on CI").
+        const held = async (): Promise<Snap> => {
+          await home(S.releaseAt);
+          const from = await t.snap();
+          await h.stick('up', S.share.mid);
+          await h.press('jump');
+          await t.until((s) => s.tick > from.tick + 2, 8000);
+          return from;
+        };
+        const settled = async (name: string, from: Snap, fingersStillDown = false): Promise<void> => {
+          const end = await t.ticks(S.settleTicks);
+          const log = await t.log(from.tick);
+          const tail = log.filter((f) => f.tick > end.tick - S.neutralTicks);
+          const wasHeld = log.some((f) => f.jump && (f.x || f.y));
+          st.check(`nothing sticks: ${name}`, wasHeld && tail.length >= S.neutralTicks && tail.every(neutral),
+            `${wasHeld ? 'the stick and Jump were read as held' : 'THE HOLD WAS NEVER READ'}; ${fingersStillDown ? 'with the fingers still down, ' : ''}the last frames: ${show(tail.find((f) => !neutral(f)) ?? tail.at(-1))}`);
+        };
+
+        let from = await held();
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('stuck'));
+        await h.lift();
+        await h.stickOff();
+        {
+          const end = await t.ticks(S.settleTicks);
+          const tail = (await t.log(from.tick)).filter((f) => f.tick > end.tick - S.neutralTicks);
+          st.check('seen to fail: with the releases broken the frame stays held after both fingers lift', tail.length > 0 && tail.some((f) => !neutral(f)), show(tail.find((f) => !neutral(f)) ?? tail.at(-1)));
+        }
+        await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+
+        from = await held();
+        await h.lift();
+        await h.stickOff();
+        await settled('both fingers lifted', from);
+
+        from = await held();
+        await t.thumbs.cancel();
+        await h.stickOff(); // the driver's own book-keeping: the page was already told by the cancel
+        await settled('touchcancel takes both fingers', from);
+
+        // a finger sliding off Jump lets Jump go; the stick, under another finger, is still held
+        from = await held();
+        const j = h.centre('jump');
+        await t.thumbs.move(2, j.x - (TOUCH.buttons.jump.radius + TOUCH.slideOff + 12), j.y - 30);
+        {
+          const end = await t.ticks(S.settleTicks);
+          const tail = (await t.log(from.tick)).filter((f) => f.tick > end.tick - S.neutralTicks);
+          st.check('a finger that slides off Jump lets it go, and the stick under the other finger is still held', tail.length >= S.neutralTicks && tail.every((f) => !f.jump && (f.x !== 0 || f.y !== 0)), show(tail.at(-1)));
+        }
+        await h.lift();
+        await h.stickOff();
+        await settled('the slid-off finger and the stick lifted', from);
+
+        // a second finger on Jump is swallowed: lifting the first lets go, whatever the second does
+        from = await held();
+        await t.thumbs.down(4, j.x + 6, j.y + 4);
+        await t.ticks(3);
+        await h.lift(); // the first finger
+        await h.stickOff();
+        await settled('a second finger on Jump, the first one lifted', from, true);
+        await t.thumbs.up(4);
+
+        // the window loses focus, and the tab is hidden, with both fingers still on the glass
+        from = await held();
+        await t.page.evaluate(() => window.dispatchEvent(new Event('blur')));
+        await settled('the window loses focus', from, true);
+        await h.lift();
+        await h.stickOff();
+        from = await held();
+        await t.page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+        await settled('the tab is hidden', from, true);
+        await t.page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
+        await h.lift();
+        await h.stickOff();
+
+        // ================= 3. everything the keyboard can leave, a finger can leave =================
+        // --- pause and resume by tap, with the stick still held under another finger
+        await home();
+        await t.page.evaluate(() => { (document.getElementById('touch-pause') as HTMLElement).style.pointerEvents = 'none'; });
+        await t.tapOn('#touch-pause');
+        await t.page.waitForTimeout(500);
+        st.check('seen to fail: with the pause button out of reach the same tap pauses nothing', (await t.snap()).state === 'play', `state ${(await t.snap()).state}`);
+        await t.page.evaluate(() => { (document.getElementById('touch-pause') as HTMLElement).style.pointerEvents = ''; });
+        await h.stick('up', S.share.mid);
+        await t.tapOn('#touch-pause');
+        const paused = await t.until((s) => s.state === 'pause', 8000);
+        const card = await t.page.evaluate(() => ({ shown: (document.getElementById('touch-card')?.getClientRects().length ?? 0) > 0, title: document.querySelector('#touch-card h1')?.textContent ?? '', buttons: [...document.querySelectorAll('#touch-card button')].map((b) => b.textContent ?? ''), hud: document.getElementById('hud')?.textContent ?? '', controls: (document.getElementById('touch')?.getClientRects().length ?? 0) > 0 }));
+        const cardButtons = await buttonFaults(t, '#touch-card button');
+        st.check('a tap on the pause button pauses, under a card that offers resume, how to play, the chapters and the menu',
+          !!paused && card.shown && card.title === W_.paused && [W_.resume, W_.help, W_.chapters, W_.menu].every((b) => card.buttons.includes(b)) && cardButtons.faults.length === 0 && card.hud === '' && !card.controls,
+          `state ${paused?.state ?? (await t.snap()).state}; card "${card.title}": ${card.buttons.join(', ')}${cardButtons.faults.length ? `; ${cardButtons.faults.join('; ')}` : ''}; the HUD's line: "${card.hud}"; the controls ${card.controls ? 'STILL SHOWN' : 'hidden'}`);
+
+        // --- how to play, from the card: the page names the touch controls
+        await tapText('#touch-card', W_.help);
+        await t.page.waitForFunction(() => !document.getElementById('help')?.hidden, null, { timeout: 8000 }).catch(() => null);
+        const help = await t.page.evaluate(() => {
+          const e = document.getElementById('help-content');
+          return { open: !document.getElementById('help')?.hidden, text: e?.textContent ?? '', heads: [...(e?.querySelectorAll('th') ?? [])].map((x) => x.textContent ?? ''), cells: [...(e?.querySelectorAll('td') ?? [])].map((x) => x.textContent ?? ''), kbd: e?.querySelectorAll('kbd').length ?? 0 };
+        });
+        const L = TOUCH.labels;
+        const named = [L['jump']!, L['dash']!, L['slash']!].every((n) => help.cells.includes(n)) && help.cells.some((c) => c.toLowerCase() === L['move']!.toLowerCase());
+        st.check('the how-to-play page, opened by tap from the pause card, names the stick, Jump, Sword and Dash, and no key',
+          help.open && help.heads.includes('Touch') && !help.heads.includes('Keyboard') && named && help.kbd === 0 && !/needs a keyboard/i.test(help.text) && help.text.includes(`Move with ${L['move']}`),
+          `${help.open ? 'open' : 'NOT open'}; columns: ${help.heads.join(' | ')}; ${help.kbd} key caps; ${/needs a keyboard/i.test(help.text) ? 'STILL says it needs a keyboard' : 'no "needs a keyboard" line'}`);
+        const helpButtons = await buttonFaults(t, '#help .foot button');
+        st.check('its Back and Chapters buttons can be pressed by a finger', helpButtons.n >= 2 && helpButtons.faults.length === 0, helpButtons.faults.join('; ') || `${helpButtons.n} buttons`);
+        await t.tapOn('#help-back');
+        await t.page.waitForFunction(() => document.getElementById('help')?.hidden, null, { timeout: 8000 }).catch(() => null);
+        const backAtCard = await t.page.evaluate(() => (document.getElementById('touch-card')?.getClientRects().length ?? 0) > 0);
+
+        // --- resume by tap: the finger that was on the stick all along is nothing until it is lifted
+        const pausedAt = await t.snap();
+        await tapText('#touch-card', W_.resume);
+        const resumed = await t.until((s) => s.state === 'play', 8000);
+        const afterResume = await t.ticks(S.settleTicks);
+        const resumeLog = await t.log(pausedAt.tick);
+        st.check('a tap on Resume resumes; the tap is not a jump, and the stick held through the pause is let go',
+          backAtCard && !!resumed && resumeLog.length >= S.neutralTicks && resumeLog.every(neutral) && afterResume.state === 'play',
+          `${backAtCard ? 'Back returned to the card' : 'BACK DID NOT RETURN TO THE CARD'}; state ${resumed?.state ?? 'never play'}; ${resumeLog.length} ticks since: ${show(resumeLog.find((f) => !neutral(f)) ?? resumeLog.at(-1))}`);
+        await h.stickOff();
+        st.check('the phone page logged no error', t.errors.length === 0, t.errors.slice(0, 3).join(' | '));
+        await t.close();
+        return;
+      }
 
       // ================= 4. a goal reached, and the next chapter taken by tap =================
       // The stage's one shortcut (see the header): the warrior is placed on chapter 1's last flat.
@@ -738,9 +925,11 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
         const base = await t.snap();
         await h2.stick('up', S.share.mid);
         // run at the face; from about three metres out Jump goes down and stays down, the stick still pushed in
-        await t.until((s) => s.feet[0] >= 9.2 || s.state !== 'play', 30000);
+        const atFace = (await t.until((s) => s.feet[0] >= 9.2 || s.state !== 'play', 30000)) ?? base;
         await h2.press('jump');
-        const grab = await t.until((s) => s.pstate === 'ledge_grab' || s.tick - base.tick > 400 || s.state !== 'play', 40000);
+        // a catch comes within about 40 ticks of the press; the wait is bounded from the press, not from the start
+        // of the run, so a face never caught (Jump broken) costs S.catchWithin ticks and not 400 (POLISH-1)
+        const grab = await t.until((s) => s.pstate === 'ledge_grab' || s.tick - atFace.tick > S.catchWithin || s.state !== 'play', 40000);
         const caught = grab?.pstate === 'ledge_grab';
         await h2.lift();
         let top = grab?.feet[1] ?? 0;
@@ -764,6 +953,46 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       st.check("chapter 2's first face is caught and climbed: Jump held while the stick pushes in, then Jump again", climbed.caught && climbed.top > 4.3 && climbed.both >= S.catchTicks,
         `${climbed.caught ? `caught the edge at y ${climbed.grabY.toFixed(2)}` : 'NEVER CAUGHT'}; feet on top at y ${climbed.top.toFixed(2)} (the face is 4.5 m); the stick and Jump read together on ${climbed.both} ticks`);
 
+      // ================= 5b. chapter 2's wall jump and double jump, by thumb (POLISH-1, B-107) =================
+      // Each at the step of its chapter that first asks for it (read from critical_path, as check:teach reads it).
+      // He is placed where the step is made from (the probe's place, which also makes it where a fall returns
+      // him); the move itself is the thumb's, and what is judged is read from the probe's log of the played ticks.
+      const wall = firstVia(ch2, 'wall'), dbl = firstVia(ch2, 'double');
+      // the wall jump: the wall stands beyond the takeoff on the side away from the shelf, as the bot takes it.
+      // Jump at it pushing in, let go of the stick and Jump as he touches it, press Jump again, steer away onto the
+      // shelf. Letting go matters on a phone: a finger's press lands about three frames after it is sent, and a
+      // warrior who is still pushing into this wall as he comes down catches the edge of its top (B-92) before a
+      // second press can arrive. The kick needs no stick ("D-025 the moves as the rig makes them"); the catch does.
+      // Each step waits whole frames of the page (a frame is 5 played ticks here: the loop's cap binds on SwiftShader).
+      const kickIn = wall.a[2] > wall.b[2] ? 'right' : 'left', kickOut = kickIn === 'left' ? 'right' : 'left';
+      const kick = (): Promise<Move> => thumbMove(t, h2, [wall.a[0], wall.a[1] + 0.05, wall.a[2]], wall.b, async () => {
+        await pressTwice(t, [h2.stick(kickIn, S.share.mid), h2.press('jump')], () => [h2.stickOff(), h2.lift()], () => h2.press('jump'));
+        await h2.stick(kickOut, S.share.mid);
+      });
+      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('jump'));
+      const noKick = await kick();
+      st.check("seen to fail: with Jump broken the wall jump onto chapter 2's first shelf is not made", !noKick.landed && !noKick.made.includes('wall_jump'), noKick.note);
+      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+      const kicked = await tries(kick);
+      st.check(`chapter 2's first wall jump by thumb (step ${wall.i}): Jump at the wall pushing in, Jump again as he touches it, the stick steering away, onto the shelf`,
+        kicked.landed && kicked.made.includes('wall_jump') && kicked.both >= 1, kicked.note);
+      // the double jump: run at it, a held Jump at the takeoff, Jump again near the peak, paced as the wall jump's
+      // presses are. Jump goes down short of the takeoff (TOUCH_STAGE.pressShort): both presses must come before the
+      // face that stands 2 m short of the landing ("4u short of the face", the level's own note; at the face a
+      // second press is a wall jump, B-90). Paced by each press being taken, the second came at the face on CI.
+      const twice = (): Promise<Move> => thumbMove(t, h2, [dbl.a[0] - 2, dbl.a[1] + 0.05, dbl.a[2]], dbl.b, async (base) => {
+        await h2.stick('up', S.share.mid);
+        await t.until((s) => s.state !== 'play' || s.feet[0] >= dbl.a[0] - S.pressShort.double || s.tick > base.tick + S.moveTicks, S.waitMs + S.moveTicks * S.msPerTick);
+        await pressTwice(t, [h2.press('jump')], () => [h2.lift()], () => h2.press('jump'));
+      });
+      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('jump'));
+      const noTwice = await twice();
+      st.check("seen to fail: with Jump broken chapter 2's first double jump is not made", !noTwice.landed && !noTwice.made.includes('double_jump'), noTwice.note);
+      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+      const twiced = await tries(twice);
+      st.check(`chapter 2's first double jump by thumb (step ${dbl.i}): a held Jump at the takeoff, Jump again at the peak, up onto the next floor`,
+        twiced.landed && twiced.made.includes('double_jump') && twiced.both >= 1, twiced.note);
+
       // ================= 6. a chapter chosen from the Chapters list by tap, and the menu =================
       await t.until((s) => s.state === 'play', 15000);
       await t.tapOn('#touch-pause');
@@ -772,7 +1001,7 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       const listOpen = await t.page.waitForFunction(() => !document.getElementById('chapters')?.hidden && document.querySelectorAll('#chapters-list button').length > 0, null, { timeout: 8000 }).then(() => true).catch(() => false);
       const rows = await buttonFaults(t, '#chapters button');
       const atList = await t.snap();
-      const rowSel = `#chapters-list button[data-level="${ch3.id}"]`;
+      const rowSel = `#chapters-list button[data-level="${ch4.id}"]`;
       await t.page.evaluate((sel) => { (document.querySelector(sel) as HTMLElement).style.pointerEvents = 'none'; }, rowSel).catch(() => null);
       const rowAt = await t.at(rowSel).catch(() => null);
       if (rowAt) await t.thumbs.tap(rowAt.x, rowAt.y);
@@ -780,12 +1009,33 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       st.check("seen to fail: with a chapter's row out of reach the same tap chooses nothing", (await t.snap()).level === ch2.id && (await t.snap()).state === 'pause', `with the list open: state ${atList.state}; after the tap: state ${(await t.snap()).state}, level ${(await t.snap()).level}`);
       await t.page.evaluate((sel) => { (document.querySelector(sel) as HTMLElement).style.pointerEvents = ''; }, rowSel).catch(() => null);
       if (rowAt) await t.thumbs.tap(rowAt.x, rowAt.y);
-      const chosen = await t.until((s) => s.state === 'play' && s.level === ch3.id, 60000);
+      const chosen = await t.until((s) => s.state === 'play' && s.level === ch4.id, 60000);
       const chosenTicks = await t.ticks(S.settleTicks);
       const chosenLog = (await t.log(0)).filter((f) => f.tick > chosenTicks.tick - S.settleTicks);
       st.check('a chapter is chosen from the Chapters list by tap, from the pause card; every row is a finger\'s size; the tap is not a jump',
         listOpen && rows.faults.length === 0 && !!chosen && chosenLog.every(neutral),
         `the list ${listOpen ? `opened: ${rows.n} buttons` : 'DID NOT OPEN'}${rows.faults.length ? `; ${rows.faults.join('; ')}` : ''}; ${chosen ? `playing ${chosen.level}` : `state ${(await t.snap()).state}, level ${(await t.snap()).level}`}`);
+      // ================= 6b. chapter 4's first dash jump, by thumb (POLISH-1, B-107) =================
+      // Run at the lip, tap Dash, and press Jump as the dash ends ("D-025 the moves as the rig makes them": the
+      // jump down 4 to 22 ticks after the dash clears it). Jump is sent as soon as the tap on Dash is taken, with no
+      // poll between: that is at least a frame (5 ticks here), and the check reads how many ticks it came to. A frame
+      // more put it at 18 on darwin and 20 on CI, near the window's end.
+      // A held jump alone carries 5 m and the gap is wider: broken Dash, no way over.
+      const dj = firstVia(ch4, 'dashjump');
+      const dashJump = (): Promise<Move> => thumbMove(t, h2, [dj.a[0] - 4, dj.a[1] + 0.05, dj.a[2]], dj.b, async (base) => {
+        await h2.stick('up', S.share.mid);
+        await t.until((s) => s.state !== 'play' || s.feet[0] >= dj.a[0] - S.pressShort.dash || s.tick > base.tick + S.moveTicks, S.waitMs + S.moveTicks * S.msPerTick);
+        await h2.tapButton('dash');
+        await h2.press('jump');
+      });
+      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl('dash'));
+      const noDj = await dashJump();
+      st.check("seen to fail: with Dash broken chapter 4's first dash jump does not cross", !noDj.landed && !noDj.made.includes('dash'), noDj.note);
+      await t.page.evaluate(() => window.__TOUCH_PROBE__!.breakControl(null));
+      const djd = await tries(dashJump);
+      st.check(`chapter 4's first dash jump by thumb (step ${dj.i}): the stick held, Dash at the lip, Jump as the dash ends, over the gap`,
+        djd.landed && djd.made.includes('dash') && djd.jumpAfterDash !== null && djd.both >= 1, djd.note);
+
       await t.tapOn('#touch-pause');
       await t.until((s) => s.state === 'pause', 8000);
       await tapText('#touch-card', W_.menu);
@@ -857,7 +1107,9 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>): P
       await asked.close();
 
       // a laptop whose screen can be touched: nothing until the first touch, and no phone's cap on its canvas
-      const laptop = await page({ size: [1280, 720], dsf: 2, init: [FINE_POINTER] });
+      // the desktop harness's own window at a pixel ratio of 2: what is checked is the pointer and the ratio, not the
+      // size, and at 1280x720 this one page took 38 s of CI's 387 (POLISH-1)
+      const laptop = await page({ size: [640, 360], dsf: 2, init: [FINE_POINTER] });
       await titleReady(laptop);
       const lapBefore = await none(laptop.page);
       await laptop.thumbs.tap(6, 6);
