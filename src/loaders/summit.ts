@@ -67,7 +67,7 @@ export const SUMMIT = {
   wall: { back: false, cap: 18 },
   // The far field. ridgeDrop: the horizon ring stands this much lower: its crest at y 3, under his eye (3.67 at
   // the start). peaks (card, bearing, radius, width, foot y, ink, mirrored): small and near, each at its
-  // painting's proportion, 4.5 to 5.7 u tall on a foot just under the mist's top: islands in the cloud, on the
+  // painting's proportion, 5.1 to 5.6 u tall on a foot just under the mist's top (heads at 3.1 to 3.62): islands in the cloud, on the
   // void side and ahead. bands: mist lying low across the islands' feet.
   far: {
     ridgeDrop: 14,
