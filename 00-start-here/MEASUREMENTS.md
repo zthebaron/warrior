@@ -2341,6 +2341,7 @@ is the same on a slower runner); a tap (down and up sent together) is one tick.
 | the dash jump's Jump | a frame after Dash | measured | Jump down 18 or 19 ticks after the dash began (the rig clears with 4 to 22): 4 of 4 (3 in a probe, 1 in the stage). By two polls of the probe it came 23 or 24 ticks after: 0 of 4 in a probe. 18 is near the window's far end: the margin is 4 ticks |
 | the double's presses | `again`: down 2 frames, up 1 frame, down | measured | 3 of 3 in a probe, and in the stage. Paced instead by each press being taken: 4 of 4 on darwin, but on CI run 43479377456 the second press came at the face (a wall jump), 3 tries failed. By a poll for the peak: a ledge grab and no double jump, 0 of 8 |
 | `moveTicks` | 150 | authored | a move's step gives up after this many played ticks; a move ends after twice this |
+| `catchWithin` | 150 ticks | authored | chapter 2's first face: the catch must come within this many played ticks of Jump going down (it comes within about 40). Was 400 from the start of the run: the broken check waited it out, 52.7 s on CI |
 | `tries` | 3 | authored | as `reachable`'s ledge catch is pressed again; the check says which try landed (all 1 of 3 on darwin) |
 
 With its control broken: Jump broken, neither the wall jump nor the double leaves the ground; Dash broken, a jump
