@@ -610,6 +610,9 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     }
     const kind = p.collider ?? a.collider;
     if (kind === 'none') {
+      // D-028: in the seam every unturned box is drawn as rock, with or without a collider: READABLE_RISE counts a
+      // render-only box as something that hides a top (B-23), and a box an ink level did not draw would not
+      if (seamLook && !(p.rot ?? []).some((v) => v !== 0)) seamBoxes.push({ x0: p.pos[0] - size.x / 2, x1: p.pos[0] + size.x / 2, y0: p.pos[1] - size.y / 2, y1: p.pos[1] + size.y / 2, z0: p.pos[2] - size.z / 2, z1: p.pos[2] + size.z / 2 });
       if (door) throw new Error(`[level] geometry[${i}]: a "${GATE.doorTag}" is what stands in the gateway while the gate is shut: it needs a collider`);
       return;
     }
