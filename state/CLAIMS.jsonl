@@ -261,3 +261,4 @@
 {"id":"MOBILE-TOUCH","agent":"mobile-touch","ts":"2026-11-13T06:37:01.133Z","released":true}
 {"id":"POLISH-1","agent":"polish-1","ts":"2026-11-13T17:25:49.101Z","ttl_min":600}
 {"id":"POLISH-1","agent":"polish-1","ts":"2026-11-13T19:23:14.205Z","released":true}
+{"id":"POLISH-1","agent":"polish-1","ts":"2026-11-13T19:25:47.921Z","ttl_min":90}
