@@ -44,3 +44,5 @@ last line of this file says COMPLETE.
 - `post` reads the dark edge of a dark form as a drawn line: keep the ink pass pale (OQ-079 items 8 and 9).
 - A painted model may not stand in front of a torii (OQ-079 item 6).
 - One playtest, frame or log at a time; never edit `src/` or `levels/` during one.
+
+**COMPLETE (2026-11-12, the same session).** Section 2 is done: CI was 10 of 10 green on e77e5a5 (run 43353508649), PR 41 has its body and is ready for review, and the claim was released on main (0735cd1). Nothing is left but for the reviewer to merge. Not deployed.
