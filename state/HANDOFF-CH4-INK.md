@@ -46,6 +46,21 @@ of this file says COMPLETE.
    `git push origin HEAD:main`. Each git command alone.
 5. Report to Tim: the PR body's numbered list is the report. Do not deploy; the reviewer merges.
 
+Before step 3, three things this session did not look at:
+
+- **The frame from the torii he respawns at.** `stone-before` is taken with his feet at x 59.6, past the T2 torii
+  (x 52). He respawns at x 54 with the camera behind that torii, and torii posts hiding a mover was exactly
+  chapter 3's failure. Take `node tools/harness/frame.ts 04-summit-ridge <out> --size=1920x1080 --at=54,2.5,0
+  --yaw=-90 --settle=30` and `--settle=150`, and the same from `--at=56.5,2.5,0`. If the posts hide the stone or
+  its lane, say so in the report's line 3 and in OQ-084 item 5. Move nothing: placements do not move.
+- **The 5120x1440 frames were not opened.** Each capture logged 404s to the console (chapter 3's did too, and
+  its frames were good). Open one of `docs/build-log/ch4-ink/*-5120x1440.jpg` before marking the PR ready.
+- **If no CI run appears for the head**, the run on 9281280 differs from it in render source only by a comment
+  in `summit.ts`: its chapter 4 frames are the head's.
+
+And for step 4: if the nested scratch worktree is gone, `git worktree add --detach $CLAUDE_JOB_DIR/tmp/<name>
+origin/main` is allowed by the guard.
+
 ## 3. Open, not blocking (all in the backlog)
 
 B-122 the islands are cut by the mist; B-123 the hanging boxes' undersides are never seen by the follow camera;

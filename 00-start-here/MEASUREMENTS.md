@@ -2650,6 +2650,7 @@ Chapter 4, `04-summit-ridge`, zone `summit`. Machine: Apple M4 Max, darwin; harn
 | far.bands | 3 mist cards 46 to 70 u wide, feet -7 and -8 | low across the islands' feet |
 | lane: length, width | sweep + stone = 12 u; 12 / 4 = 3 u (path_wash is 4:1), cropped to the top (7 u) | the card's own proportion, never scaled |
 | lane.step, lane.lift, lane.washLift, lane.ink | mist-pale; -2; -3; 0.95 | the drift's stone top and its lift (-2); one more than it for the brushwork over it |
+| lane.order | 50 | the paint layer's draw order: after the far field and the mist sheets (0 to 40), before the wall (100 and up) |
 | a top "under" a stone (EPS) | 0.01 u | the stones' feet are exactly on their tops (2.5 and 3.5) |
 
 ## D-030 the gates on chapter 4 (2026-11-13)
