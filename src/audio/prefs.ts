@@ -1,8 +1,8 @@
 // The two things about sound a player sets and expects to find again: muted or not, and how loud (D-022).
 //
 // They are kept in one cookie, and that is the whole of what this game keeps between visits. Nothing about a
-// run is in it: no chapter, no torii, no count of anything. SPEC §7 row 15 (no saves, no chapter select: a
-// reload restarts the game) is about progress, and stands untouched; D-022 and OQ-072 record that Tim asked for
+// run is in it: no chapter, no torii, no count of anything. SPEC §7 row 15 (no saves, no unlocks: a reload
+// restarts the game; D-025's chapter list stores nothing) is about progress, and stands; D-022 and OQ-072 record that Tim asked for
 // these two values to be remembered, and that a cookie holding only them is how. If the browser refuses cookies
 // the values simply last for the visit.
 

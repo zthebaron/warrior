@@ -22,7 +22,8 @@ import { ACCENT_CANDIDATES, ACCENT_HEX, configureAssetLoaders, getAccent, getKtx
 import paletteJson from '../reference/palette.json';
 import { ramp } from './engine/palette';
 import { Shell, SHELL, shellEnabled } from './ui/shell';
-import { buildHowto, chaptersFrom, keyName, type HowtoChapter } from './ui/howto';
+import { buildHowto, chaptersFrom, keyName, teachLine, type HowtoChapter } from './ui/howto';
+import { TEACH, Teach, type TeachShown, type TeachView } from './systems/teach';
 import { AUDIO, GameAudio } from './audio/audio';
 import { SoundTap } from './audio/tap';
 import { Gamepad, GAMEPAD } from './engine/gamepad';
@@ -389,6 +390,8 @@ async function boot(): Promise<void> {
     instrumentEmitted = false;
     lastDeath = null;
     tap?.reset();
+    teach?.setLevel(data); // D-025: this level's places; the moves made in this visit stay made
+    showTeach(null);
     clearError();
   };
 
@@ -449,6 +452,10 @@ async function boot(): Promise<void> {
     deathByCut = cut;
     lastDeath = [f.x, f.y, f.z];
     if (player) player.slashTime = null; // D-023: a slash in the air ends with the attempt (the player is not stepped again until the respawn)
+    if (teach) {
+      teach.died([f.x, f.y, f.z], cut, foesNow()); // D-025: a miss at the place it happened; reads, writes nothing
+      showTeach(null);
+    }
     state.transition('death');
   };
   const rulesTick = (): void => {
@@ -484,6 +491,28 @@ async function boot(): Promise<void> {
   };
   const NO_FIGHT: FightEvent[] = [];
 
+  // ---------- the teach line (D-025): told what happened after each tick, as the sound tap is ----------
+  /** Every swordsman of the level as the teach rule sees him: where he is, and whether he is down. */
+  const foesNow = (): TeachView['foes'] => enemies?.snapshot().map((e) => ({ id: e.id, pos: e.pos, down: e.mode === 'fallen' })) ?? [];
+  /** The drifting stone under the warrior's feet, by the stone's own box (the manifest's size), or null. */
+  const ridden = (p: Player, f: THREE.Vector3): string | null => {
+    if (!level || !p.grounded) return null;
+    const defs = level.data.platforms ?? [];
+    for (const [i, s] of level.platformPositions().entries()) {
+      const a = MANIFEST.get(defs[i]?.asset ?? '');
+      if (!a || a.kind !== 'primitive') continue;
+      const [w, h, d] = a.size;
+      if (Math.abs(f.x - s.pos[0]) <= w / 2 && Math.abs(f.z - s.pos[2]) <= d / 2 && Math.abs(f.y - (s.pos[1] + h / 2)) <= TEACH.riseM) return s.id;
+    }
+    return null;
+  };
+  /** Whose keys a teach line is written in: the pad's once a pad has been used, the keyboard's once a key has. */
+  let padInHand = false;
+  /** Put what the rule says on the page. The key carries whose keys it is written in, so a change of hands rebuilds it. */
+  const showTeach = (shown: TeachShown | null): void => {
+    shell?.showTeach(shown ? `${shown.line}|${padInHand ? 'pad' : 'keys'}` : null, shown?.line ?? null, shown?.spot ?? null);
+  };
+
   const onFixedUpdate = (dt: number): void => {
     if (!level || !player) return;
     worldTick++; // every executed tick advances the world: play, death, or an explicit frame step
@@ -500,6 +529,7 @@ async function boot(): Promise<void> {
         camRig.snap(player.feet(tmpFeet), player.facing);
         state.transition('play');
         tap?.respawned(checkpointLog.length);
+        teach?.moved();
       }
       instrumentTick();
       return;
@@ -520,6 +550,12 @@ async function boot(): Promise<void> {
     if (state.is('play') && fight.some((e) => e.kind === 'cut')) die(player.feet(tmpFeet), true);
     rulesTick();
     tap?.afterTick(player, checkpointLog.length, fight); // D-022: reads the tick, writes nothing
+    // D-025: the teach line, the same way: reads the tick, writes nothing. Not on a tick that ended the attempt
+    // or the chapter (die() and the results have already cleared it).
+    if (teach && state.is('play')) {
+      const f = player.feet(tmpFeet);
+      showTeach(teach.afterTick({ feet: [f.x, f.y, f.z], grounded: player.grounded, pstate: player.state, foes: foesNow(), fell: fight.some((e) => e.kind === 'fell'), riding: ridden(player, f) }));
+    }
     instrumentTick();
   };
 
@@ -642,12 +678,28 @@ async function boot(): Promise<void> {
     if (!state.is('menu')) return;
     input.holdOff('jump'); // Space and the pad's A are Play here and jump there: the press that starts the game is not a jump
     pad?.holdOff('jump');
-    void startLevel();
+    // D-025: Play is the first chapter, whatever chapter was played last (the chapter list is how to start another)
+    void startLevel(levelId);
+  };
+  /**
+   * D-025: a chapter chosen from the list. The same as Play in everything but which level: the press is the
+   * gesture that lets the page make sound, and it is not a jump. From the title the state is `menu`; from the
+   * how-to-play page in a game it is `pause` (the page paused it) or `results`: each may go to `loading`.
+   */
+  const startChapter = (id: string): void => {
+    audio?.wake();
+    if (!state.can('loading')) return;
+    input.holdOff('jump');
+    pad?.holdOff('jump');
+    void startLevel(id);
   };
   const shell: Shell | null = !HARNESS_MODE && shellEnabled()
     ? new Shell({
         state: () => state.get(),
         start: startGame,
+        chapters: () => chapters,
+        startChapter,
+        teachContent: (line) => teachLine(line, { bindings: INPUT_CONFIG.bindings, pad: padInHand ? GAMEPAD.labels : null }),
         pause: () => { if (state.is('play')) state.transition('pause'); },
         resume: () => { if (state.is('pause')) state.transition('play'); },
         helpContent: () => buildHowto({
@@ -658,6 +710,7 @@ async function boot(): Promise<void> {
             ['Back to the title (while paused)', [GAME_RULES.keys.menu]],
             ['Start, and the next chapter', [GAME_RULES.keys.start]],
             ['How to play', [SHELL.keys.help]],
+            ['Chapters (from the title, or this page)', [SHELL.keys.chapters]],
             ...(audio ? [['Sound on and off', [AUDIO.keys.mute]], ['Quieter, louder', [AUDIO.keys.quieter, AUDIO.keys.louder]]] as const : []),
           ],
           pad: GAMEPAD.labels,
@@ -673,6 +726,11 @@ async function boot(): Promise<void> {
     errorBanner.style.zIndex = '50'; // above the title: a level that fails to load must be seen
     void bundledLevelSources().then((s) => { chapters = chaptersFrom(s); shell.refreshHelp(); });
   }
+  // D-025: the teach rule exists where the shell does and nowhere else. On a bare page it is null and every line
+  // that names it does nothing, so the harness's game is the game as it was.
+  const teach: Teach | null = shell
+    ? new Teach({ dt: loop.dt, heightTol: GAME_RULES.goalHeightTolerance, dashJumpSec: TUNING.coyoteTimeSec + TUNING.jumpBufferSec })
+    : null;
 
   // ---------- HUD + UI keys ----------
   const hudText = (s: GameState): string => {
@@ -709,13 +767,25 @@ async function boot(): Promise<void> {
   // D-022: the pad's buttons that are not moves, once a render frame. The moves go through the input system.
   function padFrame(p: Gamepad, frameDt: number): void {
     p.poll();
+    if (p.active()) padInHand = true; // D-025: a teach line names the pad's buttons from here on, until a key is pressed
+    if (shell?.chaptersOpen) {
+      // D-025: the chapter list. The stick or the D-pad moves between chapters, A (or Start) chooses the one in
+      // focus, and B, Back or Y shuts the list. startChapter holds A off, as Play does: choosing is not a jump.
+      const step = p.navStep();
+      if (step) shell.stepChapter(step);
+      if (p.pressed('start')) shell.pressChapter();
+      else if (p.pressed('back') || p.pressed('chapters')) { p.holdOff('dash'); shell.closeChapters(); }
+      return;
+    }
     if (shell?.helpOpen) {
       // B closes the page and is also dash: the press that closes it is not a dash (as Play's A is not a jump)
       if (p.pressed('back') || p.pressed('help')) { p.holdOff('dash'); shell.closeHelp(); }
+      else if (p.pressed('chapters')) shell.openChapters();
       return;
     }
     if (shell && p.pressed('help')) return shell.openHelp(); // which refuses where the page could not pause the game
     if (state.is('menu')) {
+      if (shell && p.pressed('chapters')) return shell.openChapters();
       if (p.pressed('start')) startGame();
     } else if (state.is('results')) {
       if (p.pressed('start')) { p.holdOff('jump'); afterResults(); } // A is "next chapter" here and jump there
@@ -731,6 +801,7 @@ async function boot(): Promise<void> {
 
   window.addEventListener('keydown', (e) => {
     const k = GAME_RULES.keys;
+    padInHand = false; // D-025: a teach line names the keyboard's keys again
     if (audio) {
       audio.nudge();
       if (!e.repeat && e.code === AUDIO.keys.mute) audio.setMuted(!audio.muted);

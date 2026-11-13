@@ -5,8 +5,14 @@
 // written here is one plain line per move and a few short paragraphs on the rules, in MOVE_TEXT and RULES.
 //
 // A move a level names that has no line here is shown under its own id, so a missing line is seen, not hidden.
+//
+// D-025: the same lines are what the game puts on screen where a chapter's path first needs a move (teachLine,
+// src/systems/teach.ts). One table, so the page and the prompt cannot say different things. Each line says what
+// the rig really needs, as measured on it (MEASUREMENTS.md "D-025 the moves as the rig makes them").
 
 export interface HowtoChapter {
+  /** the level file's id: what the chapter list starts (D-025) */
+  id: string;
   chapter: number;
   title: string;
   /** the moves this chapter is the first to allow, in the order its level file lists them */
@@ -35,16 +41,23 @@ const ACTION_LABEL: Readonly<Record<string, string>> = {
   slash: 'Sword slash',
 };
 
-/** One plain line per move. {jump}, {dash}, {sprint} and {move} become the keys bound to them. */
-const MOVE_TEXT: Readonly<Record<string, { name: string; line: string }>> = {
+/**
+ * One plain line per move. {jump}, {dash}, {sprint}, {slash} and {move} become the keys bound to them.
+ * `line` is what the game shows on screen and what this page says; `more` is said on this page only.
+ * `hang` and `fight` are not moves a level lists: the first is the second half of the ledge grab, shown while
+ * hanging, and the second is the fight's one line.
+ */
+const MOVE_TEXT: Readonly<Record<string, { name: string; line: string; more?: string }>> = {
   ground: { name: 'Run', line: 'Move with {move}. Hold {sprint} to sprint.' },
-  jump: { name: 'Jump', line: 'Press {jump}. Hold it longer to rise higher.' },
-  wall: { name: 'Wall slide and wall jump', line: 'Push into a wall while you fall and you slide down it. Press {jump} to kick away from it.' },
-  double: { name: 'Double jump', line: 'Press {jump} again in the air for one more jump.' },
-  climb: { name: 'Ledge grab', line: 'Push into a ledge near its top to catch it. Press {jump} to pull yourself up, or push away to drop.' },
+  jump: { name: 'Jump', line: 'Press {jump} to jump. Hold it down to rise higher: a tap is a low hop.' },
+  wall: { name: 'Wall slide and wall jump', line: 'Jump at a wall and press {jump} again as you touch it: you kick up and away from it.', more: 'Push into a wall while you fall and you slide down it.' },
+  double: { name: 'Double jump', line: 'Press {jump} again in the air, clear of any wall, for one more jump.' },
+  climb: { name: 'Ledge grab', line: 'Jump at the wall and hold {jump} for full height. Keep pushing into the wall to catch the edge, then press {jump} again to pull up.', more: 'To drop instead, push away from the wall.' },
+  hang: { name: 'Hanging', line: 'Press {jump} again to pull up, or push away from the wall to drop.' },
   platform: { name: 'Drifting stones', line: 'Some stones move on a steady beat. Step on, ride, step off.' },
   dash: { name: 'Dash', line: 'Press {dash} for a short burst of speed, on the ground or once in the air.' },
-  dashjump: { name: 'Dash jump', line: 'Dash, then press {jump} just as the dash ends. It carries you over the widest gaps.' },
+  dashjump: { name: 'Dash jump', line: 'Dash, then press {jump} as the dash ends: the jump starts from where the dash carried you, so together they cross a wide gap.' },
+  fight: { name: 'Swordsmen', line: 'Press {slash} to cut. Two cuts fell a swordsman. His cut sends you back.' },
 };
 
 const RULES = {
@@ -52,8 +65,9 @@ const RULES = {
   read: 'The vermilion torii show where to go. A crow lifting off shows when: its flight is timed to a sliding stone.',
   checkpoint: 'Every torii you pass is a checkpoint: from then on, that is where you return.',
   fall: 'Fall off the path, or be caught by a sliding stone, and you stand at the furthest torii you reached {delay} later. Nothing else is taken from you.',
-  // D-023: the fight, in the three things a player has to know. The sword's key is read from the binding table.
-  fight: 'Swordsmen guard the path. Press {slash} to cut what stands in front of you: the first cut staggers a swordsman, the second fells him.',
+  // D-023: the fight. Its first line is MOVE_TEXT.fight, the one the game shows at a chapter's first swordsman
+  // (D-025), so the sword's key is still read from the binding table.
+  fight: 'Swordsmen guard the path.',
   windup: 'Before a swordsman cuts he draws his blade back. Read it: cut him first, or step out of his reach.',
   cut: 'If his blade reaches you, you stand at the furthest torii you reached {delay} later, and every swordsman is on his feet again.',
   touch: 'This game needs a keyboard or a gamepad. It has no touch controls.',
@@ -88,7 +102,7 @@ function keys(codes: readonly string[], joiner = ' '): DocumentFragment {
 }
 
 /** `text` with each {name} replaced by fill(name). */
-function filled(text: string, fill: (name: string) => Node | string): DocumentFragment {
+export function filled(text: string, fill: (name: string) => Node | string): DocumentFragment {
   const out = document.createDocumentFragment();
   text.split(/(\{[a-z]+\})/).forEach((part) => out.append(/^\{[a-z]+\}$/.test(part) ? fill(part.slice(1, -1)) : part));
   return out;
@@ -123,7 +137,7 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   // D-023: fighting, shown while the sword is bound to anything
   if (bound('slash').length) {
     page.append(el('h2', 'Swordsmen'));
-    for (const line of [RULES.fight, RULES.windup, RULES.cut]) {
+    for (const line of [`${RULES.fight} ${MOVE_TEXT['fight']!.line}`, RULES.windup, RULES.cut]) {
       const p = el('p');
       p.append(filled(line, fill));
       page.append(p);
@@ -139,7 +153,7 @@ export function buildHowto(d: HowtoData): DocumentFragment {
     for (const id of c.moves) {
       const t = MOVE_TEXT[id];
       const dd = el('dd');
-      dd.append(t ? filled(t.line, fill) : `(${id})`);
+      dd.append(t ? filled(t.more ? `${t.line} ${t.more}` : t.line, fill) : `(${id})`);
       list.append(el('dt', t?.name ?? id), dd);
     }
     page.append(list);
@@ -174,20 +188,51 @@ export function buildHowto(d: HowtoData): DocumentFragment {
   return page;
 }
 
+/** What a line's {names} are filled from: the game's binding table, and the pad's labels when a pad is in his hands. */
+export interface LineKeys {
+  bindings: Readonly<Record<string, readonly string[]>>;
+  /** GAMEPAD.labels while the last thing pressed was on a pad, else null */
+  pad: Readonly<Record<string, string>> | null;
+}
+
+/** Does this move, the hang or the fight have a line? check:teach holds every line the rule can show to it. */
+export function hasLine(id: string): boolean {
+  return MOVE_TEXT[id] !== undefined;
+}
+
+/** A line's text with its {names} left in: for a check that reads the words, never for the screen. */
+export function lineText(id: string): string {
+  return MOVE_TEXT[id]?.line ?? `(${id})`;
+}
+
+/**
+ * D-025: a move's line as the game shows it on screen, the keys read from the same tables as this page's. With
+ * a pad in his hands the names are the pad's. A line with no entry is shown as its id, so it is seen, not hidden.
+ */
+export function teachLine(id: string, k: LineKeys): DocumentFragment {
+  const bound = (action: string): readonly string[] => k.bindings[action] ?? [];
+  return filled(lineText(id), (name) => {
+    if (k.pad) return (k.pad[name] ?? name).replace(/ \(hold\)$/, ''); // "Right trigger (hold)" is the table's; the line already says hold
+    // W A S D: the first key of each direction. The arrows are on the how-to-play page.
+    if (name === 'move') return keys(MOVE_ACTIONS.map((a) => bound(a)[0]).filter((c): c is string => !!c));
+    return bound(name).length ? keys(bound(name), ' or ') : name;
+  });
+}
+
 /**
  * The chapters and the moves each is first to allow, from the level files' own text. A level with chapter 0
  * (the gym) is a test fixture and is not a chapter.
  */
 export function chaptersFrom(sources: Readonly<Record<string, string>>): HowtoChapter[] {
   const levels = Object.values(sources)
-    .map((text) => JSON.parse(text) as { chapter?: unknown; title?: unknown; moves_allowed?: unknown })
-    .filter((l): l is { chapter: number; title: string; moves_allowed: string[] } =>
-      typeof l.chapter === 'number' && l.chapter >= 1 && typeof l.title === 'string' && Array.isArray(l.moves_allowed))
+    .map((text) => JSON.parse(text) as { id?: unknown; chapter?: unknown; title?: unknown; moves_allowed?: unknown })
+    .filter((l): l is { id: string; chapter: number; title: string; moves_allowed: string[] } =>
+      typeof l.id === 'string' && typeof l.chapter === 'number' && l.chapter >= 1 && typeof l.title === 'string' && Array.isArray(l.moves_allowed))
     .sort((a, b) => a.chapter - b.chapter);
   const seen = new Set<string>();
   return levels.map((l) => {
     const moves = l.moves_allowed.filter((m) => typeof m === 'string' && !seen.has(m));
     moves.forEach((m) => seen.add(m));
-    return { chapter: l.chapter, title: l.title, moves };
+    return { id: l.id, chapter: l.chapter, title: l.title, moves };
   });
 }

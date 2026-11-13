@@ -26,6 +26,7 @@
     "measure:autostep": "node tools/measure-autostep.ts",
     "check:progression": "node tools/check-progression.ts",
     "check:fight": "node tools/check-fight.ts --self-test && node tools/check-fight.ts",
+    "check:teach": "node tools/check-teach.ts --self-test && node tools/check-teach.ts",
     "check:webgl": "node tools/webgl-preflight.mjs",
     "playtest": "node tools/harness/run.mjs",
     "check:merge-reports": "node tools/harness/merge-reports.mjs --self-test"

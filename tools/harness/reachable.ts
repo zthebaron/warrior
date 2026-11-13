@@ -32,7 +32,9 @@ import { FIXED_HZ, Stage, VIEWPORT, guard, openGame, type Ctx, type StageResult 
 import { chapterChain, entryLevel as entryOf, type LevelRef } from '../../src/systems/progression.ts';
 import { NAV_CONFIG, walk } from './nav.ts';
 import type { Page } from '@playwright/test';
-import { keepZone, titleFit } from './title-fit.ts';
+import { chaptersFit, keepZone, titleFit } from './title-fit.ts';
+import { INPUT_CONFIG } from '../../src/engine/input.ts';
+import { keyName } from '../../src/ui/howto.ts';
 
 const PROD_PORT = 4318; // beside preflight's 4317 (dist-harness)
 
@@ -70,10 +72,10 @@ const NO_WEBGL = `(() => {
   HTMLCanvasElement.prototype.getContext = function (type, ...rest) { return /webgl/i.test(String(type)) ? null : real.call(this, type, ...rest); };
 })()`;
 
-/** D-022: what the title screen must show (the brief's own words), and the parameters that must leave a page bare. */
+/** D-022: what the title screen must show (the brief's own words), and the parameters that must leave a page bare. D-025 adds Chapters. */
 const TITLE = {
   name: 'Karasu: Flight of the Exile',
-  buttons: ['Play', 'How to play'],
+  buttons: ['Play', 'How to play', 'Chapters'],
   credits: ['Designed by Tim de Vallée', 'Dedicated to Remi'],
   bare: ['harness=1', 'playtest=1', 'replay=1', 'instrument=on', 'level=01-lower-stair'],
 };
@@ -147,7 +149,7 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       st.check('bare URL shows the title screen, and the game is ready behind it', ready && !!seen?.shown, ready ? `title ${seen?.shown ? 'shown' : 'NOT shown'}; art ${seen?.art}` : 'the game never marked the shell ready (20 s)');
       st.check('page title and description are the game\'s name', seen?.title === TITLE.name && seen?.description === TITLE.name, `title ${JSON.stringify(seen?.title)}, description ${JSON.stringify(seen?.description)}`);
       st.check('the title painting is drawn (1376x768)', /^1376x768 /.test(seen?.art ?? ''), seen?.art ?? 'no page');
-      st.check('the title has Play and How to play', TITLE.buttons.every((b) => seen?.buttons.includes(b)), `buttons: ${JSON.stringify(seen?.buttons ?? [])}`);
+      st.check('the title has Play, How to play and Chapters', TITLE.buttons.every((b) => seen?.buttons.includes(b)), `buttons: ${JSON.stringify(seen?.buttons ?? [])}`);
       st.check('the two credit lines, exactly', JSON.stringify(seen?.credits) === JSON.stringify(TITLE.credits), JSON.stringify(seen?.credits ?? []));
       st.check('the name is not set again in HTML over the painting', seen?.headings === 0 && !/karasu|exile/i.test(seen?.text ?? 'karasu'), `headings ${seen?.headings}; text ${JSON.stringify((seen?.text ?? '').slice(0, 120))}`);
       const quiet = await page.evaluate(() => window.__audioProbe?.contexts ?? -1);
@@ -216,12 +218,18 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       // ---- B-59, B-60 (OQ-074). The title fits a window that is neither a phone nor a monitor: in the tall layout
       // the buttons and the credit lines stand under the painting, and in a near-square window or on a tablet held
       // upright there was no room under it, so they were off the screen.
-      for (const [width, height] of [[1000, 900], [810, 1010]] as const) {
+      // D-025 put a fourth button on the title and a chapter list over it: the phone the brief names (400 px) is
+      // held here too, and at each size the list's own buttons must be on screen.
+      for (const [width, height] of [[1000, 900], [810, 1010], [400, 800]] as const) {
         const shaped = await ctx.browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
         await shaped.goto(`${prod.url}/`);
         await shaped.waitForFunction(() => document.documentElement.dataset['shell'] === 'ready', null, { timeout: 20000 }).catch(() => null);
         const fit = await titleFit(shaped, keepZone(ctx.root));
         st.check(`the title at ${width}x${height}: every button and credit line on screen, the painting's keep zone whole`, fit.whole && fit.cut.length === 0, `keep zone x ${fit.keepLeft.toFixed(0)}..${fit.keepRight.toFixed(0)}, painting y ${fit.top.toFixed(0)}..${fit.bottom.toFixed(0)} in a box y ${fit.box.top.toFixed(0)}..${fit.box.bottom.toFixed(0)}: ${fit.whole ? 'whole' : 'CROPPED'}; ${fit.cut.length ? `CUT OFF: ${fit.cut.join(', ')}` : 'nothing cut off'}`);
+        await shaped.click('#title-chapters');
+        await shaped.waitForFunction(() => document.querySelectorAll('#chapters-list button').length > 0, null, { timeout: 20000 }).catch(() => null);
+        const list = await chaptersFit(shaped);
+        st.check(`the chapter list at ${width}x${height}: every chapter and Back on screen`, list.rows > 0 && list.cut.length === 0, `${list.rows} chapters; ${list.cut.length ? `CUT OFF: ${list.cut.join(', ')}` : 'nothing cut off'}`);
         await shaped.close();
       }
       // How to play pressed before the game has loaded lists the moves. The page was built once, at the moment
@@ -370,6 +378,179 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
       const lockAtTitle = await inGame.evaluate(() => ({ ...window.__lock! }));
       st.check('back at the title the mouse is released (a faked pointer lock)', pausedForTitle && backAtTitle && lockAtTitle.exits === 1 && !lockAtTitle.held, `the game ${pausedForTitle ? 'paused' : 'was NEVER paused'}; the title is ${backAtTitle ? 'shown' : 'NOT shown'}; the lock was released ${lockAtTitle.exits} time(s) and is ${lockAtTitle.held ? 'STILL HELD' : 'free'}`);
       await inGame.close();
+
+      // ---- D-025: the chapter list, and the teach line at the wall Tim could not get up (chapter 2's first face).
+      // All of it as a player: the production page has no harness API, so every step is a real key or click, and
+      // what is read is what the page shows (which level loaded, the sounds started, the teach line's element).
+      const chapterFiles = chapterChain(levelRefs(ctx.root)).map((r) => JSON.parse(readFileSync(join(ctx.root, 'levels', `${r.id}.json`), 'utf8')) as { id: string; chapter: number; title: string; critical_path: unknown[]; enemies?: { id: string }[] });
+      const listOf = (p: Page): Promise<{ open: boolean; rows: { id: string; text: string; disabled: boolean }[]; focus: string | null }> => p.evaluate(() => ({
+        open: (document.getElementById('chapters')?.getClientRects().length ?? 0) > 0,
+        rows: [...document.querySelectorAll<HTMLButtonElement>('#chapters-list button')].map((b) => ({ id: b.dataset['level'] ?? '', text: b.textContent ?? '', disabled: b.disabled })),
+        focus: (document.activeElement as HTMLElement | null)?.dataset?.['level'] ?? (document.activeElement as HTMLElement | null)?.id ?? null,
+      }));
+      const teachOf = (p: Page): Promise<{ shown: boolean; move: string | null; spot: string | null; keys: string[]; text: string }> => p.evaluate(() => {
+        const t = document.getElementById('teach');
+        return { shown: !!t && t.getClientRects().length > 0, move: t?.dataset['move'] ?? null, spot: t?.dataset['spot'] ?? null, keys: [...(t?.querySelectorAll('kbd') ?? [])].map((k) => k.textContent ?? ''), text: t?.textContent ?? '' };
+      });
+      const teachIs = (p: Page, move: string | null, ms: number): Promise<boolean> => p.waitForFunction((m) => {
+        const t = document.getElementById('teach');
+        const shown = !!t && t.getClientRects().length > 0;
+        return m === null ? !shown : shown && t!.dataset['move'] === m;
+      }, move, { timeout: ms }).then(() => true).catch(() => false);
+      const second = chapterFiles[1];
+      if (st.check('there is a second chapter to choose', !!second, chapterFiles.map((c) => c.id).join(' > '))) {
+        // 1. the list, opened with the mouse; a chapter chosen with the keyboard; it starts with sound, as Play does
+        const pick = await fresh(AUDIO_PROBE);
+        await shellReady(pick);
+        await pick.click('#title-chapters');
+        const listed = await listOf(pick);
+        st.check('Chapters lists every chapter by name, in order, none locked', listed.open && JSON.stringify(listed.rows.map((r) => r.id)) === JSON.stringify(chapterFiles.map((c) => c.id)) && listed.rows.every((r, i) => r.text.includes(chapterFiles[i]!.title) && !r.disabled),
+          `${listed.open ? 'open' : 'NOT open'}: ${listed.rows.map((r) => `${r.text}${r.disabled ? ' (DISABLED)' : ''}`).join(' | ') || 'no chapters'}`);
+        const silent = await pick.evaluate(() => window.__audioProbe?.contexts ?? -1);
+        await pick.keyboard.press('ArrowDown');
+        const focused = (await listOf(pick)).focus;
+        await pick.keyboard.press('Enter');
+        const picked = await levelOf(pick, 20000);
+        const pickedMusic = await pick.waitForFunction(() => window.__audioProbe?.starts.find((s) => s.loop) ?? null, null, { timeout: 20000 }).then(() => true).catch(() => false);
+        const pickedCtx = await pick.evaluate(() => `${window.__audioProbe?.contexts} context(s), ${window.__audioProbe?.ctx?.state ?? 'none'}`);
+        await pick.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).catch(() => null);
+        const pickedSeen = await screen(pick);
+        st.check('Chapters: the arrow and Enter start the chosen chapter, and the title and the list leave', focused === second!.id && picked === second!.id && !pickedSeen.title && !(await listOf(pick)).open, `focus after ArrowDown: ${focused}; loaded "${picked ?? '(nothing)'}", expected "${second!.id}"; title ${pickedSeen.title ? 'STILL SHOWN' : 'gone'}`);
+        st.check('Chapters: the chosen chapter starts with sound, as Play does', silent === 0 && pickedCtx === '1 context(s), running' && pickedMusic, `${silent} context(s) before the choice; after it ${pickedCtx}, the music ${pickedMusic ? 'started as a loop' : 'did NOT start'}`);
+
+        // 2. the teach line, on that same page: he is at the start of chapter 2, a first visit
+        const keysOf = (action: keyof typeof INPUT_CONFIG.bindings): string[] => [...new Set(INPUT_CONFIG.bindings[action].map(keyName))];
+        const walk = await teachIs(pick, 'ground', 20000);
+        const walkLine = await teachOf(pick);
+        const moveKeys = (['forward', 'left', 'back', 'right'] as const).map((a) => keyName(INPUT_CONFIG.bindings[a][0]!));
+        st.check('at the start the line is how to move, its keys read from the binding table', walk && JSON.stringify(walkLine.keys) === JSON.stringify([...moveKeys, ...keysOf('sprint')]), `${walkLine.shown ? JSON.stringify(walkLine.text) : 'no line'}; keys ${JSON.stringify(walkLine.keys)}, the table gives ${JSON.stringify([...moveKeys, ...keysOf('sprint')])}`);
+        // Forward is toward the face (the level runs the way he faces). Held from here to the catch but for the
+        // one control that lets it go: at the wall it is "pushing in".
+        const forward = INPUT_CONFIG.bindings.forward[0]!, jumpKey = INPUT_CONFIG.bindings.jump[0]!;
+        const climbStep = second!.critical_path.findIndex((w) => !Array.isArray(w) && (w as { via?: string }).via === 'climb');
+        await pick.keyboard.down(forward);
+        const atFace = await teachIs(pick, 'climb', 30000);
+        const faceLine = await teachOf(pick);
+        st.check('the ledge-grab line is up as he comes to chapter 2\'s first face, its keys read from the binding table', atFace && faceLine.spot === `step:${climbStep}` && faceLine.keys.length > 0 && faceLine.keys.every((k) => keysOf('jump').includes(k)), `${faceLine.shown ? `${faceLine.move} at ${faceLine.spot}: ${JSON.stringify(faceLine.text)}` : 'no line'}; keys ${JSON.stringify(faceLine.keys)}`);
+        // control 1: at the wall, pushing in, no jump: the line stays (long enough that he is at the wall on any runner)
+        await pick.waitForTimeout(8000);
+        const pushed = await teachOf(pick);
+        // control 2: a held jump WITHOUT pushing in catches nothing (MEASUREMENTS "D-025 the wall"): the line stays
+        await pick.keyboard.up(forward);
+        await pick.waitForTimeout(400);
+        await pick.keyboard.down(jumpKey);
+        await pick.waitForTimeout(2500);
+        await pick.keyboard.up(jumpKey);
+        await pick.waitForTimeout(1200);
+        const hopped = await teachOf(pick);
+        st.check('the line stays while he pushes at the wall, and through a held jump without pushing in', pushed.move === 'climb' && pushed.shown && hopped.move === 'climb' && hopped.shown, `after 8 s pushing in: ${pushed.shown ? pushed.move : 'NO LINE'}; after a held jump, not pushing: ${hopped.shown ? hopped.move : 'NO LINE'}`);
+        // the move as the line says it: push in, hold the jump. Pressed again until the ledge is caught: a frame
+        // on a CI runner is long, and the first press can come before he is back against the wall.
+        const grabSec = want9.effects['wall_grab']!.seconds;
+        const grabs = (): Promise<number> => pick.evaluate((sec) => (window.__audioProbe?.starts ?? []).filter((s) => !s.loop && s.seconds === sec).length, grabSec);
+        await pick.keyboard.down(forward);
+        await pick.waitForTimeout(1500);
+        const grabsBefore = await grabs();
+        let caught = false, tries = 0;
+        for (; tries < 8 && !caught; tries++) {
+          await pick.keyboard.down(jumpKey);
+          caught = await teachIs(pick, 'hang', 4000);
+          if (!caught) { await pick.keyboard.up(jumpKey); await pick.waitForTimeout(1500); }
+        }
+        const hang = await teachOf(pick);
+        const grabbed = (await grabs()) - grabsBefore;
+        st.check('a held jump while pushing in catches the ledge: the ledge-grab line goes, and the hang\'s line takes its place', caught && hang.move === 'hang' && grabbed >= 1, `${caught ? `caught on try ${tries}` : `NOT caught in ${tries} tries`}; the line is ${hang.shown ? `${hang.move}: ${JSON.stringify(hang.text)}` : 'gone'}; the grab sound started ${grabbed} time(s)`);
+        // still holding the jump he hangs: the line says to press it AGAIN. Let go, press: up he goes. Forward is
+        // still down, so on top he walks on, and the next line is the first swordsman's, who stands on top of the
+        // face: only a warrior who is up there is near him.
+        await pick.waitForTimeout(1500);
+        const stillHanging = (await teachOf(pick)).move === 'hang';
+        await pick.keyboard.up(jumpKey);
+        await pick.waitForTimeout(300);
+        await pick.keyboard.down(jumpKey);
+        await pick.waitForTimeout(300);
+        await pick.keyboard.up(jumpKey);
+        const guard = second!.enemies?.[0]?.id;
+        // read in the same breath as it is seen: he runs on past the swordsman, and the line goes with him
+        const topLine = await pick.waitForFunction((spot) => {
+          const t = document.getElementById('teach');
+          return t && t.getClientRects().length > 0 && t.dataset['spot'] === spot ? { move: t.dataset['move'] ?? '', keys: [...t.querySelectorAll('kbd')].map((k) => k.textContent ?? ''), text: t.textContent ?? '' } : null;
+        }, `foe:${guard}`, { timeout: 20000 }).then((h) => h.jsonValue()).catch(() => null);
+        await pick.keyboard.up(forward);
+        st.check('holding the jump he hangs; pressing it again pulls him up, and on top the next line is the first swordsman\'s', stillHanging && topLine?.move === 'fight' && topLine.keys.includes(keyName(INPUT_CONFIG.bindings.slash[0]!)), `${stillHanging ? 'hung while the jump was held' : 'did NOT stay hanging'}; then ${topLine ? `${topLine.move} at foe:${guard}: ${JSON.stringify(topLine.text)}` : `no line at foe:${guard} in 20 s`}`);
+        await pick.close();
+
+        // 3. Play is still the first chapter, whatever was played last; and the list is in the how-to-play page of a
+        //    running game, so a player who is stuck can move on
+        const roam = await fresh(AUDIO_PROBE);
+        await shellReady(roam);
+        const levelIs = (id: string, ms: number): Promise<boolean> => roam.waitForFunction((want8) => document.body.dataset['level'] === want8, id, { timeout: ms }).then(() => true).catch(() => false);
+        await roam.keyboard.press('KeyC'); // the list's own key, at the title
+        const byKey = (await listOf(roam)).open;
+        const last = chapterFiles[chapterFiles.length - 1]!;
+        await roam.click(`#chapters-list [data-level="${last.id}"]`, { timeout: 5000 }).catch(() => {});
+        const wentLast = await levelIs(last.id, 20000);
+        await roam.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).catch(() => null);
+        let pausedThere = false;
+        for (let i = 0; i < 10 && !pausedThere; i++) {
+          await roam.keyboard.press('KeyP');
+          pausedThere = await roam.waitForFunction(() => /^PAUSED/.test(document.getElementById('hud')?.textContent ?? ''), null, { timeout: 1500 }).then(() => true).catch(() => false);
+        }
+        await roam.keyboard.press('KeyM');
+        await roam.waitForFunction(() => (document.getElementById('title')?.getClientRects().length ?? 0) > 0, null, { timeout: 5000 }).catch(() => null);
+        await roam.keyboard.press('Enter');
+        const backToFirst = await levelIs(want!.id, 20000);
+        st.check('Play starts the first chapter, even after another was chosen and left', byKey && wentLast && pausedThere && backToFirst, `the list ${byKey ? 'opened on its key' : 'did NOT open on its key'}; chose ${last.id}: ${wentLast ? 'loaded' : 'NOT loaded'}; ${pausedThere ? 'paused' : 'NEVER paused'}, back to the title, Play: ${backToFirst ? `loaded ${want!.id}` : `level is "${await roam.evaluate(() => document.body.dataset['level'] ?? '(none)')}"`}`);
+        await roam.waitForFunction(() => document.getElementById('title')?.hidden === true, null, { timeout: 5000 }).catch(() => null);
+        await roam.keyboard.press('KeyH');
+        await roam.waitForFunction(() => document.getElementById('help')?.hidden === false, null, { timeout: 5000 }).catch(() => null);
+        const helpBefore = await screen(roam);
+        await roam.click('#help-chapters', { timeout: 5000 }).catch(() => {});
+        const overHelp = (await listOf(roam)).open;
+        const third = chapterFiles[Math.min(2, chapterFiles.length - 1)]!;
+        await roam.click(`#chapters-list [data-level="${third.id}"]`, { timeout: 5000 }).catch(() => {});
+        const wentThird = await levelIs(third.id, 20000);
+        await roam.waitForFunction(() => document.getElementById('hud')?.textContent === '', null, { timeout: 5000 }).catch(() => null);
+        const after3 = await screen(roam);
+        const ctx3 = await roam.evaluate(() => `${window.__audioProbe?.contexts} context(s), ${window.__audioProbe?.ctx?.state ?? 'none'}`);
+        st.check('Chapters is in the how-to-play page of a running game, and a chapter chosen there starts, not paused', helpBefore.help && /^PAUSED/.test(helpBefore.hud) && overHelp && wentThird && !after3.help && !(await listOf(roam)).open && after3.hud === '' && ctx3 === '1 context(s), running',
+          `how-to-play ${helpBefore.help ? 'open over a paused game' : 'NOT open'}; the list ${overHelp ? 'opened over it' : 'did NOT open'}; chose ${third.id}: ${wentThird ? 'loaded' : 'NOT loaded'}; then how-to-play ${after3.help ? 'STILL SHOWN' : 'gone'}, HUD ${JSON.stringify(after3.hud.slice(0, 12))}, ${ctx3}`);
+        await roam.close();
+
+        // 4. a pad: Y opens the list, the D-pad moves in it, A chooses (a faked pad, as B-57's)
+        const padded = await fresh(PAD_FAKE);
+        await shellReady(padded);
+        const press = async (button: number): Promise<void> => {
+          await padded.evaluate((b) => { window.__pad!.on = true; window.__pad!.down = [b]; }, button);
+          await padded.waitForTimeout(250);
+          await padded.evaluate(() => { window.__pad!.down = []; });
+          await padded.waitForTimeout(250);
+        };
+        await press(3);
+        const padOpen = await listOf(padded);
+        await press(13);
+        const padFocus = (await listOf(padded)).focus;
+        await press(0);
+        const padLevel = await levelOf(padded, 20000);
+        st.check('a pad: Y opens the chapter list, the D-pad moves down it, A starts the chapter in focus (a faked pad)', padOpen.open && padFocus === second!.id && padLevel === second!.id, `the list ${padOpen.open ? 'opened' : 'did NOT open'} with the focus on ${padOpen.focus}; after D-pad down it is on ${padFocus}; A loaded "${padLevel ?? '(nothing)'}"`);
+        await padded.close();
+
+        // 5. Chapters pressed before the game has loaded opens the list, and the list has the chapters in it (the
+        //    same lesson as B-60: the names are read after the game is ready)
+        const earlyList = await ctx.browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+        let letListLoad!: () => void;
+        const listGate = new Promise<void>((r) => { letListLoad = r; });
+        await earlyList.route(/\.js(\?|$)/, async (route) => { await listGate; await route.continue().catch(() => {}); });
+        await earlyList.goto(`${prod.url}/`, { waitUntil: 'commit' });
+        await earlyList.waitForFunction(() => !!document.getElementById('title-chapters'), null, { timeout: 20000 });
+        await earlyList.click('#title-chapters');
+        const listPressedEarly = await earlyList.evaluate(() => document.documentElement.dataset['shell'] !== 'ready');
+        letListLoad();
+        await earlyList.waitForFunction(() => document.querySelectorAll('#chapters-list button').length > 0, null, { timeout: 20000 }).catch(() => null);
+        const earlyRows = await listOf(earlyList);
+        st.check('Chapters pressed before the game has loaded opens the list, with the chapters in it', listPressedEarly && earlyRows.open && earlyRows.rows.length === chapterFiles.length, `pressed ${listPressedEarly ? 'before the game was ready' : 'AFTER the game was ready'}; the list ${earlyRows.open ? 'opened' : 'did NOT open'} with ${earlyRows.rows.length} of ${chapterFiles.length} chapters`);
+        await earlyList.close();
+      }
 
       // with a test or tool parameter the page is bare: no title screen, no how-to-play page, no sound
       for (const q of TITLE.bare.map((p) => `?${p}`)) {
