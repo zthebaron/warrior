@@ -2136,3 +2136,10 @@ took, each PROVISIONAL. **Nobody has played chapter 3 in this look; every call b
     §3: a painted face keeps full ink at any distance.
 14. **No fal spend.** The brief allowed $1.50. The ledger stands at $15.1968.
 15. **Not done:** a phone was not held; nobody has played it.
+16. **Self-review, as a player, on the real GPU at 5120 x 1440** (the one review the brief asks for). Riding the
+    stone, it reads: a mist-pale top edged in dark, the mist streak under it. The dash gap is a dark slot under the
+    hanging lintel. **Before the first jump the docked stone is behind the torii's posts and its top reads only as
+    a greyer piece of ground; nothing in that frame says it moves** (the keel is under it, out of sight until it
+    is out over the void): the brief's "where it is going ... before he jumps for it" is met by the streak only,
+    and faintly. The wall beside the path is foreshortened, its strokes magnified near the camera (B-117), and a
+    reachable ledge of it is a thin pale scratch (as chapter 2's B-113).
