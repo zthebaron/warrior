@@ -2620,4 +2620,9 @@ the branch's, the two values B-115's flipping pixel gives on main's own source (
 22, 27, 27, 28, 22, 24 for the gym and chapters 1 to 5; `reachable` 69/69, `pitch-assist` 117/117, `run-metric`
 15/15, `ambient-motion` 13/13, `fight` 15/15, `touch` 29/29, `touch-release` 16/16, `touch-chapters` 27/27.
 
+**Linux goldens, chapter 3** (the documented way: CI's own frames). CI run 43515130393 on 4b437bf: every job green
+but `level (03-drifting-stones)`, red at `visual` alone (six cameras 29.3 to 53.3% off the greybox goldens); on Linux
+its `post` is 28/28. All six `camN.actual.png` taken; against the darwin goldens (pixelmatch, threshold 0.1) they
+differ in 0, 2, 0, 1, 0 and 0 px of 230,400. No other level's golden is written.
+
 **fal:** no call. The ledger stands at $15.1968 of $20.00.
