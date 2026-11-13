@@ -138,6 +138,7 @@ export class Shell {
       if (this.root.dataset['shell'] !== 'ready') this.ready();
     } else if (to === 'loading') {
       this.setPlay(true);
+      if (this.chaptersOpen) this.hideChapters(); // D-025: the list is never left over a level that is starting
     } else if (!this.title.hidden) {
       this.title.classList.add('leaving');
       this.leaveTimer = window.setTimeout(() => { this.title.hidden = true; }, SHELL.leaveMs);
@@ -250,7 +251,24 @@ export class Shell {
     this.chaptersReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.chapterBox.hidden = false;
     this.chapterBox.scrollTop = 0;
+    this.under(true);
     this.fillChapters(true);
+  }
+
+  /**
+   * What the chapter list stands over cannot be reached while it is open: Tab stays in the list and no key or
+   * click lands on a button under it. Enter on a Play that Tab had found there would start a game beneath an
+   * open list.
+   */
+  private under(inert: boolean): void {
+    this.title.inert = inert;
+    this.help.inert = inert;
+  }
+
+  /** Take the list off the screen and give back what was under it. */
+  private hideChapters(): void {
+    this.chapterBox.hidden = true;
+    this.under(false);
   }
 
   /** Build the list from the level files' own names, and put the focus on its first chapter. */
@@ -289,7 +307,7 @@ export class Shell {
 
   closeChapters(): void {
     if (!this.chaptersOpen) return;
-    this.chapterBox.hidden = true;
+    this.hideChapters();
     if (this.chaptersReturnFocus?.isConnected) this.chaptersReturnFocus.focus({ preventScroll: true });
     this.chaptersReturnFocus = null;
   }
@@ -299,7 +317,7 @@ export class Shell {
    * that page paused is not resumed, it is left for the chapter chosen (the host loads it from `pause`).
    */
   private choose(id: string): void {
-    this.chapterBox.hidden = true;
+    this.hideChapters();
     this.chaptersReturnFocus = null;
     if (this.helpOpen) {
       this.help.hidden = true;

@@ -406,6 +406,11 @@ export async function reachable(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>
         const listed = await listOf(pick);
         st.check('Chapters lists every chapter by name, in order, none locked', listed.open && JSON.stringify(listed.rows.map((r) => r.id)) === JSON.stringify(chapterFiles.map((c) => c.id)) && listed.rows.every((r, i) => r.text.includes(chapterFiles[i]!.title) && !r.disabled),
           `${listed.open ? 'open' : 'NOT open'}: ${listed.rows.map((r) => `${r.text}${r.disabled ? ' (DISABLED)' : ''}`).join(' | ') || 'no chapters'}`);
+        // what the list stands over cannot be reached while it is open: Enter on a Play that Tab had found under it
+        // would start a game beneath an open list
+        const under = await pick.evaluate(() => ['title-play', 'title-help', 'title-chapters'].filter((id) => { document.getElementById(id)?.focus(); return document.activeElement?.id === id; }));
+        await pick.evaluate(() => document.querySelector<HTMLElement>('#chapters-list button')?.focus());
+        st.check('with the chapter list open, the title\'s buttons under it cannot take the focus', listed.open && under.length === 0, under.length ? `took the focus: ${under.join(', ')}` : 'Play, How to play and Chapters all refuse it');
         const silent = await pick.evaluate(() => window.__audioProbe?.contexts ?? -1);
         await pick.keyboard.press('ArrowDown');
         const focused = (await listOf(pick)).focus;
