@@ -1835,3 +1835,64 @@ tightest catch the rig has), B-90 (a second press at a wall is a kick), B-91 (un
 **What nobody has judged.** No person has read these lines in the game. Whether six metres is early enough,
 whether the ledge-grab line is short enough to take in at a wall, and whether a line under the warrior's feet is
 where the eye goes are Tim's to say. The pad's wording was never seen with a pad in hand.
+
+## OQ-079 — COURTYARD: the rules the brief crosses, and the builder's calls
+raised: 2026-11-12 by courtyard (claim COURTYARD). Brief: `00-start-here/PROMPT-COURTYARD.md`. Decision: D-026.
+Numbers: MEASUREMENTS "D-026 the gate", "D-026 the courtyard", "D-026 the courtyard's look", "D-026 the checks".
+took, each PROVISIONAL:
+
+1. **The brief asks for a gate that opens when the yard is clear; Q3 refused a gate, and NOT rows 8 and 9 stand
+   in its way.** Options: A, a new goal type (`defeat_all`): row 9's own check refuses it | B, an `interactables`
+   entry: row 8's check refuses it | C, a boolean on the goal and a tag on a collision box. Took C:
+   `goal.once_clear` and `gate_door`. Both rows' checks still pass unchanged; their text is narrowed and row 9
+   gains a check (the flag without a swordsman is rejected). Tim ruled the gate; the spelling is mine.
+2. **`FACE_RISE` does not see a door.** With the flag, the linter walks the path as it is once the level is
+   clear. AGENT-BRIEF refuses "a lint exemption to make your level work"; this one is the rule the brief asks for
+   ("the goal is reachable once clear"), it applies to a tagged door on a flagged level only, and the same box
+   without the flag fails `FACE_RISE` and `DOOR_NO_CLEAR` (seen in `lint:self`).
+3. **"They come at the warrior together" against a sight of 4.5 m that may not be retuned.** For all three to be
+   roused at once they must stand within about 5 m of each other. Took: 4.82, 3.54 and 2.97 m apart, in the
+   middle third of a 16 m yard. The painting has the two outer ones about twice as far apart. Options: A, as
+   the painting: the bot then meets them one at a time (measured: the first alone, the other two 15 ticks after
+   he fell) | B, close enough to be roused together. Took B: the brief's sentence is about the fight.
+4. **The door collides until it has swung right back** (1.2 s), not until the last one falls. The bot reaches
+   it after it is open (61 ticks later). A player at the door when it opens waits for the leaves.
+5. **The yard is 22 by 16 m with walls 4.8 m high.** The wall is above the highest catch a climb makes (4.5 m),
+   so the yard is not left over it; whether some chain of moves tops 4.8 m was not measured (B-100).
+6. **The way in is an open post-and-beam gateway, not the gate model.** Two reasons, both measured: from the
+   checkpoint the follow camera is still outside the near wall and saw the yard through a 3.2 m doorway under a
+   roof; and the painted model stood in front of the checkpoint torii from the harness's cameras (2,169 accent
+   pixels hidden, 39 pixels over the hue limit where its edge met the vermilion). D-020: paint hides no accent.
+7. **The terrace is 9 m wide, not 7.** At 7 the warrior's idle figure showed against the void from one harness
+   camera and `post`'s "painted sky is static" counted 53 of its pixels. The check is unchanged; the floor is
+   wider.
+8. **The ink pass is kept pale and simple and the darks are painted.** `post` reads the edge of a dark form as a
+   drawn line: with dark caps and timbers 99.6% of near silhouettes counted as ink (limit 92%) and 44.8% of mid
+   silhouettes as a line (limit 35%). So caps and timbers are `wash-light` and `stone-mid`, there is no ridge or
+   eave geometry darker than its roof, and tiles, stains, joints and planks are washes on the paint layer.
+9. **Plaster is the paper's own tone on the faces toward the mist.** With every outer face `mist-pale` the paper
+   share was 36.4% (floor 41%); with every one paper, 49.1% but only 121 stroke pixels (floor 200). Took: side
+   walls paper, the two end walls a step down: 44.9% and 341.
+10. **"A warm sky" against STYLE §2 (the accent is the torii's alone) and the hue gate (chroma 31).** The paper
+    is already at the ramp's chroma limit (30). Took: a wash the paper's own value and chroma, turned toward
+    rose: rgb 204,184,174, laid where the painting's sky is red. It passes `no hue` (0 pixels over). It is a
+    strain on §2's wording, not the accent; STYLE-BIBLE is not amended. Tim may want it stronger: that needs §2
+    amended on a measurement.
+11. **Not from the painting: the flags, the plaster and the tiles.** The painting's ground and walls are in
+    perspective under four figures. They are drawn by a seeded script as brush lines that break. The far field
+    and the sky are cut from the painting itself.
+12. **The gate model's tone.** Tone-matched to its input, as other hero assets are, its posts came out
+    paper-pale; it is one hue instead, a ramp whose median is ink-grey (`tools/gen/finish.sh`).
+13. **The harness's six cameras hang over the side wall's cap** (path + [-7, 7, 11] with the wall at z 8 to 9).
+    The goldens and `post` judge those frames. Not changed: bending the route to move test cameras would make
+    the critical path a lie.
+14. **Chapter 5 allows all eight moves and uses one.** `MOVES_ALLOWED` demands the chapter's running total.
+15. **Ultracode was on; one read-only fan-out was run** (six readers mapping the code before any edit), and one
+    web lookup of fal's three price pages. No review workflow, as the brief says. An advisor was consulted once
+    on the design. One focused self-review was done by me at the end.
+16. **The claim was pushed to main by this session** (`b3c12f3`, the ledger line only), as CLAUDE.md prescribes.
+
+**What nobody has judged.** How three at once feels by hand; whether the fight is too short (the bot ends it in
+1.42 s); the look in motion; the gate's 1.2 s; the rose of the sky; the yard's size from inside. Nothing was
+judged by ear: the gate opens in silence (B-98).
+status: PROVISIONAL

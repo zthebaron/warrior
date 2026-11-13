@@ -8,7 +8,8 @@ one disagree, that one wins and this one has a bug. The look is governed by
 **The 20-second test:** *A browser platformer in sumi-e ink. You climb a cliff mountain in four
 chapters, running and jumping along the seam between dark rock and bright cloud. Vermilion torii
 show you where to go; a crow lifting off tells you when. Die, and you are back at the last torii in
-under a second. Reach the summit and you have won. About ten minutes.*
+under a second. Reach the summit, then cross the walled courtyard beyond it past three swordsmen
+(chapter 5, D-026), and you have won. About ten minutes.*
 
 ---
 
@@ -53,17 +54,20 @@ A **segment** is the run between consecutive torii: spawn → each checkpoint �
 
 ## 4. Win condition and session length (Q4)
 
-- **You win by arriving** at the last torii of the last chapter. There is no score, par time, rank
-  or unlock. The results state reads `COMPLETE` and nothing else.
+- **You win by arriving** at the goal of the last chapter. There is no score, par time, rank
+  or unlock. The results state reads `COMPLETE` and nothing else. In the courtyard (chapter 5,
+  D-026) the arrival counts once every swordsman of the level is down, and its gate is shut until
+  then: `goal.once_clear`. It is still arriving that wins.
 - **Session length is a content budget:** 4 chapters × 5 segments = **20 segments, 8–12 min** for
-  a first-time player. Production grows by adding chapters, not by stretching them: 12 × 5 ≈ 30 min.
-- Chapters 2 and up are **5 ± 1 segments** (linter `CHAPTER_LENGTH`). Chapter 1's length is not
+  a first-time player, and the courtyard after them: one checkpoint, two segments, one fight. Production grows by adding chapters, not by stretching them: 12 × 5 ≈ 30 min.
+- Chapters 2 to 4 are **5 ± 1 segments** (linter `CHAPTER_LENGTH`, which runs on chapters 1 to 4).
+  Chapter 5 is not a climb and is not held to it (D-026). Chapter 1's length is not
   fixed. It is an output of the teach rate, which the vertical slice will measure
   (`CHAPTER_LENGTH_PENDING`).
 
 ## 5. Chapter list (Q5)
 
-Four chapters climbing one mountain, **one level file per chapter**. Each chapter declares
+Four chapters climbing one mountain and a fifth at its top (D-026), **one level file per chapter**. Each chapter declares
 `moves_allowed`, and the linter rejects any `via` outside it, because chapter agents cannot see
 each other. Teaching order has to live in the data.
 
@@ -72,7 +76,8 @@ each other. Teaching order has to live in the data.
 | 1 | The Lower Stair | ground, jump, climb | 3 | Cut-stone paths and straight stairs at the cliff base, plus the first crow cue. **This is the vertical slice.** |
 | 2 | Fracture Wall | wall, double | 5 | Sheer faces and narrow ledges. Airborne cliff work, still native to the cliff. |
 | 3 | The Hanging Shrines | platform, dash | 7 | Shrines built against the cliff, lifts that run along the cliff face, gaps and timing arriving together. |
-| 4 | The Summit Fortress | dashjump | 8 | Pagoda roofs, densest timing, a mastery beat rather than new content. The last torii is the win. |
+| 4 | The Summit Fortress | dashjump | 8 | Pagoda roofs, densest timing, a mastery beat rather than new content. Its last torii leads on to chapter 5. |
+| 5 | The Courtyard | none | 8 | D-026. The walled yard of Tim's painting: a walk in through a gate, three swordsmen who come at him together, and the tiled gate at the far side, shut until the yard is clear. Its goal is the win. |
 
 Climb and wall are what the §5 cliff seam affords. Dash is the move that fights it, so it comes
 late. `dashjump` combines two moves the player already knows, so it is never taught: the player
@@ -132,8 +137,8 @@ what *does* exist.
 | 5 | A ninth move, in code | Q2 | src | `glide*` | enforced |
 | 6 | Pickups and collectibles | Q3 | schema | `collectibles=[]` | enforced |
 | 7 | Pickups, in code | Q3 | src | `collectible*` `pickup*` | enforced |
-| 8 | Ordered-state puzzles and interactables (bell, gate, plate, lever, door, rope, torch), and triggered platforms | Q3, Q2c | schema | `interactables=[]` `platforms[0].loop="triggered"` | enforced |
-| 9 | Any win but arriving | Q4 | schema | `goal.type="collect_all"` `goal.type="defeat_all"` `goal.type="strike"` | enforced |
+| 8 | Ordered-state puzzles and interactables (bell, plate, lever, rope, torch, a gate or door the player works), and triggered platforms. The gate of a goal that waits (D-026) is allowed because it is neither: nothing is worked, it is level geometry that shows whether the goal counts yet | Q3, Q2c, D-026 | schema | `interactables=[]` `platforms[0].loop="triggered"` | enforced |
+| 9 | Any win but arriving. `goal.once_clear` (D-026) is not another win: it is when the arrival counts, it is refused on a level with no swordsman, and no other goal type exists | Q4, D-026 | schema | `goal.type="collect_all"` `goal.type="defeat_all"` `goal.type="strike"` `goal.once_clear=true` | enforced |
 | 10 | Score, par time, rank | Q4 | schema | `score=1` `par_time=1` `rank=1` | enforced |
 | 11 | Score, par time, rank, in code | Q4 | src | `score` `par_time` `rank` | enforced |
 | 12 | A second route or branching path | Q3, Q5 | schema | `critical_paths=[]` | enforced |

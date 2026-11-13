@@ -274,3 +274,16 @@ node tools/gen/paint-warrior.mjs --weights assets/hero/rigged/warrior_rigged.glb
 node tools/gen/anim-strip.mjs out.png --frames 6 land=assets/hero/rigged/warrior_anim.glb#land
 node tools/gen/build-backdrop.mjs && node tools/gen/backdrop-sheet.mjs docs/build-log/art-gen/backdrop-sheet.png
 ```
+
+## The courtyard's gate (D-026, 2026-11-12)
+
+| Step | What | Ledger row | Cost |
+|---|---|---|---|
+| input image | `assets/hero/input/gate.png`: `fal-ai/nano-banana/edit` from a crop of the painting's own gate (`tools/gen/make-gate-payloads.mjs`, `tools/gen/payloads/in-gate.json`): alone, grey ink, the doorway empty | 94 | $0.0398 |
+| shape test | `fal-ai/trellis`: an open four-post gate with a tiled roof; accepted | 95 | $0.0200 |
+| model | `fal-ai/hunyuan3d-v3/image-to-3d`, Normal and PBR (`assets/hero/raw/gate.result.json`) | 96 | $0.5250 |
+
+`sh tools/gen/finish.sh gate` builds `assets/hero/gate.glb`: 29,400 triangles, a 1024 px texture, one hue on a
+ramp whose median is ink-grey (tone-matched to its input its posts came out paper-pale). It is named in
+`assets/src/hero.json` `static` and ships as `assets/dist/gate.glb` (1,076,744 B). Its doors are not part of it:
+the two leaves are the game's own (`src/loaders/courtyard.ts`). $0.5848 in all.
