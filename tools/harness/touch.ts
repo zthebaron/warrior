@@ -69,6 +69,13 @@ export const TOUCH_STAGE = {
    * before; at x 0 a 'down' hold of the nothing-sticks checks carries him over the edge.
    */
   home: [1.5, 0.05, 0] as Vec3,
+  /**
+   * where each nothing-sticks hold starts (the stick pushed up the path, Jump held): the back of the same flat,
+   * 11 m short of the stair tread at x 6, whose 1.25 m face he cannot walk up. His one jump comes down well before
+   * it, and the face holds him there however long the hold (a 250-tick hold from here ended at x 5.64, running,
+   * against it). From S.home a hold of either way can run off the flat.
+   */
+  releaseAt: [-5, 0.05, 0] as Vec3,
   /** ticks a release is given to show in the frames, and how many frames at the end must be neutral */
   settleTicks: 8,
   neutralTicks: 3,
@@ -571,13 +578,13 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, pa
        * about 18 s a call and 324 s of the stage's 537 (MEASUREMENTS "POLISH-1 the touch stage"); and the walk was
        * never one of the checks. Placing also puts the camera back behind him, which the walk did not.
        */
-      const home = async (): Promise<void> => {
+      const home = async (at: Vec3 = S.home): Promise<void> => {
         for (let i = 0; i < 3; i++) {
           const s = (await t.until((v) => v.state === 'play', 15000)) ?? (await t.snap());
           if (s.enemies[0] && s.enemies[0].mode !== 'fallen') { await fell(t, s.enemies[0].id, 'up'); continue; }
           break;
         }
-        await t.page.evaluate((p) => window.__TOUCH_PROBE__!.place(p, -90), S.home);
+        await t.page.evaluate((p) => window.__TOUCH_PROBE__!.place(p, -90), at);
         await t.ticks(S.settleTicks);
       };
       const fastest = (log: Tick[]): number => Math.max(0, ...log.map((f) => f.speed));
@@ -753,13 +760,16 @@ export async function touch(ctx: Omit<Ctx, 'levelId' | 'level' | 'segments'>, pa
       if (part === 'release') {
         // ================= 2. nothing sticks: after every way a finger can leave, the live frame is neutral =================
         // Each: the stick pushed and Jump held (two fingers), seen in the frames; then the release; then the last
-        // frames of the ticks that follow must be neutral. The direction alternates so the warrior stays on the flat.
-        let flip = false;
+        // frames of the ticks that follow must be neutral. Each hold starts at S.releaseAt and pushes up the path: his
+        // one jump comes down short of chapter 1's first stair tread, whose face then stops him for as long as the
+        // fingers stay. A hold is as long as the round trips it waits on, not a count of ticks, and on a slow page
+        // that is enough to run off the flat: on a page slowed 6 times a down hold from S.home went over the edge at
+        // x -6, the respawn stood chapter 1's swordsman up again, and the next home() fought him. On CI runs
+        // 43485369808 and 43485459420 that cost one check 286 and 294 s (MEASUREMENTS "POLISH-1 the touch job on CI").
         const held = async (): Promise<Snap> => {
-          await home();
-          flip = !flip;
+          await home(S.releaseAt);
           const from = await t.snap();
-          await h.stick(flip ? 'up' : 'down', S.share.mid);
+          await h.stick('up', S.share.mid);
           await h.press('jump');
           await t.until((s) => s.tick > from.tick + 2, 8000);
           return from;
