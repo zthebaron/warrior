@@ -164,8 +164,9 @@ jobs:
   touch:
     runs-on: ubuntu-latest
     # D-027: the game played by a thumb on the real page (its own frame loop, real touch events). 533 s on darwin
-    # SwiftShader; x1.8 slow runner ~16 min, so a job of its own beside `game` rather than a third of game's 20.
-    timeout-minutes: 30
+    # SwiftShader, 28m20s on CI run 43374834353 (the runner draws the real page about 3 times slower), so a job of
+    # its own beside `game`, with room over that (B-108).
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:

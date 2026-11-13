@@ -1945,8 +1945,8 @@ took, each PROVISIONAL:
     and walks in by thumb. It breaks each control from outside the controls (`breakControl`, a harness build's
     `?touchprobe=1` page only; preflight refuses a `dist/` carrying its marker), and a real button by taking the
     pointer from it.
-12. **The touch stage has its own CI job** beside `game` (533 s on this Mac; about 16 min on a slow runner), with
-    a 30 minute limit. merge-reports gates it as it gates every once-stage.
+12. **The touch stage has its own CI job** beside `game` (533 s on this Mac; 28m20s on CI run 43374834353), with
+    a 45 minute limit. merge-reports gates it as it gates every once-stage.
 13. **B-105, found and fixed:** a click or tap on the chapter list's gap between two rows found `<body
     data-level>` and started the current chapter again. On main since D-025, on desktop as well. The list now
     takes only its own rows. The one change a desktop player can notice.

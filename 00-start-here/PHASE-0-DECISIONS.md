@@ -1834,7 +1834,7 @@ every static check and every existing stage green.
 
 **Known limits (OQ-080).** Only emulated: headless Chromium, SwiftShader, touch on. Not tried on a phone, in Safari,
 with a notch, or by a thumb (B-106). The stage does not play the double jump, wall jump or dash jump by thumb
-(B-107). It is slow (B-108). The controls have no settings (B-109).
+(B-107). It is slow: 28 minutes in CI, the slowest job (B-108). The controls have no settings (B-109).
 
 **STYLE-BIBLE:** not amended. §2: the controls are ink and paper, part see-through; no accent on UI.
 

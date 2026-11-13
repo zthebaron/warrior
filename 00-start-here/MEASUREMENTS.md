@@ -2269,6 +2269,9 @@ largest round step under 2. PROVISIONAL (OQ-080): on a real phone it may be too 
 | `settleTicks`, `neutralTicks` | 8, 3 | authored | a release must show in the frames within 8 ticks, and the last 3 must be neutral |
 | `msPerTick`, `waitMs` | 120, 20000 | authored | a wait for n ticks gives up after 20 s + 120 ms a tick (a CI runner draws about 4 frames a second) |
 
+The stage's own time: 533 s on darwin SwiftShader, 28m20s in CI run 43374834353 (its `touch` job). The job's
+limit is 45 minutes.
+
 ## D-027 desktop is untouched (2026-11-12)
 
 `node tools/harness/frame-hashes.ts <out.json> --build` on origin/main (`4635605`, taken in this worktree before
