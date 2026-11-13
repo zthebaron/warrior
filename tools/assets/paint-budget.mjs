@@ -7,7 +7,8 @@
 // memory and each committed PNG must match it pixel for pixel. A hand-painted or stale texture fails.
 // The painted cards (D-021, assets/backdrop/cards/*.png) are held the same way against
 // tools/art/backdrop-cards.mjs and ART-GEN's sources in assets/backdrop/gen, and the courtyard's cards (D-026,
-// assets/courtyard/*.png) against tools/art/courtyard-cards.mjs.
+// assets/courtyard/*.png) against tools/art/courtyard-cards.mjs, and the cliff seam's (D-028, assets/seam/*.png)
+// against tools/art/seam-cards.mjs.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -15,6 +16,7 @@ import { io, measure } from './measure.mjs';
 import { LAYERS, buildLayer } from '../art/backdrop-textures.mjs';
 import { BUILDERS } from '../art/backdrop-cards.mjs';
 import { BUILDERS as YARD_BUILDERS, OUT_DIR as YARD_DIR } from '../art/courtyard-cards.mjs';
+import { BUILDERS as SEAM_BUILDERS, OUT_DIR as SEAM_DIR } from '../art/seam-cards.mjs';
 
 const { PNG } = createRequire(import.meta.url)('pngjs');
 const list = (dir, ext) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(ext)).sort() : []);
@@ -89,6 +91,26 @@ export async function checkPaintBudgets(root) {
     rows.push({ name: `courtyard/${name}`, checks: [over(name, 'px', Math.max(png.width, png.height), b.px), over(name, 'bytes', statSync(file).size, b.bytes)] });
   }
   for (const name of Object.keys(YARD_BUILDERS)) if (!yard.includes(`${name}.png`)) errors.push(`${name}.png: tools/art/courtyard-cards.mjs makes it but ${YARD_DIR}/ does not have it`);
+
+  // ---- the cliff seam's cards (D-028): assets/seam/*.png, each exactly what tools/art/seam-cards.mjs gives
+  const sLines = budgets.seam ?? {};
+  const seam = list(join(root, SEAM_DIR), '.png');
+  for (const name of Object.keys(sLines)) if (!seam.includes(`${name}.png`)) errors.push(`budgets.json seam has "${name}" but ${SEAM_DIR}/${name}.png does not exist: stale budget line`);
+  for (const f of seam) {
+    const name = f.slice(0, -4);
+    const file = join(root, SEAM_DIR, f);
+    const png = PNG.sync.read(readFileSync(file));
+    const build = SEAM_BUILDERS[name];
+    if (!build) errors.push(`${name}: ${SEAM_DIR}/${f} is not made by tools/art/seam-cards.mjs (no card of that name)`);
+    else {
+      const want = build().png;
+      if (want.width !== png.width || want.height !== png.height || Buffer.compare(want.data, png.data) !== 0) errors.push(`${name}: the committed card is not what the script gives. Run: node tools/art/seam-cards.mjs`);
+    }
+    const b = sLines[name];
+    if (!b) { errors.push(`${name}: no seam budget in tools/assets/budgets.json (measured ${Math.max(png.width, png.height)} px, ${statSync(file).size} B)`); continue; }
+    rows.push({ name: `seam/${name}`, checks: [over(name, 'px', Math.max(png.width, png.height), b.px), over(name, 'bytes', statSync(file).size, b.bytes)] });
+  }
+  for (const name of Object.keys(SEAM_BUILDERS)) if (!seam.includes(`${name}.png`)) errors.push(`${name}.png: tools/art/seam-cards.mjs makes it but ${SEAM_DIR}/ does not have it`);
 
   // ---- rigged characters
   const cLines = budgets.characters ?? {};
