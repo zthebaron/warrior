@@ -2670,6 +2670,10 @@ Seen red. Proportion on chapter 4, the lane's card 1.3 too wide for its length: 
 
 Chapter 4's per-level suite, darwin: schema 2/2, lint-level 1/1, preflight 10/10, nav 7/7, phase-sweep 14/14, replay 6/6 (the committed trace), chaos 7/7, hazards 7/7, counters 8/8, assets 78/78, accent 6/6, visual 7/7 (new goldens), post 27/27, camera-room 5/5. `check:teach`, `check:fight`, `lint:levels`, `lint:self`, `lint:not-list`, `lint:pack`, typecheck: pass.
 
+Chapter 4's Linux goldens are CI run 43525329870's own frames (head bd28a42, where `visual` was the one red stage: 9.1% to 50.0% against the greybox goldens). Against darwin, pixelmatch 0.1, of 230,400 px: cam0 0, cam1 0, cam2 1, cam3 0, cam4 1, cam5 3.
+
+The first stone from the torii he respawns at (T2, x 52), 1920x1080, the harness's Chromium, one frame each. Its sweep is 240 ticks (10 u at 5 u/s each way), its centre at z -5 at tick 0 and 240, +5 at tick 120; the top it crosses is 7 u wide. Feet at 54, 2.5, 0, ticks 30, 120, 150, 240, and feet at 56.5, 2.5, 0, ticks 30, 120, 150, 228, 234, 240: the posts cover no part of the lane and no part of the stone while it is over the top; at tick 120 from x 54 the right post covers part of the stone, which is then past the edge. From x 56.5 the painted wall covers part of the stone at tick 228, all but a sliver at 234 and all of it at 240: out of sight for under 12 ticks (0.2 s) of 240. Greybox (origin/main), x 56.5, tick 240: about half of it shows (B-128).
+
 ## D-030 every other level (2026-11-13)
 
 `tools/harness/frame-hashes.ts`, this branch against origin/main's source (7fae5e2), same machine. After the shared builders took their optional parameters and before the look was tuned: 25 values differ, 24 of them chapter 4's, the 25th chapter 1's cam3 (main c7b29bc6, branch 881620c4: B-115's pixel). On the final source: 24 values, all chapter 4's. The gym and chapters 2, 3 and 5 are identical in both runs.

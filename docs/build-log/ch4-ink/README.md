@@ -13,4 +13,6 @@ Each file is greybox (origin/main, 7fae5e2) on the left and the ink look on the 
 
 `five-chapters-starts.jpg`: chapters 1 to 5, each from its own spawn, side by side at 1920x1080.
 
+`respawn-torii-sheet.png`: the first stone seen through the torii he respawns at (T2, x 52), the harness's Chromium. Top row, feet at 54, 2.5, 0 (where he respawns): ticks 30, 120 (the void end) and 240 (the wall end) of the 240-tick sweep. Bottom row, feet at 56.5, 2.5, 0: tick 228, tick 240, and tick 240 in greybox (origin/main). The posts hide nothing over the path; at the wall end the painted wall hides the stone and the lane is what is left (OQ-084 item 5, B-128).
+
 Where it falls short, from these frames (OQ-084): the wall on the left is the same foreshortened cliff as chapters 1 to 3 and is the one thing still over his head; the islands are cut by the mist on a level line; the hanging boxes' undersides are not in any of these frames, because his eye is never under them.

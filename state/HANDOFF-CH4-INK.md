@@ -78,3 +78,15 @@ scene ratchet for chapter 4; B-127 the proportion check's title.
 - `--update-goldens --level=04-summit-ridge` only. Never `--record`.
 - A greybox frame of chapter 4 comes from a checkout of origin/main (the scratch worktree above has one, with
   its `node_modules`); `$CLAUDE_JOB_DIR/tmp/ch4/shots.sh` takes the six frames from any checkout's root.
+
+## 5. The close-out session (2026-11-13, later the same day)
+
+Done in the commit that adds this section: section 2's step 1 (chapter 4's Linux goldens, from run 43525329870's
+own frames on bd28a42, each within 3 px of darwin) and the three things not yet looked at. The respawn torii: the
+posts hide nothing over the path, the painted wall hides the stone at the wall end of its sweep (OQ-084 item 5,
+B-128, `docs/build-log/ch4-ink/respawn-torii-sheet.png`). The 5120x1440 frames: all six opened, every card drawn.
+The CI run: one did appear for the head.
+
+Steps 3 to 5 (green on this commit, the run id in the PR body, ready, the claim released on main) are not commits
+on this branch, so this file cannot say COMPLETE: PR #46's line 12 and `state/CLAIMS.jsonl` on main say it. If
+line 12 names a green run on the PR's head and the ledger shows CH4-INK released, nothing is left.
