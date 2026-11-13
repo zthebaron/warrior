@@ -259,3 +259,4 @@
 {"id":"COURTYARD","agent":"courtyard","ts":"2026-11-13T02:46:52.429Z","released":true}
 {"id":"MOBILE-TOUCH","agent":"mobile-touch","ts":"2026-11-13T04:38:39.523Z","ttl_min":600}
 {"id":"MOBILE-TOUCH","agent":"mobile-touch","ts":"2026-11-13T06:37:01.133Z","released":true}
+{"id":"POLISH-1","agent":"polish-1","ts":"2026-11-13T17:25:49.101Z","ttl_min":600}
