@@ -184,7 +184,7 @@ export const INK = {
 } as const;
 /** Name prefix of the hidden mesh an undrawn collider keeps (D-021). */
 export const UNDRAWN = 'undrawn:';
-/** Name prefix of a moving platform's mesh, in every look (D-029). */
+/** Name prefix of a moving platform's mesh in an ink level, whatever it is drawn as (D-029). */
 export const PLATFORM_MESH = 'platform:';
 const isInk = (data: Pick<LevelData, 'palette'>): boolean => data.palette === INK.palette;
 const inkBackground = (): number => {
@@ -652,7 +652,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (stone) stones.push(stone);
     const mesh = stone ? stone.mesh : new THREE.Mesh(walkGeo(V.platformTopColor, V.platformColor), walkMat);
     mesh.userData['translates'] = 'platform'; // NOT #18: a moving platform is the `platform` move (Q2), not ambience
-    mesh.name = `${PLATFORM_MESH}${def.id ?? i}`; // the harness finds a platform's mesh by this (tools/harness/post.ts STONE_GATE)
+    if (ink) mesh.name = `${PLATFORM_MESH}${def.id ?? i}`; // the harness finds an ink level's platform by this (tools/harness/post.ts STONE_GATE)
     if (!stone) mesh.scale.copy(size);
     travels.push({ from: def.path[0]!, to: def.path[def.path.length - 1]!, size: a.size });
     mesh.position.copy(start);
@@ -738,7 +738,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
   const byHandle = new Map<number, PlatformInstance>(platforms.map((p) => [p.collider.handle, p]));
 
   // D-020: an ink level's far field is painted (paint layer), under root so it leaves with the level
-  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : seamLook ? SEAM.cliffs : driftLook ? DRIFT.cliffs : undefined, driftLook ? DRIFT.mist : undefined) : null;
+  const backdrop = ink ? buildBackdrop(data.bounds, Math.min(...data.critical_path.map((w) => waypointPos(w)[1])), yardLook ? [] : seamLook ? SEAM.cliffs : driftLook ? DRIFT.cliffs : undefined, driftLook ? DRIFT.mist : undefined, driftLook ? 1 : undefined) : null; // D-029: the drift's far peaks are not squashed
   if (backdrop) root.add(backdrop.root);
   // D-021: the near rock is painted too, from the placements that collide and are not drawn
   const cliffWall = ink && rockMasses.length ? buildCliffWall(rockMasses, driftLook) : null; // D-029: the drift's wall keeps its paintings' proportion

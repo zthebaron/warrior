@@ -127,6 +127,18 @@ export const STONE_GATE = {
                       // (the far end, where its side faces him)
 };
 
+// D-029, a painting's proportion. Chapter 2's frames showed brushwork pulled out of shape: its square face card is
+// laid 7 u by 9 u, and the shared wall lays cliff paintings up to a third too narrow. In a level of a zone named
+// here, every painted card (by its mesh's name) must lay its painting's pixels at one scale both ways: neither
+// stretched nor sheared. Reported on every dressed level; judged in `zones`. It measures the card, not the view:
+// a true card seen along its length is still foreshortened (B-52). MEASUREMENTS "D-029 proportion".
+export const PROPORTION_GATE = {
+  zones: ['drift'],
+  cards: ['cliff:', 'drift:', 'seam:', 'backdrop:', 'path:', 'courtyard:'], // name prefixes of the level's painted cards
+  max: 1.02,          // the two scales' ratio: 1.004 shipped at the worst (the far ridge's ring); 1.667 with the far
+                      // peaks squashed as chapters 1 and 2 have them, 1.29 with the seam's 7 x 9 u face card
+};
+
 export async function post(ctx: Ctx): Promise<StageResult> {
   const st = new Stage('post');
   return guard(st, async () => {
@@ -439,6 +451,15 @@ export async function post(ctx: Ctx): Promise<StageResult> {
           `${compHue} of ${compN} px above the ramp's chroma ${chromaMax}${compHueAt.length ? `: ${compHueAt.join('; ')}` : ''}`);
         st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', (dressed ? compStill > 0 : true) && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed${foes ? `; ${foePx} px that the ${foes} swordsmen cover are not judged: a figure moves (D-023)` : ''}`);
         st.check('D-020 paint layer: hides no accent pixel', accentLost === 0, `${accentLost} px that are accent in the ink pass are not in the painted frame${foes ? `; ${accentBehindFoe} more are behind a swordsman, who may stand in front of a gate (D-023)` : ''}`);
+      }
+      // ---- D-029: no painted card is stretched or sheared out of its painting's proportion
+      if (dressed) {
+        const stretch = (await g.page.evaluate((p) => window.__HARNESS__!.paintStretch(p), PROPORTION_GATE.cards)).sort((x, y) => y.stretch - x.stretch);
+        const judged = PROPORTION_GATE.zones.includes((ctx.level as { lighting?: { ambienceZone?: string } }).lighting?.ambienceZone ?? '');
+        const over = stretch.filter((x) => !(x.stretch <= PROPORTION_GATE.max));
+        st.check('D-029 proportion: every painted card lays its painting at one scale both ways (judged in the drift; reported elsewhere)',
+          stretch.length > 0 && (!judged || over.length === 0),
+          `${stretch.length} painted cards, the worst ${stretch.slice(0, 3).map((x) => `${x.name} ${x.stretch.toFixed(3)}`).join(', ')}; ${over.length} over ${PROPORTION_GATE.max}${judged ? '' : ' (not judged in this zone: B-116)'}`);
       }
       // ---- D-029: every moving stone of an ink level, seen from where he stands before it
       const stones = dressed ? ((ctx.level as unknown as { platforms?: { id?: string; path: [number, number, number][]; duration: number }[] }).platforms ?? []) : [];

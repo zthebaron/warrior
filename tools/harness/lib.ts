@@ -321,6 +321,7 @@ declare global {
       teleportPlayer(pos: Vec3): void;
       /** D-021: show or hide every level mesh whose name starts with `prefix`; returns how many. */
       showMeshes(prefix: string, visible: boolean): number;
+      paintStretch(prefixes: string[]): { name: string; stretch: number }[]; // D-029
       showEnemies(visible: boolean): number;
       /** D-021: the figure's clips, and one shown at a time in place of the state's pose (null clears it). */
       figureClips(): { name: string; duration: number }[];
