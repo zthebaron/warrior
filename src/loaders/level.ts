@@ -184,6 +184,8 @@ export const INK = {
 } as const;
 /** Name prefix of the hidden mesh an undrawn collider keeps (D-021). */
 export const UNDRAWN = 'undrawn:';
+/** Name prefix of a moving platform's mesh, in every look (D-029). */
+export const PLATFORM_MESH = 'platform:';
 const isInk = (data: Pick<LevelData, 'palette'>): boolean => data.palette === INK.palette;
 const inkBackground = (): number => {
   const c = paletteJson.colors.find((x) => x.name === INK.background);
@@ -650,6 +652,7 @@ export function buildLevel(data: PreparedLevel, physics: Physics): LevelInstance
     if (stone) stones.push(stone);
     const mesh = stone ? stone.mesh : new THREE.Mesh(walkGeo(V.platformTopColor, V.platformColor), walkMat);
     mesh.userData['translates'] = 'platform'; // NOT #18: a moving platform is the `platform` move (Q2), not ambience
+    mesh.name = `${PLATFORM_MESH}${def.id ?? i}`; // the harness finds a platform's mesh by this (tools/harness/post.ts STONE_GATE)
     if (!stone) mesh.scale.copy(size);
     travels.push({ from: def.path[0]!, to: def.path[def.path.length - 1]!, size: a.size });
     mesh.position.copy(start);

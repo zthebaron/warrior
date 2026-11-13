@@ -14,7 +14,7 @@
 //                    the air: it is the dark band all the way down, with a paper top and a dark underside.
 //                    A moving stone (buildDriftStone) is the same slab with a dark keel of rock hanging under it:
 //                    the darkest thing in the void, so where it is can be read at any distance, and its top is
-//                    the same bare paper as every top he stands on. It is ink-pass geometry only: the paint
+//                    mist-pale, one step off the paper of the void and of the ground. It is ink-pass geometry only: the paint
 //                    layer's rule is that nothing painted moves (tools/harness/post.ts, D-020), and it rides the
 //                    platform's own mesh, so it is the `platform` move and not ambient motion (NOT #18).
 //   where it goes    under each stone's travel lies one streak of mist, dock to dock, fixed in the world: the
@@ -63,10 +63,16 @@ export const DRIFT = {
   ledge: { reach: 6, up: 0.9, step: 'paper-cream' } as { reach: number; up: number; step: RampName },
   /** the mist's heights in this level (chapters 1 and 2: -7 and -3). The lowest landing is y 0. */
   mist: { baseY: -5.5, topY: -1.5 },
-  // A moving stone, in the ink pass. rim: the step of its four sides (the brink's); keel: rock hanging under it,
-  // an uneven pyramid from `inset` u inside the slab's underside down to a point `drop` u below it, `off` u off
-  // centre (along the path, across it). It has no collider: it is under a slab he stands on, over the void.
-  stone: { keel: { inset: 0.35, drop: 1.7, off: [0.45, -0.3], steps: ['ink-deep', 'ink-black'] as RampName[] } },
+  // A moving stone, in the ink pass. Its four sides are the brink's step. top: mist-pale, the one top in the level
+  // that is not paper: docked, he looks DOWN on it, and a paper top over a paper void is an outline and nothing
+  // else (measured: 94% of it paper on paper). Mist-pale is one step off the paper at any distance (the post pass
+  // never pushes it) and tells the stone from the ground it docks against. lift: the stone's top lies in the
+  // plane of the ground at each dock (0.5 u of it at one, 2 u at the other), so it is drawn with this polygon
+  // offset (factor and units): the stone wins that tie, and wins it over the path's dry-brush (offset -1) too.
+  // keel: rock hanging under it, an uneven pyramid from `inset` u inside the slab's underside down to a point
+  // `drop` u below it, `off` u off centre (along the path, across it). It has no collider: it is under a slab
+  // he stands on, over the void.
+  stone: { top: 'mist-pale', lift: -2, keel: { inset: 0.35, drop: 1.7, off: [0.45, -0.3], steps: ['ink-deep', 'ink-black'] as RampName[] } },
   // The channel under a stone's travel: one mist card lying flat, at its own proportion, as long as the travel
   // plus the stone plus `beyond` u past each dock (its thin ends lie inside the rock he boards from; what shows
   // is its middle, wider than the stone, so it is seen on both sides of it from above), `over` u above the
@@ -108,7 +114,7 @@ const D = DRIFT;
 export function buildDriftStone(size: THREE.Vector3): { mesh: THREE.Mesh; dispose(): void } {
   const q = new Quads();
   const hx = size.x / 2, hy = size.y / 2, hz = size.z / 2;
-  const cTop = col(D.top), cRim = col(D.brink.step), cUnder = col(D.under);
+  const cTop = col(D.stone.top), cRim = col(D.brink.step), cUnder = col(D.under);
   q.flat([-hx, hy, hz], [hx, hy, hz], [hx, hy, -hz], [-hx, hy, -hz], cTop);
   q.flat([hx, -hy, hz], [hx, -hy, -hz], [hx, hy, -hz], [hx, hy, hz], cRim);     // +x
   q.flat([-hx, -hy, -hz], [-hx, -hy, hz], [-hx, hy, hz], [-hx, hy, -hz], cRim); // -x
@@ -120,9 +126,8 @@ export function buildDriftStone(size: THREE.Vector3): { mesh: THREE.Mesh; dispos
   const base: Vec3[] = [[-ix, -hy, iz], [ix, -hy, iz], [ix, -hy, -iz], [-ix, -hy, -iz]];
   for (let i = 0; i < 4; i++) q.tri(base[(i + 1) % 4]!, base[i]!, apex, col(k.steps[i % k.steps.length]!)); // outward, seen from beside it
   const geo = q.geometry();
-  const mat = new THREE.MeshBasicMaterial({ vertexColors: true }); // D-018: unlit, flat, ramp steps only
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: D.stone.lift, polygonOffsetUnits: D.stone.lift }); // D-018: unlit, flat, ramp steps only
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.name = 'drift:stone';
   return { mesh, dispose() { geo.dispose(); mat.dispose(); } };
 }
 

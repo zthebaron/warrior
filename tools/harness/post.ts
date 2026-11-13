@@ -104,6 +104,29 @@ export const PAINT_GATE = {
                          // with the wall lifted away (the mid cliffs behind it), 99.9% shipped
 };
 
+// D-029 (B-110), a moving stone in an ink level. An ink level draws no box, and a moving platform is a box: it
+// can be left as the greybox slab, drawn paper on paper, or not drawn at all, and no check above this line
+// would say so (they judge six fixed cameras, wherever the stone happens to be). This one looks at each stone
+// from where he stands before it, with the follow rig's own offset, at EACH end of its travel, in the frame the
+// player sees: the pixels where the stone is nearer than what is behind it (its mesh shown against hidden) must
+// be there at all, must be OFF THE PAPER'S VALUE (docked, he looks down on its top, and a paper top in a paper
+// level is an outline and nothing else; what happens to lie behind it does not come into this: the first cut of
+// this check compared the frame with the one without the stone, and a paper stone passed it at 83%, because the
+// mist under it is grey), and must hold a light top (ground: paper or mist-pale, never pushed dark).
+// MEASUREMENTS "D-029 the stone check" has each number's wrong values.
+export const STONE_GATE = {
+  mesh: 'platform:',  // name prefix of a moving platform's mesh (src/loaders/level.ts PLATFORM_MESH)
+  stand: 5.2,         // u before the stone's centre at the start of its path, along its travel: where he stands to look
+  back: 6.66,         // the follow rig, settled: u behind his feet,
+  up: 3.67,           // and u above them (tools/harness/frame.ts --at prints it)
+  arrive: 0.05,       // u: the stone is "at" an end of its path within this
+  minPx: 500,         // px of the 640 x 360 frame: 0 with the stone not drawn; 1,332 shipped at the least (the far end)
+  minOff: 0.6,        // of those px, further than PAINT_GATE.changed from the paper's value: 4.8% as the greybox slab
+                      // an ink level drew before D-029 and 3.7% paper on paper (both docked, seen from above); 100% shipped
+  minTop: 0.15,       // of those px, mist-pale or lighter: 0.0% with a stone dark all over; 29.2% shipped at the least
+                      // (the far end, where its side faces him)
+};
+
 export async function post(ctx: Ctx): Promise<StageResult> {
   const st = new Stage('post');
   return guard(st, async () => {
@@ -416,6 +439,51 @@ export async function post(ctx: Ctx): Promise<StageResult> {
           `${compHue} of ${compN} px above the ramp's chroma ${chromaMax}${compHueAt.length ? `: ${compHueAt.join('; ')}` : ''}`);
         st.check('D-020 paint layer: static (what it drew over the sky is identical next frame)', (dressed ? compStill > 0 : true) && compMoved === 0, `${compMoved} of ${compStill} painted sky px changed${foes ? `; ${foePx} px that the ${foes} swordsmen cover are not judged: a figure moves (D-023)` : ''}`);
         st.check('D-020 paint layer: hides no accent pixel', accentLost === 0, `${accentLost} px that are accent in the ink pass are not in the painted frame${foes ? `; ${accentBehindFoe} more are behind a swordsman, who may stand in front of a gate (D-023)` : ''}`);
+      }
+      // ---- D-029: every moving stone of an ink level, seen from where he stands before it
+      const stones = dressed ? ((ctx.level as unknown as { platforms?: { id?: string; path: [number, number, number][]; duration: number }[] }).platforms ?? []) : [];
+      if (stones.length) {
+        const S = STONE_GATE;
+        await g.page.evaluate((p) => { window.__HARNESS__!.paintLayer(true); window.__HARNESS__!.showMeshes(p, false); }, PAINT_GATE.undrawn); // the frame the player sees
+        let leastPx = Infinity, leastOff = Infinity, leastTop = Infinity;
+        const seen: string[] = [];
+        for (const [pi, p] of stones.entries()) {
+          const id = p.id ?? `platforms[${pi}]`, from = p.path[0]!, to = p.path[p.path.length - 1]!;
+          const len = Math.hypot(to[0] - from[0], to[2] - from[2]) || 1, dir = [(to[0] - from[0]) / len, (to[2] - from[2]) / len];
+          const feet = [from[0] - dir[0]! * S.stand, from[1], from[2] - dir[1]! * S.stand];
+          const camPos = [feet[0]! - dir[0]! * S.back, feet[1]! + S.up, feet[2]! - dir[1]! * S.back] as [number, number, number];
+          for (const [ei, end] of [from, to].entries()) {
+            // run the world on until the stone is at this end (it comes back to each within two crossings)
+            let at = false;
+            for (let k = 0; k < Math.ceil(p.duration * 60) * 2 + 2 && !at; k++) {
+              const snap = await g.page.evaluate(() => window.__HARNESS__!.advance(1, 0));
+              const pos = snap.platforms.find((q) => q.id === id)?.pos;
+              at = !!pos && Math.hypot(pos[0] - end[0], pos[1] - end[1], pos[2] - end[2]) <= S.arrive;
+            }
+            if (!at) { st.check(`D-029 moving stone ${id}: reaches the ${ei ? 'far' : 'near'} end of its path`, false, 'it never came within reach of it in two crossings'); continue; }
+            await g.page.evaluate(([c, t]) => { window.__HARNESS__!.setCamera(c, t); window.__HARNESS__!.redraw(); }, [camPos, end] as const);
+            const frame = PNG.sync.read(await g.page.locator('canvas').screenshot());
+            const withIt = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist;
+            await g.page.evaluate((m) => { window.__HARNESS__!.showMeshes(m, false); window.__HARNESS__!.redraw(); }, S.mesh);
+            const without = (await g.page.evaluate(() => window.__HARNESS__!.postProbe())).dist;
+            await g.page.evaluate((m) => { window.__HARNESS__!.showMeshes(m, true); window.__HARNESS__!.redraw(); }, S.mesh);
+            let px = 0, off = 0, top = 0;
+            for (let i = 0; i < withIt.length; i++) {
+              if (!(withIt[i]! < without[i]! * 0.999)) continue; // not the stone: nothing came nearer when it was shown
+              px++;
+              const v = (frame.data[i * 4]! + frame.data[i * 4 + 1]! + frame.data[i * 4 + 2]!) / 3;
+              if (Math.abs(v - vPaper) > PAINT_GATE.changed) off++;
+              if (v >= vMist - G.tol) top++;
+            }
+            leastPx = Math.min(leastPx, px);
+            leastOff = Math.min(leastOff, px ? off / px : 0);
+            leastTop = Math.min(leastTop, px ? top / px : 0);
+            seen.push(`${id} at its ${ei ? 'far' : 'near'} end ${px} px, ${pc(off, px || 1)} off the paper's value, ${pc(top, px || 1)} a light top`);
+          }
+        }
+        st.check('D-029 a moving stone is drawn in an ink level: from where he stands before it, at each end of its travel, it is off the paper value and has a light top',
+          leastPx >= S.minPx && leastOff >= S.minOff && leastTop >= S.minTop,
+          `${seen.join('; ')} (need >= ${S.minPx} px, >= ${S.minOff * 100}% off paper, >= ${S.minTop * 100}% top)`);
       }
       st.check('zero console errors', g.errors.length === 0, g.errors.slice(0, 5).join(' | ') || 'none');
     } finally {
