@@ -20,6 +20,19 @@ export function keepZone(root: string): { x0: number; x1: number } {
   return (JSON.parse(readFileSync(join(root, 'assets/ui/art.json'), 'utf8')) as { keep: { x0: number; x1: number } }).keep;
 }
 
+/** D-025: the chapter list as it stands open: how many chapters it holds, and which of its buttons are partly or wholly off the screen. */
+export async function chaptersFit(page: Page): Promise<{ rows: number; cut: string[] }> {
+  await page.evaluate(() => document.fonts.ready);
+  return page.evaluate(() => {
+    const buttons = [...document.querySelectorAll<HTMLElement>('#chapters button')].filter((e) => e.getClientRects().length > 0);
+    const cut = buttons
+      .map((e) => ({ what: (e.textContent ?? '').trim(), r: e.getBoundingClientRect() }))
+      .filter(({ r }) => r.left < 0 || r.top < 0 || r.right > innerWidth + 0.5 || r.bottom > innerHeight + 0.5)
+      .map(({ what }) => what);
+    return { rows: document.querySelectorAll('#chapters-list button').length, cut };
+  });
+}
+
 /** Wait for the title's painting to be drawn, then measure. */
 export async function titleFit(page: Page, keep: { x0: number; x1: number }): Promise<TitleFit> {
   await page.waitForFunction(() => { const i = document.querySelector<HTMLImageElement>('#title img'); return !!i && i.complete && i.naturalWidth > 0; });

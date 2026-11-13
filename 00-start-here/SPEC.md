@@ -94,7 +94,9 @@ discovers it. Every platform attaches to the cliff mass (Q2b).
    checkpoint at 8 evenly spaced phase offsets, within 12 s counting the wait. The first proves you can't respawn *into* a hazard; the second proves you
    can always get *out*.
 
-A reload restarts the game. That is a known trade-off, and a showcase item after gold.
+A reload restarts the game. That is a known trade-off, and a showcase item after gold. D-025 is the
+showcase's half of it: the title's Chapters list starts any chapter, with nothing saved and nothing locked,
+so a reload is still the title, and the list is how to get back to where you were.
 
 ## 7. The NOT list (Q7)
 
@@ -137,12 +139,12 @@ what *does* exist.
 | 12 | A second route or branching path | Q3, Q5 | schema | `critical_paths=[]` | enforced |
 | 13 | Fire hazard, and any hazard that does damage | Q2c, Q6 | schema | `hazards[0].type="fire"` `hazards[0].damage=1` | enforced |
 | 14 | Health, lives, damage, knockback, invulnerability, game over. A swordsman's cut is a death like a fall (D-023); he falls on a counted hit, which is not a health bar | Q6, D-023 | src | `health` `hp` `lives` `damage` `knockback` `invuln*` `iframe*` `game_over` | enforced |
-| 15 | Saves, unlocks, chapter select | Q4, Q6 | src | `local_storage` `session_storage` `indexed_db` `unlock*` `chapter_select` | enforced |
+| 15 | Saves and unlocks: nothing about a run is stored, and no chapter is ever locked. The chapter list (D-025) is allowed because it is neither: it lists every chapter, always, and starts the one chosen | Q4, Q6, D-025 | src | `local_storage` `session_storage` `indexed_db` `unlock*` `chapter_lock*` | enforced |
 | 16 | A light with a direction | STYLE §1 | schema | `lighting.sunAngle=[0,0]` `lighting.intensity=1` | enforced |
 | 17 | Multiplayer or a backend | playbook §3 | src | `web_socket` `rtc_peer_connection` | enforced |
 | 18 | Ambient motion: anything translating except the player, hazards and swordsmen (D-023). Moving platforms are allowed as the `platform` move (Q2; OQ-054). Shader-only motion is not seen | Q2a | harness | `ambient-motion` | enforced |
 | 19 | Dialogue, cutscenes, text in the world (three.js text and DOM-in-world APIs) | STYLE §9.10 | src | `dialogue*` `cutscene*` `subtitle*` `text_geometry` `font_loader` `css2_d` `css3_d` | enforced |
-| 20 | A death counter or any run metric shown to the player. `deaths` exists legitimately for the harness, so the check is behaviour: visible text must not depend on run history. Out of scope: the `~` dev overlay, which shows world time in production too (OQ-054 #3) | Q4, Q6 | harness | `run-metric` | enforced |
+| 20 | A death counter or any run metric shown to the player. `deaths` exists legitimately for the harness, so the check is behaviour: visible text must not depend on run history. Out of scope: the `~` dev overlay, which shows world time in production too (OQ-054 #3). One exception (D-025): a move's teach line, at the game's front door only, comes back at a place where the player has missed twice or stood for some seconds. It says how the move is made and shows no count; the page this stage runs on never has it | Q4, Q6, D-025 | harness | `run-metric` | enforced |
 | 21 | Procedurally generated levels (Blender assets authored as code are not this) | playbook | src | `procedural_level*` `perlin*` `simplex*` `level_gen*` `generate_level*` | enforced |
 | 22 | Difficulty modes (a level's `difficulty` 1-5 is a rating, not a mode) | Q6 | src | `difficulty_mode*` `easy*` `hard_mode` `normal_mode` `assist_mode` | enforced |
 <!-- NOT-LIST:END -->

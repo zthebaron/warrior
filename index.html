@@ -37,6 +37,13 @@
               letter-spacing: 0.04em; color: var(--ink); opacity: 0.72;
               text-shadow: 0 0 0.5em var(--paper), 0 0 0.25em var(--paper); }
       #hint[hidden] { display: none; }
+      /* D-025: a move's one line, low on the screen while playing. Ink on a wash of paper with no edge; the keys
+         are the how-to-play page's. Every number is in MEASUREMENTS.md "D-025 the teach prompts". */
+      #teach { position: fixed; left: 50%; bottom: clamp(40px, 9vh, 120px); transform: translateX(-50%); z-index: 5; pointer-events: none;
+               box-sizing: border-box; width: max-content; max-width: min(92vw, 44em); padding: 0.5em 1.1em; text-align: center;
+               font: 500 clamp(15px, 1vw + 9px, 26px)/1.5 var(--serif); letter-spacing: 0.02em; color: var(--ink);
+               background: rgba(224, 212, 190, 0.86); border-radius: 0.4em; box-shadow: 0 0 0.9em 0.5em rgba(224, 212, 190, 0.86); }
+      #teach[hidden] { display: none; }
 
       .btn { font: inherit; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink); cursor: pointer;
              padding: 0.6em 1.3em; min-height: 44px; border: 0.12em solid var(--ink); border-radius: 0.2em;
@@ -120,7 +127,7 @@
       #help table { border-collapse: collapse; width: 100%; max-width: 44em; }
       #help th, #help td { text-align: left; padding: 0.3em 1.2em 0.3em 0; vertical-align: top; border-bottom: 0.06em solid rgba(32, 32, 30, 0.22); }
       #help th { font-size: 0.8em; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
-      #help kbd { display: inline-block; font: 600 0.82em/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace; padding: 0.15em 0.45em;
+      #help kbd, #teach kbd { display: inline-block; font: 600 0.82em/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace; padding: 0.15em 0.45em;
                   margin: 0.08em 0.1em; border: 0.1em solid var(--ink); border-radius: 0.3em; background: rgba(255, 255, 255, 0.28); white-space: nowrap; }
       #help .sound { display: flex; flex-wrap: wrap; gap: 0.8em 1.2em; align-items: center; }
       #help input[type="range"] { width: min(16em, 60vw); accent-color: var(--ink); }
@@ -137,6 +144,23 @@
                           mask-image: linear-gradient(to right, #000 86%, transparent 100%); }
         #help .body { padding-top: clamp(20px, 5vh, 70px); }
       }
+
+      /* D-025: the chapter list. A card of paper over whatever it was opened from (the title, or the how-to-play
+         page), which shows through a wash of paper. Every chapter is a button; none is ever locked. */
+      #chapters { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; overflow: auto; box-sizing: border-box;
+                  padding: 16px; background: rgba(224, 212, 190, 0.8); color: var(--ink);
+                  font: 400 clamp(15px, 1.05vw + 9px, 21px)/1.5 var(--serif); -webkit-overflow-scrolling: touch; }
+      #chapters[hidden] { display: none; }
+      #chapters .card { box-sizing: border-box; width: min(100%, 25em); padding: 1.1em 1.3em 1.2em; background: var(--paper);
+                        border: 0.12em solid var(--ink); border-radius: 0.3em; }
+      #chapters h1 { font-size: 1.05em; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.9em;
+                     padding-bottom: 0.25em; border-bottom: 0.08em solid var(--ink); }
+      #chapters .list { display: flex; flex-direction: column; gap: 0.55em; }
+      #chapters .list .btn { display: flex; gap: 1em; align-items: baseline; width: 100%; text-align: left; text-transform: none; letter-spacing: 0.03em; }
+      /* the chapter in focus is the one a key or a pad's A will start: it is always marked, however it got the focus */
+      #chapters .btn:focus { outline: 0.18em solid var(--ink); outline-offset: 0.2em; }
+      #chapters .list .n { flex: none; font-size: 0.8em; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+      #chapters .foot { margin-top: 1.1em; }
     </style>
   </head>
   <body>
@@ -154,6 +178,7 @@
             <div class="row">
               <button id="title-play" class="btn primary" type="button">Play</button>
               <button id="title-help" class="btn" type="button">How to play</button>
+              <button id="title-chapters" class="btn" type="button">Chapters</button>
               <button id="title-sound" class="btn quiet" type="button" aria-pressed="true">Sound: on</button>
             </div>
             <p class="credits"><span>Designed by Tim de Vallée</span><span>Dedicated to Remi</span></p>
@@ -175,8 +200,18 @@
               <button id="help-sound" class="btn" type="button" aria-pressed="true">Sound: on</button>
               <label>Volume <input id="help-volume" type="range" min="0" max="100" step="5" value="80" /></label>
             </div>
-            <div class="foot"><button id="help-back" class="btn primary" type="button">Back</button></div>
+            <div class="foot">
+              <button id="help-back" class="btn primary" type="button">Back</button>
+              <button id="help-chapters" class="btn" type="button">Chapters</button>
+            </div>
           </div>
+        </div>
+      </div>
+      <div id="chapters" hidden role="dialog" aria-modal="true" aria-labelledby="chapters-h">
+        <div class="card">
+          <h1 id="chapters-h">Chapters</h1>
+          <div id="chapters-list" class="list"></div>
+          <div class="foot"><button id="chapters-back" class="btn" type="button">Back</button></div>
         </div>
       </div>
     </template>
@@ -197,6 +232,7 @@
         }
         play.addEventListener('click', function () { want('play'); });
         document.getElementById('title-help').addEventListener('click', function () { want('help'); });
+        document.getElementById('title-chapters').addEventListener('click', function () { want('chapters'); });
         window.addEventListener('keydown', function (e) { if (e.code === 'Enter' || e.code === 'Space') want('play'); });
       })();
     </script>

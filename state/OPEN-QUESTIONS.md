@@ -1771,3 +1771,67 @@ took, each PROVISIONAL:
 
 **What nobody has judged.** No person has played chapters 2 to 4 with swordsmen. The bot does not dodge, never
 waits and never runs past, so it says nothing about how a fight beside a void, a sweep or a docked stone feels.
+
+## OQ-078 — TEACH-AND-CHAPTER-SELECT: two NOT rows the brief crosses, and the builder's calls
+raised: 2026-11-12 by teach-and-chapters (claim TEACH-AND-CHAPTER-SELECT). Tim's brief is
+`PROMPT-TEACH-AND-CHAPTER-SELECT.md` (D-025). What follows is what it left to the builder. Numbers: MEASUREMENTS
+"D-025 the wall, as a player meets it", "D-025 the moves as the rig makes them", "D-025 the teach prompts".
+took, each PROVISIONAL:
+1. **SPEC §7 row 15 refused "chapter select" by name, and the brief asks for one.** Options: A leave the row and
+   its `chapter_select` check, and name the feature around the word (D-022's way with the slash) | B narrow the
+   row to what it was protecting and change its check (D-023's way with row 1). Took B. The row was about
+   progress kept and gated; the brief says "Nothing is locked. This is a showcase." So row 15 now refuses saves
+   and unlocks, the check `chapter_select` is replaced by `chapter_lock*`, and the storage checks stand. Keeping a
+   check for a thing that ships would have been a tripwire nobody can trip honestly. `lint:pack` reads the same
+   row, so the plan documents may now say "chapter select" unmarked.
+2. **Row 20 says visible text must not depend on run history, and "show it again after two failures" does.**
+   The row is about counts and metrics on screen. The line names a move and shows no number, and the page
+   `run-metric` runs on never has it. The row's text now carries that one exception. A line that said "third
+   try" would still be refused, by the row and by review; no check can see it, because the stage's page is bare.
+3. **"Fails at the same spot twice" was read as two misses, not two deaths.** A miss at chapter 2's first face
+   kills nobody ("a miss drops you where you stood"), so a death counter would never fire at the wall this was
+   written for. A miss is: he leaves the ground by a move at the place and comes down still short of it; or the
+   attempt ends between where the move is made and where it lands; or, for a swordsman, his cut.
+4. **A line that came back stays until he is past the place**, not until he next makes the move. Otherwise at a
+   jump he keeps missing it would blink off at every takeoff. The first showing goes the moment the move is
+   made, as the brief says.
+5. **"Stands near it for several seconds" counts only for a move he has already made.** Before that the line is
+   already up. So the first showing never turns into a line that will not go: however long he reads it, it goes
+   when he makes the move.
+6. **Catching the ledge takes the ledge-grab line down and puts up a second one for the hang.** The brief's check
+   is "goes when the ledge is caught", and the catch is half the climb: he still has to let go of the jump and
+   press it again. The hang's line shows wherever he hangs until he has pulled up once in the visit, which also
+   covers the hangs chapter 1 gives without teaching (B-91).
+7. **The fight's line goes when a swordsman falls, not at the first slash.** "Two cuts fell him" is the lesson;
+   a slash in the air is not it. Leaving him behind takes it down, and it comes up at the next one.
+8. **Walking has a line too, once, where the first chapter played begins.** The path's first step is `via:
+   ground`, so the brief's rule gives it one. It goes at the first step, and it comes before the swordsman's
+   (chapter 1's first stands 4.6 m from the spawn).
+9. **One line at a time: how to walk, then a swordsman within 6 m, then the earliest place on the path.**
+10. **With a pad in use the line names the pad's buttons** (`GAMEPAD.labels`), and the keyboard's again at the next
+    key. Nobody has tried it with a pad. "Move with Left stick or D-pad" is the table's wording.
+11. **The chapter list is a card over the title or over the how-to-play page**, not a screen of its own, so it
+    is the same thing from both places. Its keys: C, the arrows, Enter, Esc; on a pad Y, the stick or D-pad, A,
+    B. C does nothing in a running game: the brief puts the list in the how-to-play page there.
+12. **Choosing a chapter from a game leaves that game.** The how-to-play page had paused it; the chapter chosen
+    loads from `pause`, and nothing asks "are you sure". Nothing is lost that the game keeps (it keeps nothing).
+13. **Play is the first chapter, always.** Before D-025, M from a paused game and then Play restarted the chapter
+    just left. The brief: "Play still starts chapter 1."
+14. **The numbers** (6 m, 5 s, 2 misses) are the builder's reading of "as he approaches", "several seconds" and
+    "twice".
+15. **Worked solo but for one read-only fan-out**, with ultracode on. The brief says "No multi-agent review
+    workflow". Four readers mapped the harness, the levels, the moves and the records before any edit; nothing
+    was reviewed or written by an agent other than the builder (the same call as OQ-075 and OQ-077).
+16. **The local browser was run with the macOS pasteboard service fenced off.** Mid-session every headless
+    Chromium launch on this machine hung in AppKit's start-up, waiting on `pboard`, which was itself waiting on a
+    Universal Clipboard fetch. Nothing on the machine was restarted; the probe, the screenshots and the local
+    playtest ran Chromium under `sandbox-exec` with that one service denied. `frame-hashes` taken with and
+    without it are identical.
+
+**What the move check found and did not change** (the brief: report, do not retune): B-89 (the first face is the
+tightest catch the rig has), B-90 (a second press at a wall is a kick), B-91 (untaught hangs in chapter 1), B-92
+(four first-use places need not use their move), B-93 (idle and run flip at a wall).
+
+**What nobody has judged.** No person has read these lines in the game. Whether six metres is early enough,
+whether the ledge-grab line is short enough to take in at a wall, and whether a line under the warrior's feet is
+where the eye goes are Tim's to say. The pad's wording was never seen with a pad in hand.

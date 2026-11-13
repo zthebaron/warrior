@@ -9,6 +9,12 @@
 // The title is the game's `menu` state made visible: it shows whenever the state is `menu` and leaves when a
 // level starts. The how-to-play page opens over the title or over the game (which it pauses) and closes back
 // to wherever it was opened from.
+//
+// D-025 adds two things, behind the same gate. The chapter list: every chapter by name, opened from the title or
+// from the how-to-play page (so also from a game that page has paused); choosing one starts it as Play starts
+// the first, and none is ever locked. And the teach line: one line about a move, low on the screen while
+// playing. What it says and when is src/systems/teach.ts and src/ui/howto.ts; this only puts it on the page.
+// Its element is made here, not in index.html, as the hint's is.
 
 import type { GameState } from '../engine/state';
 
@@ -19,6 +25,11 @@ export const SHELL = {
     start: ['Space'],
     help: 'KeyH',
     back: 'Escape',
+    /** D-025: the chapter list, from the title or the how-to-play page */
+    chapters: 'KeyC',
+    /** and inside it: the chapter above, the chapter below (Enter and Space press the one in focus, as on any button) */
+    up: 'ArrowUp',
+    down: 'ArrowDown',
   },
   /** the title fades out over this long when a level starts: index.html `#title { transition }` is the same number */
   leaveMs: 350,
@@ -42,6 +53,12 @@ export interface ShellHost {
   helpContent(): Node;
   /** one line for the corner of the screen while playing */
   hint(): string;
+  /** D-025: the chapters, in order, from the level files (empty until they have been read) */
+  chapters(): readonly { id: string; chapter: number; title: string }[];
+  /** D-025: start this chapter, as Play starts the first: with sound, and from wherever the list was opened */
+  startChapter(id: string): void;
+  /** D-025: a teach line's content, its keys read from the game's tables */
+  teachContent(line: string): Node;
   /** sound, when the page has it: the shell only shows and flips what the audio module holds */
   sound: { muted(): boolean; setMuted(m: boolean): void; volume(): number; setVolume(v: number): void } | null;
 }
@@ -61,18 +78,35 @@ export class Shell {
   private readonly soundButtons = [need<HTMLButtonElement>('title-sound'), need<HTMLButtonElement>('help-sound')];
   private readonly volume = need<HTMLInputElement>('help-volume');
   private readonly hint = document.createElement('div');
+  private readonly chapterBox = need<HTMLDivElement>('chapters');
+  private readonly chapterList = need<HTMLDivElement>('chapters-list');
+  private readonly teach = document.createElement('div');
+  /** what the teach line shows now: the key it was last built for, or null when there is none */
+  private teachKey: string | null = null;
   private leaveTimer = 0;
   /** the how-to-play page paused a running game, and owes it a resume */
   private owesResume = false;
   private returnFocus: HTMLElement | null = null;
+  private chaptersReturnFocus: HTMLElement | null = null;
 
   constructor(private readonly host: ShellHost) {
     this.hint.id = 'hint';
     this.hint.hidden = true;
     document.body.appendChild(this.hint);
+    this.teach.id = 'teach';
+    this.teach.hidden = true;
+    this.teach.setAttribute('role', 'status'); // read out when it changes, without taking the focus
+    document.body.appendChild(this.teach);
 
     this.play.addEventListener('click', () => this.host.start());
     need<HTMLButtonElement>('title-help').addEventListener('click', () => this.openHelp());
+    need<HTMLButtonElement>('title-chapters').addEventListener('click', () => this.openChapters());
+    need<HTMLButtonElement>('help-chapters').addEventListener('click', () => this.openChapters());
+    need<HTMLButtonElement>('chapters-back').addEventListener('click', () => this.closeChapters());
+    this.chapterList.addEventListener('click', (e) => {
+      const id = (e.target as Element | null)?.closest<HTMLElement>('[data-level]')?.dataset['level'];
+      if (id) this.choose(id);
+    });
     need<HTMLButtonElement>('help-back').addEventListener('click', () => this.closeHelp());
     for (const b of this.soundButtons) b.addEventListener('click', () => this.toggleSound());
     this.volume.addEventListener('input', () => {
@@ -84,6 +118,10 @@ export class Shell {
 
   get helpOpen(): boolean {
     return !this.help.hidden;
+  }
+
+  get chaptersOpen(): boolean {
+    return !this.chapterBox.hidden;
   }
 
   /** Call on every state change, and once when the game first reaches `menu`. */
@@ -100,6 +138,7 @@ export class Shell {
       if (this.root.dataset['shell'] !== 'ready') this.ready();
     } else if (to === 'loading') {
       this.setPlay(true);
+      if (this.chaptersOpen) this.hideChapters(); // D-025: the list is never left over a level that is starting
     } else if (!this.title.hidden) {
       this.title.classList.add('leaving');
       this.leaveTimer = window.setTimeout(() => { this.title.hidden = true; }, SHELL.leaveMs);
@@ -115,6 +154,7 @@ export class Shell {
     // after the state change that brought us here has finished telling its listeners
     if (intent === 'play') queueMicrotask(() => this.host.start());
     else if (intent === 'help') queueMicrotask(() => this.openHelp());
+    else if (intent === 'chapters') queueMicrotask(() => this.openChapters());
   }
 
   private setPlay(loading: boolean): void {
@@ -130,13 +170,28 @@ export class Shell {
     // A held key's repeats belong to whatever its first press was for. On the title that press was the shell's
     // (Play, or another button's own click), so a repeat must not reach the game's start key behind it: that
     // route starts the level without the Play press, and so without sound (OQ-073).
-    if (e.repeat) return this.helpOpen || this.host.state() === 'menu';
+    if (e.repeat) return this.helpOpen || this.chaptersOpen || this.host.state() === 'menu';
+    if (this.chaptersOpen) {
+      // the list has the keyboard, over the title or over the how-to-play page: Enter and Space press the
+      // chapter in focus, the arrows move between them, and the same key that opened it shuts it
+      if (e.code === SHELL.keys.back || e.code === SHELL.keys.chapters) this.closeChapters();
+      else if (e.code === SHELL.keys.up || e.code === SHELL.keys.down) {
+        e.preventDefault(); // the arrows are the list's here, not the page's scroll
+        this.stepChapter(e.code === SHELL.keys.down ? 1 : -1);
+      }
+      return true;
+    }
     if (this.helpOpen) {
       if (e.code === SHELL.keys.back || e.code === SHELL.keys.help) this.closeHelp();
+      else if (e.code === SHELL.keys.chapters) this.openChapters();
       return true; // the page has the keyboard: Enter and Space press its focused button, the arrows scroll it
     }
     if (e.code === SHELL.keys.help) {
       this.openHelp(); // which refuses where the page could not pause the game
+      return true;
+    }
+    if (e.code === SHELL.keys.chapters && this.host.state() === 'menu') {
+      this.openChapters();
       return true;
     }
     if (this.host.state() === 'menu' && (e.code === startKey || SHELL.keys.start.includes(e.code))) {
@@ -181,6 +236,119 @@ export class Shell {
    */
   refreshHelp(): void {
     if (this.helpOpen) this.helpBody.replaceChildren(this.host.helpContent());
+    if (this.chaptersOpen) this.fillChapters(true); // the same lesson: a list opened before the names were read
+  }
+
+  // ---------- the chapter list (D-025) ----------
+
+  /**
+   * Open the chapter list. Only from the title, or over the how-to-play page: so behind it the game is at the
+   * title, or paused by that page, or finished, and never running. Every way in comes through here: the two
+   * buttons, the key, the pad, and a press made before the game was ready.
+   */
+  openChapters(): void {
+    if (this.chaptersOpen || !(this.helpOpen || this.host.state() === 'menu')) return;
+    this.chaptersReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    this.chapterBox.hidden = false;
+    this.chapterBox.scrollTop = 0;
+    this.under(true);
+    this.fillChapters(true);
+  }
+
+  /**
+   * What the chapter list stands over cannot be reached while it is open: Tab stays in the list and no key or
+   * click lands on a button under it. Enter on a Play that Tab had found there would start a game beneath an
+   * open list.
+   */
+  private under(inert: boolean): void {
+    this.title.inert = inert;
+    this.help.inert = inert;
+  }
+
+  /** Take the list off the screen and give back what was under it. */
+  private hideChapters(): void {
+    this.chapterBox.hidden = true;
+    this.under(false);
+  }
+
+  /** Build the list from the level files' own names, and put the focus on its first chapter. */
+  private fillChapters(focus: boolean): void {
+    const rows = this.host.chapters().map((c) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn';
+      b.dataset['level'] = c.id;
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = `Chapter ${c.chapter}`;
+      const t = document.createElement('span');
+      t.textContent = c.title;
+      b.append(n, t);
+      return b;
+    });
+    this.chapterList.replaceChildren(...rows);
+    if (focus) (rows[0] ?? need<HTMLButtonElement>('chapters-back')).focus({ preventScroll: true });
+  }
+
+  /** Move the focus one chapter down (1) or up (-1), stopping at the ends; Back is below the last. */
+  stepChapter(by: number): void {
+    if (!this.chaptersOpen) return;
+    const stops = [...this.chapterList.querySelectorAll<HTMLButtonElement>('button'), need<HTMLButtonElement>('chapters-back')];
+    const at = stops.indexOf(document.activeElement as HTMLButtonElement);
+    stops[Math.max(0, Math.min(stops.length - 1, at < 0 ? 0 : at + by))]?.focus({ preventScroll: true });
+  }
+
+  /** Press whatever the list has in focus (a pad's A): a chapter, or Back. */
+  pressChapter(): void {
+    if (!this.chaptersOpen) return;
+    const el = document.activeElement;
+    if (el instanceof HTMLButtonElement && this.chapterBox.contains(el)) el.click();
+  }
+
+  closeChapters(): void {
+    if (!this.chaptersOpen) return;
+    this.hideChapters();
+    if (this.chaptersReturnFocus?.isConnected) this.chaptersReturnFocus.focus({ preventScroll: true });
+    this.chaptersReturnFocus = null;
+  }
+
+  /**
+   * A chapter was chosen. The list goes, and so does the how-to-play page if it was opened from there: the game
+   * that page paused is not resumed, it is left for the chapter chosen (the host loads it from `pause`).
+   */
+  private choose(id: string): void {
+    this.hideChapters();
+    this.chaptersReturnFocus = null;
+    if (this.helpOpen) {
+      this.help.hidden = true;
+      this.owesResume = false;
+      this.returnFocus = null;
+    }
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    this.host.startChapter(id);
+    this.syncHint(this.host.state());
+  }
+
+  // ---------- the teach line (D-025) ----------
+
+  /**
+   * Show this teach line, or none. `key` names what is shown (the line, and whose keys it is written in): the
+   * content is built only when the key changes, since this is called every tick. `spot` is the place it belongs
+   * to, kept on the element for the checks and never drawn.
+   */
+  showTeach(key: string | null, line: string | null = null, spot: string | null = null): void {
+    if (key === this.teachKey) return;
+    this.teachKey = key;
+    if (key === null || line === null) {
+      this.teach.replaceChildren();
+      delete this.teach.dataset['move'];
+      delete this.teach.dataset['spot'];
+    } else {
+      this.teach.replaceChildren(this.host.teachContent(line));
+      this.teach.dataset['move'] = line;
+      this.teach.dataset['spot'] = spot ?? '';
+    }
+    this.syncHint(this.host.state());
   }
 
   closeHelp(): void {
@@ -224,5 +392,7 @@ export class Shell {
     const playing = state === 'play' || state === 'pause' || state === 'death';
     this.hint.hidden = !playing || this.helpOpen;
     if (!this.hint.hidden) this.hint.textContent = this.host.hint();
+    // the teach line is for a game being played: not under PAUSED, not beside the word a fall leaves on screen
+    this.teach.hidden = this.teachKey === null || state !== 'play' || this.helpOpen;
   }
 }

@@ -1407,6 +1407,11 @@ implemented_by: d03247e (the first cut: rock undrawn, the wall, the cards, the a
 
 ## D-022 — a title screen, a how-to-play page, sound, and a sword slash that cuts nothing. Narrows Q1 and NOT row 2 by one drawn move; Q7 stands. The slash's "drawn, never simulated" is superseded by D-023. DECIDED
 
+**Extended (2026-11-12, D-025).** The title has a third button, Chapters, and so does the how-to-play page; Play
+is always the first chapter; the pad's Y opens the chapter list; and the game now shows one line about a move
+while playing. "SPEC §7 row 15 ... the lint and row 15 are unchanged" in item 5 describes D-022 as it shipped:
+row 15 no longer refuses a chapter list. The cookie still holds only the two sound settings.
+
 **Superseded in part (2026-11-10, D-023).** The slash now has a hit volume in the fixed tick and is in the input
 frame, and Q7 no longer stands for enemies. Item 6 below and every sentence saying the slash cuts nothing, is
 not simulated or is not recorded describe D-022 as it shipped, not the game now. The rest of D-022 stands.
@@ -1615,3 +1620,61 @@ to their measured peaks (MEASUREMENTS "ENEMIES-CH2-4 where the ten stand"); Tier
 **STYLE-BIBLE:** not amended.
 
 implemented_by: 525faac (B-79 red: the fixture, check:fight rule 5 and the lint:self cases, failing on main's ground), 06cf80b (B-79: risers, groundRect, the game and the linter on one function), 1e0036b (B-78: the HUD word), a9670a8 (the ten swordsmen, the three traces, the scene budgets, the darwin goldens)
+
+## D-025 — a move's line on screen where a chapter first needs it, and a chapter list on the title. Narrows NOT rows 15 and 20; extends D-022. DECIDED
+
+**Ruled by Tim** (2026-11-12, `PROMPT-TEACH-AND-CHAPTER-SELECT.md`, from play on the live site): "level 2 can't
+jump the wall, when do i go to level in the square?" The brief fixes: reproduce the wall as a player would before
+changing anything; the first time a chapter's path needs a move not used before in this visit, one short line on
+screen as he approaches, "with the real keys read from the binding tables (not typed in)", the spots found "from
+each level's `critical_path` (`via`) so they cannot drift from the level"; "The line goes when he does the move.
+If he fails at the same spot twice, or stands near it for several seconds without doing it, show it again"; the
+ledge-grab line rewritten to say what works, the same wording on the how-to-play page; a fight line at chapter
+1's first swordsman; every other move's line checked on the rig. And: "A **Chapters** button on the title screen,
+beside Play and How to play: the four chapters by name; choosing one starts it with sound, the same as Play.
+Play still starts chapter 1"; reachable from the how-to-play page in the game; keyboard and gamepad; "Nothing is
+locked. This is a showcase." No change to movement numbers, levels, the fight or the camera; "Same gate as the
+title screen: none of this exists under the harness, and every golden stays byte-identical."
+**Applied by the builder, PROVISIONAL until Tim confirms (OQ-078):** every wording, the three numbers (6 m, 5 s,
+2 misses), what counts as a miss, the hang's second line, where the line sits on screen, the list's keys and its
+pad button, and the two NOT rows as reworded. **Nobody has read these lines in the game.**
+
+**What this narrows, and what it does not.** SPEC §7 row 15 refused "saves, unlocks, chapter select" and row 20
+says visible text must not depend on run history. Tim has now asked for a chapter list with nothing locked, and
+for a line that comes back after two misses. So row 15 reads: saves and unlocks, and no chapter is ever locked;
+the list is allowed because it is neither. Its check `chapter_select` is replaced by `chapter_lock*`; the storage
+checks and `unlock*` stand, and nothing about a run is stored ("this visit" is memory: a reload forgets it). Row
+20 keeps its stage and gains one sentence: a move's line may come back at a place where he has missed twice or
+stood; it shows how the move is made and never a count. Row 19 (no text in the world) is untouched: the line is
+DOM over the canvas, as the HUD's word is. Q4 (the only win is arriving; no score, no rank) and Q6 (one way to
+die, nothing kept) stand.
+
+**Built.**
+1. **Step 1, before anything else** (`tools/harness/teach-probe.ts`): at chapter 2's first face a tapped jump
+   pushing in never catches the ledge, a held jump pushing in catches it every time, and a held jump without
+   pushing in never does. The move is sound; nothing told the player. MEASUREMENTS "D-025 the wall".
+2. **The rule** (`src/systems/teach.ts`, pure, no import): the places are read from a level's `critical_path`
+   and `enemies`. A place's line is up from 6 m short of where its move is made while the move is unmade in
+   this visit; it goes when the move is made; it comes back after two misses or 5 s of standing there, and then
+   stays until he is past. One line at a time. Told what happened after each tick, as the sound tap is; it
+   writes nothing back. `check:teach` runs it on `levels/` under Node, in CI's static job.
+3. **The lines** (`src/ui/howto.ts`): one table for the how-to-play page and the screen. Rewritten where the rig
+   showed them wrong: the ledge grab, the double jump (at a face it is a kick), the wall jump (the kick needs no
+   slide), the dash jump (it is not the widest). New: the fight's line, and the hang's.
+4. **The chapter list** (`index.html`, `src/ui/shell.ts`): a card over the title or over the how-to-play page,
+   the chapters by name from the level files. Choosing one starts it as Play starts the first: the press wakes
+   the sound and is not a jump. From a game it leaves that game. Play is always the first chapter.
+5. **The checks.** `reachable` holds the list (mouse, keys, a faked pad, an early press, three window shapes)
+   and the line at the wall, as a player, on the production page; it was mutated to show it bites.
+
+**What it keeps.** `TUNING`, `MOVE`, `FIGHT`, the camera and every level file are untouched. `player.ts` gained
+nothing. `frame-hashes` is IDENTICAL to main over 191 values: no golden was updated, no trace recorded again.
+
+**Known limits (OQ-078).** The first face is still the tightest catch the rig has (B-89); the line carries it.
+Four first-use places can be cleared without their move (B-92). There is no line for the crow (B-94). "The level
+in the square" (the courtyard of Tim's painting) does not exist and is a separate task.
+
+**STYLE-BIBLE:** not amended. §2: the accent is never on UI; the line and the list are ink and paper. §9.10
+(no text in the world): the line is on the page, not in the scene.
+
+implemented_by: 7cd56eb (step 1 and the move check: the probe), 3caf66b (the rule, the lines, the chapter list, check:teach, the reachable checks), 7399844 (a dash jump made off an edge counts as made), a35952b (what the list stands over is inert while it is open)

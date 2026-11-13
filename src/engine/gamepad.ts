@@ -29,6 +29,7 @@ export const GAMEPAD = {
     pause: [9],         // Start
     help: [8],          // Back / Select / View
     back: [1, 8],       // B or Back closes the how-to-play page
+    chapters: [3],      // Y / triangle: the chapter list, from the title or the how-to-play page (D-025)
     up: [12], down: [13], left: [14], right: [15],
   },
   /** what the how-to-play page calls each of them */
@@ -42,6 +43,7 @@ export const GAMEPAD = {
     Pause: 'Start',
     'Start, and the next chapter': 'A or Start',
     'How to play': 'Back',
+    'Chapters (from the title, or this page)': 'Y',
   } as Readonly<Record<string, string>>,
 };
 
@@ -53,12 +55,17 @@ export class Gamepad {
   private readonly heldOff = new Set<PadButton>();
   private readonly stick = { x: 0, y: 0 };
   private readonly lookStick = { x: 0, y: 0 };
+  /** D-025: which way the stick or D-pad points up or down this frame (-1 up, 1 down, 0 neither), and the frame before */
+  private nav = 0;
+  private navBefore = 0;
 
   /** Read the first connected standard-layout pad. Call once a render frame. */
   poll(): void {
     this.before = this.now;
     this.now = new Set();
     this.stick.x = this.stick.y = this.lookStick.x = this.lookStick.y = 0;
+    this.navBefore = this.nav;
+    this.nav = 0;
     let pad: globalThis.Gamepad | null = null;
     try {
       pad = [...(navigator.getGamepads?.() ?? [])].find((p) => p?.connected && p.mapping === 'standard') ?? null;
@@ -80,6 +87,7 @@ export class Gamepad {
     if (len > 0) {
       this.stick.x = x / len; // full deflection, whatever the tilt: see the header
       this.stick.y = y / len;
+      if (Math.abs(y) > Math.abs(x)) this.nav = Math.sign(y); // more up or down than sideways: a step in a list
     }
     const lx = pad.axes[a.lookX] ?? 0, ly = pad.axes[a.lookY] ?? 0;
     if (Math.abs(lx) >= dz) this.lookStick.x = lx;
@@ -99,6 +107,16 @@ export class Gamepad {
   /** Ignore the button until it is released: A starts the game from the title and is also jump. */
   holdOff(name: PadButton): void {
     if (this.now.has(name)) this.heldOff.add(name);
+  }
+
+  /** D-025: one step in a list: 1 (down) or -1 (up) on the frame the stick or D-pad is first pushed that way, else 0. */
+  navStep(): number {
+    return this.nav !== this.navBefore ? this.nav : 0;
+  }
+
+  /** D-025: is the pad being used this frame (a button down, or a stick past its dead zone)? Says whose keys a teach line is written in. */
+  active(): boolean {
+    return this.now.size > 0 || this.stick.x !== 0 || this.stick.y !== 0 || this.lookStick.x !== 0 || this.lookStick.y !== 0;
   }
 
   /** Move intent in the screen's frame: x right, y forward. Length 0 or 1. */

@@ -38,6 +38,8 @@ jobs:
       - run: npm run check:progression
       # D-023: the four rules of the fight on the pure state machine; --self-test first, so each is seen to FAIL on a broken fight
       - run: npm run check:fight
+      # D-025: the teach prompts' rule on levels/ itself (where each line shows comes from critical_path); --self-test first
+      - run: npm run check:teach
       # NOT list (SPEC.md §7): refused fields absent from the schema, refused identifiers absent from src/
       - run: npm run lint:not-list
       # The prompt pack must not instruct a NOT-listed concept unmarked (UNMARKED_RETIRED); self-test proves it bites
