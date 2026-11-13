@@ -1885,7 +1885,10 @@ a grazing angle (D-021's finding about the wall beside the path does not apply t
    ground. The 1% ceiling stands, and D-019's mutation still fails it on chapters 1 and 2.
 8. **Colliders did not change.** Replay passes against the committed, un-re-recorded trace, with nav,
    phase-sweep, chaos, hazards and camera-room. `frame-hashes` against origin/main differs on `02-cliff-seam`
-   alone. `src/engine/ink-post.ts` and `src/engine/renderer.ts` are not edited.
+   alone, but for one pixel of chapter 1's cam3 that flips between runs of one build (B-115).
+   `src/engine/ink-post.ts` and `src/engine/renderer.ts` are not edited.
+9. **Every box of a seam level is drawn**, with or without a collider: READABLE_RISE counts a render-only box
+   as hiding a top, and `pitch-assist` holds the rig to that on a clone of chapter 2.
 
 **Measurement.** MEASUREMENTS "D-028 the seam's look", "D-028 the seam's cards", "D-028 every other level".
 `post` 26/26; paper 44.6% (floor 41%); scene peak 80 draw calls and 171,290 triangles (100 and 177,330 as
@@ -1900,4 +1903,4 @@ The wall-jump corridor's two walls are painted as rock like any other face: noth
 "kick off this". A face's card repeats every 7 to 9 u and mirrors 9 u down. The rock's upper ledges (6 u and
 more over the path) are behind the painted wall and not drawn. Chapters 3 and 4 are still greybox.
 
-implemented_by: 5b8ca9e (chapter 2 to ink in the seam zone, the boxes as paper tops, pale faces and a lip, the two face washes, the grazing check's sign), 5af4e4c (the pines under the ledges, the seam's own towers, the rock wall's reachable ledges, face cards laid from each face's top), ffdb1df (the seam's cards under assets:budget, the scene ratchet, darwin goldens)
+implemented_by: 5b8ca9e (chapter 2 to ink in the seam zone, the boxes as paper tops, pale faces and a lip, the two face washes, the grazing check's sign), 5af4e4c (the pines under the ledges, the seam's own towers, the rock wall's reachable ledges, face cards laid from each face's top), ffdb1df (the seam's cards under assets:budget, the scene ratchet, darwin goldens), 2754b16 (a seam level draws a box with no collider)

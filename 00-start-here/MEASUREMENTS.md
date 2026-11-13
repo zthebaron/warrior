@@ -2479,3 +2479,40 @@ ART-GEN delivered in round 2 (`assets/backdrop/gen`, ledger rows 47 to 60). Ledg
 `floor` 0.3, `gain` 1.25 (authored): a wash is ink-black with the painting's density in alpha; density under 0.3
 is the painting's own pale ground wash, which the face's mist-pale fill already is, so it is not laid twice.
 At 1024 px a card is 114 to 146 px a u; chapter 1's front cliff cards are 98 to 158. Download: +1.57 MB.
+
+## D-028 every other level (2026-11-13)
+
+**Frame hashes.** `node tools/harness/frame-hashes.ts`, darwin SwiftShader, 229 values a report (six frames a
+level with their counters, every visible renderable, the paint layer, the page's text and ids), on origin/main at
+12a09c7 before any edit and on this branch.
+
+| Run | Values that differ | Whose |
+|---|---|---|
+| first cut (5b8ca9e) | 24 | all `02-cliff-seam` |
+| final tree | 24 or 25 | 24 `02-cliff-seam`; in some runs 1 more: `01-lower-stair` cam3 |
+
+Chapter 1's cam3 is **not stable from run to run of one build**: hashed three times on the final tree it gave
+the baseline's value once (c7b29bc6) and another twice (881620c4). The two frames differ in ONE pixel of
+230,400, at (606, 91), by 51 levels in one channel. Nothing of the seam is loaded by chapter 1, and a run that
+reproduces the baseline's hash exactly shows the branch changed nothing there. Not traced further (B-115).
+The gym and chapters 3, 4 and 5: identical in every run.
+
+**The grazing check after its sign** (the whole playtest, every level): gym 0 of 48,857 px; chapter 1 0 of
+43,267 (0.1% on record with the absolute slope); chapter 2 0 of 48,098; chapter 3 148 of 48,446 (0.3%); chapter
+4 31 of 47,453 (0.1%); chapter 5 49 of 50,868 (0.1%, ceiling 1%). The check is judged on dressed levels: 1, 2, 5.
+
+**The whole playtest** on the tree before the last loader fix: every stage of every level PASS, and of the game
+stages `reachable` 69/69, `run-metric` 15/15, `ambient-motion` 13/13, `fight` 15/15, `touch` 29/29,
+`touch-release` 16/16, `touch-chapters` 27/27; `pitch-assist` 116/117. The one red was the fixture
+`render-only-rear-beam` (a clone of chapter 2 with a beam that has no collider across the view): the linter's
+model rejects the top behind it (0.000 deg) and the rig read it (4.250 deg), because an ink level did not draw a
+box with no collider. A seam level now draws every unturned box; rerun: `pitch-assist` 117/117, and chapter 2's
+`visual` unchanged against its goldens (the level has no such box).
+
+**Frame rate** (`tools/measure-display.mjs`, headed Chrome, ANGLE Metal, Apple M4 Max, the rig view at spawn,
+360 frames, both levels in one session):
+
+| Level | 2560 x 1440 | 5120 x 1440 | Cost of a frame, 2560 / 5120 |
+|---|---|---|---|
+| 01-lower-stair | 144.9 fps, 0 frames over 10 ms | 144.9 fps, 0 over 10 ms | 1.98 ms / 2.85 ms (2.81 ms on record, D-021) |
+| 02-cliff-seam | 144.9 fps, 0 over 10 ms | 144.9 fps, 0 over 10 ms | 2.02 ms / 3.04 ms |

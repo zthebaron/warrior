@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Two or more frames side by side, at their own size, with a paper gutter: for build-log pairs (greybox | ink).
 //
-//   node tools/art/beside.mjs <out.png> <left.png> <right.png> [<more.png> ...] [--gutter 16]
+//   node tools/art/beside.mjs <out.png|out.jpg> <left.png> <right.png> [<more.png> ...] [--gutter 16]
 //
 // Every frame is scaled to the first one's height. It judges nothing.
 import sharp from 'sharp';
@@ -20,5 +20,7 @@ for (const f of a) {
   tiles.push({ input: data, left, top: 0 });
   left += info.width + gutter;
 }
-await sharp({ create: { width: left - gutter, height, channels: 3, background: PAPER } }).composite(tiles).png({ compressionLevel: 9 }).toFile(out);
+const sheet = sharp({ create: { width: left - gutter, height, channels: 3, background: PAPER } }).composite(tiles);
+// .jpg for the very wide pairs: a 10256 x 1440 PNG of brushwork is 10 MB, and CI pulls every LFS file on every job
+await (out.endsWith('.jpg') ? sheet.jpeg({ quality: 92, chromaSubsampling: '4:4:4' }) : sheet.png({ compressionLevel: 9 })).toFile(out);
 console.log(`${out}  ${left - gutter}x${height}`);

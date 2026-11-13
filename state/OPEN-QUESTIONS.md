@@ -2072,3 +2072,10 @@ took, each PROVISIONAL. **Nobody has played chapter 2 in this look; every call b
     level does not draw there, and may want one or two new paintings at $0.12 each).
 11. **Not done:** the Linux goldens come from CI's own frames (documented way); a phone was not held; the frame
     rate was measured on one Mac.
+12. **A seam level draws a box with no collider.** `pitch-assist` holds the real rig to the linter's rule that a
+    render-only box hides a top, on a clone of chapter 2; as an ink level chapter 2 drew no such box and the
+    fixture went red (116/117). The look was changed, not the fixture. A TURNED box is still not drawn in the
+    seam (chapter 2 has none): a level that adds one would collide with something unseen.
+13. **`frame-hashes` is 24 or 25, not always 24.** One pixel of chapter 1's cam3 flips between runs of the same
+    build (B-115). The brief asks that every differing value be chapter 2's; in a run where that pixel lands the
+    other way it is not, and I am reporting that rather than re-running until it is.
