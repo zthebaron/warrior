@@ -1,4 +1,4 @@
-# assets/audio: the game's sound (D-022, D-023)
+# assets/audio: the game's sound (D-022, D-023, POLISH-1)
 
 Every file here was generated on fal through `tools/gen/fal-call.mjs`, so each has a row in
 `state/FAL-LEDGER.md`, and cut to what ships by `tools/gen/build-audio.mjs`. **Nothing here was judged by ear:**
@@ -22,6 +22,7 @@ the session that made it cannot hear. Every choice below rests on a measurement 
 | `hit.mp3` | 4,702 | 0.32 s | `hit-b.mp3`, from its onset | 93 | $0.0020 | D-023: the warrior's blade lands. |
 | `fell.mp3` | 10,031 | 0.76 s | `fell.mp3` from 188 ms | 91 | $0.0020 | D-023: a swordsman falls. Played with `hit.mp3`. |
 | `cut.mp3` | 7,836 | 0.60 s | `cut.mp3`, from its onset | 92 | $0.0020 | D-023: a swordsman's blade lands on the warrior. |
+| `gate.mp3` | 27,271 | 2.20 s | `gate-b.mp3` from 7 ms | 98 | $0.0060 | POLISH-1 (B-98): the courtyard's far gate begins to swing open, on the tick after the last swordsman falls. A wooden creak and groan for 1.6 s, then one dull knock. |
 
 Effects are mono, 96 kbps, each with its peak set to -3 dB. The brief's limits are about 1.5 MB for the music and
 about 50 KB an effect; `tools/assets/shell-budget.mjs` (in `npm run assets:budget`) holds them.
@@ -38,6 +39,7 @@ the window the music loops over.
 | `land_soft.mp3` | 69 | $0.0020 | Nearly silent: its peak is -38.6 dB. |
 | `music-s29.wav` | 77 | $0.2000 | It clips (peak +1.7 dB) and its level swings 14.2 LU; seed 11 swings 7.7. |
 | `hit.mp3` (first take) | 90 | $0.0020 | D-023: a low thud with no steel in it: 54% of its energy is under 200 Hz, centroid 367 Hz. `hit-b.mp3` ships in its place. |
+| `gate.mp3` (first take) | 97 | $0.0060 | POLISH-1: quiet (-32.8 LUFS, peak -17.9 dB) broadband rumble, with two clicks near its end and no creak to see in its spectrogram. `gate-b.mp3` ships in its place. |
 
 ## Endpoints and prices (read from each model page on 2026-11-10)
 
@@ -50,6 +52,11 @@ The task's sound cost **$0.4860** in 14 rows (67 to 80), of the $4.00 it was all
 
 D-023's four fight sounds cost **$0.0100** in 5 rows (89 to 93). Every call carried `--max-total 18.08`. None has
 a voice in it: a cry cannot be judged by a session that cannot hear.
+
+POLISH-1's gate cost **$0.0120** in 2 rows (97, 98), of the $0.25 it was allowed. Both calls carried
+`--max-total 15.4348` (the ledger stood at $15.1848). Wood and weight were asked for, and no music, bell or metal
+ring; `gate-b`'s energy is 43% under 200 Hz and 1% over 4 kHz. It was cut alone (`build-audio.mjs --only=gate`), so
+no other shipped file was encoded again.
 
 ## What was measured, and what was not
 

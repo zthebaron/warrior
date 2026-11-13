@@ -622,7 +622,7 @@ async function boot(): Promise<void> {
     if (state.is('play') && fight.some((e) => e.kind === 'cut')) die(player.feet(tmpFeet), true);
     gateTick(dt); // D-026: after the fight's tick, before the goal is asked
     rulesTick();
-    tap?.afterTick(player, checkpointLog.length, fight); // D-022: reads the tick, writes nothing
+    tap?.afterTick(player, checkpointLog.length, fight, gateShare); // D-022: reads the tick, writes nothing
     // D-025: the teach line, the same way: reads the tick, writes nothing. Not on a tick that ended the attempt
     // or the chapter (die() and the results have already cleared it).
     if (teach && state.is('play')) {

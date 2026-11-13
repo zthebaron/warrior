@@ -296,6 +296,7 @@
     "notice.mp3": { "bytes": 50000 },
     "hit.mp3": { "bytes": 50000 },
     "fell.mp3": { "bytes": 50000 },
-    "cut.mp3": { "bytes": 50000 }
+    "cut.mp3": { "bytes": 50000 },
+    "gate.mp3": { "bytes": 50000 }
   }
 }

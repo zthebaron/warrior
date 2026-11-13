@@ -11,8 +11,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TEACH, Teach, nearestStretch, teachSpots, type TeachLevel, type TeachRules, type TeachShown, type TeachView, type V3 } from '../src/systems/teach.ts';
+import { GATE_DOOR_TAG, TEACH, Teach, nearestStretch, teachSpots, type TeachLevel, type TeachRules, type TeachShown, type TeachView, type V3 } from '../src/systems/teach.ts';
 import { hasLine, lineText } from '../src/ui/howto.ts';
+import { GATE } from '../src/systems/fight.ts';
 
 // the linter is plain .mjs with no types: loaded by a path the typechecker does not follow, and typed here
 const { MOVE, RESPAWN_RULES } = (await import('./lint-level.mjs' as string)) as { MOVE: { ground: { autostep: number } }; RESPAWN_RULES: { heightTolerance: number } };
@@ -91,10 +92,17 @@ function run(): { checks: number; fails: string[] } {
     ok(`${l.id}: a place for every step of the path that needs a move`, JSON.stringify(spots.filter((s) => s.step > 0).map((s) => s.step)) === JSON.stringify(steps), `${spots.filter((s) => s.step > 0).length} places for ${steps.length} steps`);
     ok(`${l.id}: each place is where its step is made from and lands`, spots.filter((s) => s.step > 0).every((s) => s.from === pos(l.critical_path[s.step - 1]!) && s.to === pos(l.critical_path[s.step]!)));
     ok(`${l.id}: a place for every swordsman`, spots.filter((s) => s.move === 'fight').length === (l.enemies ?? []).length);
+    // POLISH-1 (B-99): the gate's line is only where a goal waits, at each of its doors; nowhere else is there a place more
+    const doors = l.goal?.once_clear ? (l.geometry ?? []).filter((g) => g.tag === GATE.doorTag).length : 0;
+    ok(`${l.id}: a gate place for each door of a goal that waits, and nothing else beyond the steps and the swordsmen`, spots.filter((s) => s.move === 'gate').length === doors && spots.length === steps.length + (l.enemies ?? []).length + doors, `${spots.filter((s) => s.move === 'gate').length} gate places for ${doors} doors; ${spots.length} places in all`);
     ok(`${l.id}: every move the chapter allows has a line`, l.moves_allowed.every(hasLine), l.moves_allowed.filter((m) => !hasLine(m)).join(', '));
     ok(`${l.id}: every place shows a line that exists`, spots.every((s) => hasLine(s.move)));
   }
-  ok('the hang and the fight have lines', hasLine('hang') && hasLine('fight'));
+  ok('the hang, the fight and the gate have lines', hasLine('hang') && hasLine('fight') && hasLine('gate'));
+  ok('the gate\'s door is found by the tag the game opens (GATE.doorTag)', GATE_DOOR_TAG === GATE.doorTag, `${GATE_DOOR_TAG} vs ${GATE.doorTag}`);
+  ok('chapters 1 to 4 have no gate place: their goals do not wait', levels.filter((l) => l.chapter <= 4).every((l) => !l.goal?.once_clear && teachSpots(l).every((s) => s.move !== 'gate')));
+  const gateLine = lineText('gate');
+  ok('the gate line: it opens when every swordsman is down, and the sword\'s control, read from the tables', /gate opens when every swordsman is down/i.test(gateLine) && /\{slash\}/.test(gateLine), gateLine);
   ok('a line that does not exist is not claimed', !hasLine('glide'));
   // the lines say what the brief asks of them (the words, not the keys: the keys are read from the binding tables)
   const climb = lineText('climb');
@@ -102,7 +110,7 @@ function run(): { checks: number; fails: string[] } {
     /jump at the wall/i.test(climb) && /hold \{jump\}/i.test(climb) && /full height/i.test(climb) && /pushing into the wall/i.test(climb) && /catch the edge/i.test(climb) && /press \{jump\} again to pull up/i.test(climb), climb);
   const fightLine = lineText('fight');
   ok('the fight line: the slash key, two cuts fell him, his cut sends you back', /\{slash\}/.test(fightLine) && /two cuts fell/i.test(fightLine) && /sends you back/i.test(fightLine), fightLine);
-  ok('no line types a key in: every key is a {name} the binding tables fill', ['ground', 'jump', 'wall', 'double', 'climb', 'hang', 'platform', 'dash', 'dashjump', 'fight'].every((m) => !/\b(Space|Shift|Enter|WASD|[JK]\b|Left click)/.test(lineText(m))));
+  ok('no line types a key in: every key is a {name} the binding tables fill', ['ground', 'jump', 'wall', 'double', 'climb', 'hang', 'platform', 'dash', 'dashjump', 'fight', 'gate'].every((m) => !/\b(Space|Shift|Enter|WASD|[JK]\b|Left click)/.test(lineText(m))));
 
   // ---- the numbers this rule shares with the rest of the game are the same numbers
   ok('TEACH.riseM is the measured autostep ceiling (lint-level MOVE.ground.autostep)', TEACH.riseM === MOVE.ground.autostep, `${TEACH.riseM} vs ${MOVE.ground.autostep}`);
@@ -160,6 +168,30 @@ function run(): { checks: number; fails: string[] } {
     const near = s.at([15, 0, 0], 'run');
     ok('ch5: past the torii, the fight\'s line, for the nearest of the three', line(near) === 'fight' && near?.spot === `foe:${first.id}`, `${line(near)} at ${near?.spot}`);
     ok('ch5: it goes when the first of the three falls, with two still standing', line(s.fell(first.id)) === 'none' && s.teach.has('fight'), line(s.teach.current()));
+    // POLISH-1 (B-99): the shut gate. Two still stand: he runs past them to the door
+    const door = l.geometry!.find((g) => g.tag === GATE.doorTag)!;
+    const gk = `gate:${l.geometry!.indexOf(door)}`;
+    const foot: V3 = [door.pos[0] - 1.2, 0, door.pos[2]]; // stopped against the shut door
+    ok('ch5: nothing while the gate is far off', line(s.at([door.pos[0] - TEACH.approachM - 0.5, 0, 0], 'run')) === 'none', line(s.teach.current()));
+    const atGate = s.at([door.pos[0] - TEACH.approachM + 0.5, 0, 0], 'run');
+    ok('ch5: two still standing, the gate\'s line is up as he comes to it', line(atGate) === 'gate' && atGate?.spot === gk, `${line(atGate)} at ${atGate?.spot}`);
+    ok('ch5: it stays while he stands at the shut door', line(s.seconds(8, { feet: foot, pstate: 'idle' })) === 'gate', line(s.teach.current()));
+    ok('ch5: and through a jump at it', line(s.hop()) === 'gate', line(s.teach.current()));
+    ok('ch5: one more falls, one stands: it stays', line(s.fell(l.enemies![1]!.id)) === 'gate', line(s.teach.current()));
+    ok('ch5: it goes when the last falls', line(s.fell(l.enemies![2]!.id)) === 'none' && line(s.seconds(3)) === 'none', line(s.teach.current()));
+    ok('ch5: and on the far side of the gate, nothing', line(s.at([door.pos[0] + 1.5, 0, 0], 'run')) === 'none', line(s.teach.current()));
+    // cut down at the gate: every swordsman stands again, and it is back the next time he comes to it
+    s.die(foot, true);
+    s.foesUp();
+    s.respawn(l.checkpoints[0]?.pos ?? l.spawn.pos);
+    ok('ch5: after a respawn, away from the gate: no gate line', line(s.teach.current()) !== 'gate', line(s.teach.current()));
+    ok('ch5: all three up again, back at the gate: the line is back', line(s.at(foot, 'idle')) === 'gate', line(s.teach.current()));
+    ok('ch5: walking away takes it down', line(s.at([door.pos[0] - TEACH.approachM - 1, 0, 0], 'run')) === 'none', line(s.teach.current()));
+    // a first visit straight to the courtyard: a swordsman close by at the gate is the fight's line first
+    const f = new Sim(l);
+    f.at([0.5, 0, 0], 'run');
+    const beside = f.tick({ feet: foot, pstate: 'idle', foes: l.enemies!.map((e, k) => ({ id: e.id, pos: k === 0 ? [foot[0] - 1.5, 0, foot[2]] : e.pos, down: false })) });
+    ok('ch5: the sword never used, a swordsman beside him at the gate: the fight\'s line comes before the gate\'s', line(beside) === 'fight', line(beside));
   }
 
   // ---- chapter 1: walking, the first swordsman, the first jump, in that order
@@ -305,12 +337,17 @@ if (process.argv.includes('--self-test')) {
     ['the line comes back at the first miss', () => { TEACH.misses = 1; }],
     ['the line comes back for standing four times too late', () => { TEACH.lingerSec *= 4; }],
     ['standing on top of a face still counts as at its foot (rise 99 m)', () => { TEACH.riseM = 99; }],
+    ['the courtyard\'s goal does not wait: no gate line (POLISH-1)', () => { delete byChapter(5).goal!.once_clear; }],
+    ['chapter 1\'s goal waits at a door: a gate line where none was', () => { const l = byChapter(1); l.goal = { ...l.goal, once_clear: true }; l.geometry = [...(l.geometry ?? []), { pos: [90, 2.4, 0], scale: [1, 4.8, 4], tag: GATE.doorTag }]; }],
   ];
+  const keep = levels.map((l) => ({ l, goal: l.goal, geometry: l.geometry }));
   let bad = 0;
   for (const [name, mutate] of mutations) {
+    for (const k of keep) { k.l.goal = k.goal && { ...k.goal }; k.l.geometry = k.geometry; }
     mutate();
     const r = run();
     Object.assign(TEACH, real);
+    for (const k of keep) { k.l.goal = k.goal; k.l.geometry = k.geometry; }
     console.log(`  ${r.fails.length ? 'caught' : 'MISSED'}  ${name}${r.fails.length ? `  (${r.fails.length} properties fail, first: ${r.fails[0]!.slice(0, 90)})` : ''}`);
     if (!r.fails.length) bad++;
   }

@@ -30,6 +30,9 @@ import {
   FIGHT, GATE, boxTops, goalCounts, groundRect, makeSwordsman, resetSwordsman, risers, slashCutting, stepGate, stepSlash, stepSwordsman,
   type EnemyDef, type FightAsset, type FightEvent, type FightLevel, type Rect, type Swordsman, type V3, type WarriorView,
 } from '../src/systems/fight.ts';
+import { SoundTap } from '../src/audio/tap.ts';
+import type { GameAudio } from '../src/audio/audio.ts';
+import type { Player } from '../src/entities/player.ts';
 // @ts-expect-error the linter is plain JavaScript: obstaclesOf and withColliders are documented where they are defined
 import { obstaclesOf, withColliders } from './lint-level.mjs';
 
@@ -380,6 +383,11 @@ function hisGround(step: Step, ground: Ground = shippedGround): string[] {
 // ---------- 6. the goal waits for every swordsman, and the gate with it (D-026) ----------
 type Counts = typeof goalCounts;
 type Gate = typeof stepGate;
+/** POLISH-1 (B-98): how a tick is told to the sound tap, as src/main.ts tells it (after the gate's tick, with its share). */
+type Hear = (tap: SoundTap, player: Player, fight: readonly FightEvent[], share: number) => void;
+const hearIt: Hear = (tap, player, fight, share) => tap.afterTick(player, 0, fight, share);
+/** The tap reads four things of the player; a warrior standing still on the floor. */
+const STANDING = { state: 'idle', grounded: true, slashCount: 0, vel: { y: 0 } } as unknown as Player;
 /** Three on one floor, as the courtyard has them: one to each side and one ahead. Posts are shares of his sight. */
 const THREE: EnemyDef[] = [
   { id: 'left', type: 'swordsman', pos: [F.sightRange, 0, -F.sightRange * 0.6], facing: 90 },
@@ -387,8 +395,11 @@ const THREE: EnemyDef[] = [
   { id: 'middle', type: 'swordsman', pos: [F.sightRange * 1.9, 0, 0], facing: 90 },
 ];
 
-function theGoalWaits(step: Step, counts: Counts = goalCounts, gate: Gate = stepGate): string[] {
+function theGoalWaits(step: Step, counts: Counts = goalCounts, gate: Gate = stepGate, hear: Hear = hearIt): string[] {
   const bad: string[] = [];
+  // the REAL sound tap, with an audio that only writes down what it is asked to play, and on which tick
+  const heard: { t: number; name: string }[] = [];
+  const tap = new SoundTap({ play: (name: string) => { heard.push({ t, name }); } } as unknown as GameAudio);
   const all = THREE.map((def) => makeSwordsman(def, FLOOR));
   let time: number | null = null, slashes = 0, t = 0, share = 0;
   const fellAt: number[] = [];
@@ -399,9 +410,11 @@ function theGoalWaits(step: Step, counts: Counts = goalCounts, gate: Gate = step
     time = sl.time;
     if (sl.started) slashes++;
     const view: WarriorView = { present, x, y: 0, z, facing, cutting: present && slashCutting(time), slashId: slashes };
-    for (const s of all) for (const e of step(s, view, DT)) if (e.kind === 'fell') fellAt.push(t + 1);
+    const events: FightEvent[] = [];
+    for (const s of all) for (const e of step(s, view, DT)) { events.push(e); if (e.kind === 'fell') fellAt.push(t + 1); }
     t++;
     share = gate(share, counts(true, all), DT);
+    hear(tap, STANDING, events, share);
     const standing = all.filter((s) => s.mode !== 'fallen').length;
     if (standing > 0 && counts(true, all)) bad.push(`tick ${t}: the goal counts with ${standing} of ${all.length} still standing`);
     if (standing === 0 && !counts(true, all)) bad.push(`tick ${t}: every swordsman is down and the goal does not count`);
@@ -431,9 +444,16 @@ function theGoalWaits(step: Step, counts: Counts = goalCounts, gate: Gate = step
   for (let k = 0; k < want + 30; k++) tickAll(0, 0, FACING_HIM, false);
   if (openedAt < 0) bad.push(`the gate never stood open: ${share.toFixed(3)} after ${sec(t - lastFell)}`);
   else if (openedAt - lastFell + 1 !== want) bad.push(`the gate stood open ${sec(openedAt - lastFell + 1)} after the last fell, not GATE.openSec ${GATE.openSec} s (${want} ticks)`);
+  // the gate's sound (POLISH-1): once, on the tick the last one fell (the gate begins to swing on that tick), with his fall
+  const gates = heard.filter((h) => h.name === 'gate');
+  if (gates.length !== 1 || gates[0]!.t !== lastFell) bad.push(`the gate's sound started ${gates.length} time(s)${gates.length ? ` (from tick ${gates.slice(0, 4).map((g) => g.t).join(', ')}${gates.length > 4 ? ', ...' : ''})` : ''}, not once on tick ${lastFell}, when the last one fell`);
+  else if (!heard.some((h) => h.name === 'fell' && h.t === lastFell)) bad.push(`the gate's sound and the last fall are not heard on the same tick (${lastFell})`);
   // a respawn: every one back on his post. The goal and the gate are asked again and keep nothing.
   for (const s of all) resetSwordsman(s);
+  tap.respawned(0);
   share = gate(share, counts(true, all), DT);
+  hear(tap, STANDING, [], share);
+  if (heard.filter((h) => h.name === 'gate').length !== 1) bad.push('the gate\'s sound started again when the respawn shut the gate');
   if (counts(true, all)) bad.push('after a respawn the goal still counts');
   if (share !== 0) bad.push(`after a respawn the gate is ${share.toFixed(3)} open, not shut`);
   // nobody to fell: a goal that waits can never count (the schema and CLEAR_NO_ENEMY refuse such a level)
@@ -480,6 +500,8 @@ const MUTATIONS: [string, number, () => string[]][] = [
   ['a goal that never waits', 5, () => theGoalWaits(stepSwordsman, () => true)],
   ['a gate that stays open over a respawn', 5, () => theGoalWaits(stepSwordsman, goalCounts, (share, clear, dt) => (clear ? stepGate(share, true, dt) : share))],
   ['a gate that stands open the tick the last one falls', 5, () => theGoalWaits(stepSwordsman, goalCounts, (_share, clear) => (clear ? 1 : 0))],
+  ['a gate that opens in silence (POLISH-1)', 5, () => theGoalWaits(stepSwordsman, goalCounts, stepGate, (tap, p, f) => tap.afterTick(p, 0, f, 0))],
+  ['a gate heard on every tick it swings', 5, () => theGoalWaits(stepSwordsman, goalCounts, stepGate, (tap, p, f, share) => { tap.reset(); tap.afterTick(p, 0, f, share); })],
 ];
 
 function selfTest(): number {

@@ -20,6 +20,9 @@
 //                        so it is heard here like every other move, and no longer played where the key is read)
 //   the fight (D-023)    what src/systems/fight.ts reported for the tick: a swordsman notices the warrior, the
 //                        warrior's blade lands (and, on the hit that fells him, he falls), a swordsman's blade lands
+//   the gate (POLISH-1)  the gate of a level whose goal waits (D-026) has begun to swing open: it was shut on the
+//                        tick before and is not now. That is the tick after the last swordsman falls, so it is
+//                        heard with that fall. A respawn shuts it again and it is heard again the next time.
 //
 // A teleport (a level starting, a respawn) drops the player from where it stands, which reads as a landing a
 // tick or two later. reset() is called at each teleport and the first landing after it makes no sound.
@@ -53,8 +56,15 @@ export class SoundTap {
   private skipLanding = true;
   /** how many slashes the player had started at the last tick; -1 before the first tick */
   private slashes = -1;
+  /** the gate was open (by any share) at the last tick */
+  private gateOpen = false;
 
-  constructor(private readonly audio: GameAudio) {}
+  private readonly audio: GameAudio;
+
+  /** (A plain field, not a parameter property: check:fight runs this file under Node, which only strips types.) */
+  constructor(audio: GameAudio) {
+    this.audio = audio;
+  }
 
   /** The player was put somewhere (level start, respawn): forget the last tick, and let it land in silence. */
   reset(checkpoints = 0): void {
@@ -63,10 +73,13 @@ export class SoundTap {
     this.fallSpeed = 0;
     this.checkpoints = checkpoints;
     this.skipLanding = true;
+    this.gateOpen = false;
   }
 
-  /** Call once after each fixed tick that advanced the player. Reads only. */
-  afterTick(player: Player, checkpoints: number, fight: readonly FightEvent[] = []): void {
+  /** Call once after each fixed tick that advanced the player. Reads only. `gate`: D-026's gate, 0 shut to 1 open (0 on a level without one). */
+  afterTick(player: Player, checkpoints: number, fight: readonly FightEvent[] = [], gate = 0): void {
+    if (gate > 0 && !this.gateOpen) this.audio.play('gate');
+    this.gateOpen = gate > 0;
     if (this.slashes >= 0 && player.slashCount > this.slashes) this.audio.play('slash');
     this.slashes = player.slashCount;
     for (const e of fight) {

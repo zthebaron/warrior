@@ -37,6 +37,7 @@ export const AUDIO = {
   gain: {
     jump: 0.45, land_soft: 0.5, land_hard: 0.9, slash: 0.7, dash: 0.55, wall_grab: 0.6, checkpoint: 0.5, respawn: 0.45,
     notice: 0.5, hit: 0.8, fell: 0.8, cut: 0.9, // D-023, the fight
+    gate: 0.7, // POLISH-1: the courtyard's far gate swinging open (it starts with the last fall's hit and fell)
   } satisfies Record<EffectName, number>,
   /** the same effect is not started twice inside this long (a wall slide can begin again within a few ticks) */
   minGapSec: 0.08,

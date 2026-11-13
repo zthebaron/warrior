@@ -2279,3 +2279,19 @@ the first change) and on this branch, then `--diff`, one machine (darwin, SwiftS
 6 levels**, after the first `index.html` change and again on the finished source. No golden was written. A page
 with a mouse has no touch element in its document, playing or paused (the touch stage's check); a bare page has
 none even on a touch device, unless the URL asks (`?touch=on`).
+
+## POLISH-1 the gate's sound (2026-11-13)
+
+B-98. `assets/audio/gate.mp3`, `assets/audio/audio.json` `effects.gate`, `src/audio/audio.ts` `AUDIO.gain.gate`,
+`src/audio/tap.ts` (the gate's event), `tools/gen/build-audio.mjs` `AUDIO_BUILD.effects.gate`.
+
+| Constant | Value | Kind | Basis |
+|---|---|---|---|
+| the takes' length | 2.5 s | authored | asked of the model: `GATE.openSec` 1.2 s of swing and a tail; $0.002 a second, priced $0.0060 a take |
+| the take that ships | `gate-b.mp3` | measured | `tools/gen/audio-stats.mjs`: `gate.mp3` peaks at -17.9 dB, -32.8 LUFS, broadband rumble with no creak in its spectrogram; `gate-b.mp3` peaks at -6 dB, -21.4 LUFS, a creak of regular wooden pulses for 1.6 s and one knock at 1.82 s; 43.5% of its energy under 200 Hz, 1.0% over 4 kHz (no ring of metal) |
+| `seconds`, `fadeOut` | 2.2 s, 0.3 s | authored | keeps the knock at 1.82 s and lets it ring out; cut from its onset at 7 ms as every effect is |
+| shipped | 27,271 B, 2.20 s, peak -3.4 dB, -20.8 LUFS, lead silence 1 ms | measured | `build-audio.mjs --check`: inside `LIMITS` (50,000 B an effect, peak -6 to 0 dB, lead under 40 ms) |
+| `AUDIO.gain.gate` | 0.7 | authored | between the slash (0.7) and the fall (0.8) it starts with; **to be judged by ear** |
+| when | the tick the gate leaves shut | derived | `check:fight` rule 6: heard once, on tick 579, the tick the last of three fell, with his `fell`; not again when a respawn shuts the gate |
+
+Cost: $0.0120 in ledger rows 97 and 98; the ledger stands at $15.1968 of $20.00.
